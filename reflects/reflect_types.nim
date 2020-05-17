@@ -72,13 +72,15 @@ type
         value* : C
 # let x : typeof(seq[int]) = 9
 
+type 
+    DataTypeCallbackable* = concept d
+        d.callback(DataType)
+
 proc apply*[T](operation : TaggedOperation[T], value : var T) =
     case operation.kind:
     of OperationKind.Add: 
         when compiles(value += operation.arg):
-            echo " += reached ", operation.arg
             value += operation.arg
-            echo "value is ", value
         else:
             echo "set += operation on type that does not support it", value
     of OperationKind.Mul: 
@@ -146,3 +148,8 @@ proc `/=`*[C,T](field : Field[C,T], delta : T) : FieldModification[C,T] =
 
 proc append*[C,T, U](field : Field[C,T], delta : U) : FieldModification[C,T] =
     FieldModification[C,T](operation : TaggedOperation[T](kind : OperationKind.Append, seqArg: delta), field : field)
+
+
+
+macro class*(t : typedesc) : untyped =
+    result = newIdentNode($t & "Type")

@@ -26,7 +26,7 @@ import reflect
 
 when isMainModule:
     import macros
-    macro myAssert(arg: untyped): untyped =
+    macro echoAssert(arg: untyped): untyped =
         # all node kind identifiers are prefixed with "nnk"
         arg.expectKind nnkInfix
         arg.expectLen 3
@@ -35,71 +35,83 @@ when isMainModule:
         let lhs = arg[1]
         let rhs = arg[2]
 
+        let li = newLit($lineInfoObj(arg))
         result = quote do:
             if not `arg`:
+                echo `li`
                 raise newException(AssertionError,$`lhs` & `op` & $`rhs`)
         
-    import worlds
-    type
-        Foo* =object
-            i : int
-            s : seq[int]
-
+    include world_sugar
     
-    defineReflection(Foo)
-
-    type
-        DefinedHere* = ref object of DataType[Foo]
-
-    let DH : DefinedHere = new(DefinedHere)
-
-    proc tester[T](dt : DataType[T]) =
+    proc shineLight(brightness : int) = 
+        discard
+    proc applyPhysics(entity : Entity, weight : int) = 
         discard
 
-    echo FooType.i.name
-    when FooType is DataType[Foo]:
-        echo "hello"
+    # Define some types of data that our entities might have
+    type
+        LightSource* =object
+            brightness : int
+            color : seq[int]
 
-    tester(DH)
-    tester(FooType)
+        Item* =object
+            weight : int
 
-    let entity = Entity(3)
+    # Call macros that introspect on the type given to them at compile time and define types and methods for
+    # performing reflection on them, with no[1] runtime overhead.
+    #   [1] terms and conditions apply
+    defineReflection(LightSource)
+    defineReflection(Item)
+
+    # Create a new world to hold our entities
     var world = createWorld()
+    # Create a second view of that same world that can be moved through time independently, currently it
+    # is pointing at the world at the beginning of time, where it is right now
+    var historicalView = world.createView()
 
-    let op = TaggedOperation[seq[int]](kind : OperationKind.Append, seqArg : 3)
-    var s1 = @[1,2,3]
-    op.apply(s1)
-    assert s1 == @[1,2,3,3]
+    # Create a lamp and attach data to it, both as a light source and an item
+    let lamp = world.createEntity()
+    lamp.attachData(LightSource(brightness : 4))
+    lamp.attachData(Item(weight : 5))
 
-    var foo = new(Foo)
-    foo.i = 1
-    let field = FooType.i
+    # Create a sun and attach just light source information to it
+    let sun = world.createEntity()
+    sun.attachData(LightSource(brightness : 20))
 
-    let add3 = field += 3
-    add3.apply(foo)
-    echo foo
-    assert foo.i == 4
+    # retrieve the light source information for our lamp, it should be the same as when we set it
+    let lampLS = lamp.data(LightSource)
+    echoAssert lampLS.brightness == 4
 
-    let newFoo = new(Foo)
-    newFoo.i = 4
-    world.attachData(entity, FooType, move(newFoo[]))
+    # increase the brightness by 3, that should take effect immediately within our view of the current world
+    lamp.modify(LightSource.brightness += 3)
+    echoAssert lampLS.brightness == 7
 
-    macro data(entity : Entity, t : typedesc) : untyped =
-        let dataTypeIdent = newIdentNode($t & "Type")
-        result = quote do:
-            when compiles(view.data(entity, `dataTypeIdent`)):
-                view.data(entity, `dataTypeIdent`)
-            else:
-                world.data(entity, `dataTypeIdent`)
+    # here we can apply different effects to entities based on what data they have, so the sun and lamp will 
+    # both shine light, but only the lamp will be affected by physics. That way you can composite together
+    # different subsets of functionality on entities without dealing with weird inheritance hierarchies
+    for entity in world.view.entities:
+        if entity.hasData(LightSource):
+            # for convenience we have the even more minimal syntax `entity[TypeName]` to reference data
+            shineLight(entity[LightSource].brightness)
+        if entity.hasData(Item):
+            applyPhysics(entity, entity[Item].weight)
 
-    let retrieved = world.view.data(entity, FooType)
-    myAssert retrieved.i == 4
+    # the historical view doesn't have anything in it yet, it's still pointing to the beginning of time
+    # if we look at our entities, they won't have any data
+    echoAssert lamp.hasData(historicalView, LightSource) == false
 
-    let niceRetrieved = entity.data(Foo)
-    myAssert niceRetrieved.i == 4
+    # advance time to the point where the entities have been created and had their initial data attached
+    historicalView.advance(world, 4.WorldModifierClock) 
+    # now the lamp has the brightness it had when we first created it
+    echoAssert historicalView.data(lamp, LightSourceType).brightness == 4
 
-    world.modify(entity, FooType.i += 3)
-    myAssert retrieved.i == 7
-    assert foo.i == 4
+    # now advance further and we'll get the change we made to brightness
+    historicalView.advance(world, 5.WorldModifierClock)
+    echoAssert lamp.data(historicalView, LightSource).brightness == 7
 
-    
+    # This is super useful for maintaining a separation between the world as you are simulating it and the
+    # world as you are displaying it. Simple animation can be implemented by simply advancing the modifier
+    # clock forward every N seconds (but you can do rather better than that if you look at what the actual
+    # modifications are and add extra logic around it).
+
+
