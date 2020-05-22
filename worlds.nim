@@ -6,11 +6,12 @@ import typetraits
 import options
 import reflects/reflect_types
 import hashes
+import engines/event_types
 
 {.experimental.}
 
 type Entity* = distinct int  
-type GameEventClock* = distinct int
+type WorldEventClock* = distinct int
 type WorldModifierClock* = distinct int
 
 type
@@ -34,18 +35,20 @@ type
         entities* : seq[Entity]
         baseView : Option[WorldView]
         dataContainers : seq[AbstractDataContainer]
-        currentTime* : GameEventClock
+        lastAppliedEvent : WorldEventClock
         lastAppliedIndex : WorldModifierClock
+        events* : seq[Event]
 
     World* = ref object
         view* : WorldView
         modificationContainer : ModificationContainer
-        currentTime* : GameEventClock
+        currentTime* : WorldEventClock
         entityCounter : int
+        eventModificationTimes : seq[WorldModifierClock]  # the "current modifier time" when the event was created, all modifications < that time are included
 
 converter toView*(world : World) : WorldView = world.view
 
-var worldCallsForAllTypes* : seq[proc(world: var World)] = @[]
+var worldCallsForAllTypes* : seq[proc(world: World)] = @[]
 
 proc hash*(e : Entity) : int =
     return e.int.hash
@@ -53,12 +56,17 @@ proc `==`*(a : Entity, b : Entity) : bool {.borrow.}
 proc `+`*(a : WorldModifierClock, b : int) : WorldModifierClock = return (a.int + b).WorldModifierClock
 proc `-`*(a : WorldModifierClock, b : int) : WorldModifierClock = return (a.int - b).WorldModifierClock
 
+proc `$`*(e : Entity) : string =
+    return $e.int
+
 proc createWorld*() : World = 
     var ret = new World
     ret.view = new WorldView
     ret.view.entities = @[]
     ret.view.dataContainers = newSeq[AbstractDataContainer]()
     ret.view.lastAppliedIndex = (-1).WorldModifierClock
+    ret.view.lastAppliedEvent = (-1).WorldEventClock
+    ret.view.events = @[]
     
     ret.modificationContainer = ModificationContainer(modifications : @[])
 
@@ -66,16 +74,28 @@ proc createWorld*() : World =
         setup(ret)
     return ret
 
+proc currentTime*(view : WorldView) : WorldEventClock =
+    (view.lastAppliedEvent.int+1).WorldEventClock
 
-proc createEntity*(world : var World) : Entity =
+proc addModification*(world : World, modification : EntityModification)
+
+proc createEntity*(world : World) : Entity =
     result = world.entityCounter.Entity
     world.entityCounter.inc
-    world.view.entities.add(result)
     
-    world.modificationContainer.modifications.add(EntityModification(entity : result, dataTypeIndex : -1))
-    world.modificationContainer.modificationClock = world.modificationContainer.modificationClock + 1
+    addModification(world, EntityModification(entity : result, dataTypeIndex : -1))
 
-proc setUpType*[C](world : var World, dataType : DataType[C]) =
+proc addEventToView(view : WorldView, evt : Event, eventTime : WorldEventClock) =
+    view.events.add(evt)
+    view.lastAppliedEvent = eventTime
+
+proc addEvent*(world : World, evt : Event) : WorldEventClock {.discardable.} =
+    result = world.currentTime
+    world.eventModificationTimes.add(world.modificationContainer.modificationClock)
+    addEventToView(world.view, evt, world.currentTime)
+    world.currentTime.inc
+
+proc setUpType*[C](world : World, dataType : DataType[C]) =
     if world.view.dataContainers.len <= dataType.index:
         world.view.dataContainers.setLen(dataType.index + 1)
     world.view.dataContainers[dataType.index] = DataContainer[C](dataStore : Table[Entity, ref C](), defaultValue : new C)
@@ -87,56 +107,69 @@ method applyModification(container : AbstractDataContainer, entMod : EntityModif
 
 method applyModification[T](container : DataContainer[T], entMod : EntityModification) {.base.} =
     var data = container.dataStore.getOrDefault(entMod.entity, nil)
+    # todo: warn when we have no existing data and the modification is not an initial setting mod
     if data == nil:
         data = new T
         container.dataStore[entMod.entity] = data
     entMod.modification.apply(data)
-    # for i in container.lastAppliedIndex ..< modContainer.modifications.len:
-    #     let modifier : EntityModification = modContainer.modifications[i]
-    #     if modifier.modificationTime > targetTime:
-    #         break
-    #     var data = container.dataStore[modifier.entity]
-    #     modifier.modification.apply(data)
-    #     container.lastAppliedIndex = i
-
 
 proc createView*(world : World) : WorldView =
     deepCopy(world.view)
 
-proc advance*(view : var WorldView, world : World, targetTime : WorldModifierClock) =
-    for i in view.lastAppliedIndex.int+1 .. min(world.modificationContainer.modificationClock.int-1, targetTime.int):
-        let modifier : EntityModification = world.modificationContainer.modifications[i]
-        if modifier.dataTypeIndex == -1:
-            view.entities.add(modifier.entity)
+proc applyModificationToView(view : WorldView, modifier : EntityModification, modifierClock : WorldModifierClock) =
+    if modifier.dataTypeIndex == -1:
+        view.entities.add(modifier.entity)
+    else:
+        view.dataContainers[modifier.dataTypeIndex].applyModification(modifier)
+    view.lastAppliedIndex = modifierClock
+
+
+proc advance*(view : WorldView, world : World, targetCurrentTime : WorldModifierClock) =
+    # add events
+    while true:
+        let nextEventIndex = view.lastAppliedEvent.int+1
+        if world.view.events.len > nextEventIndex and world.eventModificationTimes[nextEventIndex].int <= targetCurrentTime.int:
+            addEventToView(view, world.view.events[nextEventIndex], nextEventIndex.WorldEventClock)
+            view.lastAppliedEvent = nextEventIndex.WorldEventClock
         else:
-            view.dataContainers[modifier.dataTypeIndex].applyModification(modifier)
-        view.lastAppliedIndex = WorldModifierClock(i)
+            break
+    
+    # add modifications
+    for i in view.lastAppliedIndex.int+1 ..< min(world.modificationContainer.modificationClock.int, targetCurrentTime.int):
+        let modifier : EntityModification = world.modificationContainer.modifications[i]
+        applyModificationToView(view, modifier, WorldModifierClock(i))
 
-
+proc advance*(view : WorldView, world : World, targetCurrentTime : WorldEventClock) =
+    advance(view, world, world.eventModificationTimes[targetCurrentTime.int - 1])
 
 # proc attachData*[C] (world : var World, entity : Entity, dataType : DataType[C]) =
 #     attachData(world, entity, dataType, C())
 
-proc attachData*[C] (world : var World, entity : Entity, dataType : DataType[C], dataValue : C = C()) =
+proc attachData*[C] (world : World, entity : Entity, dataType : DataType[C], dataValue : C = C()) =
     let entityMod = EntityModification(entity : entity, dataTypeIndex : dataType.index, modification : InitialAssignmentModification[C](value : dataValue))
-    world.addModification(dataType, entityMod)
+    world.addModification(entityMod)
 
-proc modify*[C,T] (world : var World, entity : Entity, modification : FieldModification[C,T]) =
-    world.addModification(modification.field.dataType, EntityModification(entity : entity, dataTypeIndex : modification.field.dataType.index, modification : modification))
+proc modify*[C,T] (world : World, entity : Entity, modification : FieldModification[C,T]) =
+    world.addModification(EntityModification(entity : entity, dataTypeIndex : modification.field.dataType.index, modification : modification))
 
 
-proc addModification*[C] (world : var World, dataType : DataType[C], modification : EntityModification) =
-    let entity = modification.entity
+iterator entitiesWithData*[C](view : WorldView, t : typedesc[C]) : Entity =
+    let dataType = t.getDataType()
+    var dc = (DataContainer[C]) view.dataContainers[dataType.index]
+    for ent in dc.dataStore.keys:
+        yield ent
 
-    var dc = (DataContainer[C]) world.view.dataContainers[dataType.index]
-    var existingRef = dc.dataStore.getOrDefault(entity)
-    if existingRef == nil:
-        existingRef = new C
-        dc.dataStore[entity] = existingRef
-    modification.modification.apply(existingRef)
+# macro entitiesWithData*[C](view : WorldView, t : typedesc[C]) =
+#     let dataTypeIdent = newIdentNode($t & "Type")
+#     result = newStmtList()
+#     result.add( quote do:
+#         entitiesWithDataIntern(`view`,`dataTypeIdent`)
+#     )
+
+proc addModification* (world : World, modification : EntityModification) =
     world.modificationContainer.modifications.add(modification)
-    world.modificationContainer.modificationClock = world.modificationContainer.modificationClock + 1
-    world.view.lastAppliedIndex = world.view.lastAppliedIndex + 1
+    applyModificationToView(world.view, modification, world.modificationContainer.modificationClock)
+    world.modificationContainer.modificationClock.inc
 
 
 proc data*[C] (view : WorldView, entity : Entity, dataType : DataType[C]) : ref C =
@@ -150,7 +183,7 @@ proc hasData*[C] (view : WorldView, entity : Entity, dataType : DataType[C]) : b
     var dc = (DataContainer[C]) view.dataContainers[dataType.index]
     result = dc.dataStore.hasKey(entity)
 
-macro modify*(world : var World, expression : untyped) =
+macro modify*(world : World, expression : untyped) =
     result = newStmtList()
     if expression.kind == nnkInfix:
         let inf = unpackInfix(expression)

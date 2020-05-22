@@ -172,9 +172,15 @@ macro defineReflection*(t: typedesc) =
 
     result = result.add(
         quote do:
-            worldCallsForAllTypes.add(proc(world : var World) =
+            worldCallsForAllTypes.add(proc(world : World) =
                 setUpType[`typeName`](world, `fooType`)
             )
+    )
+
+    result.add(
+        quote do:
+            proc getDataType* (t : typedesc[`t`]) : DataType[`t`] {.inline.} =
+                return `fooType`
     )
 
     # echo result.copy.repr
@@ -190,3 +196,10 @@ macro defineReflection*(t: typedesc) =
 
 
 
+
+
+macro ifOfType*(x : untyped, t : typed, stmts : untyped) : untyped =
+    result = quote do:
+        if `x` of `t`:
+            let `x` {.inject.} = `x`.`t`
+            `stmts`

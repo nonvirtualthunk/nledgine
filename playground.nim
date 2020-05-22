@@ -26,6 +26,7 @@ import reflect
 
 when isMainModule:
     import macros
+    import engines/event_types
     macro echoAssert(arg: untyped): untyped =
         # all node kind identifiers are prefixed with "nnk"
         arg.expectKind nnkInfix
@@ -57,6 +58,9 @@ when isMainModule:
         Item* =object
             weight : int
 
+    type
+        UpdateEvent = ref object of Event
+
     # Call macros that introspect on the type given to them at compile time and define types and methods for
     # performing reflection on them, with no[1] runtime overhead.
     #   [1] terms and conditions apply
@@ -64,10 +68,10 @@ when isMainModule:
     defineReflection(Item)
 
     # Create a new world to hold our entities
-    var world = createWorld()
+    let world = createWorld()
     # Create a second view of that same world that can be moved through time independently, currently it
     # is pointing at the world at the beginning of time, where it is right now
-    var historicalView = world.createView()
+    let historicalView = world.createView()
 
     # Create a lamp and attach data to it, both as a light source and an item
     let lamp = world.createEntity()
@@ -101,12 +105,12 @@ when isMainModule:
     echoAssert lamp.hasData(historicalView, LightSource) == false
 
     # advance time to the point where the entities have been created and had their initial data attached
-    historicalView.advance(world, 4.WorldModifierClock) 
+    historicalView.advance(world, 5.WorldModifierClock) 
     # now the lamp has the brightness it had when we first created it
     echoAssert historicalView.data(lamp, LightSourceType).brightness == 4
 
     # now advance further and we'll get the change we made to brightness
-    historicalView.advance(world, 5.WorldModifierClock)
+    historicalView.advance(world, 6.WorldModifierClock)
     echoAssert lamp.data(historicalView, LightSource).brightness == 7
 
     # This is super useful for maintaining a separation between the world as you are simulating it and the
@@ -114,4 +118,17 @@ when isMainModule:
     # clock forward every N seconds (but you can do rather better than that if you look at what the actual
     # modifications are and add extra logic around it).
 
+
+    lamp.modify(LightSource.brightness += 1)
+
+    let evt = UpdateEvent()
+    world.addEvent(evt)
+
+    echoAssert lamp.data(historicalView, LightSource).brightness == 7
+    echoAssert lamp.data(world.view, LightSource).brightness == 8
+
+    historicalView.advance(world, world.currentTime)
+
+    echoAssert lamp.data(historicalView, LightSource).brightness == 8
+    echoAssert historicalView.events[0] of UpdateEvent
 
