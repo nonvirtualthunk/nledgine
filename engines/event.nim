@@ -28,13 +28,6 @@ proc activeKeyModifiers*() : KeyModifiers =
         alt : isKeyDown(KeyCode.LeftAlt) or isKeyDown(KeyCode.RightAlt)
     )
 
-type
-    EventBuffer* = ref object
-        listenerCursors : seq[int]
-        discardedEvents : int
-        events : Deque[Event]
-        maximumSize : int
-
 variantp EventSource:
     WorldSource(world : World)
     EventBufferSource(buffer : EventBuffer, index : int)
@@ -44,13 +37,6 @@ type
         cursor : int
         source : EventSource
 
-
-proc createEventBuffer*(maximumSize : int = 1000) : EventBuffer =
-    EventBuffer(
-        discardedEvents : 0,
-        maximumSize : maximumSize
-    )
-
 proc createEventBus*(buffer : EventBuffer) : EventBus =
     let index = buffer.listenerCursors.len
     buffer.listenerCursors.add(0)
@@ -59,10 +45,6 @@ proc createEventBus*(buffer : EventBuffer) : EventBus =
 proc createEventBus*(world : World) : EventBus =
     return EventBus(cursor : 0, source : WorldSource(world))
 
-proc addEvent*(buffer : EventBuffer, evt : Event) =
-    buffer.events.addLast(evt)
-    while buffer.events.len > buffer.maximumSize:
-        buffer.events.popFirst()
 
 proc addEvent*(bus : var EventBus, evt : Event) =
     match bus.source:
@@ -95,6 +77,13 @@ proc pollEvent*(bus : var EventBus) : Option[Event] =
                 result = none(Event)
 
 
+iterator newEvents*(bus : var EventBus) : Event =
+    while true:
+        let nextEvent = bus.pollEvent()
+        if nextEvent.isSome:
+            yield nextEvent.get()
+        else:
+            break
 
 when isMainModule:
     import ../reflect

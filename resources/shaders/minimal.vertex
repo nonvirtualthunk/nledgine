@@ -1,0 +1,10 @@
+#version 150 core
+
+in vec3 Vertex;
+
+uniform mat4 ProjectionMatrix;
+uniform mat4 ModelViewMatrix;
+
+void main (){
+    gl_Position = vec4(Vertex, 1.0);
+}

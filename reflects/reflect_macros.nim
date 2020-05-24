@@ -175,6 +175,9 @@ macro defineReflection*(t: typedesc) =
             worldCallsForAllTypes.add(proc(world : World) =
                 setUpType[`typeName`](world, `fooType`)
             )
+            displayWorldCallsForAllTypes.add(proc(world : DisplayWorld) =
+                setUpType[`typeName`](world, `fooType`)
+            )
     )
 
     result.add(

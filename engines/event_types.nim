@@ -1,5 +1,6 @@
 import glm
 import nimgl/glfw
+import deques
 
 import key_codes
 
@@ -12,6 +13,14 @@ type
 
 type
     Event* = ref object of RootRef
+
+    GameEvent* = ref object of RootRef
+
+    EventBuffer* = ref object
+        listenerCursors* : seq[int]
+        discardedEvents* : int
+        events* : Deque[Event]
+        maximumSize* : int
     
     KeyModifiers* = object
         shift* : bool
@@ -46,6 +55,17 @@ type
 
     QuitRequest* = ref object of InputEvent
 
+
+proc createEventBuffer*(maximumSize : int = 1000) : EventBuffer =
+    EventBuffer(
+        discardedEvents : 0,
+        maximumSize : maximumSize
+    )
+
+proc addEvent*(buffer : EventBuffer, evt : Event) =
+    buffer.events.addLast(evt)
+    while buffer.events.len > buffer.maximumSize:
+        buffer.events.popFirst()
 
 method toString*(evt : Event) : string {.base} =
     return $evt[]

@@ -105,12 +105,12 @@ when isMainModule:
     echoAssert lamp.hasData(historicalView, LightSource) == false
 
     # advance time to the point where the entities have been created and had their initial data attached
-    historicalView.advance(world, 5.WorldModifierClock) 
+    historicalView.advance(world, 6.WorldModifierClock) 
     # now the lamp has the brightness it had when we first created it
     echoAssert historicalView.data(lamp, LightSourceType).brightness == 4
 
     # now advance further and we'll get the change we made to brightness
-    historicalView.advance(world, 6.WorldModifierClock)
+    historicalView.advance(world, 7.WorldModifierClock)
     echoAssert lamp.data(historicalView, LightSource).brightness == 7
 
     # This is super useful for maintaining a separation between the world as you are simulating it and the
