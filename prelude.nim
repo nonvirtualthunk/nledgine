@@ -1,3 +1,4 @@
+import glm
 import metric
 import sugar
 import times
@@ -23,3 +24,6 @@ proc seconds*(f : float) : UnitOfTime =
 proc relTime*() : UnitOfTime =
     let dur = now() - programStartTime
     return inMicroseconds(dur).float.microseconds
+
+# proc vec3f*(v : Vec3i) : Vec3f =
+#     vec3f(v.x.float, v.y.float, v.z.float)

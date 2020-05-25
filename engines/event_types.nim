@@ -28,7 +28,7 @@ type
         alt* : bool
     
     UIEvent* = ref object of Event
-        consumed : bool
+        consumed* : bool
     
     InputEvent* = ref object of UIEvent
         modifiers* : KeyModifiers

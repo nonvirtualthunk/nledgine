@@ -111,7 +111,7 @@ proc createWorld*() : World {.gcsafe.} =
 proc createDisplayWorld*() : DisplayWorld {.gcsafe.} = 
     var ret = new DisplayWorld
     ret.dataContainers = newSeq[AbstractDataContainer]()
-    ret.events = createEventBuffer()
+    ret.events = createEventBuffer(1000)
 
     for setup in displayWorldCallsForAllTypes:
         setup(ret)
@@ -243,7 +243,10 @@ proc data*[C] (world : DisplayWorld, t : typedesc[C]) : ref C =
 proc attachData*[C] (world : DisplayWorld, entity : DisplayEntity, t : typedesc[C], dataValue : C = C()) =
     let dataType = t.getDataType()
     var dc = (DataContainer[C]) world.dataContainers[dataType.index]
-    dc.dataStore[entity.int] = dataValue
+    let nv : ref C = new C
+    nv[] = dataValue
+    dc.dataStore[entity.int] = nv
+    
 
 proc attachDataInternal[C] (world : DisplayWorld, entity : DisplayEntity, dataType : DataType[C], dataValue : C = C()) =
     var dc = (DataContainer[C]) world.dataContainers[dataType.index]
@@ -252,7 +255,7 @@ proc attachDataInternal[C] (world : DisplayWorld, entity : DisplayEntity, dataTy
     dc.dataStore[entity.int] = nv
 
 proc attachData*[C] (world : DisplayWorld, t : typedesc[C], dataValue : C = C()) =
-    attachData(world, WorldEntity, t, dataValue)
+    attachData(world, WorldDisplayEntity, t, dataValue)
 
 macro modify*(world : World, expression : untyped) =
     result = newStmtList()

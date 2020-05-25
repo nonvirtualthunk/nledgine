@@ -28,10 +28,9 @@ proc runEngine(full : FullGameSetup) {.thread.} =
     for op in full.reflectInitializers:
         op()
 
-    var eventBuffer = createEventBuffer(1000)
-
     var gameEngine = newGameEngine()
     var graphicsEngine = newGraphicsEngine(gameEngine)
+    graphicsEngine.displayWorld.attachData(GraphicsContextData)
 
     for gc in full.setup.gameComponents:
         gameEngine.addComponent(gc)
@@ -54,7 +53,7 @@ proc runEngine(full : FullGameSetup) {.thread.} =
                 let gctxt = graphicsEngine.displayWorld[GraphicsContextData]
                 gctxt.windowSize = evt.windowSize
                 gctxt.framebufferSize = evt.framebufferSize
-            eventBuffer.addEvent(evt)
+            graphicsEngine.displayWorld.addEvent(evt)
         
         gameEngine.update()
         graphicsEngine.update(drawCommandChannel, 1.0f)
@@ -90,6 +89,9 @@ proc framebufferSizeCallback(window : GLFWWindow, width : int32, height : int32)
     framebufferSize = vec2i(width, height)
     eventChannel.send(WindowResolutionChanged(windowSize : windowSize, framebufferSize: framebufferSize))
 
+proc errorCallback(errorCode : int32, err : cstring) : void {.cdecl.} =
+    echo "GLFW ERROR[", errorCode, "]: ", err
+
 proc toGLFWBool(b : bool) : int32 =
     if b:
         GLFW_TRUE
@@ -111,7 +113,17 @@ proc main*(setup : GameSetup) =
 
     glfwSwapInterval(1)
 
-    # glfwGetWindowSize(w,)
+    var width: int32 = 0
+    var height: int32 = 0
+    getWindowSize(w, width.addr, height.addr)
+    windowSize = vec2i(width, height)
+    getFramebufferSize(w, width.addr, height.addr)
+    framebufferSize = vec2i(width, height)
+
+    eventChannel.send(WindowResolutionChanged(windowSize : windowSize, framebufferSize : framebufferSize))
+    discard w.setFramebufferSizeCallback(framebufferSizeCallback)
+    discard w.setWindowSizeCallback(windowSizeCallback)
+    discard glfwSetErrorCallback(errorCallback)
 
     discard w.setKeyCallback(keyDownProc)
     w.makeContextCurrent()
@@ -122,7 +134,13 @@ proc main*(setup : GameSetup) =
 
     createThread(engineThread, runEngine, FullGameSetup(setup : setup, reflectInitializers : reflectInitializers))
 
+    var lastViewport = vec2i(0,0)
+
     while not w.windowShouldClose:
+        if lastViewport != framebufferSize:
+            glViewport(0,0,framebufferSize.x, framebufferSize.y)
+            lastViewport = framebufferSize
+
         glfwPollEvents()
         glClearColor(0.0f,0.0f,0.0f,1.0f)
         glClear(GL_COLOR_BUFFER_BIT)
@@ -142,7 +160,7 @@ proc main*(setup : GameSetup) =
 
         for i in 0 ..< drawCommands.len:
             if drawCommands[i].vao != 0:
-                drawCommands[i].render()
+                drawCommands[i].render(framebufferSize)
 
         goChannel.send(true)
         w.swapBuffers()

@@ -6,6 +6,8 @@ import ../worlds
 import ../prelude
 import ../graphics
 import tables
+import ../noto
+import ../graphics/camera_component
 
 
 type 
@@ -31,7 +33,7 @@ method update(g : PrintComponent, world : World) =
     let curTime = relTime()
     if curTime - g.lastPrint > seconds(2.0f):
         g.lastPrint = curTime
-        echo "Updates / second : ", (g.updateCount / 2)
+        info "Updates / second : ", (g.updateCount / 2)
         g.updateCount = 0
 
 
@@ -51,7 +53,7 @@ proc render(g : DrawQuadComponent) =
     g.vao.swap()
     g.needsUpdate = false
 
-method initialize(g : DrawQuadComponent, world : World, curView : WorldView, displayWorld : DisplayWorld) =
+method initialize(g : DrawQuadComponent, world : World, curView : WorldView, display : DisplayWorld) =
     g.vao = newVAO[SimpleVertex, uint16]()
     g.shader = initShader("shaders/simple")
     g.texture = loadTexture("resources/images/book_01b.png")
@@ -59,23 +61,21 @@ method initialize(g : DrawQuadComponent, world : World, curView : WorldView, dis
     g.size = 100.0f
     g.render()
 
-method update(g : DrawQuadComponent, world : World, curView : WorldView, displayWorld : DisplayWorld, df : float) : seq[DrawCommand] =
+    g.onEvent(KeyRelease, kre):
+        if kre.key == KeyCode.F:
+            g.size *= 2
+            g.needsUpdate = true
+
+method update(g : DrawQuadComponent, world : World, curView : WorldView, display : DisplayWorld, df : float) : seq[DrawCommand] =
     if g.needsUpdate:
         g.render()
-
-    var proj = ortho(0.0f,(float) 800,0.0f,(float) 600,-100.0f,100.0f)
-    var modelview = mat4f()
-
-    g.shader.uniformMat4["ModelViewMatrix"] = modelview
-    g.shader.uniformMat4["ProjectionMatrix"] = proj
-
-    @[draw(g.vao, g.shader, @[g.texture])]
+    @[draw(g.vao, g.shader, @[g.texture], display[CameraData].camera)]
 
 main(GameSetup(
     windowSize : vec2i(1024,768),
     resizeable : false,
     windowTitle : "Ax4",
     gameComponents : @[(GameComponent)(new PrintComponent)],
-    graphicsComponents : @[(GraphicsComponent)(new DrawQuadComponent)]
+    graphicsComponents : @[createCameraComponent(createPixelCamera(1)), DrawQuadComponent()]
 ))
 

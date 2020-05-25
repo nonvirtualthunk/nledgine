@@ -12,6 +12,7 @@ import ../noto
 import strutils
 import ../engines/event_types
 import ../worlds
+import cameras
 
 var vaoID : Atomic[int]
 var bufferID : Atomic[int]
@@ -111,6 +112,7 @@ type
         indexCount* : int
         shader* : Shader
         textures* : seq[TextureInfo]
+        camera* : Camera
         
     SimpleVertex* = object
         vertex* : Vec3f
@@ -303,7 +305,7 @@ macro vertexArrayDefinitions(t : typed) : seq[VertexArrayDefinition] =
             `definitions`
             `seqSym`
 
-proc draw* [VT; IT : uint16 | uint32](vao : Vao[VT, IT], shader : Shader, textures : seq[Texture]) : DrawCommand =
+proc draw* [VT; IT : uint16 | uint32](vao : Vao[VT, IT], shader : Shader, textures : seq[Texture], camera : Camera) : DrawCommand =
     if vao.id == 0:
         vao.id = vaoID.fetchAdd(1)+1
         vao.vertices.id = bufferID.fetchAdd(1)+1
@@ -343,7 +345,8 @@ proc draw* [VT; IT : uint16 | uint32](vao : Vao[VT, IT], shader : Shader, textur
         indexBufferType : indexType,
         indexCount : vao.indices.frontBuffer.len,
         textures : effTextures,
-        shader : shader
+        shader : shader,
+        camera : camera
     )
 
 proc merge*(command : var DrawCommand, next : DrawCommand) =
@@ -358,6 +361,7 @@ proc merge*(command : var DrawCommand, next : DrawCommand) =
         command.indexBuffer = next.indexBuffer
     command.textures = next.textures
     command.shader = next.shader
+    command.camera = next.camera
 
 
 var glVaoIDs = @[0.VertexArrayID]
@@ -389,7 +393,7 @@ proc lookupUniformLocation(shaderID : ShaderID, program : ShaderProgramID, name 
         glShaderUniformLocations[shaderID][name] = getUniformLocation(program,name)
     result = glShaderUniformLocations[shaderID][name]
 
-proc render*(command : var DrawCommand) =
+proc render*(command : var DrawCommand, framebufferSize : Vec2i) =
     if command.vertexBuffer.len == 0 or command.indexBuffer.len == 0:
         return
     discard addIfNeeded(glVaoIDs,command.vao,() => genVertexArray())
@@ -401,6 +405,9 @@ proc render*(command : var DrawCommand) =
     let shader = glShaderIDs[command.shader.id]
     shader.use()
     checkGLError()
+
+    command.shader.uniformMat4["ModelViewMatrix"] = command.camera.modelviewMatrix(framebufferSize)
+    command.shader.uniformMat4["ProjectionMatrix"] = command.camera.projectionMatrix(framebufferSize)
 
     bindVertexArray(glVaoIDs[command.vao])
     checkGLError()
@@ -508,7 +515,9 @@ when isMainModule:
 
     let staticTexture : Texture = StaticTexture(texture : default(TextureInfo))
 
-    let drawCommand = draw(vao, shader, @[staticTexture])
+    let camera : Camera = createPixelCamera(1)
+
+    let drawCommand = draw(vao, shader, @[staticTexture], camera)
     assert drawCommand.vertexArrayDefinitions == @[
         VertexArrayDefinition(dataType : EGL_FLOAT, offset : 0, stride : sizeof(TestVertex), num : 3, name : "vertex"),
         VertexArrayDefinition(dataType : GL_UNSIGNED_BYTE, offset : 12, stride : sizeof(TestVertex), num : 4, normalize : true, name : "color")

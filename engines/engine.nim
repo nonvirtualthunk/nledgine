@@ -5,6 +5,7 @@ import macros
 include ../world_sugar
 import ../noto
 import ../graphics/core
+import algorithm
 
 type 
     EventCallback = proc(world : World, evt : Event) {.gcsafe.}
@@ -15,6 +16,8 @@ type
         # callbacks : seq[CallbackType]
 
     GameComponent* = ref object of RootRef
+        initializePriority* : int
+        eventPriority* : int
         eventCallbacks : seq[EventCallback]
         lastUpdated : UnitOfTime
 
@@ -24,6 +27,8 @@ type
         world : World
 
     GraphicsComponent* = ref object of RootRef
+        initializePriority* : int
+        eventPriority* : int
         displayEventCallbacks : seq[DisplayEventCallback]
         lastUpdated : UnitOfTime
 
@@ -85,7 +90,7 @@ macro onEvent*(g : GameComponent, t: typedesc, name : untyped, body : untyped) =
 
 macro onEvent*(g : GraphicsComponent, t: typedesc, name : untyped, body : untyped) =
     result = quote do:
-        `g`.eventCallbacks.add(proc (world : World, displayWorld : DisplayWorld, evt : Event) {.gcsafe.} = 
+        `g`.displayEventCallbacks.add(proc (world : World, displayWorld : DisplayWorld, evt : Event) {.gcsafe.} = 
             if evt of `t`:
                 let `name` = (`t`) evt
                 `body`
@@ -104,8 +109,10 @@ proc update*(ge : GameEngine) =
         comp.update(ge.world)
 
 proc initialize*(ge : GameEngine) =
+    ge.components = ge.components.sortedByIt(it.initializePriority * -1)
     for comp in ge.components:
         comp.initialize(ge.world)
+    ge.components = ge.components.sortedByIt(it.eventPriority * -1)
 
 
 proc update*(ge : GraphicsEngine, channel : var Channel[DrawCommand], df : float) {.gcsafe.} =
@@ -125,8 +132,10 @@ proc update*(ge : GraphicsEngine, channel : var Channel[DrawCommand], df : float
             channel.send(command)
 
 proc initialize*(ge : GraphicsEngine) =
+    ge.components = ge.components.sortedByIt(it.initializePriority * -1)
     for comp in ge.components:
         comp.initialize(ge.world, ge.currentView, ge.displayWorld)
+    ge.components = ge.components.sortedByIt(it.eventPriority * -1)
 
 
 
