@@ -5,6 +5,9 @@ import macros
 
 var dataTypeIndexCounter* {.compileTime.} = 0
 
+type ReflectInitializers* = seq[proc() {.gcsafe.}]
+var reflectInitializers* : ReflectInitializers
+
 macro extractSeqValue*(t : typed) =
     let seqType = getType(t)[1]
     if seqType.len > 1:
@@ -29,7 +32,8 @@ macro extractTableKey*(t : typedesc) =
 
 
 type 
-    DataType*[C]=ref object of RootRef
+    # TODO: This doesn't actually need to be ref object of RootRef
+    DataType*[C]= ref object of RootRef
         name* : string
         index* : int
         fields* : seq[ref AbstractField[C]]

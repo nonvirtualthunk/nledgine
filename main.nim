@@ -3,31 +3,67 @@ import nimgl/[glfw, opengl]
 import engines
 import reflect
 import tables
+import graphics/core
+import glm
+import application
+import worlds
 
 var eventChannel : Channel[Event]
 eventChannel.open()
 
+var drawCommandChannel : Channel[DrawCommand]
+drawCommandChannel.open()
+
+var goChannel : Channel[bool]
+goChannel.open()
 
 
-var activeModifiers = KeyModifiers()
+type FullGameSetup = object
+    setup : GameSetup
+    reflectInitializers : ReflectInitializers
 
-proc runEngine() = 
+# var activeModifiers = KeyModifiers()
+
+proc runEngine(full : FullGameSetup) {.thread.} = 
+    for op in full.reflectInitializers:
+        op()
+
     var eventBuffer = createEventBuffer(1000)
 
+    var gameEngine = newGameEngine()
+    var graphicsEngine = newGraphicsEngine(gameEngine)
+
+    for gc in full.setup.gameComponents:
+        gameEngine.addComponent(gc)
+    gameEngine.initialize()
+    for gc in full.setup.graphicsComponents:
+        graphicsEngine.addComponent(gc)
+    graphicsEngine.initialize()
+
+
     while true:
+        discard goChannel.recv
+    
         let evtOpt = eventChannel.tryRecv()
         if evtOpt.dataAvailable:
             let evt = evtOpt.msg
             ifOfType(evt, QuitRequest):
                 echo "Quitting"
                 break
+            ifOfType(evt, WindowResolutionChanged):
+                let gctxt = graphicsEngine.displayWorld[GraphicsContextData]
+                gctxt.windowSize = evt.windowSize
+                gctxt.framebufferSize = evt.framebufferSize
             eventBuffer.addEvent(evt)
+        
+        gameEngine.update()
+        graphicsEngine.update(drawCommandChannel, 1.0f)
+
         
         
             
 
-var engineThread : Thread[void]
-createThread(engineThread, runEngine)
+var engineThread : Thread[FullGameSetup]
 
 proc keyDownProc(window: GLFWWindow, key: int32, scancode: int32, action: int32, mods: int32): void {.cdecl.} =
     if key == GLFWKey.ESCAPE and action == GLFWPress:
@@ -44,34 +80,84 @@ proc keyDownProc(window: GLFWWindow, key: int32, scancode: int32, action: int32,
         eventChannel.send(KeyRelease(key : key.KeyCode, modifiers : activeKeyModifiers()))
 
 
+var windowSize = vec2i(800,600)
+var framebufferSize = vec2i(800,600)
+proc windowSizeCallback(window : GLFWWindow, width : int32, height : int32) : void {.cdecl.} =
+    windowSize = vec2i(width, height)
+    eventChannel.send(WindowResolutionChanged(windowSize : windowSize, framebufferSize: framebufferSize))
 
-proc main() =
+proc framebufferSizeCallback(window : GLFWWindow, width : int32, height : int32) : void {.cdecl.} =
+    framebufferSize = vec2i(width, height)
+    eventChannel.send(WindowResolutionChanged(windowSize : windowSize, framebufferSize: framebufferSize))
+
+proc toGLFWBool(b : bool) : int32 =
+    if b:
+        GLFW_TRUE
+    else:
+        GLFW_FALSE
+
+proc main*(setup : GameSetup) =
     assert glfwInit()
 
     glfwWindowHint(GLFWContextVersionMajor, 3)
     glfwWindowHint(GLFWContextVersionMinor, 3)
     glfwWindowHint(GLFWOpenglForwardCompat, GLFW_TRUE) # Used for Mac
     glfwWindowHint(GLFWOpenglProfile, GLFW_OPENGL_CORE_PROFILE)
-    glfwWindowHint(GLFWResizable, GLFW_FALSE)
+    glfwWindowHint(GLFWResizable, toGLFWBool(setup.resizeable))
 
-    let w: GLFWWindow = glfwCreateWindow(800, 600, "NimGL")
+    let w: GLFWWindow = glfwCreateWindow(setup.windowSize.x, setup.windowSize.y, setup.windowTitle)
     if w == nil:
         quit(-1)
 
     glfwSwapInterval(1)
+
+    # glfwGetWindowSize(w,)
 
     discard w.setKeyCallback(keyDownProc)
     w.makeContextCurrent()
 
     assert glInit()
 
+    var drawCommands : seq[DrawCommand]
+
+    createThread(engineThread, runEngine, FullGameSetup(setup : setup, reflectInitializers : reflectInitializers))
+
     while not w.windowShouldClose:
         glfwPollEvents()
-        glClearColor(0.68f, 1f, 0.34f, 1f)
+        glClearColor(0.0f,0.0f,0.0f,1.0f)
         glClear(GL_COLOR_BUFFER_BIT)
+
+        while true:
+            let drawCommandOpt = drawCommandChannel.tryRecv()
+            if drawCommandOpt.dataAvailable:
+                let newComm = drawCommandOpt.msg
+                while drawCommands.len <= newComm.vao:
+                    drawCommands.add(default(DrawCommand))
+                if drawCommands[newComm.vao].vao == 0:
+                    drawCommands[newComm.vao] = newComm
+                else:
+                    drawCommands[newComm.vao].merge(newComm)
+            else:
+                break
+
+        for i in 0 ..< drawCommands.len:
+            if drawCommands[i].vao != 0:
+                drawCommands[i].render()
+
+        goChannel.send(true)
         w.swapBuffers()
 
     w.destroyWindow()
     glfwTerminate()
 
-main()
+# const appName {.strdefine.} : string = "None"
+
+# when appName == "Ax4":
+#     main(GameSetup(
+#         windowSize : vec2i(1024,768),
+#         resizeable : false,
+#         windowTitle : "Ax4"
+#     ))
+
+# when appName == "None":
+#     echo "Specify an appName when compiling"

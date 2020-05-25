@@ -11,10 +11,12 @@ import ../engines/event_types
 {.experimental.}
 
 type Entity* = distinct int  
+type DisplayEntity* = distinct int
 type WorldEventClock* = distinct int
 type WorldModifierClock* = distinct int
 
 let WorldEntity = 0.Entity
+let WorldDisplayEntity = 0.DisplayEntity
 
 type
     AbstractDataContainer=ref object of RootObj
@@ -30,7 +32,7 @@ type
 
     DataContainer[T]=ref object of AbstractDataContainer
         lastAppliedIndex : int
-        dataStore : Table[Entity, ref T]
+        dataStore : Table[int, ref T]
         defaultValue : ref T
 
     WorldView* = ref object
@@ -49,7 +51,7 @@ type
         eventModificationTimes : seq[WorldModifierClock]  # the "current modifier time" when the event was created, all modifications < that time are included
 
     DisplayWorld* = ref object
-        entities : seq[Entity]
+        entities : seq[DisplayEntity]
         dataContainers : seq[AbstractDataContainer]
         events* : EventBuffer
         entityCounter : int
@@ -59,8 +61,8 @@ type
 
 converter toView*(world : World) : WorldView = world.view
 
-var worldCallsForAllTypes* : seq[proc(world: World)] = @[]
-var displayWorldCallsForAllTypes* : seq[proc(world: DisplayWorld)] = @[]
+var worldCallsForAllTypes* {.threadvar.} : seq[proc(world: World) {.gcsafe.} ]
+var displayWorldCallsForAllTypes* {.threadvar.}: seq[proc(world: DisplayWorld) {.gcsafe.}]
 
 proc hash*(e : Entity) : int =
     return e.int.hash
@@ -74,20 +76,20 @@ proc `$`*(e : Entity) : string =
 proc currentTime*(view : WorldView) : WorldEventClock =
     (view.lastAppliedEvent.int+1).WorldEventClock
 
-proc addModification*(world : World, modification : EntityModification)
+proc addModification*(world : World, modification : EntityModification) {.gcsafe.} 
 
-proc createEntity*(world : World) : Entity =
+proc createEntity*(world : World) : Entity {.gcsafe.} =
     result = world.entityCounter.Entity
     world.entityCounter.inc
     
     addModification(world, EntityModification(entity : result, dataTypeIndex : -1))
 
-proc createEntity*(world : DisplayWorld) : Entity =
-    result = world.entityCounter.Entity
+proc createEntity*(world : DisplayWorld) : DisplayEntity =
+    result = world.entityCounter.DisplayEntity
     world.entities.add(result)
     world.entityCounter.inc
 
-proc createWorld*() : World = 
+proc createWorld*() : World {.gcsafe.} = 
     var ret = new World
     ret.view = new WorldView
     ret.view.entities = @[]
@@ -106,7 +108,7 @@ proc createWorld*() : World =
 
     return ret
 
-proc createDisplayWorld*() : DisplayWorld = 
+proc createDisplayWorld*() : DisplayWorld {.gcsafe.} = 
     var ret = new DisplayWorld
     ret.dataContainers = newSeq[AbstractDataContainer]()
     ret.events = createEventBuffer()
@@ -137,12 +139,12 @@ proc addEvent*(world : DisplayWorld, evt : Event) : WorldEventClock {.discardabl
 proc setUpType*[C](world : World, dataType : DataType[C]) =
     if world.view.dataContainers.len <= dataType.index:
         world.view.dataContainers.setLen(dataType.index + 1)
-    world.view.dataContainers[dataType.index] = DataContainer[C](dataStore : Table[Entity, ref C](), defaultValue : new C)
+    world.view.dataContainers[dataType.index] = DataContainer[C](dataStore : Table[int, ref C](), defaultValue : new C)
 
 proc setUpType*[C](world : DisplayWorld, dataType : DataType[C]) =
     if world.dataContainers.len <= dataType.index:
         world.dataContainers.setLen(dataType.index + 1)
-    world.dataContainers[dataType.index] = DataContainer[C](dataStore : Table[Entity, ref C](), defaultValue : new C)
+    world.dataContainers[dataType.index] = DataContainer[C](dataStore : Table[int, ref C](), defaultValue : new C)
 
 method applyModification(container : AbstractDataContainer, entMod : EntityModification) {.base.} =
     {.warning[LockLevel]:off.}
@@ -150,11 +152,11 @@ method applyModification(container : AbstractDataContainer, entMod : EntityModif
     
 
 method applyModification[T](container : DataContainer[T], entMod : EntityModification) {.base.} =
-    var data = container.dataStore.getOrDefault(entMod.entity, nil)
+    var data = container.dataStore.getOrDefault(entMod.entity.int, nil)
     # todo: warn when we have no existing data and the modification is not an initial setting mod
     if data == nil:
         data = new T
-        container.dataStore[entMod.entity] = data
+        container.dataStore[entMod.entity.int] = data
     entMod.modification.apply(data)
 
 proc createView*(world : World) : WorldView =
@@ -204,7 +206,7 @@ iterator entitiesWithData*[C](view : WorldView, t : typedesc[C]) : Entity =
     let dataType = t.getDataType()
     var dc = (DataContainer[C]) view.dataContainers[dataType.index]
     for ent in dc.dataStore.keys:
-        yield ent
+        yield ent.Entity
 
 proc addModification* (world : World, modification : EntityModification) =
     world.modificationContainer.modifications.add(modification)
@@ -214,7 +216,7 @@ proc addModification* (world : World, modification : EntityModification) =
 
 proc data*[C] (view : WorldView, entity : Entity, dataType : DataType[C]) : ref C =
     var dc = (DataContainer[C]) view.dataContainers[dataType.index]
-    result = dc.dataStore.getOrDefault(entity, nil)
+    result = dc.dataStore.getOrDefault(entity.int, nil)
     if result == nil:
         echo "Warning: read data[", C, "] for entity ", entity.int, " that did not have access to data of that type"
         result = dc.defaultValue
@@ -224,24 +226,30 @@ proc data*[C] (view : WorldView, dataType : typedesc[C]) : ref C =
 
 proc hasData*[C] (view : WorldView, entity : Entity, dataType : DataType[C]) : bool =
     var dc = (DataContainer[C]) view.dataContainers[dataType.index]
-    result = dc.dataStore.hasKey(entity)
+    result = dc.dataStore.hasKey(entity.int)
 
-proc data*[C] (world : DisplayWorld, entity : Entity, t : typedesc[C]) : ref C =
+proc data*[C] (world : DisplayWorld, entity : DisplayEntity, t : typedesc[C]) : ref C =
     let dataType = t.getDataType()
     var dc = (DataContainer[C]) world.dataContainers[dataType.index]
-    result = dc.dataStore.getOrDefault(entity, nil)
+    result = dc.dataStore.getOrDefault(entity.int, nil)
     # TODO: Consider auto-attaching data to display worlds
     if result == nil:
         echo "Warning: read display data[", C, "] for entity ", entity.int, " that did not have access to data of that type"
         result = dc.defaultValue
 
 proc data*[C] (world : DisplayWorld, t : typedesc[C]) : ref C =
-    data[C](world, WorldEntity, t)
+    data[C](world, WorldDisplayEntity, t)
 
-proc attachData*[C] (world : DisplayWorld, entity : Entity, t : typedesc[C], dataValue : C = C()) =
+proc attachData*[C] (world : DisplayWorld, entity : DisplayEntity, t : typedesc[C], dataValue : C = C()) =
     let dataType = t.getDataType()
     var dc = (DataContainer[C]) world.dataContainers[dataType.index]
-    dc.dataStore[entity] = dataValue
+    dc.dataStore[entity.int] = dataValue
+
+proc attachDataInternal[C] (world : DisplayWorld, entity : DisplayEntity, dataType : DataType[C], dataValue : C = C()) =
+    var dc = (DataContainer[C]) world.dataContainers[dataType.index]
+    let nv : ref C = new C
+    nv[] = dataValue
+    dc.dataStore[entity.int] = nv
 
 proc attachData*[C] (world : DisplayWorld, t : typedesc[C], dataValue : C = C()) =
     attachData(world, WorldEntity, t, dataValue)
@@ -277,31 +285,66 @@ macro hasData*(entity : Entity, view : WorldView, t : typedesc) : untyped =
 macro `[]`*(entity : Entity, t : typedesc) : untyped =
     let dataTypeIdent = newIdentNode($t & "Type")
     result = quote do:
-        when compiles(view.data(`entity`, `dataTypeIdent`)):
-            view.data(`entity`, `dataTypeIdent`)
-        else:
-            world.data(`entity`, `dataTypeIdent`)
+        injectedView.data(`entity`, `dataTypeIdent`)
+        # when compiles(view.data(`entity`, `dataTypeIdent`)):
+        #     view.data(`entity`, `dataTypeIdent`)
+        # else:
+        #     world.data(`entity`, `dataTypeIdent`)
 
 macro data*(entity : Entity, t : typedesc) : untyped =
     let dataTypeIdent = newIdentNode($t & "Type")
     result = quote do:
-        when compiles(view.data(`entity`, `dataTypeIdent`)):
-            view.data(`entity`, `dataTypeIdent`)
-        else:
-            world.data(`entity`, `dataTypeIdent`)
+        # when compiles(view.data(`entity`, `dataTypeIdent`)):
+        #     view.data(`entity`, `dataTypeIdent`)
+        # else:
+        #     world.data(`entity`, `dataTypeIdent`)
+        injectedView.data(`entity`, `dataTypeIdent`)
 
 macro attachData*(entity : Entity, t : typed) : untyped =
     let dataTypeIdent = newIdentNode(t[0].strVal & "Type")
     result = quote do:
-        world.attachData(`entity`, `dataTypeIdent`, `t`)
+        injectedWorld.attachData(`entity`, `dataTypeIdent`, `t`)
+
+macro attachData*[T](entity : DisplayEntity, t : T) : untyped =
+    let dataTypeIdent = newIdentNode(t[0].strVal & "Type")
+    result = quote do:
+        attachDataInternal(injectedDisplayWorld, `entity`, `dataTypeIdent`, `t`)
+        # attachData[`T`](injectedDisplayWorld, `entity`, typedesc[`T`], `t`)
 
 macro hasData*(entity : Entity, t : typedesc) : untyped =
     let dataTypeIdent = newIdentNode($t & "Type")
     result = quote do:
-        when compiles(view.hasData(`entity`, `dataTypeIdent`)):
-            view.data(`entity`, `dataTypeIdent`)
-        else:
-            world.hasData(`entity`, `dataTypeIdent`)
+        injectedView.hasData(`entity`, `dataTypeIdent`)
+        # when compiles(view.hasData(`entity`, `dataTypeIdent`)):
+        #     view.hasData(`entity`, `dataTypeIdent`)
+        # else:
+        #     world.hasData(`entity`, `dataTypeIdent`)
+
+template withView*(view : WorldView, stmts : untyped) : untyped =
+    block:
+        let injectedView {.inject.} = view
+        stmts
+
+template withWorld*(world : World, stmts : untyped) : untyped =
+    block:
+        let injectedView {.inject.} = world.view
+        let injectedWorld {.inject.} = world
+        stmts
+
+template withDisplay*(display : DisplayWorld, stmts : untyped) : untyped =
+    block:
+        let injectedDisplayWorld {.inject.} = display
+        stmts
+
+template `[]`* [T] (displayEntity : DisplayEntity, t : typedesc[T]) : ref T =
+    injectedDisplayWorld.data(displayEntity, t)
+
+proc `[]`* [T] (display : DisplayWorld, t : typedesc[T]) : ref T =
+    display.data(WorldDisplayEntity, t)
+
+# template dataImpl*(entity : Entity, t : typedesc) =
+#     data(injectedView, entity, t)
+
 
 # template modify*[C,T](entity : Entity, t : FieldModification[C,T]) =
 #     world.modify(entity, t)
@@ -321,4 +364,4 @@ macro modify*(entity : Entity, expression : untyped) : untyped =
     var argument = expression.copy
     discard appendToEarliestIdent(argument, "Type")
     result = quote do:
-        world.modify(`entity`, `argument`)
+        injectedWorld.modify(`entity`, `argument`)

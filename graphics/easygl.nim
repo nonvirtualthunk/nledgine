@@ -20,6 +20,26 @@ template offsetof*(typ, field): untyped = (var dummy: typ; cast[int](addr(dummy.
 template getGLError*() : GLenum =
     glGetError()
 
+import macros
+template checkGLError*() =
+    let pos = instantiationInfo()
+    let err = getGLError
+    if err != 0.GLenum:
+        let msg = if err == GL_INVALID_OPERATION:
+            "Invalid operation"
+        elif err == GL_INVALID_ENUM:
+            "Invalid enum"
+        elif err == GL_INVALID_VALUE:
+            "Invalid value"
+        elif err == GL_OUT_OF_MEMORY:
+            "Out of Memory"
+        elif err == GL_INVALID_FRAMEBUFFER_OPERATION:
+            "Invalid framebuffer operation"
+        else:
+            "unknown error"
+        
+        echo $pos.filename, ":", $pos.line, " GL Error: ", msg
+
 template viewport*(x,y,width,height:int32) =
     glViewport(x.GLint,y.GLint,width.GLsizei,height.GLsizei)
 
@@ -534,6 +554,7 @@ proc createAndLinkProgramString*(vertexSrc:string, fragmentSrc:string, geometryS
     deleteShader(vert)
     deleteShader(frag)
     if geometrySrc.isSome: deleteShader(geo)
+    checkGLError()
     programId
 
 # Compiles and attaches in 1 step with error reporting
@@ -569,3 +590,12 @@ proc createAndLinkProgram*(vertexPath:string, fragmentPath:string, geometryPath:
     deleteShader(frag)
     if geometryPath.isSome: deleteShader(geo)
     programId
+
+
+proc `$`* (e : GLenum) : string =
+    if e == EGL_FLOAT:
+        "GL_FLOAT"
+    elif e == GL_UNSIGNED_BYTE:
+        "GL_UNSIGNED_BYTE"
+    else:
+        "Unknown"

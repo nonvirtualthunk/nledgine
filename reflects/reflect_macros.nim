@@ -13,11 +13,13 @@ macro defineReflection*(t: typedesc) =
 
     let typeDefIdent = genSym(nskType, $t & "TypeDef")
 
+    var initProcStmts = newStmtList()
+
     var typeDefVarList = newSeq[NimNode]()
-    for field in tDesc[2].children:
+    for field in t.getType[1].getTypeImpl[2]:
         let typeName = t
-        let fieldName = newIdentNode($field)
-        let fieldType = getType(field).copy
+        let fieldName = newIdentNode($field[0].strVal)
+        let fieldType = field[1]
 
         typeDefVarList.add(
             nnkIdentDefs.newTree(
@@ -61,17 +63,17 @@ macro defineReflection*(t: typedesc) =
 
     var fieldVarSyms = newSeq[NimNode]()
     var fieldIdx = 0
-    for field in tDesc[2].children:
+    for field in t.getType[1].getTypeImpl[2]:
         let typeName = t
-        let fieldName = newIdentNode($field)
-        let fieldNameLit = newLit($field)
-        let fieldType = getType(field).copy
-        let fieldVarName = genSym(nskLet, $t & "Field" & $field)
+        let fieldName = newIdentNode($field[0].strVal)
+        let fieldType = field[1]
+        let fieldNameLit = newLit($field[0].strVal)
+        let fieldVarName = genSym(nskLet, $t & "Field" & $field[0].strVal)
         fieldVarSyms.add(fieldVarName)
         let objIdent = newIdentNode("obj")
         let objDotExpr = newDotExpr(objIdent, fieldName)
-
-        result.add(quote do:
+    
+        initProcStmts.add(quote do:
             let `fieldVarName` = new(Field[`typeName`, `fieldType`])
             `fieldVarName`.name = `fieldNameLit`
             `fieldVarName`.index = `fieldIdx`
@@ -84,64 +86,66 @@ macro defineReflection*(t: typedesc) =
         )
         fieldIdx.inc
 
-    var fieldListInitializer = newSeq[NimNode]()
-    var constrValues = @[
-        typeDefIdent.copy,
-            nnkExprColonExpr.newTree(
-            newIdentNode("name"),
-            newLit($t)
-            ),
-            nnkExprColonExpr.newTree(
-            newIdentNode("index"),
-            newIntLitNode(dataTypeIndexCounter)
-            )]
+    # var fieldListInitializer = newSeq[NimNode]()
+    # var constrValues = @[
+    #     typeDefIdent.copy,
+    #         nnkExprColonExpr.newTree(
+    #         newIdentNode("name"),
+    #         newLit($t)
+    #         ),
+    #         nnkExprColonExpr.newTree(
+    #         newIdentNode("index"),
+    #         newIntLitNode(dataTypeIndexCounter)
+    #         )]
 
     let typeName = newIdentNode($t)
-    fieldIdx = 0
-    for field in tDesc[2].children:
+    # fieldIdx = 0
+    # for field in tDesc[2].children:
         
-        constrValues.add(
-            nnkExprColonExpr.newTree(
-                newIdentNode($field),
-                fieldVarSyms[fieldIdx].copy
-            ),
-        )
+    #     constrValues.add(
+    #         nnkExprColonExpr.newTree(
+    #             newIdentNode($field),
+    #             fieldVarSyms[fieldIdx].copy
+    #         ),
+    #     )
 
-        fieldListInitializer.add(
-            nnkCast.newTree(
-                    nnkRefTy.newTree(
-                    nnkBracketExpr.newTree(
-                        bindSym("AbstractField"),
-                        typeName
-                    )
-                    ),
-                    fieldVarSyms[fieldIdx].copy
-                )
-        )
-        fieldIdx.inc
+    #     fieldListInitializer.add(
+    #         nnkCast.newTree(
+    #                 nnkRefTy.newTree(
+    #                 nnkBracketExpr.newTree(
+    #                     bindSym("AbstractField"),
+    #                     typeName
+    #                 )
+    #                 ),
+    #                 fieldVarSyms[fieldIdx].copy
+    #             )
+    #     )
+    #     fieldIdx.inc
 
-    constrValues.add(nnkExprColonExpr.newTree(
-            newIdentNode("fields"),
-            nnkPrefix.newTree(
-                newIdentNode("@"),
-                nnkBracket.newTree(
-                    fieldListInitializer
-                )
-            )
-            ))
+    # constrValues.add(nnkExprColonExpr.newTree(
+    #         newIdentNode("fields"),
+    #         nnkPrefix.newTree(
+    #             newIdentNode("@"),
+    #             nnkBracket.newTree(
+    #                 fieldListInitializer
+    #             )
+    #         )
+    #         ))
 
     let footype = newIdentNode($t & "Type")
     # let tdi = quote do:
     #     let `footype` = new(`typeDefIdent`)
     #     `footype`.name = 
 
-
     let typelit = newLit($t)
     let idxlit = newIntLitNode(dataTypeIndexCounter)
     let typeDefInst = quote do:
-        let `footype` = new(`typeDefIdent`)
+        var `footype` {.threadvar.} : `typeDefIdent`
+    initProcStmts.add(quote do:
+        `footype` = new(`typeDefIdent`)
         `footype`.name = `typelit`
         `footype`.index = `idxlit`
+    )
     
 
     # let typeDefInst = nnkLetSection.newTree(
@@ -155,13 +159,11 @@ macro defineReflection*(t: typedesc) =
     # )
     result.add(typeDefInst)
 
-
-
     fieldIdx = 0
     for field in tDesc[2].children:
         let fieldName = newIdentNode($field)
         let fieldSym = fieldVarSyms[fieldIdx]
-        result.add(
+        initProcStmts.add(
             quote do:
                 `fieldSym`.dataType = `footype`
                 `footype`.`fieldName` = `fieldSym`
@@ -170,7 +172,7 @@ macro defineReflection*(t: typedesc) =
 
     dataTypeIndexCounter.inc
 
-    result = result.add(
+    initProcStmts.add(
         quote do:
             worldCallsForAllTypes.add(proc(world : World) =
                 setUpType[`typeName`](world, `fooType`)
@@ -179,6 +181,14 @@ macro defineReflection*(t: typedesc) =
                 setUpType[`typeName`](world, `fooType`)
             )
     )
+
+    result.add(quote do:
+        let initProc = proc() {.gcsafe.} =
+            `initProcStmts`
+        reflectInitializers.add(initProc)
+        initProc()
+    )
+
 
     result.add(
         quote do:
