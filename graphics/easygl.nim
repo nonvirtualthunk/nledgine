@@ -597,5 +597,11 @@ proc `$`* (e : GLenum) : string =
         "GL_FLOAT"
     elif e == GL_UNSIGNED_BYTE:
         "GL_UNSIGNED_BYTE"
+    elif e == GL_NEAREST:
+        "GL_NEAREST"
+    elif e == GL_RGBA:
+        "GL_RGBA"
+    elif e == GL_SRGB_ALPHA:
+        "GL_SRGB_ALPHA"
     else:
         "Unknown"

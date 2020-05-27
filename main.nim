@@ -7,6 +7,8 @@ import graphics/core
 import glm
 import application
 import worlds
+import resources
+import noto
 
 var eventChannel : Channel[Event]
 eventChannel.open()
@@ -29,8 +31,10 @@ proc runEngine(full : FullGameSetup) {.thread.} =
         op()
 
     var gameEngine = newGameEngine()
+    gameEngine.world.attachData(Resources)
     var graphicsEngine = newGraphicsEngine(gameEngine)
     graphicsEngine.displayWorld.attachData(GraphicsContextData)
+    graphicsEngine.displayWorld.attachData(Resources)
 
     for gc in full.setup.gameComponents:
         gameEngine.addComponent(gc)
@@ -70,13 +74,19 @@ proc keyDownProc(window: GLFWWindow, key: int32, scancode: int32, action: int32,
         window.setWindowShouldClose(true)
     
     if action == GLFWPress:
-        let isFirstPress = not isKeyDown(key.KeyCode)
-        if isFirstPress:
-            setKeyDown(key.KeyCode, true)
-            eventChannel.send(KeyPress(key : key.KeyCode, modifiers : activeKeyModifiers()))
+        if key != -1:
+            let isFirstPress = not isKeyDown(key.KeyCode)
+            if isFirstPress:
+                setKeyDown(key.KeyCode, true)
+                eventChannel.send(KeyPress(key : key.KeyCode, modifiers : activeKeyModifiers()))
+        else:
+            fine "-1 key: ", scancode
     elif action == GLFWRelease:
-        setKeyDown(key.KeyCode, false)
-        eventChannel.send(KeyRelease(key : key.KeyCode, modifiers : activeKeyModifiers()))
+        if key != -1:
+            setKeyDown(key.KeyCode, false)
+            eventChannel.send(KeyRelease(key : key.KeyCode, modifiers : activeKeyModifiers()))
+        else:
+            fine "-1 key: ", scancode
 
 
 var windowSize = vec2i(800,600)

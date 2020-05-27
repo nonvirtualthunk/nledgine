@@ -8,6 +8,9 @@ import ../graphics
 import tables
 import ../noto
 import ../graphics/camera_component
+import ../resources
+import ../graphics/texture_block
+import ../graphics/images
 
 
 type 
@@ -17,13 +20,14 @@ type
 
     DrawQuadComponent = ref object of GraphicsComponent
         vao : VAO[SimpleVertex, uint16]
-        texture : Texture
+        texture : TextureBlock
         shader : Shader
         y : float
         size : float
         dy : float
         needsUpdate: bool
-
+        bookImg : Image
+        swordImg : Image
 
 method initialize(g : PrintComponent, world : World) =
     echo "Initialized"
@@ -38,25 +42,32 @@ method update(g : PrintComponent, world : World) =
 
 
 proc render(g : DrawQuadComponent) =
+
+    let bookTexCoords = g.texture[g.bookImg]
     for i in 0..<4:
         g.vao.vertices[i].vertex = UnitSquareVertices[i] * g.size
         g.vao.vertices[i].color = rgba(1.0f,1.0f,1.0f,1.0f)
-        g.vao.vertices[i].texCoords = UnitSquareVertices[i].xy
+        g.vao.vertices[i].texCoords = bookTexCoords[i]
+    g.vao.addIQuad(0, 0)
 
-    g.vao.indices[0] = 0
-    g.vao.indices[1] = 1
-    g.vao.indices[2] = 2
+    let swordTexCoords = g.texture[g.swordImg]
+    for i in 0..<4:
+        g.vao.vertices[4+i].vertex = UnitSquareVertices[i] * g.size + vec3f(g.size + 10, 0.0f, 0.0f)
+        g.vao.vertices[4+i].color = rgba(1.0f,1.0f,1.0f,1.0f)
+        g.vao.vertices[4+i].texCoords = swordTexCoords[i]
+    g.vao.addIQuad(6, 4)
 
-    g.vao.indices[3] = 2
-    g.vao.indices[4] = 3
-    g.vao.indices[5] = 0
     g.vao.swap()
     g.needsUpdate = false
 
 method initialize(g : DrawQuadComponent, world : World, curView : WorldView, display : DisplayWorld) =
     g.vao = newVAO[SimpleVertex, uint16]()
+    g.bookImg = display[Resources].image("images/book_01b.png")
+    g.swordImg = display[Resources].image("images/sword_02b.png")
     g.shader = initShader("shaders/simple")
-    g.texture = loadTexture("resources/images/book_01b.png")
+    g.texture = newTextureBlock(1024, 1, false)
+    g.texture.addImage(g.bookImg)
+    g.texture.addImage(g.swordImg)
     g.y = 0.0f
     g.size = 100.0f
     g.render()
@@ -72,7 +83,7 @@ method update(g : DrawQuadComponent, world : World, curView : WorldView, display
     @[draw(g.vao, g.shader, @[g.texture], display[CameraData].camera)]
 
 main(GameSetup(
-    windowSize : vec2i(1024,768),
+    windowSize : vec2i(1440,900),
     resizeable : false,
     windowTitle : "Ax4",
     gameComponents : @[(GameComponent)(new PrintComponent)],

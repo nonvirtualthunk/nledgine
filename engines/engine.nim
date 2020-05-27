@@ -24,7 +24,7 @@ type
     GameEngine* = ref object
         components : seq[GameComponent]
         eventBus : EventBus
-        world : World
+        world* : World
 
     GraphicsComponent* = ref object of RootRef
         initializePriority* : int

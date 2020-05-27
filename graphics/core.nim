@@ -6,18 +6,19 @@ import tables
 import macros
 import color
 import sequtils
-import stb_image/read as stbi
+import ../stb_image/read as stbi
 import sugar
 import ../noto
 import strutils
 import ../engines/event_types
 import ../worlds
 import cameras
+import images
 
 var vaoID : Atomic[int]
 var bufferID : Atomic[int]
 var shaderID : Atomic[int]
-var textureID : Atomic[int]
+var textureID* : Atomic[int]
 
 type 
     VaoID* = int
@@ -167,10 +168,46 @@ method textureInfo*(dt : DynamicTexture) : TextureInfo =
         revision : dt.revision
     )
 
+proc toTexture*(image : Image, gammaCorrection : bool = false) : StaticTexture =
+    result = new StaticTexture
+
+    result.texture.data = image.data
+    let len = image.dimensions.x * image.dimensions.y * image.channels
+    let gammaFormat = 
+        if gammaCorrection: 
+            GL_SRGB_ALPHA
+        else: 
+            GL_RGBA
+            
+    let (internalFormat,dataFormat) = 
+        if image.channels == 1:                    
+            (GL_RED,GL_RED)
+        elif image.channels == 3:                    
+            (gammaFormat,GL_RGB)
+        elif image.channels == 4:
+            (gammaFormat,GL_RGBA)
+        else:            
+            ( echo "texture unknown, assuming rgb";        
+                   (GL_RGBA,GL_RGBA) )
+
+    
+    result.texture.len = len
+    
+    result.texture.magFilter = GL_NEAREST
+    result.texture.minFilter = GL_NEAREST
+    result.texture.internalFormat = internalFormat
+    result.texture.dataFormat = dataFormat
+    result.texture.width = image.dimensions.x
+    result.texture.height = image.dimensions.y
+
+
 proc loadTexture*(path : string, gammaCorrection : bool = false) : StaticTexture =
+    result = new StaticTexture
+
     stbi.setFlipVerticallyOnLoad(true)               
     var width,height,channels:int        
-    var data = stbi.load(path,width,height,channels,stbi.Default)        
+    result.texture.data = stbi.load(path,width,height,channels,stbi.Default)        
+    let len = width * height * channels
     let gammaFormat = 
         if gammaCorrection: 
             GL_SRGB_ALPHA
@@ -188,10 +225,9 @@ proc loadTexture*(path : string, gammaCorrection : bool = false) : StaticTexture
             ( echo "texture unknown, assuming rgb";        
                    (GL_RGBA,GL_RGBA) )
 
-    result = new StaticTexture
-    result.texture.data = allocShared0(data.len)
-    result.texture.len = data.len
-    copyMem(result.texture.data, data[0].addr, data.len)
+    
+    result.texture.len = len
+    
     result.texture.magFilter = GL_NEAREST
     result.texture.minFilter = GL_NEAREST
     result.texture.internalFormat = internalFormat
@@ -226,6 +262,15 @@ proc `[]=`* [T](buffer : var GLBuffer[T], index: int, v : T) =
 
 proc `[]`* [VT,IT](vao : Vao[VT,IT], index: int) : ptr VT =
     vao.vertices[index]
+
+proc addIQuad* [VT,IT](vao : Vao[VT,IT], ii : int, vi : IT) =
+    vao.indices[ii+0] = (vi+0).IT
+    vao.indices[ii+1] = (vi+1).IT
+    vao.indices[ii+2] = (vi+2).IT
+
+    vao.indices[ii+3] = (vi+2).IT
+    vao.indices[ii+4] = (vi+3).IT
+    vao.indices[ii+5] = (vi+0).IT
 
 proc swap*[T](buffer : var GLBuffer[T]) =
     var tmp = buffer.frontBuffer
@@ -305,7 +350,7 @@ macro vertexArrayDefinitions(t : typed) : seq[VertexArrayDefinition] =
             `definitions`
             `seqSym`
 
-proc draw* [VT; IT : uint16 | uint32](vao : Vao[VT, IT], shader : Shader, textures : seq[Texture], camera : Camera) : DrawCommand =
+proc draw* [VT; IT : uint16 | uint32, TT : Texture](vao : Vao[VT, IT], shader : Shader, textures : seq[TT], camera : Camera) : DrawCommand =
     if vao.id == 0:
         vao.id = vaoID.fetchAdd(1)+1
         vao.vertices.id = bufferID.fetchAdd(1)+1
@@ -371,6 +416,7 @@ var glTextureIDs = @[0.TextureIDType]
 var glTextureRevisions = @[0]
 var glShaderIDs = @[0.ShaderProgramID]
 var glShaderUniformLocations = @[newTable[string, UniformLocation]()]
+var shadersBySource = newTable[(string,string), ShaderProgramID]()
 
 proc setAt[T](s : var seq[T], i : int, v : T) =
     while s.len < i:
@@ -393,6 +439,12 @@ proc lookupUniformLocation(shaderID : ShaderID, program : ShaderProgramID, name 
         glShaderUniformLocations[shaderID][name] = getUniformLocation(program,name)
     result = glShaderUniformLocations[shaderID][name]
 
+proc cachedCreateAndLinkProgram(vertexSource : string, fragmentSource : string) : ShaderProgramID =
+    if not shadersBySource.hasKey((vertexSource, fragmentSource)):
+        let id = createAndLinkProgram(vertexSource, fragmentSource)
+        shadersBySource[(vertexSource, fragmentSource)] = id
+    shadersBySource[(vertexSource, fragmentSource)]
+
 proc render*(command : var DrawCommand, framebufferSize : Vec2i) =
     if command.vertexBuffer.len == 0 or command.indexBuffer.len == 0:
         return
@@ -400,7 +452,7 @@ proc render*(command : var DrawCommand, framebufferSize : Vec2i) =
         
     let vertexSource = command.shader.vertexSource
     let fragmentSource = command.shader.fragmentSource
-    if addIfNeeded(glShaderIDs, command.shader.id, () => createAndLinkProgram(vertexSource, fragmentSource)):
+    if addIfNeeded(glShaderIDs, command.shader.id, () => cachedCreateAndLinkProgram(vertexSource, fragmentSource)):
         setAt(glShaderUniformLocations, command.shader.id, newTable[string,UniformLocation]())
     let shader = glShaderIDs[command.shader.id]
     shader.use()
@@ -453,7 +505,8 @@ proc render*(command : var DrawCommand, framebufferSize : Vec2i) =
         bindTexture(GL_TEXTURE_2D, glTextureIDs[tex.id])
         if glTextureRevisions[tex.id] < tex.revision:
             checkGLError()
-            fine "Buffering texture data"
+            info "Buffering texture data, data format: ", tex.dataFormat, " internalFormat: ", tex.internalFormat, " magfilter: ", tex.magFilter, " minfilter: ", tex.minFilter
+            info "\twidth: ", tex.width, " height: ", tex.height, " len: ", tex.len
             let minFilter = if tex.minFilter.int != 0: tex.minFilter
                             else: GL_NEAREST
             let magFilter = if tex.minFilter.int != 0: tex.magFilter

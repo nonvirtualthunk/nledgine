@@ -5,13 +5,13 @@ import macros
 
 type
     ConfigValueKind {.pure.} = enum
+        Empty
         String
         Number
         Object
         Array
-        Empty
 
-    ConfigValue = object 
+    ConfigValue* = object 
         case kind : ConfigValueKind
         of String : str : string
         of Number : num : float64
@@ -267,7 +267,7 @@ proc parseValue(ctx : var ParseContext) : ConfigValue =
 
 
 
-proc parse(str : string) : ConfigValue = 
+proc parseConfig*(str : string) : ConfigValue = 
     var ctx = ParseContext(str : str, cursor : 0)
     ctx.skipWhitespace()
     parseObj(ctx)
@@ -308,7 +308,7 @@ when isMainModule:
         }
     """
 
-    let parsed = parse(hoconString)
+    let parsed = parseConfig(hoconString)
     # echo parse(hoconString)
     assert parsed["firstChild"]["intKey"].asInt == 1
     assert parsed["firstChild"]["stringKey"].asStr == "someString"
@@ -377,3 +377,6 @@ when isMainModule:
     assert tl.secondChild.nestedArrayObj[0].x == 2
     assert tl.custom == 4
     assert tl.notLoadable == 0
+
+    let defaultCV = ConfigValue()
+    assert defaultCV.kind == ConfigValueKind.Empty
