@@ -10,11 +10,14 @@ import options
 import core
 import atomics
 import nimgl/opengl
+import graphics.color
 
 
 type 
     ImageData = object
-        location : Vec2i
+        location* : Vec2i
+        texPosition* : Vec2f
+        texDimensions* : Vec2f
         revision : int
     TextureBlock* = ref object of Texture
         id : TextureID
@@ -27,6 +30,8 @@ type
         minFilter : GLenum
         internalFormat : GLenum
         dataFormat : GLenum
+        blankImage : Image
+        blankTexCoords : ref array[4, Vec2f]
 
 method textureInfo*(tb : TextureBlock) : TextureInfo =
     if tb.id == 0:
@@ -44,6 +49,8 @@ method textureInfo*(tb : TextureBlock) : TextureInfo =
         height : tb.image.dimensions.y
     )
 
+proc addNewImage(tb : TextureBlock, img : Image)
+
 proc newTextureBlock*(size : int = 2048, borderWidth : int = 1, gammaCorrection : bool = false) : TextureBlock =
     let internalFormat = if gammaCorrection: GL_SRGB_ALPHA
                          else: GL_RGBA
@@ -54,8 +61,7 @@ proc newTextureBlock*(size : int = 2048, borderWidth : int = 1, gammaCorrection 
         minFilter : GL_NEAREST,
         magFilter : GL_NEAREST,
         internalFormat : internalFormat,
-        dataFormat : GL_RGBA,
-        
+        dataFormat : GL_RGBA
     )
 
 proc toTexCoords(tb : TextureBlock, rect : Recti) : ref array[4, Vec2f] =
@@ -86,8 +92,9 @@ proc addNewImage(tb : TextureBlock, img : Image) =
         
         tb.image.copyFrom(img, chosenRect.position + vec2i(tb.borderWidth, tb.borderWidth))
         tb.image.revision += 1
-        tb.imageData[img] = ImageData(location : chosenRect.position, revision : img.revision)
-        tb.imageTexCoords[img] = tb.toTexCoords(Recti(position : chosenRect.position + vec2i(tb.borderWidth, tb.borderWidth), dimensions : img.dimensions))
+        let tc = tb.toTexCoords(Recti(position : chosenRect.position + vec2i(tb.borderWidth, tb.borderWidth), dimensions : img.dimensions))
+        tb.imageData[img] = ImageData(location : chosenRect.position, revision : img.revision, texPosition : tc[0], texDimensions : tc[2] - tc[0])
+        tb.imageTexCoords[img] = tc
     else:
         raise newException(ValueError, "Could not find space for image in texture block")
     
@@ -97,6 +104,19 @@ proc `[]`*(tb : TextureBlock, img : Image) : ref array[4, Vec2f] =
     if result == nil:
         tb.addNewImage(img)
         result = tb.imageTexCoords[img]
+
+proc imageData*(tb : TextureBlock, img : Image) : ImageData =
+    if not tb.imageData.contains(img):
+        tb.addNewImage(img)
+    tb.imageData[img]
+
+proc blankTexCoords*(tb : TextureBlock) : ref array[4, Vec2f] = 
+    if tb.blankImage.isNil:
+        tb.blankImage = createImage(vec2i(1,1))
+        tb.blankImage[0,0] = rgba(1.0f,1.0f,1.0f,1.0f)
+        tb.addNewImage(tb.blankImage)
+        tb.blankTexCoords = tb[tb.blankImage]
+    tb.blankTexCoords
 
 proc addImage*(tb : TextureBlock, img : Image) =
     discard tb[img]

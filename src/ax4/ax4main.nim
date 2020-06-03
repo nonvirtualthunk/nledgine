@@ -70,8 +70,8 @@ proc render(g : DrawQuadComponent) =
 
 method initialize(g : DrawQuadComponent, world : World, curView : WorldView, display : DisplayWorld) =
     g.vao = newVAO[SimpleVertex, uint16]()
-    g.bookImg = display.resources.image("images/book_01b.png")
-    g.swordImg = display.resources.image("images/sword_02b.png")
+    g.bookImg = image("images/book_01b.png")
+    g.swordImg = image("images/sword_02b.png")
     g.shader = initShader("shaders/simple")
     g.texture = newTextureBlock(1024, 1, false)
     g.texture.addImage(g.bookImg)
@@ -94,12 +94,8 @@ method update(g : DrawQuadComponent, world : World, curView : WorldView, display
 
 
 
-method initialize(g : MapInitializationComponent, world : World) =
-    var taxonomy = Taxonomy()
-    let terrain = taxonomy.addTaxon("terrain", @[])
-    let grass = taxonomy.addTaxon("terrains", "grass", @[terrain])
-
-    world.attachData(taxonomy)
+method initialize(g : MapInitializationComponent, world : World) = 
+    let grass = taxon("vegetations", "Grass")
     withWorld(world):
         var map = createMap(vec2i(50,50))
         for r in 0 ..< 10:

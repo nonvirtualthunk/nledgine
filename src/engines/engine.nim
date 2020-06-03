@@ -54,7 +54,6 @@ proc newGraphicsEngine*(gameEngine : GameEngine): GraphicsEngine {.gcsafe.} =
     result.world = gameEngine.world
     result.currentView = result.world.createView()
     result.displayWorld = createDisplayWorld()
-    result.displayWorld.resources = gameEngine.world.resources
     result.gameEventBus = createEventBus(result.world)
     result.displayEventBus = createEventBus(result.displayWorld.events)
 

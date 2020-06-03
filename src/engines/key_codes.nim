@@ -124,5 +124,19 @@ type
     RightSuper = 347
     Menu = 348
 
+  MouseButton* {.pure, size: int32.sizeof.} = enum
+    Left = 0
+    Right = 1
+    Middle = 2
+    Other = 3
+
+
 proc fromGLFW*(key : GLFWKey) : KeyCode =
     key.int.KeyCode
+
+proc mouseButtonFromGLFW*(button : int32) : MouseButton =
+    case button:
+    of 0 : MouseButton.Left
+    of 1 : MouseButton.Right
+    of 2 : MouseButton.Middle
+    else: MouseButton.Other

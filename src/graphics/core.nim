@@ -67,6 +67,7 @@ type
         indices* : GLBuffer[IT]
         swapped : bool
         usage* : GLenum
+        revision* : int
 
     Texture* = ref object of RootRef
 
@@ -140,11 +141,13 @@ type
 defineReflection(GraphicsContextData)
 
 
-var UnitSquareVerticesStore {.threadvar.} : seq[Vec3f]
-template UnitSquareVertices* : seq[Vec3f] =
-    if UnitSquareVerticesStore.len == 0:
-        UnitSquareVerticesStore = @[vec3f(0.0f,0.0f,0.0f), vec3f(1.0f,0.0f,0.0f), vec3f(1.0f,1.0f,0.0f), vec3f(0.0f,1.0f,0.0f)]
-    UnitSquareVerticesStore
+const UnitSquareVertices* : array[4, Vec3f] = [vec3f(0.0f,0.0f,0.0f), vec3f(1.0f,0.0f,0.0f), vec3f(1.0f,1.0f,0.0f), vec3f(0.0f,1.0f,0.0f)]
+const UnitSquareVertices2d* : array[4, Vec2f] = [vec2f(0.0f,0.0f), vec2f(1.0f,0.0f), vec2f(1.0f,1.0f), vec2f(0.0f,1.0f)]
+# var UnitSquareVerticesStore {.threadvar.} : array[4, Vec3f]
+# template UnitSquareVertices* : array[4, Vec3f] =
+#     if UnitSquareVerticesStore.len == 0:
+#         UnitSquareVerticesStore = [vec3f(0.0f,0.0f,0.0f), vec3f(1.0f,0.0f,0.0f), vec3f(1.0f,1.0f,0.0f), vec3f(0.0f,1.0f,0.0f)]
+#     UnitSquareVerticesStore
         
 
 
@@ -252,13 +255,21 @@ proc `[]`* [T](buffer : var GrowableBuffer[T], index: int) : ptr T =
     if index >= buffer.capacity:
         var newCapacity = buffer.capacity
         if newCapacity == 0:
-            newCapacity += 1
+            newCapacity += 100
         while newCapacity <= index:
             newCapacity *= 2
-        buffer.data = resizeShared(buffer.data, newCapacity)
+        let newData = createSharedU(T, newCapacity)
+        if buffer.data != nil:
+            copyMem(newData, buffer.data, buffer.len * sizeof(T))
+            freeShared(buffer.data)
+        buffer.data = newData
+
     if index >= buffer.len:
         buffer.len = index+1
-    cast[ptr T](cast[uint](buffer) + (index * sizeof(T)).uint)
+    cast[ptr T](cast[uint](buffer.data) + (index * sizeof(T)).uint)
+
+proc clear*[T](buffer : var GrowableBuffer[T]) =
+    buffer.len = 0
 
 proc `[]`* [T](buffer : var GLBuffer[T], index: int) : ptr T =
     buffer.backBuffer[index]
@@ -285,12 +296,32 @@ proc swap*[T](buffer : var GLBuffer[T]) =
     var tmp = buffer.frontBuffer
     buffer.frontBuffer = buffer.backBuffer
     buffer.backBuffer = tmp
+    buffer.backBuffer.clear()
     # swap(buffer.frontBuffer, buffer.backBuffer)
 
 proc swap*[VT,IT](vao : VAO[VT,IT]) =
     vao.vertices.swap()
     vao.indices.swap()
     vao.swapped = true
+
+proc `$`*[T](buffer : var GrowableBuffer[T]) : string =
+    result = "["
+    for i in 0 ..< buffer.len:
+        result &= $(buffer[i][])
+        result &= ",\n"
+    result &= "]"
+
+proc `$`*[T](buffer : var GLBuffer[T]) : string =
+    result = "Buffer {\n" &
+        "\tfrontBuffer: " & $buffer.frontBuffer & "\n" &
+        "\tbackBuffer: " & $buffer.backBuffer & "\n" &
+        "}"
+    
+proc vi*[VT,IT](vao : Vao[VT,IT]) : int =
+    vao.vertices.backBuffer.len
+
+proc ii*[VT,IT](vao : Vao[VT,IT]) : int =
+    vao.indices.backBuffer.len
 
 #=============================================================================================#
 #                                    Shader Functions                                         #
@@ -388,7 +419,7 @@ proc draw* [VT; IT : uint16 | uint32, TT : Texture](vao : Vao[VT, IT], shader : 
 
     when IT is uint32:
         let indexType = GL_UNSIGNED_INT
-    when IT is uint16:
+    elif IT is uint16:
         let indexType = GL_UNSIGNED_SHORT
     else:
         raiseAssert("invalid index type " & $IT)
@@ -485,7 +516,7 @@ proc render*(command : var DrawCommand, framebufferSize : Vec2i) =
     discard addIfNeeded(glVboIDs, command.indexBuffer.id, () => genBuffer())
 
     if command.vertexBuffer.data != nil:
-        info "Buffering vertex data : ", command.vertexBuffer.len
+        fine "Buffering vertex data : ", command.vertexBuffer.len
         bindBuffer(GL_ARRAY_BUFFER, glVboIDs[command.vertexBuffer.id])
         bufferData(GL_ARRAY_BUFFER, command.vertexBuffer.len, command.vertexBuffer.data, command.vertexBuffer.usage)
         checkGLError()
@@ -521,8 +552,8 @@ proc render*(command : var DrawCommand, framebufferSize : Vec2i) =
         bindTexture(GL_TEXTURE_2D, glTextureIDs[tex.id])
         if glTextureRevisions[tex.id] < tex.revision:
             checkGLError()
-            info "Buffering texture data, data format: ", tex.dataFormat, " internalFormat: ", tex.internalFormat, " magfilter: ", tex.magFilter, " minfilter: ", tex.minFilter
-            info "\twidth: ", tex.width, " height: ", tex.height, " len: ", tex.len
+            fine "Buffering texture data, data format: ", tex.dataFormat, " internalFormat: ", tex.internalFormat, " magfilter: ", tex.magFilter, " minfilter: ", tex.minFilter
+            fine "\twidth: ", tex.width, " height: ", tex.height, " len: ", tex.len
             let minFilter = if tex.minFilter.int != 0: tex.minFilter
                             else: GL_NEAREST
             let magFilter = if tex.minFilter.int != 0: tex.magFilter

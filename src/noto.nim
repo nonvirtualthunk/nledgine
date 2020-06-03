@@ -1,5 +1,5 @@
 
-var fineEnabled = false
+const fineEnabled = false
 
 template fine* (msg : varargs[untyped]) =
     if fineEnabled:

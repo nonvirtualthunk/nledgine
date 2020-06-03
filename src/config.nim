@@ -2,6 +2,8 @@ import tables
 import parseutils
 import strutils
 import macros
+import sequtils
+import noto
 
 type
     ConfigValueKind {.pure.} = enum
@@ -10,14 +12,16 @@ type
         Number
         Object
         Array
+        Bool
 
     ConfigValue* = object 
-        case kind : ConfigValueKind
-        of String : str : string
-        of Number : num : float64
-        of Object : fields : Table[string, ConfigValue] 
-        of Array : values : seq[ConfigValue]
+        case kind* : ConfigValueKind
+        of String : str* : string
+        of Number : num* : float64
+        of Object : fields* : Table[string, ConfigValue] 
+        of Array : values* : seq[ConfigValue]
         of Empty : discard
+        of Bool : truth* : bool
 
 
     ParseContext = object
@@ -30,10 +34,11 @@ template noAutoLoad* {.pragma.}
 let fieldStartCharacters = { ':' , '{' }
 let fieldValueEndCharacters = { '\n', ',', ']' }
 
-macro hoconAssert(b : typed) =
+macro hoconAssert(ctx : ParseContext, b : typed) =
     result = quote do:
         if not `b`:
             echo "Hocon assertion hit"
+            echo ctx.str[0 ..< ctx.cursor] , "§", ctx.str[ctx.cursor ..< min(ctx.str.len, ctx.cursor + 10)]
             assert false
     
 
@@ -45,6 +50,8 @@ proc render(v : ConfigValue, indentation : int) : string =
         $v.num
     of ConfigValueKind.Empty:
         "Empty Config Value"
+    of ConfigValueKind.Bool:
+        $v.truth
     of ConfigValueKind.Array:
         var s = "[\n"
         for sub in v.values:
@@ -79,6 +86,8 @@ proc asSeq*(v : ConfigValue) : seq[ConfigValue] =
     case v.kind:
     of ConfigValueKind.Array:
         return v.values
+    of ConfigValueKind.Object:
+        toSeq(v.fields.values)
     of ConfigValueKind.Empty:
         return @[]
     else:
@@ -91,21 +100,33 @@ proc asStr*(v : ConfigValue) : string =
     of ConfigValueKind.Number:
         return $v.num
     else:
-        echo "Cannot get string value for config value : ", v
+        warn "Cannot get string value for config value : ", v
+
+proc asArr*(v : ConfigValue) : seq[ConfigValue] =
+    v.asSeq
+
 
 proc asInt*(v : ConfigValue) : int =
     case v.kind:
     of ConfigValueKind.Number:
         return int(v.num)
     else:
-        echo "Cannot get int value for config value : ", v
+        warn "Cannot get int value for config value : ", v
+
+proc asBool*(v : ConfigValue) : bool =
+    case v.kind:
+    of ConfigValueKind.Bool:
+        v.truth
+    else:
+        warn "Cannot get bool value for config value : ", v
+        false
 
 proc asFloat*(v : ConfigValue) : float =
     case v.kind:
     of ConfigValueKind.Number:
         return float(v.num)
     else:
-        echo "Cannot get float value for config value : ", v
+        warn "Cannot get float value for config value : ", v
 
 # proc fields*(v : ConfigValue) : Table[string, ConfigValue] =
 #     case v.kind:
@@ -122,19 +143,45 @@ iterator pairs*(v : ConfigValue) : tuple[a : string, b : ConfigValue] =
     else:
         echo "Invalid type of configvalue to be iterating over by k/v : ", $v
 
-template readInto*(v : ConfigValue, x : var int) =
+proc isEmpty*(v : ConfigValue) : bool =
+    return v.kind == ConfigValueKind.Empty
+
+template nonEmpty*(v : ConfigValue) : bool =
+    not v.isEmpty
+
+
+proc readFromConfig*(v : ConfigValue, x : var int) =
     if v.nonEmpty:
         x = v.asInt
 
-template readInto*(v : ConfigValue, x : var float) =
+proc readFromConfig*(v : ConfigValue, x : var uint8) =
+    if v.nonEmpty:
+        x = v.asInt.uint8
+
+proc readFromConfig*(v : ConfigValue, x : var int32) =
+    if v.nonEmpty:
+        x = v.asInt.int32
+
+proc readFromConfig*(v : ConfigValue, x : var bool) =
+    if v.nonEmpty:
+        x = v.asBool
+
+proc readFromConfig*(v : ConfigValue, x : var float) =
     if v.nonEmpty:
         x = v.asFloat
 
-template readInto*(v : ConfigValue, x : var string) =
+proc readFromConfig*(v : ConfigValue, x : var string) =
     if v.nonEmpty:
         x = v.asStr
 
-template readInto*[T](v : ConfigValue, x : var seq[T]) =
+proc readFromConfig*[T](v : ConfigValue, x : var seq[T]) =
+    if v.nonEmpty:
+        for s in v.asSeq:
+            var tmp : T
+            s.readInto(tmp)
+            x.add(tmp)
+
+proc readFromConfig*[T](v : ConfigValue, x : var set[T]) =
     if v.nonEmpty:
         for s in v.asSeq:
             var tmp : T
@@ -151,27 +198,29 @@ macro subReadInto[T](v : ConfigValue, t : typedesc[T], x : var T) =
         let fieldNameLit = newLit($field)
         result.add(quote do:
             when not hasCustomPragma(`x`.`fieldName`, noAutoLoad):
-                `v`[`fieldNameLit`].readInto(`x`.`fieldName`)
+                let cv = `v`[`fieldNameLit`]
+                if cv.nonEmpty:
+                    cv.readInto(`x`.`fieldName`)
         )
 
-proc readInto[T](v : ConfigValue, x : var T) =
+proc readInto*[T](v : ConfigValue, x : var T) =
     if v.nonEmpty:
-        subReadInto(v, T, x)
-        when compiles(customReadInto(v, x)):
-            customReadInto(v, x)
+        when compiles(readFromConfig(v, x)):
+            readFromConfig(v,x)
+        else:
+            subReadInto(v, T, x)
 
-
-proc isEmpty*(v : ConfigValue) : bool =
-    return v.kind == ConfigValueKind.Empty
-
-template nonEmpty*(v : ConfigValue) : bool =
-    not v.isEmpty
+        when compiles(extraReadFromConfig(v, x)):
+            extraReadFromConfig(v, x)
 
 proc `$`*(v : ConfigValue) : string =
     render(v, 0)
 
 proc peek(ctx : ParseContext) : char = 
     ctx.str[ctx.cursor]
+
+proc finished(ctx : ParseContext) : bool =
+    ctx.cursor >= ctx.str.len
 
 proc next(ctx : var ParseContext) : char =
     result = ctx.str[ctx.cursor]
@@ -187,10 +236,10 @@ proc parseUntil(ctx : var ParseContext, chars : set[char]) : string =
 proc skipWhitespace(ctx : var ParseContext) =
     ctx.cursor += skipWhitespace(ctx.str, ctx.cursor)
 
-proc parseValue(ctx : var ParseContext) : ConfigValue
+proc parseValue(ctx : var ParseContext) : ConfigValue {.gcsafe.}
 
 proc parseString(ctx : var ParseContext) : ConfigValue =
-    hoconAssert ctx.next() == '"'
+    hoconAssert ctx, ctx.next() == '"'
     var str = ""
     var escaped = false
     while true:
@@ -212,8 +261,8 @@ proc parseString(ctx : var ParseContext) : ConfigValue =
         escaped = shouldEscape
     result = ConfigValue(kind : ConfigValueKind.String, str : str)
         
-proc parseArray(ctx : var ParseContext) : ConfigValue =
-    hoconAssert ctx.next() == '['
+proc parseArray(ctx : var ParseContext) : ConfigValue {.gcsafe.} =
+    hoconAssert ctx, ctx.next() == '['
     var values : seq[ConfigValue] = @[]
     while true:
         ctx.skipWhitespace()
@@ -229,11 +278,12 @@ proc parseArray(ctx : var ParseContext) : ConfigValue =
 
         
 
-proc parseObj(ctx : var ParseContext) : ConfigValue =
-    hoconAssert ctx.next() == '{'
+proc parseObj(ctx : var ParseContext, skipEnclosingBraces : bool = false) : ConfigValue =
+    if not skipEnclosingBraces:
+        hoconAssert ctx, ctx.next() == '{'
     ctx.skipWhitespace()
     var fields = Table[string, ConfigValue]()
-    while ctx.peek() != '}':
+    while not ctx.finished and ctx.peek() != '}':
         let fieldName = ctx.parseUntil(fieldStartCharacters).strip()
         if ctx.peek() == ':':
             ctx.advance()
@@ -241,9 +291,10 @@ proc parseObj(ctx : var ParseContext) : ConfigValue =
 
         fields[fieldName] = fieldValue
         ctx.skipWhitespace()
-        if ctx.peek() == ',':
+        if not ctx.finished and ctx.peek() == ',':
             ctx.advance()
-    ctx.advance() # advance past the end }
+    if not skipEnclosingBraces:
+        ctx.advance() # advance past the end }
     result = ConfigValue(kind : ConfigValueKind.Object, fields : fields)
         
 
@@ -270,14 +321,21 @@ proc parseValue(ctx : var ParseContext) : ConfigValue =
 proc parseConfig*(str : string) : ConfigValue = 
     var ctx = ParseContext(str : str, cursor : 0)
     ctx.skipWhitespace()
-    parseObj(ctx)
+    parseObj(ctx, true)
+
+proc isObj*(cv : ConfigValue) : bool =
+    cv.kind == ConfigValueKind.Object
+
+proc isArr*(cv : ConfigValue) : bool =
+    cv.kind == ConfigValueKind.Array
+
+
     
     
 
 when isMainModule:
 
     let hoconString = """
-        {
             firstChild : {
                 intKey : 1
                 stringKey : "someString"
@@ -289,6 +347,7 @@ when isMainModule:
                     a : "quoted"
                     b : unquoted
                 }
+                color : [0.1,0.2,0.3,1.0]
                 nestedNoColon {
                     x : 1
                 }
@@ -305,11 +364,12 @@ when isMainModule:
             }
             notLoadable : 3
             customLoadTarget : 4
-        }
     """
 
+    import prelude
+
     let parsed = parseConfig(hoconString)
-    # echo parse(hoconString)
+    # echo parseConfig(hoconString)
     assert parsed["firstChild"]["intKey"].asInt == 1
     assert parsed["firstChild"]["stringKey"].asStr == "someString"
     let secondChild = parsed["secondChild"]
@@ -324,8 +384,10 @@ when isMainModule:
     assert secondChild["nestedArrayObj"][0]["x"].asInt == 2
     assert secondChild["nestedArrayObj"][1]["y"].asInt == 6
 
-    
     type
+        TestColor = object
+            r,g,b,a : float
+
         FirstChild=object
             intKey : int
             stringKey : string
@@ -347,6 +409,7 @@ when isMainModule:
             nestedObject : NestedObject
             nestedNoColon : NestedNoColon
             nestedArrayObj : seq[NestedArrayObj]
+            color : TestColor
 
         TopLevel=object
             firstChild : FirstChild
@@ -354,6 +417,15 @@ when isMainModule:
             notLoadable {.noAutoLoad.} : int
             custom : int
 
+
+    proc `==`(a,b : TestColor) : bool =
+        a.r == b.r and a.g == b.g and a.b == b.b and a.a == b.a
+
+    proc readFromConfig(cv : ConfigValue, tc : var TestColor) =
+        tc.r = cv.asArr[0].asFloat
+        tc.g = cv.asArr[1].asFloat
+        tc.b = cv.asArr[2].asFloat
+        tc.a = cv.asArr[3].asFloat
 
     var c = FirstChild()
 
@@ -368,7 +440,7 @@ when isMainModule:
     assert d.stringKey == "someString"
 
     echo "================================="
-    proc customReadInto(v : ConfigValue, tl : var TopLevel) =
+    proc extraReadFromConfig(v : ConfigValue, tl : var TopLevel) =
         tl.custom = v["customLoadTarget"].asInt
 
     var tl = TopLevel()
@@ -377,6 +449,7 @@ when isMainModule:
     assert tl.secondChild.nestedArrayObj[0].x == 2
     assert tl.custom == 4
     assert tl.notLoadable == 0
+    echoAssert tl.secondChild.color == TestColor(r : 0.1,g : 0.2,b : 0.3,a : 1.0)
 
     let defaultCV = ConfigValue()
     assert defaultCV.kind == ConfigValueKind.Empty

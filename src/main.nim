@@ -10,6 +10,8 @@ import worlds
 import resources
 import noto
 import os
+import bitops
+import unicode
 
 var eventChannel : Channel[Event]
 eventChannel.open()
@@ -24,6 +26,13 @@ goChannel.open()
 type FullGameSetup = object
     setup : GameSetup
     reflectInitializers : ReflectInitializers
+
+var engineThread : Thread[FullGameSetup]
+
+var lastMousePosition : Vec2f
+var lastModifiers : KeyModifiers
+var hasFocus : bool
+var mouseButtonsDown : Table[MouseButton, bool]
 
 # var activeModifiers = KeyModifiers()
 
@@ -44,7 +53,8 @@ proc runEngine(full : FullGameSetup) {.thread.} =
 
 
     var lastTime = glfwGetTime()
-    while true:
+    var quit = false
+    while not quit:
         # let curTime = glfwGetTime()
         # let dt = curTime - lastTime
         # if dt < 0.01666666667:
@@ -53,46 +63,87 @@ proc runEngine(full : FullGameSetup) {.thread.} =
         # lastTime = curTime
         discard goChannel.recv
     
-        let evtOpt = eventChannel.tryRecv()
-        if evtOpt.dataAvailable:
-            let evt = evtOpt.msg
-            ifOfType(evt, QuitRequest):
-                echo "Quitting"
+        while true:
+            let evtOpt = eventChannel.tryRecv()
+            if evtOpt.dataAvailable:
+                let evt = evtOpt.msg
+                ifOfType(evt, QuitRequest):
+                    echo "Quitting"
+                    quit = true
+                ifOfType(evt, WindowResolutionChanged):
+                    let gctxt = graphicsEngine.displayWorld[GraphicsContextData]
+                    gctxt.windowSize = evt.windowSize
+                    gctxt.framebufferSize = evt.framebufferSize
+                graphicsEngine.displayWorld.addEvent(evt)
+            else:
                 break
-            ifOfType(evt, WindowResolutionChanged):
-                let gctxt = graphicsEngine.displayWorld[GraphicsContextData]
-                gctxt.windowSize = evt.windowSize
-                gctxt.framebufferSize = evt.framebufferSize
-            graphicsEngine.displayWorld.addEvent(evt)
         
         gameEngine.update()
         graphicsEngine.update(drawCommandChannel, 1.0f)
 
         
         
-            
-
-var engineThread : Thread[FullGameSetup]
+proc toKeyModifiers(mods : int32) : KeyModifiers = 
+    let shift = (mods.bitand(GLFWModShift)) != 0
+    let alt = (mods.bitand(GLFWModAlt)) != 0
+    let ctrl = (mods.bitand(GLFWModControl)) != 0 or (mods.bitand(GLFWModSuper)) != 0
+    KeyModifiers(shift : shift, alt : alt, ctrl : ctrl)
 
 proc keyDownProc(window: GLFWWindow, key: int32, scancode: int32, action: int32, mods: int32): void {.cdecl.} =
     if key == GLFWKey.ESCAPE and action == GLFWPress:
         eventChannel.send(QuitRequest())
         window.setWindowShouldClose(true)
     
+    lastModifiers = toKeyModifiers(mods)
     if action == GLFWPress:
         if key != -1:
             let isFirstPress = not isKeyDown(key.KeyCode)
             if isFirstPress:
                 setKeyDown(key.KeyCode, true)
-                eventChannel.send(KeyPress(key : key.KeyCode, modifiers : activeKeyModifiers()))
+                eventChannel.send(KeyPress(key : key.KeyCode, modifiers : lastModifiers))
         else:
             fine "-1 key: ", scancode
     elif action == GLFWRelease:
         if key != -1:
             setKeyDown(key.KeyCode, false)
-            eventChannel.send(KeyRelease(key : key.KeyCode, modifiers : activeKeyModifiers()))
+            eventChannel.send(KeyRelease(key : key.KeyCode, modifiers : lastModifiers))
         else:
             fine "-1 key: ", scancode
+
+proc mouseButtonProc(window: GLFWWindow, buttonRaw: int32, action: int32, mods: int32): void {.cdecl.} =
+    let button = mouseButtonFromGlfw(buttonRaw)
+    lastModifiers = toKeyModifiers(mods)
+    if action == GLFWPress:
+        mouseButtonsDown[button] = true
+        setMouseButtonDown(button, true)
+        eventChannel.send(MousePress(position : lastMousePosition, modifiers : lastModifiers, button : button))
+    elif action == GLFWRelease:
+        mouseButtonsDown[button] = false
+        setMouseButtonDown(button, false)
+        eventChannel.send(MouseRelease(position : lastMousePosition, modifiers : lastModifiers, button : button))
+
+proc mouseMoveProc(window : GLFWWindow, x : float, y : float) : void {.cdecl.} =
+    let delta = vec2f(x,y) - lastMousePosition
+    lastMousePosition = vec2f(x,y)
+
+    for button in MouseButton:
+        if mouseButtonsDown.getOrDefault(button, false):
+            eventChannel.send(MouseDrag(position : lastMousePosition, modifiers : lastModifiers, delta : delta, button : button))
+            return
+        
+    eventChannel.send(MouseMove(position : lastMousePosition, modifiers : lastModifiers, delta : delta))
+
+proc charEnterProc(window : GLFWWindow, codePoint : uint32) : void {.cdecl.} =
+    let rune = codePoint.Rune
+    eventChannel.send(RuneEnter(rune : rune, modifiers : lastModifiers))
+
+proc focusProc(window : GLFWWindow, focus : bool) : void {.cdecl.} =
+    if focus != hasFocus:
+        hasFocus = focus
+        if focus:
+            eventChannel.send(WindowFocusGained())
+        else:
+            eventChannel.send(WindowFocusLost())
 
 
 var windowSize = vec2i(800,600)
@@ -123,7 +174,12 @@ proc main*(setup : GameSetup) =
     glfwWindowHint(GLFWOpenglProfile, GLFW_OPENGL_CORE_PROFILE)
     glfwWindowHint(GLFWResizable, toGLFWBool(setup.resizeable))
 
-    let w: GLFWWindow = glfwCreateWindow(setup.windowSize.x, setup.windowSize.y, setup.windowTitle)
+    let w: GLFWWindow = if not setup.fullscreen:
+        glfwCreateWindow(setup.windowSize.x, setup.windowSize.y, setup.windowTitle)
+    else:
+        let vidMode = getVideoMode(glfwGetPrimaryMonitor())
+        glfwCreateWindow(vidMode.width, vidMode.height, setup.windowTitle, glfwGetPrimaryMonitor())
+
     if w == nil:
         quit(-1)
 
@@ -142,6 +198,10 @@ proc main*(setup : GameSetup) =
     discard glfwSetErrorCallback(errorCallback)
 
     discard w.setKeyCallback(keyDownProc)
+    discard w.setMouseButtonCallback(mouseButtonProc)
+    discard w.setCursorPosCallback(mouseMoveProc)
+    discard w.setCharCallback(charEnterProc)
+    discard w.setWindowFocusCallback(focusProc)
     w.makeContextCurrent()
 
     assert glInit()
@@ -161,7 +221,7 @@ proc main*(setup : GameSetup) =
             lastViewport = framebufferSize
 
         glfwPollEvents()
-        glClearColor(0.0f,0.0f,0.0f,1.0f)
+        glClearColor(0.5f,0.5f,0.5f,1.0f)
         glClear(GL_COLOR_BUFFER_BIT)
 
         while true:

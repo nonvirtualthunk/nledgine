@@ -8,6 +8,7 @@ type
     Tile* = object
         position* : AxialVec
         terrainKind* : Taxon
+        vegetationKind* : Taxon
 
     Map* = object
         tileEntities* : seq[Entity]

@@ -8,15 +8,18 @@ import ../prelude
 type
     CameraKind* {.pure.} = enum
         PixelCamera
+        WindowingCamera
 
     Camera* = object
         case kind : CameraKind
         of PixelCamera: 
             translation : Vec2f
             delta : Vec2f
-            scale : int
-            initialized : bool
+            scale : int 
+        of WindowingCamera:
+            windowingScale : int
 
+        initialized : bool
         moveSpeed : float # in pixels / second
 
 
@@ -31,6 +34,12 @@ proc createPixelCamera*(scale : int) : Camera =
         initialized : true
     )
 
+proc createWindowingCamera*(scale : int) : Camera =
+    Camera(
+        kind : WindowingCamera,
+        windowingScale : scale,
+        initialized : true
+    )
 
 proc handleEvent*(camera : var Camera, evt : Event) =
     case camera.kind:
@@ -42,6 +51,8 @@ proc handleEvent*(camera : var Camera, evt : Event) =
             of KeyCode.Right: camera.delta.x = 1.0f
             of KeyCode.Left: camera.delta.x = -1.0f
             else: discard
+    of WindowingCamera:
+        discard
 
         
 proc update*(camera : var Camera, df : float) =
@@ -58,13 +69,21 @@ proc update*(camera : var Camera, df : float) =
             camera.delta.x = 0.0f
 
         camera.translation += camera.delta * (camera.moveSpeed * 0.016666667f * df)
+    of WindowingCamera:
+        if not camera.initialized:
+            camera.windowingScale = 1
+            camera.initialized = true
 
 proc modelviewMatrix*(camera : Camera, framebufferSize : Vec2i) : Mat4f =
     case camera.kind:
     of PixelCamera:
         mat4f().scale(camera.scale.float, camera.scale.float, 1.0f).translate(vec3f(camera.translation.x.float, camera.translation.y.float, 0.0f))
+    of WindowingCamera:
+        mat4f().scale(camera.windowingScale.float, camera.windowingScale.float, 1.0f)
 
 proc projectionMatrix*(camera : Camera, framebufferSize : Vec2i) : Mat4f =
     case camera.kind:
     of PixelCamera:
         ortho((float32) -framebufferSize.x/2,(float32) framebufferSize.x/2, (float32) -framebufferSize.y/2, (float32) framebufferSize.y/2,-100.0f,100.0f)
+    of WindowingCamera:
+        ortho((float32) 0.0f, (float32) framebufferSize.x, (float32) framebufferSize.y, 0.0f, -100.0f, 100.0f)

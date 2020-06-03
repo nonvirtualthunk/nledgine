@@ -1,15 +1,9 @@
 import glm
 import nimgl/glfw
 import deques
+import unicode
 
 import key_codes
-
-type
-    MouseButton* {.pure.} = enum
-        Left,
-        Right,
-        Middle,
-        Other
 
 type
     Event* = ref object of RootRef
@@ -34,18 +28,21 @@ type
         modifiers* : KeyModifiers
     
     MousePress* = ref object of InputEvent
-        position* : Vec2i
+        button* : MouseButton
+        position* : Vec2f
 
     MouseRelease* = ref object of InputEvent
-        position* : Vec2i
+        button* : MouseButton
+        position* : Vec2f
 
     MouseMove* = ref object of InputEvent
-        position* : Vec2i
-        delta* : Vec2i
+        position* : Vec2f
+        delta* : Vec2f
 
     MouseDrag* = ref object of InputEvent
-        position* : Vec2i
-        delta* : Vec2i
+        button* : MouseButton
+        position* : Vec2f
+        delta* : Vec2f
 
     KeyPress* = ref object of InputEvent
         key* : KeyCode
@@ -53,7 +50,13 @@ type
     KeyRelease* = ref object of InputEvent
         key* : KeyCode
 
+    RuneEnter* = ref object of InputEvent
+        rune* : Rune
+
     QuitRequest* = ref object of InputEvent
+
+    WindowFocusGained* = ref object of InputEvent
+    WindowFocusLost* = ref object of InputEvent    
 
 
 proc createEventBuffer*(maximumSize : int = 1000) : EventBuffer =

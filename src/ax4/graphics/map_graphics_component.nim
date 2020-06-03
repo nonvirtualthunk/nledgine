@@ -20,8 +20,7 @@ method initialize(g : MapGraphicsComponent, world : World, curView : WorldView, 
     g.vao = newVAO[SimpleVertex, uint16]()
     g.shader = initShader("shaders/simple")
     g.texture = newTextureBlock(1024, 1, false)
-    let taxonomy = world.view.data(Taxonomy)
-    g.imagesByKind[taxonomy.taxon("terrains", "grass")] = display.resources.image("images/zeshioModified/01 Grass/01 Solid Tiles/PixelHex_zeshio_tile-001.png")
+    g.imagesByKind[taxon("vegetations", "grass")] = image("images/zeshioModified/01 Grass/01 Solid Tiles/PixelHex_zeshio_tile-001.png")
     g.needsUpdate = true
 
 

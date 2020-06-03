@@ -53,7 +53,6 @@ type
         currentTime* : WorldEventClock
         entityCounter : int
         eventModificationTimes : seq[WorldModifierClock]  # the "current modifier time" when the event was created, all modifications < that time are included
-        resources* : Resources
 
     DisplayWorld* = ref object
         entities : seq[DisplayEntity]
@@ -61,7 +60,6 @@ type
         events* : EventBuffer
         entityCounter : int
         eventClock : WorldEventClock
-        resources* : Resources
 
 
 
@@ -78,6 +76,8 @@ proc `+`*(a : WorldModifierClock, b : int) : WorldModifierClock = return (a.int 
 proc `-`*(a : WorldModifierClock, b : int) : WorldModifierClock = return (a.int - b).WorldModifierClock
 
 proc `$`*(e : Entity) : string =
+    return $e.int
+proc `$`*(e : DisplayEntity) : string =
     return $e.int
 
 proc isSentinel*(e : Entity) : bool = e == SentinelEntity
@@ -108,7 +108,6 @@ proc createWorld*() : World {.gcsafe.} =
     ret.view.lastAppliedEvent = (-1).WorldEventClock
     ret.view.events = @[]
     
-    ret.resources = new Resources
     ret.entityCounter = 1
     
     ret.modificationContainer = ModificationContainer(modifications : @[])

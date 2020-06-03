@@ -17,7 +17,6 @@ type
         revision* : int
         resourcePathHash : Hash
 
-
 proc loadImage*(path : string) : Image =
     stbi.setFlipVerticallyOnLoad(true)               
     var width,height,channels:int        
@@ -61,10 +60,20 @@ proc `==`*(a : Image, b : Image) : bool =
         # else:
         cast[int](a.data) == cast[int](b.data)
 
+proc width*(a : Image) : int = a.dimensions.x
+proc height*(a : Image) : int = a.dimensions.y
 
 proc `[]`*(img : Image, x : int, y : int) : ptr RGBA =
     let offset = y * img.dimensions.x * 4 + x * 4
     cast[ptr RGBA]((cast[uint](img.data) + offset.uint))
+
+proc `[]=`*(img : Image, x : int, y : int, v : RGBA) =
+    let offset = y * img.dimensions.x * 4 + x * 4
+    cast[ptr RGBA]((cast[uint](img.data) + offset.uint))[] = v
+
+proc `[]`*(img : Image, x : int, y : int, q : int) : float =
+    let offset = y * img.dimensions.x * 4 + x * 4 + q
+    cast[ptr uint8]((cast[uint](img.data) + offset.uint))[].float / 255.0f
 
 
 proc copyFrom*(target : Image, src : Image, position : Vec2i) =

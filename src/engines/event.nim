@@ -10,9 +10,15 @@ import key_codes
 
 var keyStateMap : SharedTable[int, bool] 
 init(keyStateMap)
+var buttonStateMap: SharedTable[int, bool]
+init(buttonStateMap)
+
 
 for kc in KeyCode:
     keyStateMap[kc.int] = false 
+
+for mb in MouseButton:
+    buttonStateMap[mb.int] = false
 
 proc isKeyDown*(key : KeyCode) : bool =
     {.warning[ProveInit]: off.}
@@ -20,6 +26,13 @@ proc isKeyDown*(key : KeyCode) : bool =
 
 proc setKeyDown*(key : KeyCode, down : bool) =
     keyStateMap[key.int] = down
+
+proc isMouseButtonDown*(button : MouseButton) : bool =
+    {.warning[ProveInit]: off.}
+    result = buttonStateMap.mget(button.int)
+
+proc setMouseButtonDown*(button : MouseButton, down : bool) =
+    buttonStateMap[button.int] = down
 
 proc activeKeyModifiers*() : KeyModifiers =
     KeyModifiers(

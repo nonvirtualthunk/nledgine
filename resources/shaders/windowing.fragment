@@ -1,0 +1,22 @@
+#version 150 core
+
+uniform sampler2D mainTexture;
+uniform sampler2D fontTexture;
+
+in vec2 VClipCoord;
+in vec2 VBoundsOrigin;
+in vec2 VBoundsDirection;
+in vec2 VBoundsDimensions;
+in vec2 VTexCoord;
+in vec4 VColor;
+
+out vec4 o_FragColor;
+
+void main (){
+    // if ((VClipCoord.x < VBounds.x || VClipCoord.y < VBounds.y || VClipCoord.x > VBounds.z || VClipCoord.y > VBounds.w)){
+    //     discard;
+    // }
+
+    o_FragColor = VColor * texture(mainTexture, VTexCoord);
+    // o_FragColor = vec4(1,1,1,1);
+}

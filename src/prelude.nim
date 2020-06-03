@@ -4,12 +4,19 @@ import sugar
 import times
 import options
 import worlds
+import macros
 
 export metric
 export sugar
 export worlds
 
-type UnitOfTime* = Metric[metric.Time,float]
+type 
+    UnitOfTime* = Metric[metric.Time,float]
+
+    Axis* = enum
+        X
+        Y
+        Z
 
 
 let programStartTime* = now()
@@ -60,3 +67,61 @@ proc minBy*[T, U](s : seq[T], mapFn : (T) -> U) : Option[T] =
             lowestMapped = some(mapped)
             result = some(v)
     
+
+
+macro echoAssert*(arg: untyped): untyped =
+        # all node kind identifiers are prefixed with "nnk"
+        arg.expectKind nnkInfix
+        arg.expectLen 3
+        # operator as string literal
+        let op  = newLit(" " & arg[0].repr & " ")
+        let lhs = arg[1]
+        let rhs = arg[2]
+
+        let li = newLit($lineInfoObj(arg))
+        result = quote do:
+            if not (`arg`):
+                echo `li`
+                raise newException(AssertionError,$`lhs` & `op` & $`rhs`)
+
+iterator enumValues*[T](t : typedesc[T]) : T =
+    for o in ord(low(t))..ord(high(t)):
+        yield T(o)
+
+iterator axes*() : Axis =
+    yield Axis.X
+    yield Axis.Y
+    yield AXis.Z
+
+iterator axes2d*() : Axis =
+    yield Axis.X
+    yield Axis.Y
+
+converter toOrd(axis : Axis) : int = axis.ord
+
+
+
+proc `[]=`*(v : var Vec3i, axis : Axis, value : int) =
+    v[axis.ord] = value.int32
+
+proc `[]`*(v : Vec3i, axis : Axis) : int = v[axis.ord]
+
+proc `[]=`*(v : var Vec2i, axis : Axis, value : int) =
+    v[axis.ord] = value.int32
+
+proc `[]`*(v : Vec2i, axis : Axis) : int = v[axis.ord]
+
+proc `[]=`*(v : var Vec2f, axis : Axis, value : float) =
+    v[axis.ord] = value
+
+proc `[]`*(v : Vec2f, axis : Axis) : float = v[axis.ord]
+
+proc `*`*(v : Vec2i, m : int) : Vec2i = vec2i(v.x * m, v.y * m)
+
+proc minAll*(a : var Vec3i, b : Vec3i) =
+    a.x = a.x.min(b.x)
+    a.y = a.y.min(b.y)
+    a.z = a.z.min(b.z)
+
+proc `div`*(a : Vec2i, b : int) : Vec2i =
+    vec2i(a.x div b, a.y div b)

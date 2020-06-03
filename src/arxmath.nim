@@ -4,7 +4,7 @@ type Rect*[T] = object
     position* : Vec2[T]
     dimensions* : Vec2[T]
 
-type Rectf* = Rect[float]
+type Rectf* = Rect[float32]
 type Recti* = Rect[int]
 
 proc rect*[T](pos : Vec2[T], dim : Vec2[T]) : Rect[T] =
@@ -17,4 +17,3 @@ proc y*[T](r : Rect[T]) : T = r.position.y
 
 proc `==`*[T](a : Rect[T], b : Rect[T]) : bool = 
     a.position == b.position and a.dimensions == b.dimensions
-
