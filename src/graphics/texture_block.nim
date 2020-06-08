@@ -65,15 +65,21 @@ proc newTextureBlock*(size : int = 2048, borderWidth : int = 1, gammaCorrection 
     )
 
 proc toTexCoords(tb : TextureBlock, rect : Recti) : ref array[4, Vec2f] =
+    result = new array[4, Vec2f]
+
     let wf = tb.image.dimensions.x.float
     let hf = tb.image.dimensions.y.float
-    let lowX = rect.x.float / wf
-    let highX = (rect.x + rect.width).float / wf
-    let lowY = rect.y.float / hf
-    let highY = (rect.y + rect.height).float / hf
+    if rect.dimensions == vec2i(1,1):
+        let px = rect.position.x.float / wf
+        let py = rect.position.y.float / hf
+        result[] = [vec2f(px,py), vec2f(px,py), vec2f(px,py), vec2f(px,py)]
+    else:
+        let lowX = (rect.x.float + 0.0f) / wf
+        let highX = ((rect.x + rect.width).float + 0.0f) / wf
+        let lowY = (rect.y.float + 0.0f) / hf
+        let highY = ((rect.y + rect.height).float + 0.0f) / hf
 
-    result = new array[4, Vec2f]
-    result[] = [vec2f(lowX, lowY),vec2f(highX, lowY),vec2f(highX, highY),vec2f(lowX, highY)]
+        result[] = [vec2f(lowX, lowY),vec2f(highX, lowY),vec2f(highX, highY),vec2f(lowX, highY)]
 
 proc addNewImage(tb : TextureBlock, img : Image) =
     let requiredSize = img.dimensions + vec2i(tb.borderWidth * 2, tb.borderWidth * 2)

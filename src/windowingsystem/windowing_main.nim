@@ -12,7 +12,9 @@ import ../resources
 import ../graphics/texture_block
 import ../graphics/images
 import windowingsystem
-
+import windowingsystem/text_widget
+import config
+import options
 
 type 
     PrintComponent = ref object of GameComponent
@@ -24,8 +26,8 @@ type
         texture : TextureBlock
         shader : Shader
         needsUpdate: bool
-        windowingSystem : WindowingSystem
         camera : Camera
+        initTime : UnitOfTime
 
 
         
@@ -38,11 +40,15 @@ method update(g : PrintComponent, world : World) =
     let curTime = relTime()
     if curTime - g.lastPrint > seconds(2.0f):
         g.lastPrint = curTime
-        info "Updates / second : ", (g.updateCount / 2)
+        let updatesPerSecond = (g.updateCount / 2)
+        if updatesPerSecond < 59:
+            info "Updates / second (sub 60) : ", updatesPerSecond
+        else:
+            fine "Updates / second : ", updatesPerSecond
         g.updateCount = 0
 
 
-proc render(g : DrawQuadComponent) =
+proc render(g : DrawQuadComponent, display: DisplayWorld) =
 
     # let swordTexCoords = g.texture[g.swordImg]
     # for i in 0..<4:
@@ -51,7 +57,7 @@ proc render(g : DrawQuadComponent) =
     #     g.vao.vertices[vi+i].texCoords = swordTexCoords[i]
     # g.vao.addIQuad(ii, vi)
 
-    g.windowingSystem.render(g.vao, g.texture)
+    display[WindowingSystem].render(g.vao, g.texture)
 
     # var vi = g.vao.vi
     # var ii = g.vao.ii
@@ -72,35 +78,76 @@ proc render(g : DrawQuadComponent) =
     g.needsUpdate = false
 
 method initialize(g : DrawQuadComponent, world : World, curView : WorldView, display : DisplayWorld) =
+    g.initTime = relTime()
     g.vao = newVAO[WVertex, uint32]()
     g.shader = initShader("shaders/windowing")
     g.texture = newTextureBlock(1024, 1, false)
-    g.windowingSystem = createWindowingSystem(display)
-    g.windowingSystem.pixelScale = 2
+    let windowingSystem = createWindowingSystem(display)
+    windowingSystem.pixelScale = 2
+
+    display.attachDataRef(windowingSystem)
     g.camera = createWindowingCamera(2)
     g.needsUpdate = true
 
-    g.windowingSystem.desktop.background = nineWayImage("ui/woodBorderTransparent.png")
+    windowingSystem.desktop.background = nineWayImage("ui/woodBorder.png")
 
-    let widget = g.windowingSystem.createWidget()
-    widget.background = nineWayImage("ui/minimalistBorder.png")
-    widget.x = fixedPos(50)
-    widget.y = fixedPos(50)
-    widget.width = fixedSize(400)
-    widget.height = fixedSize(400)
+    # let widget = windowingSystem.createWidget()
+    # widget.background = nineWayImage("ui/minimalistBorder.png")
+    # widget.x = fixedPos(50)
+    # widget.y = fixedPos(50)
+    # widget.width = fixedSize(500)
+    # widget.height = fixedSize(500)
 
-    let child = g.windowingSystem.createWidget()
-    child.background = nineWayImage("ui/buttonBackground.png")
-    child.parent = widget
-    child.x = fixedPos(10)
-    child.y = fixedPos(10)
-    child.width = proportionalSize(0.5)
-    child.height = relativeSize(-20)
+    # # let child = windowingSystem.createWidget()
+    # # child.background = nineWayImage("ui/buttonBackground.png")
+    # # child.parent = widget
+    # # child.x = fixedPos(10)
+    # # child.y = fixedPos(10)
+    # # child.width = proportionalSize(0.5)
+    # # child.height = relativeSize(-20)
+
+    # let child = windowingSystem.createWidgetFromConfig("child",parseConfig("""
+    #     background.image : "ui/buttonBackground.png"
+    #     x : 10
+    #     y : 10
+    #     width : 0.5
+    #     height : -20
+    # """), widget)
+
+    let widget = windowingSystem.createWidget("demo/widgets/main_widgets.sml", "widget")
+    let child = widget.childByIdentifier("child").get
+    let rightChild = widget.childByIdentifier("rightChild").get
+    let textChild = widget.childByIdentifier("textChild").get
+    let textChild2 = widget.childByIdentifier("textChild2").get
+
+    let quote = richText("There are not many persons who know what wonders are opened to them in the stories and visions of their youth; for when as children we listen and dream, we think but half-formed thoughts, and when as men we try to remember, we are dulled and prosaic with the poison of life.")
+    # discard updateBindings(textChild2.data(TextDisplay)[], boundValueResolver({"text2" : bindValue(quote)}.toTable))
+    textChild2.bindValue("text2", quote)
+
+    # let textChild2 = windowingSystem.createWidget(widget)
+    # textChild2.attachData(TextDisplay(
+    #     text : bindable(richText("There are not many persons who know what wonders are opened to them in the stories and visions of their youth; for when as children we listen and dream, we think but half-formed thoughts, and when as men we try to remember, we are dulled and prosaic with the poison of life.")),
+    #     fontSize : 16,
+    #     color : bindable(rgba(0,0,0,1.0f))
+    # ))
+    # textChild2.x = relativePos(textChild, 10, WidgetOrientation.TopRight)
+    # textChild2.y = fixedPos(10)
+    # textChild2.width = expandToParent(10)
+    # textChild2.height = intrinsic()
+    # textChild2.background = nineWayImage("ui/minimalistBorder.png")
+    # textChild2.padding = vec3i(2,2,0)
+
+
+
+
 
 method update(g : DrawQuadComponent, world : World, curView : WorldView, display : DisplayWorld, df : float) : seq[DrawCommand] =
     if g.needsUpdate:
-        g.windowingSystem.update()
-        g.render()
+        display[WindowingSystem].update(g.texture)
+        g.render(display)
+        # echo g.vao.vertices
+        info "Seconds till first render: " , (relTime() - g.initTime).as(second)
+    
     @[draw(g.vao, g.shader, @[g.texture], g.camera, RenderSettings(depthTestEnabled : false))]
 
 

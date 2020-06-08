@@ -8,6 +8,7 @@ import ../reflects/reflect_types
 import hashes
 import ../engines/event_types
 import resources
+import noto
 
 {.experimental.}
 
@@ -234,6 +235,7 @@ proc data*[C] (view : WorldView, entity : Entity, dataType : DataType[C]) : ref 
     var dc = (DataContainer[C]) view.dataContainers[dataType.index]
     result = dc.dataStore.getOrDefault(entity.int, nil)
     if result == nil:
+        writeStackTrace()
         echo "Warning: read data[", C, "] for entity ", entity.int, " that did not have access to data of that type"
         result = dc.defaultValue
 
@@ -250,8 +252,13 @@ proc data*[C] (world : DisplayWorld, entity : DisplayEntity, t : typedesc[C]) : 
     result = dc.dataStore.getOrDefault(entity.int, nil)
     # TODO: Consider auto-attaching data to display worlds
     if result == nil:
-        echo "Warning: read display data[", C, "] for entity ", entity.int, " that did not have access to data of that type"
+        writeStackTrace()
+        warn "Warning: read display data[", C, "] for entity ", entity.int, " that did not have access to data of that type"
         result = dc.defaultValue
+
+proc hasData*[C] (world : DisplayWorld, entity : DisplayEntity, t : typedesc[C]) : bool =
+    var dc = (DataContainer[C]) world.dataContainers[t.getDataType().index]
+    result = dc.dataStore.hasKey(entity.int)
 
 proc data*[C] (world : DisplayWorld, t : typedesc[C]) : ref C =
     data[C](world, WorldDisplayEntity, t)
@@ -272,6 +279,14 @@ proc attachDataInternal[C] (world : DisplayWorld, entity : DisplayEntity, dataTy
 
 proc attachData*[C] (world : DisplayWorld, t : typedesc[C], dataValue : C = C()) =
     attachData(world, WorldDisplayEntity, t, dataValue)
+
+proc attachDataRef*[C] (world : DisplayWorld, entity : DisplayEntity, dataValue : ref C) =
+    echo C, ", dt: ", C.getDataType().index#, " size: ", world.dataContainers.len
+    var dc = (DataContainer[C]) world.dataContainers[C.getDataType().index]
+    dc.dataStore[entity.int] = dataValue
+
+proc attachDataRef*[C] (world : DisplayWorld, dataValue : ref C) =
+    attachDataRef[C](world, WorldDisplayEntity, dataValue)
 
 macro modify*(world : World, expression : untyped) =
     result = newStmtList()

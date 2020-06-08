@@ -76,8 +76,8 @@ proc stbi_write_jpg(
 ## Please see the documentation in the `stbi_image_write.h` file for more info.
 ##
 ## By default the stride is set to zero.
-proc writePNG*(filename: string; w, h, comp: int; data: openarray[byte]; stride_in_bytes: int = 0): bool {.discardable.} =
-  return (stbi_write_png(filename.cstring, w.cint, h.cint, comp.cint, data[0].unsafeAddr, stride_in_bytes) == 1)
+proc writePNG*(filename: string; w, h, comp: int; data: ptr[uint8]; stride_in_bytes: int = 0): bool {.discardable.} =
+  return (stbi_write_png(filename.cstring, w.cint, h.cint, comp.cint, data, stride_in_bytes) == 1)
 
 
 ## This proc will let you write out data to a BMP file.  `w` and `h` are the

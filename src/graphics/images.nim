@@ -5,6 +5,7 @@ import os
 import times
 import color
 import hashes
+import noto
 
 type 
     Image* = ref object
@@ -16,6 +17,12 @@ type
         sentinel* : bool
         revision* : int
         resourcePathHash : Hash
+
+proc `$`*(img : Image) : string = 
+    if img.resourcePath.isSome:
+        "ImageFrom(" & img.resourcePath.get & ")"
+    else:
+        "Image(" & $cast[uint](img.data) & ")"
 
 proc loadImage*(path : string) : Image =
     stbi.setFlipVerticallyOnLoad(true)               
@@ -41,6 +48,20 @@ proc createImage*(dimensions : Vec2i) : Image =
     result.dimensions = dimensions
     result.sentinel = false
     result.revision = 1
+
+proc createImage*(data : ptr uint8, dimensions : Vec2i, flipY : bool = false) : Image =
+    result = createImage(dimensions)
+    if flipY:
+        for y in 0 ..< dimensions.y:
+            let srcPointer = cast[pointer](cast[uint](data) + (y * dimensions.x * 4).uint)
+            let destPointer = cast[pointer](cast[uint](result.data) + ((dimensions.y - y - 1) * dimensions.x * 4).uint)
+            copyMem(destPointer, srcPointer, dimensions.x * 4)
+    else:
+        copyMem(result.data, data, dimensions.x * dimensions.y * 4)
+
+proc createImage*(data : seq[uint8], dimensions : Vec2i, flipY : bool = false) : Image =
+    createImage(data[0].unsafeAddr, dimensions, flipY)
+
 
 proc hash*(e : Image) : int =
     # if e.resourcePath.isSome:
@@ -79,10 +100,14 @@ proc `[]`*(img : Image, x : int, y : int, q : int) : float =
 proc copyFrom*(target : Image, src : Image, position : Vec2i) =
     if target.channels != src.channels:
         raise newException(ValueError, "copyFrom(...) on images with differing channel counts")
-    for y in 0 ..< src.dimensions.y:
-        # for x in 0 ..< src.dimensions.x:
-        #     # echo "Copying pixel [", x, ",", y, "] : ", src[x,y][]
-        #     target[position.x + x, position.y + y][] = src[x,y][]
-        let srcPointer = src[0,y]
-        let targetPointer = target[position.x,position.y + y]
-        copyMem(targetPointer, srcPointer, src.dimensions.x * 4)
+
+    if position.x < 0 or position.y < 0 or position.x + src.dimensions.x >= target.dimensions.x or position.y + src.dimensions.y >= target.dimensions.y:
+        warn "Trying to copy image at invalid positon ! ", $position, " target image dimensions: ", $target.dimensions
+    else:
+        for y in 0 ..< src.dimensions.y:
+            # for x in 0 ..< src.dimensions.x:
+            #     # echo "Copying pixel [", x, ",", y, "] : ", src[x,y][]
+            #     target[position.x + x, position.y + y][] = src[x,y][]
+            let srcPointer = src[0,y]
+            let targetPointer = target[position.x,position.y + y]
+            copyMem(targetPointer, srcPointer, src.dimensions.x * 4)

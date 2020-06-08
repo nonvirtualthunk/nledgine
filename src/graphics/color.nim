@@ -1,6 +1,8 @@
 import glm
-import config
+import config/config_core
 import noto
+import strutils
+import chroma
 
 type
     RGBA* = distinct Vec4u8
@@ -51,12 +53,24 @@ proc `$`*(rgba : RGBA) : string =
 proc `*`*(a,b : RGBA) : RGBA =
     rgba(a.r * b.r, a.g * b.g, a.b * b.b, a.a * a.a)
 
+proc mix*(a,b : RGBA, f : float) : RGBA =
+    rgba(a.r * f + b.r * (1.0f - f), a.g * f + b.g * (1.0f - f), a.b * f + b.b * (1.0f - f), a.a * f + b.a * (1.0f - f))
+
 proc readFromConfig*(v : ConfigValue, color : var RGBA) =
-    let elems = v.asArr
-    if elems.len != 4:
-        warn "RGBA cannot be read, less than 4 elements: ", $v
-    else:
-        if elems[0].asFloat <= 1.0f and elems[1].asFloat <= 1.0f and elems[2].asFloat <= 1.0f and elems[3].asFloat <= 1.0f:
-            color = rgba(elems[0].asFloat, elems[1].asFloat, elems[2].asFloat, elems[3].asFloat)
+    if v.isStr:
+        let str = v.asStr
+        if str.startsWith("#") or str.startsWith("rgb"): 
+            echo "Parsing: ", str
+            let parsed = chroma.parseHtmlColor(str)
+            color = rgba(parsed.r, parsed.g, parsed.b, 1.0f)
         else:
-            color = rgba(elems[0].asInt.uint8, elems[1].asInt.uint8, elems[2].asInt.uint8, elems[3].asInt.uint8)
+            warn "Color could not be parsed: ", str
+    else:
+        let elems = v.asArr
+        if elems.len != 4:
+            warn "RGBA cannot be read, less than 4 elements: ", $v
+        else:
+            if elems[0].asFloat <= 1.0f and elems[1].asFloat <= 1.0f and elems[2].asFloat <= 1.0f and elems[3].asFloat <= 1.0f:
+                color = rgba(elems[0].asFloat, elems[1].asFloat, elems[2].asFloat, elems[3].asFloat)
+            else:
+                color = rgba(elems[0].asInt.uint8, elems[1].asInt.uint8, elems[2].asInt.uint8, elems[3].asInt.uint8)

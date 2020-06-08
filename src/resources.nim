@@ -1,8 +1,11 @@
 import tables
 import graphics/images
-import config
+import config/config_core
+import typography
+import graphics/fonts
+import noto
 
-export config
+export config_core
 export images
 
 {.experimental.}
@@ -11,13 +14,16 @@ type
     Resources = ref object
         images : Table[string, Image]
         config : Table[string, ConfigValue]
+        fonts : Table[string, ArxFontRoot]
 
         imageChannel : ptr Channel[Image]
         configChannel : ptr Channel[ConfigValue]
+        fontChannel : ptr Channel[ArxFontRoot]
 
     ResourceRequestKind = enum
         ImageRequest
         ConfigRequest
+        FontRequest
         ExitRequest
 
     ResourceRequest = object
@@ -27,6 +33,8 @@ type
             imageChannel : ptr Channel[Image]
         of ConfigRequest:
             configChannel : ptr Channel[ConfigValue]
+        of FontRequest:
+            fontChannel : ptr Channel[ArxFontRoot]
         of ExitRequest: 
             discard
 
@@ -49,7 +57,7 @@ proc loadResources() {.thread.} =
                 cur = loadImage("resources/" & request.path)
                 r.images[request.path] = cur
             if request.imageChannel != nil:
-                request.imageChannel.send(cur)
+                discard request.imageChannel.trySend(cur)
         of ConfigRequest:
             var cur = r.config.getOrDefault(request.path)
             if cur.isEmpty:
@@ -57,7 +65,14 @@ proc loadResources() {.thread.} =
                 cur = parseConfig(configStr)
                 r.config[request.path] = cur
             if request.configChannel != nil:
-                request.configChannel.send(cur)
+                discard request.configChannel.trySend(cur)
+        of FontRequest:
+            var cur = r.fonts.getOrDefault(request.path)
+            if cur == nil:
+                cur = loadArxFont("resources/fonts/" & request.path)
+                r.fonts[request.path] = cur
+            if request.fontChannel != nil:
+                discard request.fontChannel.trySend(cur)
 
 createThread(resourcesThread, loadResources)
             
@@ -69,6 +84,8 @@ proc getGlobalResources() : Resources =
         globalResources.imageChannel.open()
         globalResources.configChannel = createShared(Channel[ConfigValue])
         globalResources.configChannel.open()
+        globalResources.fontChannel = createShared(Channel[ArxFontRoot])
+        globalResources.fontChannel.open()
     globalResources
 
 proc image*(path : string) : Image =
@@ -79,6 +96,17 @@ proc image*(path : string) : Image =
         cur = r.imageChannel.recv()
         r.images[path] = cur
     cur
+
+
+proc font*(path : string) : ArxFontRoot =
+    let r = getGlobalResources()
+    var cur = r.fonts.getOrDefault(path)
+    if cur == nil:
+        requestChannel.send(ResourceRequest(kind : FontRequest, path : path, fontChannel : r.fontChannel))
+        cur = r.fontChannel.recv()
+        r.fonts[path] = cur
+    cur
+
 
 proc config*(path : string) : ConfigValue =
     let r = getGlobalResources()
@@ -97,6 +125,18 @@ proc preloadImage*(path : string) =
 proc preloadConfig*(path : string) =
     requestChannel.send(ResourceRequest(kind : ConfigRequest, path : path))
 
+proc preloadFont*(path : string) =
+    requestChannel.send(ResourceRequest(kind : FontRequest, path : path))
+
+
+preloadFont("pf_ronda_seven.ttf")
+
+
+proc readFromConfig*(cv : ConfigValue, v : var ArxFontRoot) =
+    if cv.isStr:
+        v = font(cv.str)
+    else:
+        warn "could not load font from config value : " , cv
 
 when isMainModule:
     let taxonomyConfig = config("data/taxonomy.sml")

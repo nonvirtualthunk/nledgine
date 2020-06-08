@@ -12,6 +12,9 @@ import noto
 import os
 import bitops
 import unicode
+import times
+import noto
+import prelude
 
 var eventChannel : Channel[Event]
 eventChannel.open()
@@ -130,7 +133,7 @@ proc mouseMoveProc(window : GLFWWindow, x : float, y : float) : void {.cdecl.} =
         if mouseButtonsDown.getOrDefault(button, false):
             eventChannel.send(MouseDrag(position : lastMousePosition, modifiers : lastModifiers, delta : delta, button : button))
             return
-        
+
     eventChannel.send(MouseMove(position : lastMousePosition, modifiers : lastModifiers, delta : delta))
 
 proc charEnterProc(window : GLFWWindow, codePoint : uint32) : void {.cdecl.} =
@@ -215,6 +218,9 @@ proc main*(setup : GameSetup) =
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
 
+    let windowInitTime = relTime()
+    var first = true
+
     while not w.windowShouldClose:
         if lastViewport != framebufferSize:
             glViewport(0,0,framebufferSize.x, framebufferSize.y)
@@ -224,25 +230,32 @@ proc main*(setup : GameSetup) =
         glClearColor(0.5f,0.5f,0.5f,1.0f)
         glClear(GL_COLOR_BUFFER_BIT)
 
-        while true:
-            let drawCommandOpt = drawCommandChannel.tryRecv()
-            if drawCommandOpt.dataAvailable:
-                let newComm = drawCommandOpt.msg
-                while drawCommands.len <= newComm.vao:
-                    drawCommands.add(default(DrawCommand))
-                if drawCommands[newComm.vao].vao == 0:
-                    drawCommands[newComm.vao] = newComm
+        if hasFocus:
+            while true:
+                let drawCommandOpt = drawCommandChannel.tryRecv()
+                if drawCommandOpt.dataAvailable:
+                    let newComm = drawCommandOpt.msg
+                    while drawCommands.len <= newComm.vao:
+                        drawCommands.add(default(DrawCommand))
+                    if drawCommands[newComm.vao].vao == 0:
+                        drawCommands[newComm.vao] = newComm
+                    else:
+                        drawCommands[newComm.vao].merge(newComm)
                 else:
-                    drawCommands[newComm.vao].merge(newComm)
-            else:
-                break
+                    break
 
-        for i in 0 ..< drawCommands.len:
-            if drawCommands[i].vao != 0:
-                drawCommands[i].render(framebufferSize)
+            for i in 0 ..< drawCommands.len:
+                if drawCommands[i].vao != 0:
+                    drawCommands[i].render(framebufferSize)
 
-        discard goChannel.trySend(true)
-        w.swapBuffers()
+            discard goChannel.trySend(true)
+            w.swapBuffers()
+        else:
+            sleep(100)
+        
+        if first:
+            info "Time to first frame drawn: ", (relTime() - windowInitTime).as(second)
+            first = false
 
     w.destroyWindow()
     glfwTerminate()

@@ -93,6 +93,7 @@ proc load*(filename: string; x, y, channels_in_file: var int; desired_channels: 
 
   # Check for a bad read
   if data == nil:
+    echo "Failed to load file from ", filename
     raise newException(STBIException, failureReason())
 
   # Set the returns

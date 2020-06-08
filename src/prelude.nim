@@ -5,6 +5,7 @@ import times
 import options
 import worlds
 import macros
+import strutils
 
 export metric
 export sugar
@@ -17,6 +18,16 @@ type
         X
         Y
         Z
+
+    HorizontalAlignment* {.pure.} = enum
+        Left
+        Right
+        Center
+
+    VerticalAlignment* {.pure.} = enum
+        Top
+        Bottom
+        Center
 
 
 let programStartTime* = now()
@@ -97,7 +108,13 @@ iterator axes2d*() : Axis =
     yield Axis.X
     yield Axis.Y
 
-converter toOrd(axis : Axis) : int = axis.ord
+proc oppositeAxis2d*(axis : Axis) : Axis = 
+    if axis == Axis.X:
+        Axis.Y
+    else:
+        Axis.X
+
+converter toOrd*(axis : Axis) : int = axis.ord
 
 
 
@@ -118,10 +135,21 @@ proc `[]`*(v : Vec2f, axis : Axis) : float = v[axis.ord]
 
 proc `*`*(v : Vec2i, m : int) : Vec2i = vec2i(v.x * m, v.y * m)
 
-proc minAll*(a : var Vec3i, b : Vec3i) =
-    a.x = a.x.min(b.x)
-    a.y = a.y.min(b.y)
-    a.z = a.z.min(b.z)
-
 proc `div`*(a : Vec2i, b : int) : Vec2i =
     vec2i(a.x div b, a.y div b)
+
+proc `=~=`*[A,B](a : A, b : B) : bool =
+    abs(b.A - a) < 0.000001.A
+
+
+proc parseIntOpt*(str : string) : Option[int] =
+    try:
+        some(parseInt(str))
+    except ValueError:
+        none(int)
+
+proc parseFloatOpt*(str : string) : Option[float] =
+    try:
+        some(parseFloat(str))
+    except ValueError:
+        none(float)

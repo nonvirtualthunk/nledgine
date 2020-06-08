@@ -43,7 +43,11 @@ method update(g : PrintComponent, world : World) =
     let curTime = relTime()
     if curTime - g.lastPrint > seconds(2.0f):
         g.lastPrint = curTime
-        info "Updates / second : ", (g.updateCount / 2)
+        let updatesPerSecond = (g.updateCount / 2)
+        if updatesPerSecond < 59:
+            info "Updates / second (sub 60) : ", updatesPerSecond
+        else:
+            fine "Updates / second : ", updatesPerSecond
         g.updateCount = 0
 
 

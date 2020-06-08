@@ -5,7 +5,7 @@ type Rect*[T] = object
     dimensions* : Vec2[T]
 
 type Rectf* = Rect[float32]
-type Recti* = Rect[int]
+type Recti* = Rect[int32]
 
 proc rect*[T](pos : Vec2[T], dim : Vec2[T]) : Rect[T] =
     Rect[T](position : pos, dimensions : dim)
@@ -17,3 +17,19 @@ proc y*[T](r : Rect[T]) : T = r.position.y
 
 proc `==`*[T](a : Rect[T], b : Rect[T]) : bool = 
     a.position == b.position and a.dimensions == b.dimensions
+
+
+
+proc minAll*(a : var Vec3i, b : Vec3i) =
+    a.x = a.x.min(b.x)
+    a.y = a.y.min(b.y)
+    a.z = a.z.min(b.z)
+
+
+proc minAll*(a : var Vec2i, b : Vec2i) =
+    a.x = a.x.min(b.x)
+    a.y = a.y.min(b.y)
+
+proc maxAll*(a : var Vec2i, b : Vec2i) =
+    a.x = a.x.max(b.x)
+    a.y = a.y.max(b.y)

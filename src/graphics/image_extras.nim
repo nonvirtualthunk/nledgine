@@ -1,6 +1,6 @@
 import images
 import resources
-import config
+import config/config_core
 import glm
 
 type
@@ -15,8 +15,23 @@ type
         of Sentinel : discard
 
 
+proc `==`*(a,b : ImageLike) : bool =
+    a.kind == b.kind and 
+    (case a.kind:
+        of ImageRef: a.img == b.img
+        of Path: a.path == b.path
+        of Sentinel: true)
+
 proc imageLike*(img : Image) : ImageLike = ImageLike(kind : ImageRef, img : img)
 proc imageLike*(img : string) : ImageLike = ImageLike(kind : Path, path : img)
+
+proc `$`*(img : ImageLike) : string = 
+    case img.kind:
+    of ImageLikeKinds.Sentinel: "SentinelImage"
+    of ImageLikeKinds.ImageRef: $img.img
+    of ImageLikeKinds.Path: "ImageAt(" & img.path & ")"
+
+proc isNil*(img : ImageLike) : bool = false
 
 proc asImage*(il : ImageLike) : Image =
     case il.kind:
@@ -28,7 +43,8 @@ proc asImage*(il : ImageLike) : Image =
         createImage(vec2i(1,1))
 
 proc readFromConfig*(cv : ConfigValue, img : var ImageLike) =
-    img = imageLike(cv.asStr)
+    if cv.nonEmpty:
+        img = imageLike(cv.asStr)
 
 converter toImage* (il : ImageLike) : Image =
     asImage(il)

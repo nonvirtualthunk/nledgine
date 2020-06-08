@@ -258,11 +258,12 @@ proc `[]`* [T](buffer : var GrowableBuffer[T], index: int) : ptr T =
             newCapacity += 100
         while newCapacity <= index:
             newCapacity *= 2
-        let newData = createSharedU(T, newCapacity)
+        let newData = cast[ptr T](allocShared0(newCapacity * sizeof(T)))
         if buffer.data != nil:
             copyMem(newData, buffer.data, buffer.len * sizeof(T))
             freeShared(buffer.data)
         buffer.data = newData
+        buffer.capacity = newCapacity
 
     if index >= buffer.len:
         buffer.len = index+1
