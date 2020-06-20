@@ -148,6 +148,15 @@ type
         dimensions* : Vec2i
         renderRevision : int
         components* : seq[WindowingComponent]
+        # event handling
+        focusedWidget : Option[Widget]
+        lastWidgetUnderMouse : Widget
+        
+        # optimization metrics tracking
+        updateDependentsCount : int
+        updateDimensionsCount : int
+        updatePositionCount : int
+        renderContentsCount : int
 
     WindowingSystemRef* = ref WindowingSystem
 
@@ -533,9 +542,16 @@ proc recalculateDimensions(w : Widget, axis : Axis, dirtySet : HashSet[Dependenc
         w.resolvedDimensions[axis] = w.windowingSystem.dimensions[axis]
 
 proc ensureDependency(dep : Dependency, dirtySet : HashSet[Dependency], completedSet : var HashSet[Dependency]) =
-    case dep.kind:
-    of DependencyKind.Position: dep.widget.recalculatePosition(dep.axis, dirtySet, completedSet)
-    of DependencyKind.Dimensions: dep.widget.recalculateDimensions(dep.axis, dirtySet, completedSet)
+    if not completedSet.contains(dep):
+        case dep.kind:
+        of DependencyKind.Position: 
+            dep.widget.windowingSystem.updatePositionCount.inc
+            dep.widget.recalculatePosition(dep.axis, dirtySet, completedSet)
+        of DependencyKind.Dimensions: 
+            fine "Updating dimensions(", dep.axis, ") for widget ", dep.widget.identifier
+            dep.widget.windowingSystem.updateDimensionsCount.inc
+            dep.widget.recalculateDimensions(dep.axis, dirtySet, completedSet)
+        completedSet.incl(dep)
 
 proc updateDependent(dep : Dependent, dirtySet : HashSet[Dependency], completedSet : var HashSet[Dependency]) =
     case dep.sourceKind:
@@ -553,6 +569,11 @@ proc collectDirty(dep : Dependency, dirty : var HashSet[Dependency]) =
 # proc recursivelyCollectDependents(w : )
 
 proc update*(ws : WindowingSystemRef, tb : TextureBlock) =
+    ws.updateDependentsCount = 0
+    ws.updateDimensionsCount = 0
+    ws.updatePositionCount = 0
+    ws.renderContentsCount = 0
+
     let expectedDimensions = ws.display[GraphicsContextData].framebufferSize div ws.pixelScale
     if ws.dimensions != expectedDimensions:
         ws.dimensions = expectedDimensions
@@ -563,6 +584,7 @@ proc update*(ws : WindowingSystemRef, tb : TextureBlock) =
     for w,v in ws.pendingUpdates:
         for axis in axes():
             if v.contains(depFlag(axis)):
+                ws.updateDependentsCount.inc
                 w.recalculateDependents(axis)
     
     var dirtySet : HashSet[Dependency]
@@ -589,11 +611,18 @@ proc update*(ws : WindowingSystemRef, tb : TextureBlock) =
 
     if rerenderSet.len != 0:
         for widget in rerenderSet:
+            ws.renderContentsCount.inc
             renderContents(ws, widget, tb)
         ws.renderRevision.inc
+        info "Re-rendered"
 
     ws.pendingUpdates.clear()
 
+    if ws.renderContentsCount + ws.updateDependentsCount + ws.updateDimensionsCount + ws.updatePositionCount > 0:
+        info "contents renders: ", ws.renderContentsCount
+        info "dependents recalc: ", ws.updateDependentsCount
+        info "dimensions recalc: ", ws.updateDimensionsCount
+        info "position recalc: ", ws.updatePositionCount
 
 
 type Corner = object
@@ -714,6 +743,7 @@ proc render*(ws : WindowingSystemRef, vao : VAO[WVertex,uint32], textureBlock : 
 
         ws.render(ws.desktop, vao, textureBlock, vi, ii)
 
+        info "Swapping ui vao"
         vao.swap()
         vao.revision = ws.renderRevision
 

@@ -153,3 +153,14 @@ proc parseFloatOpt*(str : string) : Option[float] =
         some(parseFloat(str))
     except ValueError:
         none(float)
+
+proc removeAll*[T](s : var seq[T], toRemove : seq[T]) =
+    var newSeq : seq[T]
+    for v in s:
+        if not toRemove.contains(v):
+            newSeq.add(v)
+    s = newSeq
+
+iterator items*[T](opt : Option[T]) : T =
+    if opt.isSome:
+        yield opt.get

@@ -8,7 +8,12 @@ import key_codes
 type
     Event* = ref object of RootRef
 
-    GameEvent* = ref object of RootRef
+    GameEventState* = enum
+        PreEvent
+        PostEvent
+
+    GameEvent* = ref object of Event
+        state* : GameEventState
 
     EventBuffer* = ref object
         listenerCursors* : seq[int]

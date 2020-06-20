@@ -5,7 +5,6 @@ import atomics
 import tables
 import macros
 import color
-import sequtils
 import ../stb_image/read as stbi
 import sugar
 import ../noto
@@ -455,6 +454,8 @@ proc merge*(command : var DrawCommand, next : DrawCommand) =
     command.textures = next.textures
     command.shader = next.shader
     command.camera = next.camera
+    command.indexCount = next.indexCount
+    command.renderSettings = next.renderSettings
 
 
 var glVaoIDs = @[0.VertexArrayID]

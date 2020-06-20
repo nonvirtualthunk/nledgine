@@ -1,30 +1,15 @@
 import tables
 import worlds
 import sugar
-import engines/event_types
-
+import config
+import library
+import resources
 
 
 type
-    EventCondition* = (Event) -> bool
+    Flags* = object
+      flags* : Table[Taxon, int]
 
-    FlagBehaviorKind = enum
-        Delta
-        Reset
-        Divide
-        Multiply
-
-    FlagBehavior* = object
-        condition : EventCondition
-        case kind : FlagBehaviorKind
-        of Delta : 
-            delta : int
-        of Reset : 
-            discard
-        of Divide :
-            divisor : int
-        of Multiply :
-            multiplier : int
 
     FlagEquivalency* = enum
         Positive
@@ -35,9 +20,15 @@ type
 
 
     FlagInfo* = object
-        flag* : Taxon
         description* : string
+        vagueDescription* : string
         minValue* : int
         maxValue* : int
-        behaviors* : seq[FlagBehavior]
         hidden* : bool
+
+
+defineReflection(Flags)
+
+defineBasicReadFromConfig(FlagInfo)
+
+defineSimpleLibrary[FlagInfo]("ax4/game/flags.sml", "Flags")

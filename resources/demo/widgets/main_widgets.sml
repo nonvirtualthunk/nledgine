@@ -28,7 +28,7 @@ widget : {
          x : "10 right of child"
          y : 10
          padding : [2,2,0]
-         text : "test text"
+         text : "%(text1)"
          fontSize : 16
          color : [0,0,0,1]
       }

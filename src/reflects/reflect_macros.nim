@@ -218,3 +218,79 @@ macro ifOfType*(x : untyped, t : typed, stmts : untyped) : untyped =
         if `x` of `t`:
             let `x` {.inject.} = `x`.`t`
             `stmts`
+
+macro ofType*(x : untyped, t : typed, stmts : untyped) : untyped  =
+    result = quote do:
+        if typeTarget of `t`:
+            let `x` {.inject.} = typeTarget.`t`
+            `stmts`
+            break
+    # let cond = quote do:
+    #     `x` of `t`
+    # let body = quote do:
+    #     let `x` {.inject.} = `x`.`t`
+    #     `stmts`
+
+    # startBranch.add(
+    #     newTree(nnkElifBranch, cond, body)
+    # )
+
+macro extract*(t : typed, field1 : untyped, stmts : untyped) : untyped  =
+    result = quote do:
+        if typeTarget of `t`:
+            let `field1` {.inject.} = typeTarget.`t`.`field1`
+            `stmts`
+            break
+
+macro extract*(t : typed, field1 : untyped, field2 : untyped, stmts : untyped) : untyped  =
+    result = quote do:
+        if typeTarget of `t`:
+            let `field1` {.inject.} = typeTarget.`t`.`field1`
+            let `field2` {.inject.} = typeTarget.`t`.`field2`
+            `stmts`
+            break
+
+macro extract*(t : typed, field1 : untyped, field2 : untyped, field3 : untyped, stmts : untyped) : untyped  =
+    result = quote do:
+        if typeTarget of `t`:
+            let `field1` {.inject.} = typeTarget.`t`.`field1`
+            let `field2` {.inject.} = typeTarget.`t`.`field2`
+            let `field3` {.inject.} = typeTarget.`t`.`field3`
+            `stmts`
+            break
+
+macro extract*(t : typed, field1 : untyped, field2 : untyped, field3 : untyped, field4 : untyped, stmts : untyped) : untyped  =
+    result = quote do:
+        if typeTarget of `t`:
+            let `field1` {.inject.} = typeTarget.`t`.`field1`
+            let `field2` {.inject.} = typeTarget.`t`.`field2`
+            let `field3` {.inject.} = typeTarget.`t`.`field3`
+            let `field4` {.inject.} = typeTarget.`t`.`field4`
+            `stmts`
+            break
+
+template matchType*(value : untyped, stmts : untyped) =
+   block:
+      let typeTarget {.inject.} = value
+      stmts
+
+when isMainModule:
+    type
+        F1 = ref object of RootRef
+            i : int
+
+        F2 = ref object of RootRef
+            j : int
+            k : int
+
+
+    let f : RootRef = F1()
+
+    matchType(f):
+        ofType(f2, F2):
+            echo "F2"
+        extract(F1, i):
+            echo "i : ", i
+        ofType(f1, F1):
+            echo "F1 : ", f1.i
+

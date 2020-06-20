@@ -2,14 +2,15 @@ import sugar
 import sequtils
 import tables
 import macros
+import noto
 
 var dataTypeIndexCounter* {.compileTime.} = 0
 
 type ReflectInitializers* = seq[proc() {.gcsafe.}]
 var reflectInitializers* : ReflectInitializers
 
-macro extractSeqValue*(t : typed) =
-    let seqType = getType(t)[1]
+macro extractSeqValue*[T](t : typedesc[T]) =
+    let seqType = t[1]
     if seqType.len > 1:
         result = seqType[1]
     else:
@@ -55,22 +56,31 @@ type
         Append
         Remove
         Put
+        Set
+        ChangeMaximum
 
     TaggedOperation*[T] = object
         case kind* : OperationKind
-        of OperationKind.Add, OperationKind.Mul, OperationKind.Div: 
+        of OperationKind.Add, OperationKind.Mul, OperationKind.Div, OperationKind.ChangeMaximum, OperationKind.Set: 
             arg* : T
         of OperationKind.Append, OperationKind.Remove: 
-            seqArg* : typeof(extractSeqValue(T))
+            discard
+            # seqArg* : extractSeqValue(T)
         of OperationKind.Put: 
-            newKey : typeof(extractTableKey(T))
-            newValue : typeof(extractTableValue(T))
+            discard
+            # newKey* : typeof(extractTableKey(T))
+            # newValue* : typeof(extractTableValue(T))
 
     AbstractModification* =ref object of RootObj
 
     FieldModification*[C, T]=ref object of AbstractModification
         operation* : TaggedOperation[T]
         field* : Field[C, T]
+
+    TableFieldModification*[C,K,V] = ref object of AbstractModification
+        field*: Field[C,Table[K,V]]
+        key*: K
+        operation : TaggedOperation[V]
 
     InitialAssignmentModification*[C]=ref object of AbstractModification
         value* : C
@@ -86,32 +96,43 @@ proc apply*[T](operation : TaggedOperation[T], value : var T) =
         when compiles(value += operation.arg):
             value += operation.arg
         else:
-            echo "set += operation on type that does not support it", value
+            warn "set += operation on type that does not support it", value
+    of OperationKind.Set: 
+        # "when compiles" gives an invalid result here, indicating that it cannot compile though that is not true
+        # when compiles(value = operation.arg):
+        value = operation.arg
+        # else:
+        #     warn "set = operation on type that does not support it `", value, " = ", operation.arg, "`, `", T, "`"
     of OperationKind.Mul: 
         when compiles(value *= operation.arg):
             value *= operation.arg
         else:
-            echo "set *= operation on type that does not support it", value
+            warn "set *= operation on type that does not support it", value
     of OperationKind.Div: 
         when compiles(value /= operation.arg):
             value /= operation.arg
         else:
-            echo "set /= operation on type that does not support it", value
+            warn "set /= operation on type that does not support it", value
     of OperationKind.Append: 
         when compiles(value.add(operation.seqArg)):
             value.add(operation.seqArg)
         else:
-            echo "set append operation on type that does not support it", value
+            warn "set append operation on type that does not support it", value
     of OperationKind.Remove: 
         when compiles(value.filterNot(x => x == operation.seqArg)):
             value.filterNot(x => x == operation.seqArg)
         else:
-            echo "set remove operation on type that does not support it", value
+            warn "set remove operation on type that does not support it", value
     of OperationKind.Put: 
         when compiles(value[operation.newKey] = operation.newValue):
             value[operation.newKey] = operation.newValue
         else:
-            echo "set put operation on type that does not support it", value
+            warn "set put operation on type that does not support it", value
+    of OperationKind.ChangeMaximum:
+        when compiles(value.changeMaxBy(operation.arg)):
+            value.changeMaxBy(operation.arg)
+        else:
+            warn "changeMaximum operaton on type that does not support it", value
 
 method apply*[C](modification : AbstractModification, target : ref C) {.base.} =
     echo "hit base implementation of abstract modification"
@@ -120,6 +141,9 @@ method apply*[C](modification : AbstractModification, target : ref C) {.base.} =
 
 method apply*[C, T](modification : FieldModification[C,T], target : ref C) {.base.} =
     modification.operation.apply(modification.field.varGetter(target))
+
+method apply*[C, K, V](modification : TableFieldModification[C,K,V], target : ref C) {.base.} =
+    modification.operation.apply(modification.field.varGetter(target).mgetOrPut(modification.key, default(V)))
 
 method apply*[C](modification : InitialAssignmentModification[C], target : ref C) {.base.} =
     target[] = modification.value
@@ -131,6 +155,8 @@ proc `+`*[C,T](field : Field[C,T], delta : T) : FieldModification[C,T] =
 proc `+=`*[C,T](field : Field[C,T], delta : T) : FieldModification[C,T] =
     FieldModification[C,T](operation : TaggedOperation[T](kind : OperationKind.Add, arg: delta), field : field)
 
+proc `changeMaxBy`*[C,T](field : Field[C,T], delta : T) : FieldModification[C,T] =
+    FieldModification[C,T](operation : TaggedOperation[T](kind : OperationKind.ChangeMaximum, arg: delta), field : field)
 
 proc `-`*[C,T](field : Field[C,T], delta : T) : FieldModification[C,T] =
     FieldModification[C,T](operation : TaggedOperation[T](kind : OperationKind.Add, arg: -delta), field : field)
@@ -153,6 +179,14 @@ proc `/=`*[C,T](field : Field[C,T], delta : T) : FieldModification[C,T] =
 proc append*[C,T, U](field : Field[C,T], delta : U) : FieldModification[C,T] =
     FieldModification[C,T](operation : TaggedOperation[T](kind : OperationKind.Append, seqArg: delta), field : field)
 
+proc `[]=`*[C,K,V](field : Field[C,Table[K,V]], k : K, v : V) : FieldModification[C,Table[K,V]] =
+    FieldModification[C,Table[K,V]](operation : TaggedOperation[Table[K,V]](kind : OperationKind.Put, newKey : k, newValue : v), field : field)
+
+proc `put`*[C,K,V](field : Field[C,Table[K,V]], k : K, v : V) : TableFieldModification[C,K,V] =
+    TableFieldModification[C,K,V](key : k, operation : TaggedOperation[V](kind : OperationKind.Set, arg : v), field : field)
+
+proc `addToKey`*[C,K,V](field : Field[C,Table[K,V]], k : K, v : V) : TableFieldModification[C,K,V] =
+    TableFieldModification[C,K,V](key : k, operation : TaggedOperation[V](kind : OperationKind.Add, arg : v), field : field)
 
 
 macro class*(t : typedesc) : untyped =

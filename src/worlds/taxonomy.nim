@@ -94,6 +94,7 @@ proc taxon*(t : ref Taxonomy, namespace : string, name : string) : Taxon {.gcsaf
                 let parentNamespace = t.namespaceParents.getOrDefault(namespace, RootNamespace)
                 result = t.taxon(parentNamespace, name)
     if result == UnknownThing:
+        writeStackTrace()
         warn "Unresolveable taxon ", namespace, ".", name
 
 proc taxon*(t : ref Taxonomy, name : string) : Taxon =

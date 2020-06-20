@@ -64,15 +64,18 @@ method readDataFromConfig*(ws : TextDisplayRenderer, cv : ConfigValue, widget : 
 method updateBindings*(ws : TextDisplayRenderer, widget : Widget, resolver : var BoundValueResolver) =
    if widget.hasData(TextDisplay) and updateBindings(widget.data(TextDisplay)[], resolver):
       widget.markForUpdate(RecalculationFlag.Contents)
-      widget.markForUpdate(RecalculationFlag.DimensionsX)
-      widget.markForUpdate(RecalculationFlag.DimensionsY)
+      if widget.width.isIntrinsic:
+         widget.markForUpdate(RecalculationFlag.DimensionsX)
+      if widget.height.isIntrinsic:
+         widget.markForUpdate(RecalculationFlag.DimensionsY)
 
 template getterSetter(t : untyped)  : untyped {.dirty.} =
    proc `t =`*(td : ref TextDisplay, text : typeof(TextDisplay.`t`)) =
       if not td.widget.isNil and td.`t` != text:
          td.widget.markForUpdate(RecalculationFlag.Contents)
-         if td.widget.width.isIntrinsic or td.widget.height.isIntrinsic:
+         if td.widget.width.isIntrinsic:
             td.widget.markForUpdate(RecalculationFlag.DimensionsX)
+         if td.widget.height.isIntrinsic:
             td.widget.markForUpdate(RecalculationFlag.DimensionsY)
       td.`t` = text
 

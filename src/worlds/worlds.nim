@@ -205,8 +205,8 @@ proc advance*(view : WorldView, world : World, targetCurrentTime : WorldEventClo
 # proc attachData*[C] (world : var World, entity : Entity, dataType : DataType[C]) =
 #     attachData(world, entity, dataType, C())
 
-proc attachData*[C] (world : World, entity : Entity, dataType : DataType[C], dataValue : C = C()) =
-    let entityMod = EntityModification(entity : entity, dataTypeIndex : dataType.index, modification : InitialAssignmentModification[C](value : dataValue))
+proc attachData*[C] (world : World, entity : Entity, dataValue : C = C()) =
+    let entityMod = EntityModification(entity : entity, dataTypeIndex : C.getDataType().index, modification : InitialAssignmentModification[C](value : dataValue))
     world.addModification(entityMod)
 
 proc attachData*[C] (world : World, dataType : typedesc[C], dataValue : C = C()) =
@@ -216,6 +216,9 @@ proc attachData*[C] (world : World, dataValue : C) =
     attachData[C](world, WorldEntity, C.getDataType(), dataValue)
 
 proc modify*[C,T] (world : World, entity : Entity, modification : FieldModification[C,T]) =
+    world.addModification(EntityModification(entity : entity, dataTypeIndex : modification.field.dataType.index, modification : modification))
+
+proc modify*[C,K,V] (world : World, entity : Entity, modification : TableFieldModification[C,K,V]) =
     world.addModification(EntityModification(entity : entity, dataTypeIndex : modification.field.dataType.index, modification : modification))
 
 
@@ -383,19 +386,25 @@ proc `[]`* [T] (display : DisplayWorld, t : typedesc[T]) : ref T =
 # template modify*[C,T](entity : Entity, t : FieldModification[C,T]) =
 #     world.modify(entity, t)
 
-proc appendToEarliestIdent(n : NimNode, append : string) : bool =
-    if n.kind == nnkIdent:
-        return true
-    else:
-        for i in 0 ..< n.len:
-            if appendToEarliestIdent(n[i], append):
-                if n.kind == nnkDotExpr:
-                    n[i] = newIdentNode(n[i].strVal & append)
-                    return true
-        return false
+
+proc appendToEarliestIdent(n : var NimNode, append : string) : bool =
+    echo "ATEI: ", n.repr
+    for i in 0 ..< n.len:
+        echo "SubPiece: ", n[i].repr
+        if n[i].kind == nnkDotExpr:
+            if n[i][0].kind == nnkIdent:
+                n[i][0] = newIdentNode(n[i][0].strVal & append)
+                echo "Replaced subPiece: ", n[i][0]
+            elif n[i][0][0].kind == nnkIdent:
+                n[i][0][0] = newIdentNode(n[i][0][0].strVal & append)
+                echo "Replaced subPiece: ", n[i][0][0]
+            else:
+                echo "modify won't work"
+    return false
 
 macro modify*(entity : Entity, expression : untyped) : untyped =
     var argument = expression.copy
     discard appendToEarliestIdent(argument, "Type")
     result = quote do:
         injectedWorld.modify(`entity`, `argument`)
+    echo "Result: ", result.repr

@@ -24,13 +24,13 @@ import prelude
 #     )
 #     dataTypeIndexCounter.inc
 
-import windowingsystem/text_widget
+# import windowingsystem/text_widget
 
-when isMainModule:
-   let td = new TextDisplay
-   td.text = RichText()
-   td.fontSize = 2
-   echo "RT", td.text.size
+# when isMainModule:
+#    let td = new TextDisplay
+#    td.text = RichText()
+#    td.fontSize = 2
+#    echo "RT", td.text.size
 
 when isMainModule:
     import macros

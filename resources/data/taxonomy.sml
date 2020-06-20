@@ -140,8 +140,6 @@ Taxonomy {
     Accuracy : GameConcept
     Defense : GameConcept
     Armor : GameConcept
-    ActionPoint : GameConcept
-    StaminaPoint : GameConcept
     MinimumRange : GameConcept
     MaximumRange : GameConcept
     SkillLevelUp : GameConcept
@@ -158,6 +156,12 @@ Taxonomy {
     ExpendedPile : GameConcept
     Hand : GameConcept
     NotInDeck : GameConcept
+  }
+
+  Resource : []
+  Resources {
+    ActionPoints : Resource
+    StaminaPoints : Resource
   }
 
   DamageType : []

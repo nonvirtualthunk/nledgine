@@ -64,20 +64,26 @@ proc addComponent*(engine : GraphicsEngine, comp : GraphicsComponent) =
     engine.components.add(comp)
 
 
-method initialize(g : GameComponent, world : World) {.base.} =
+method initialize(g : GameComponent, world : World) {.base, locks: "unknown".} =
     fine "No initialization impl for game engine component"
     discard
 
-method update(g : GameComponent, world : World) {.base.} =
+method update(g : GameComponent, world : World) {.base, locks: "unknown".} =
     fine "No update impl for game engine component"
     discard
 
-method initialize(g : GraphicsComponent, world : World, curView : WorldView, displayWorld : DisplayWorld) {.base.} =
+method onEvent(g : GameComponent, world : World, event : Event) {.base, locks: "unknown".} =
+    discard
+
+method initialize(g : GraphicsComponent, world : World, curView : WorldView, displayWorld : DisplayWorld) {.base, locks: "unknown".} =
     fine "No initialization impl for graphics engine component"
     discard
 
-method update(g : GraphicsComponent, world : World, curView : WorldView, displayWorld : DisplayWorld, df : float) : seq[DrawCommand] {.base.} =
+method update(g : GraphicsComponent, world : World, curView : WorldView, displayWorld : DisplayWorld, df : float) : seq[DrawCommand] {.base, locks: "unknown".} =
     fine "No update impl for graphics engine component"
+    discard
+
+method onEvent(g : GraphicsComponent, world : World, curView : WorldView, displayWorld : DisplayWorld, event : Event) {.base, locks: "unknown".} =
     discard
 
 macro onEvent*(g : GameComponent, t: typedesc, name : untyped, body : untyped) =
@@ -100,6 +106,7 @@ macro onEvent*(g : GraphicsComponent, t: typedesc, name : untyped, body : untype
 proc update*(ge : GameEngine) =
     for evt in ge.eventBus.newEvents:
         for comp in ge.components:
+            comp.onEvent(ge.world, evt)
             for callback in comp.eventCallbacks:
                 callback(ge.world, evt)
 
@@ -118,11 +125,13 @@ proc initialize*(ge : GameEngine) =
 proc update*(ge : GraphicsEngine, channel : var Channel[DrawCommand], df : float) {.gcsafe.} =
     for evt in ge.gameEventBus.newEvents:
         for comp in ge.components:
+            comp.onEvent(ge.world, ge.currentView, ge.displayWorld, evt)
             for callback in comp.displayEventCallbacks:
                 callback(ge.world, ge.displayWorld, evt)
 
     for evt in ge.displayEventBus.newEvents:
         for comp in ge.components:
+            comp.onEvent(ge.world, ge.currentView, ge.displayWorld, evt)
             for callback in comp.displayEventCallbacks:
                 callback(ge.world, ge.displayWorld, evt)
 
@@ -190,6 +199,6 @@ when isMainModule:
 
     engine.initialize()
 
-    engine.world.addEvent(MousePress(position : vec2i(1,1)))
+    engine.world.addEvent(MousePress(position : vec2f(1,1)))
 
     engine.update()

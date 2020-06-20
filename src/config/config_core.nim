@@ -262,7 +262,7 @@ template readInto*[T](v : ConfigValue, x : var T) =
         when compiles(extraReadFromConfig(v, x)):
             extraReadFromConfig(v, x)
 
-proc readFromConfig*[T](v : ConfigValue, t : typedesc[T]) : T =
+proc readInto*[T](v : ConfigValue, t : typedesc[T]) : T =
     readInto(v, result)
 
 macro readFromConfigByField*[T](v : ConfigValue, t : typedesc[T], x : var T) =
@@ -294,8 +294,8 @@ template readIntoOrElse*[T](cv : ConfigValue, x : var T, defaultV : typed) =
 proc `$`*(v : ConfigValue) : string =
     render(v, 0)
 
-proc peek(ctx : ParseContext) : char = 
-    ctx.str[ctx.cursor]
+proc peek(ctx : ParseContext, ahead : int = 0) : char = 
+    ctx.str[ctx.cursor + ahead]
 
 proc finished(ctx : ParseContext) : bool =
     ctx.cursor >= ctx.str.len
@@ -303,11 +303,17 @@ proc finished(ctx : ParseContext) : bool =
 proc next(ctx : var ParseContext) : char =
     result = ctx.str[ctx.cursor]
     ctx.cursor += 1
+    # skip comments
+    if result == '/' and ctx.peek() == '/':
+        while ctx.next() != '\n': discard
+        result = ctx.next()
 
 proc advance(ctx : var ParseContext) =
     ctx.cursor += 1
 
 proc parseUntil(ctx : var ParseContext, chars : set[char]) : string =
+    if ctx.peek() == '/' and ctx.peek(1) == '/':
+        while ctx.next() != '\n': discard
     ctx.cursor += parseUntil(ctx.str, ctx.buffer, chars, ctx.cursor)
     return ctx.buffer
 
@@ -403,11 +409,16 @@ proc parseValue(ctx : var ParseContext) : ConfigValue =
         parseArray(ctx)
     else:
         let rawValue = ctx.parseUntil(fieldValueEndCharacters)
-        try:
-            let f = parseFloat rawValue
-            ConfigValue(kind : ConfigValueKind.Number, num : f)
-        except ValueError:
-            ConfigValue(kind : ConfigValueKind.String, str : rawValue)
+        if cmpIgnoreCase(rawValue, "true") == 0:
+            ConfigValue(kind : ConfigValueKind.Bool, truth : true)
+        elif cmpIgnoreCase(rawValue, "false") == 0:
+            ConfigValue(kind : ConfigValueKind.Bool, truth : false)
+        else:
+            try:
+                let f = parseFloat rawValue
+                ConfigValue(kind : ConfigValueKind.Number, num : f)
+            except ValueError:
+                ConfigValue(kind : ConfigValueKind.String, str : rawValue)
 
 
 
@@ -435,7 +446,8 @@ proc isString*(cv : ConfigValue) : bool =
 proc isBool*(cv : ConfigValue) : bool =
     cv.kind == ConfigValueKind.Bool
 
-
+proc asConf*(str : string) : ConfigValue =
+    ConfigValue(kind: ConfigValueKind.String, str : str)
     
     
 
