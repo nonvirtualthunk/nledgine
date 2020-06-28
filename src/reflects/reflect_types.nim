@@ -35,7 +35,7 @@ macro extractTableKey*(t : typedesc) =
 type 
     # TODO: This doesn't actually need to be ref object of RootRef
     DataType*[C]= ref object of RootRef
-        name* : string
+        typeName* : string
         index* : int
         fields* : seq[ref AbstractField[C]]
 
@@ -148,6 +148,9 @@ method apply*[C, K, V](modification : TableFieldModification[C,K,V], target : re
 method apply*[C](modification : InitialAssignmentModification[C], target : ref C) {.base.} =
     target[] = modification.value
 
+
+proc `:=`*[C,T](field : Field[C,T], value : T) : FieldModification[C,T] =
+    FieldModification[C,T](operation : TaggedOperation[T](kind : OperationKind.Set, arg: value), field : field)
 
 proc `+`*[C,T](field : Field[C,T], delta : T) : FieldModification[C,T] =
     FieldModification[C,T](operation : TaggedOperation[T](kind : OperationKind.Add, arg: delta), field : field)

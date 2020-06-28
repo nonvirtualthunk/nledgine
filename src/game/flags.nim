@@ -29,6 +29,6 @@ type
 
 defineReflection(Flags)
 
-defineBasicReadFromConfig(FlagInfo)
+defineSimpleReadFromConfig(FlagInfo)
 
 defineSimpleLibrary[FlagInfo]("ax4/game/flags.sml", "Flags")

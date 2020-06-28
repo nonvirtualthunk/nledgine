@@ -16,6 +16,7 @@ import graphics.color
 type 
     ImageData = object
         location* : Vec2i
+        dimensions* : Vec2i
         texPosition* : Vec2f
         texDimensions* : Vec2f
         revision : int
@@ -99,7 +100,7 @@ proc addNewImage(tb : TextureBlock, img : Image) =
         tb.image.copyFrom(img, chosenRect.position + vec2i(tb.borderWidth, tb.borderWidth))
         tb.image.revision += 1
         let tc = tb.toTexCoords(Recti(position : chosenRect.position + vec2i(tb.borderWidth, tb.borderWidth), dimensions : img.dimensions))
-        tb.imageData[img] = ImageData(location : chosenRect.position, revision : img.revision, texPosition : tc[0], texDimensions : tc[2] - tc[0])
+        tb.imageData[img] = ImageData(location : chosenRect.position, dimensions : img.dimensions, revision : img.revision, texPosition : tc[0], texDimensions : tc[2] - tc[0])
         tb.imageTexCoords[img] = tc
     else:
         raise newException(ValueError, "Could not find space for image in texture block")
@@ -126,3 +127,5 @@ proc blankTexCoords*(tb : TextureBlock) : ref array[4, Vec2f] =
 
 proc addImage*(tb : TextureBlock, img : Image) =
     discard tb[img]
+
+proc dimensions*(tb : TextureBlock) : Vec2i = tb.image.dimensions

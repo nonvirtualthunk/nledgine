@@ -23,7 +23,15 @@ type
    TextDisplayRenderer* = ref object of WindowingComponent
 
 defineReflection(TextDisplay)
-defineBasicReadFromConfig(TextDisplay)
+# defineSimpleReadFromConfig(TextDisplay)
+
+proc readFromConfig*(cv : ConfigValue, td : var TextDisplay) =
+   readInto(cv["text"], td.text)
+   readIntoOrElse(cv["fontSize"], td.fontSize, 12)
+   readInto(cv["font"], td.font)
+   readIntoOrElse(cv["color"], td.color, bindable(rgba(0.0,0.0,0.0,1.0)))
+   readInto(cv["tintColor"], td.tintColor)
+   echo "Font size ", td.fontSize
 
 proc computeLayout*(widget : Widget) : TextLayout =
    let TD = widget.data(TextDisplay)
@@ -35,7 +43,7 @@ proc computeLayout*(widget : Widget) : TextLayout =
       some(TD.tintColor.get.value)
    else:
       none(RGBA)
-   result = layout(TD.text.value, TD.color.value, tintColor, TD.font, TD.fontSize, bounds)
+   result = layout(TD.text.value, TD.color.value, tintColor, TD.font, TD.fontSize, bounds, widget.windowingSystem.pixelScale)
    # echo "computed layout: ", result
 
 method render*(ws : TextDisplayRenderer, widget : Widget) : seq[WQuad] =

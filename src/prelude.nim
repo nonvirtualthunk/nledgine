@@ -6,161 +6,230 @@ import options
 import worlds
 import macros
 import strutils
+import bitops
+import strformat
 
 export metric
 export sugar
 export worlds
+export strformat
 
 type 
-    UnitOfTime* = Metric[metric.Time,float]
+   UnitOfTime* = Metric[metric.Time,float]
 
-    Axis* = enum
-        X
-        Y
-        Z
+   Axis* = enum
+      X
+      Y
+      Z
 
-    HorizontalAlignment* {.pure.} = enum
-        Left
-        Right
-        Center
+   HorizontalAlignment* {.pure.} = enum
+      Left
+      Right
+      Center
 
-    VerticalAlignment* {.pure.} = enum
-        Top
-        Bottom
-        Center
+   VerticalAlignment* {.pure.} = enum
+      Top
+      Bottom
+      Center
+
+   Watcher*[T] = object
+      function : () -> T
+      lastValue : Option[T]
+
+   Watchable*[T] = object
+      value : T
+      hasChangedFlag : bool
 
 
 let programStartTime* = now()
 
 
 proc `<`* (a : UnitOfTime, b : UnitOftime): bool =
-    a.val < b.val
+   a.val < b.val
 
 proc microseconds*(f : float) : UnitOfTime =
-    (f / 1000000.0) * metric.second
+   (f / 1000000.0) * metric.second
 
 proc seconds*(f : float) : UnitOfTime =
-    (f) * metric.second
+   (f) * metric.second
 
 proc relTime*() : UnitOfTime =
-    let dur = now() - programStartTime
-    return inMicroseconds(dur).float.microseconds
+   let dur = now() - programStartTime
+   return inMicroseconds(dur).float.microseconds
+
+proc `$`*(t : UnitOfTime) : string =
+   fmt"{t.as(second)}s"
 
 # proc vec3f*(v : Vec3i) : Vec3f =
-#     vec3f(v.x.float, v.y.float, v.z.float)
+#    vec3f(v.x.float, v.y.float, v.z.float)
 
 proc vec2i*(x : int, y : int) : Vec2i =
-    vec2i(x.int32, y.int32)
+   vec2i(x.int32, y.int32)
 
 proc vec2f*(x : int, y : int) : Vec2f =
-    vec2f(x.float, y.float)
+   vec2f(x.float, y.float)
+
+proc Vec2f*(v : Vec2i) : Vec2f = vec2f(v.x,v.y)
 
 converter toVec2i*(v : Vec2[int]) : Vec2i = vec2i(v.x.int32, v.y.int32)
 converter toVec2int*(v : Vec2i) : Vec2[int] = vec2(v.x.int, v.y.int)
 
 proc minIndexBy*[T, U](s : seq[T], mapFn : (T) -> U) : Option[int] =
-    result = none(int)
-    var lowestMapped : Option[U] = none(U)
-    for i, v in s:
-        let mapped = mapFn(v)
-        if not lowestMapped.isSome or lowestMapped.get < mapped:
-            lowestMapped = some(mapped)
-            result = some(i)
-    
+   result = none(int)
+   var lowestMapped : Option[U] = none(U)
+   for i, v in s:
+      let mapped = mapFn(v)
+      if not lowestMapped.isSome or lowestMapped.get < mapped:
+         lowestMapped = some(mapped)
+         result = some(i)
+   
 
 
 proc minBy*[T, U](s : seq[T], mapFn : (T) -> U) : Option[T] =
-    result = none(T)
-    var lowestMapped : Option[U] = none(U)
-    for v in s:
-        let mapped = mapFn(v)
-        if not lowestMapped.isSome or lowestMapped.get < mapped:
-            lowestMapped = some(mapped)
-            result = some(v)
-    
+   result = none(T)
+   var lowestMapped : Option[U] = none(U)
+   for v in s:
+      let mapped = mapFn(v)
+      if not lowestMapped.isSome or lowestMapped.get < mapped:
+         lowestMapped = some(mapped)
+         result = some(v)
+   
 
 
 macro echoAssert*(arg: untyped): untyped =
-        # all node kind identifiers are prefixed with "nnk"
-        arg.expectKind nnkInfix
-        arg.expectLen 3
-        # operator as string literal
-        let op  = newLit(" " & arg[0].repr & " ")
-        let lhs = arg[1]
-        let rhs = arg[2]
+      # all node kind identifiers are prefixed with "nnk"
+      arg.expectKind nnkInfix
+      arg.expectLen 3
+      # operator as string literal
+      let op  = newLit(" " & arg[0].repr & " ")
+      let lhs = arg[1]
+      let rhs = arg[2]
 
-        let li = newLit($lineInfoObj(arg))
-        result = quote do:
-            if not (`arg`):
-                echo `li`
-                raise newException(AssertionError,$`lhs` & `op` & $`rhs`)
+      let li = newLit($lineInfoObj(arg))
+      result = quote do:
+         if not (`arg`):
+            echo `li`
+            raise newException(AssertionError,$`lhs` & `op` & $`rhs`)
 
 iterator enumValues*[T](t : typedesc[T]) : T =
-    for o in ord(low(t))..ord(high(t)):
-        yield T(o)
+   for o in ord(low(t))..ord(high(t)):
+      yield T(o)
 
 iterator axes*() : Axis =
-    yield Axis.X
-    yield Axis.Y
-    yield AXis.Z
+   yield Axis.X
+   yield Axis.Y
+   yield AXis.Z
 
 iterator axes2d*() : Axis =
-    yield Axis.X
-    yield Axis.Y
+   yield Axis.X
+   yield Axis.Y
 
 proc oppositeAxis2d*(axis : Axis) : Axis = 
-    if axis == Axis.X:
-        Axis.Y
-    else:
-        Axis.X
+   if axis == Axis.X:
+      Axis.Y
+   else:
+      Axis.X
 
 converter toOrd*(axis : Axis) : int = axis.ord
 
 
 
 proc `[]=`*(v : var Vec3i, axis : Axis, value : int) =
-    v[axis.ord] = value.int32
+   v[axis.ord] = value.int32
 
 proc `[]`*(v : Vec3i, axis : Axis) : int = v[axis.ord]
 
 proc `[]=`*(v : var Vec2i, axis : Axis, value : int) =
-    v[axis.ord] = value.int32
+   v[axis.ord] = value.int32
 
 proc `[]`*(v : Vec2i, axis : Axis) : int = v[axis.ord]
 
 proc `[]=`*(v : var Vec2f, axis : Axis, value : float) =
-    v[axis.ord] = value
+   v[axis.ord] = value
 
 proc `[]`*(v : Vec2f, axis : Axis) : float = v[axis.ord]
 
 proc `*`*(v : Vec2i, m : int) : Vec2i = vec2i(v.x * m, v.y * m)
 
 proc `div`*(a : Vec2i, b : int) : Vec2i =
-    vec2i(a.x div b, a.y div b)
+   vec2i(a.x div b, a.y div b)
 
 proc `=~=`*[A,B](a : A, b : B) : bool =
-    abs(b.A - a) < 0.000001.A
+   abs(b.A - a) < 0.000001.A
 
 
 proc parseIntOpt*(str : string) : Option[int] =
-    try:
-        some(parseInt(str))
-    except ValueError:
-        none(int)
+   try:
+      some(parseInt(str))
+   except ValueError:
+      none(int)
 
 proc parseFloatOpt*(str : string) : Option[float] =
-    try:
-        some(parseFloat(str))
-    except ValueError:
-        none(float)
+   try:
+      some(parseFloat(str))
+   except ValueError:
+      none(float)
 
 proc removeAll*[T](s : var seq[T], toRemove : seq[T]) =
-    var newSeq : seq[T]
-    for v in s:
-        if not toRemove.contains(v):
-            newSeq.add(v)
-    s = newSeq
+   var newSeq : seq[T]
+   for v in s:
+      if not toRemove.contains(v):
+         newSeq.add(v)
+   s = newSeq
 
 iterator items*[T](opt : Option[T]) : T =
-    if opt.isSome:
-        yield opt.get
+   if opt.isSome:
+      yield opt.get
+
+
+const a : uint64 = 0xffffda61.uint64
+proc permute*(x : int): int = 
+   ((a * (x.uint64.bitand(0xffffffff.uint64))) + (x shr 32).uint64).int.abs
+
+proc isEmpty*[T](s : seq[T]) : bool = s.len == 0
+proc nonEmpty*[T](s : seq[T]) : bool = s.len != 0
+
+proc hasChanged*[T](w : var Watcher[T]) : bool = 
+   if w.lastValue.isNone:
+      w.lastValue = some(w.function())
+      true
+   else:
+      let newValue = w.function()
+      if newValue != w.lastValue.get:
+         w.lastValue = some(newValue)
+         true
+      else:
+         false
+
+proc peekChanged*[T](w : Watcher[T]) : bool =
+   if w.lastValue.isNone:
+      true
+   else:
+      w.function() == w.lastValue.get
+
+proc hasChanged*[T](w : var Watchable[T]) : bool = 
+   result = w.hasChangedFlag
+   w.hasChangedFlag = false
+
+proc peekChanged*[T](w : Watchable[T]) : bool = 
+   result = w.hasChangedFlag
+
+proc set*[T](w : var Watchable[T], v : T) =
+   if w.value != v:
+      w.value = v
+      w.hasChangedFlag = true
+
+converter toWatchedValue*[T](w : Watchable[T]) : T = w.value
+
+   
+proc watcher*[T](f : () -> T) : Watcher[T] =
+   Watcher[T](function : f)
+
+proc currentValue*[T](w : Watcher[T]) : T =
+   if w.lastValue.isSome:
+      w.lastValue.get
+   else:
+      w.function()
+
+proc clear*[T](s : var seq[T]) =
+   s.setLen(0)

@@ -23,7 +23,11 @@ proc `==`*(a,b : ImageLike) : bool =
         of Sentinel: true)
 
 proc imageLike*(img : Image) : ImageLike = ImageLike(kind : ImageRef, img : img)
-proc imageLike*(img : string) : ImageLike = ImageLike(kind : Path, path : img)
+proc imageLike*(img : string) : ImageLike = 
+    if img != "":
+        ImageLike(kind : Path, path : img)
+    else:
+        ImageLike(kind: Sentinel)
 
 proc `$`*(img : ImageLike) : string = 
     case img.kind:
@@ -51,3 +55,6 @@ converter toImage* (il : ImageLike) : Image =
 
 converter toImageLike*(img : Image) : ImageLike = ImageLike(kind : ImageRef, img : img)
 converter toImageLike*(img : string) : ImageLike = ImageLike(kind : Path, path : img)
+
+proc isEmpty*(img : ImageLike) : bool = img.kind == ImageLikeKinds.Sentinel
+proc isSentinel*(img : ImageLike) : bool = img.kind == ImageLikeKinds.Sentinel

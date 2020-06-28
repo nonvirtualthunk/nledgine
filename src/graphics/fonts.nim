@@ -9,7 +9,8 @@ import config/config_core
 import math
 import vmath
 import layout_fork
-
+import options
+import strutils
 
 type
    GlyphInfo* = object
@@ -19,8 +20,10 @@ type
       font* : Font
       basePointSize* : int
       baseLineHeight* : int
+      prerenderedPath* : Option[string]
       pixelFont* : bool
       fonts : Table[int, ArxFont]
+      useRawSizes* : bool
    ArxFont* = ref object
       fontRoot* : ArxFontRoot
       pointSize* : int
@@ -29,9 +32,25 @@ type
       
 
 
-proc withPointSize*(root : ArxFontRoot, pointSize : int) : ArxFont =
-   let effPointSize = if root.pixelFont : (pointSize div root.basePointSize) * root.basePointSize else : pointSize
-   let lineHeight = if root.pixelFont : (pointSize div root.basePointSize) * root.baseLineHeight else : 0
+proc withPointSize*(root : ArxFontRoot, pointSize : int, pixelScale : int) : ArxFont =
+   let effPointSize = 
+      if root.pixelFont : 
+         if pointSize >= root.basePointSize:
+            (pointSize.float / root.basePointSize.float).round.int * root.basePointSize 
+         else:
+            # root.basePointSize div pixelScale
+            root.basePointSize
+      else : 
+         pointSize
+   let lineHeight = 
+      if root.pixelFont : 
+         if pointSize >= root.basePointSize:
+            (pointSize.float / root.basePointSize.float).round.int * root.baseLineHeight
+         else:
+            # root.baseLineHeight div pixelScale
+            root.baseLineHeight
+      else : 
+         0
    if root.fonts.contains(effPointSize):
       result = root.fonts[effPointSize]
    else:
@@ -42,8 +61,8 @@ proc withPointSize*(root : ArxFontRoot, pointSize : int) : ArxFont =
       )
       root.fonts[effPointSize] = result
 
-proc withPixelSize*(root : ArxFontRoot, pixelSize : int) : ArxFont =
-   root.withPointSize((pixelSize.float * 0.75f).round.int)
+proc withPixelSize*(root : ArxFontRoot, pixelSize : int, pixelScale : int) : ArxFont =
+   root.withPointSize((pixelSize.float * 0.75f).round.int, pixelScale)
 
 proc loadArxFont*(path : string) : ArxFontRoot =
    result = ArxFontRoot(
@@ -59,11 +78,19 @@ proc loadArxFont*(path : string) : ArxFontRoot =
       conf["pixelFont"].readInto(result.pixelFont)
       conf["basePointSize"].readInto(result.basePointSize)
       conf["baseLineHeight"].readInto(result.baseLineHeight)
+      conf["useRawSizes"].readInto(result.useRawSizes)
+      if conf["prerendered"].asBool(false):
+         var prePath = path
+         prePath.removeSuffix(".ttf")
+         result.prerenderedPath = some(prePath)
 
 
 proc typographyFont(font : ArxFont) : Font =
    result = font.fontRoot.font
-   result.sizePt = font.pointSize.float
+   if font.fontRoot.useRawSizes:
+      result.size = font.pointSize.float
+   else:
+      result.sizePt = font.pointSize.float
    result.lineHeight = if font.lineHeight != 0: font.lineHeight.float else : (result.ascent - result.descent) * result.scale
    
 proc glyph*(font : ArxFont, character : string) : GlyphInfo =
@@ -72,11 +99,15 @@ proc glyph*(font : ArxFont, character : string) : GlyphInfo =
    else:
       let f = font.typographyFont()
       var offsets : vmath.Vec2
-      let img = if character == "\n" or character == "\t":
-         createImage(vec2i(1,1))
-      else:
-         let baseImg = getGlyphImage(f, character, offsets)
-         createImage(baseImg.data,glm.vec2i(baseImg.width.int32, baseImg.height.int32), true)
+      let img = 
+         if character == "\n" or character == "\t" or character == " ":
+            createImage(vec2i(1,1))
+         else:
+            if font.fontRoot.prerenderedPath.isSome:
+               loadImage(font.fontRoot.prerenderedPath.get & "/chars/" & $int(character[0]) & ".png")
+            else:
+               let baseImg = getGlyphImage(f, character, offsets)
+               createImage(baseImg.data,glm.vec2i(baseImg.width.int32, baseImg.height.int32), true)
       result = GlyphInfo(image : img, offset : glm.vec2f(offsets.x, offsets.y))
       font.glyphs[character] = result
       

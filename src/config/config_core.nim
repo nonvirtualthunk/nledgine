@@ -282,7 +282,7 @@ macro readFromConfigByField*[T](v : ConfigValue, t : typedesc[T], x : var T) =
                 readInto[`fieldType`](cv, `x`.`fieldName`)
         )
 
-template defineBasicReadFromConfig*[T](t : typedesc[T]) =
+template defineSimpleReadFromConfig*[T](t : typedesc[T]) =
    proc readFromConfig* (cv : ConfigValue, tc : var T) = readFromConfigByField(cv,t, tc)
 
 template readIntoOrElse*[T](cv : ConfigValue, x : var T, defaultV : typed) =
@@ -300,16 +300,17 @@ proc peek(ctx : ParseContext, ahead : int = 0) : char =
 proc finished(ctx : ParseContext) : bool =
     ctx.cursor >= ctx.str.len
 
+proc advance(ctx : var ParseContext) =
+    ctx.cursor += 1
+
 proc next(ctx : var ParseContext) : char =
     result = ctx.str[ctx.cursor]
     ctx.cursor += 1
     # skip comments
     if result == '/' and ctx.peek() == '/':
-        while ctx.next() != '\n': discard
+        while ctx.peek() != '\n': ctx.advance()
         result = ctx.next()
 
-proc advance(ctx : var ParseContext) =
-    ctx.cursor += 1
 
 proc parseUntil(ctx : var ParseContext, chars : set[char]) : string =
     if ctx.peek() == '/' and ctx.peek(1) == '/':
@@ -449,7 +450,8 @@ proc isBool*(cv : ConfigValue) : bool =
 proc asConf*(str : string) : ConfigValue =
     ConfigValue(kind: ConfigValueKind.String, str : str)
     
-    
+proc hasField*(v : ConfigValue, str : string) : bool =
+    v.isObj and v.fields.contains(str)
 
 when isMainModule:
 
@@ -551,7 +553,7 @@ when isMainModule:
    proc readFromConfig(cv : ConfigValue, tc : var NestedObject) = readFromConfigByField(cv,NestedObject, tc)
    proc readFromConfig(cv : ConfigValue, tc : var SecondChild) = readFromConfigByField(cv,SecondChild, tc)
    # proc readFromConfig(cv : ConfigValue, tc : var TopLevel) = readFromConfigByField(cv,TopLevel, tc)
-   defineBasicReadFromConfig(TopLevel)
+   defineSimpleReadFromConfig(TopLevel)
 
    var c = FirstChild()
 

@@ -44,7 +44,8 @@ when isMainModule:
 
    echoAssert flagValue(world, entityA, flag) == 1
 
-   flagComponent.onEvent(world, AxEvent(kind : CharacterTurnEndEvent, entity : entityA))
+   # flagComponent.onEvent(world, AxEvent(kind : CharacterTurnEndEvent, entity : entityA))
+   flagComponent.onEvent(world, CharacterTurnEndEvent(entity : entityA))
 
    echoAssert flagValue(world, entityA, flag) == 0
    

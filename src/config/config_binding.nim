@@ -390,7 +390,7 @@ when isMainModule:
       fixedRichText : Bindable[RichText]
       bindableRichText : Bindable[RichText]
       optBindable : Option[Bindable[RGBA]]
-   defineBasicReadFromConfig(BindContainer)
+   defineSimpleReadFromConfig(BindContainer)
 
    type NestedBindingObject = object
       a : bool

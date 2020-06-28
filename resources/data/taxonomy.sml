@@ -158,10 +158,11 @@ Taxonomy {
     NotInDeck : GameConcept
   }
 
-  Resource : []
-  Resources {
-    ActionPoints : Resource
-    StaminaPoints : Resource
+  ResourcePool : []
+  ResourcePools {
+    ActionPoints : ResourcePool
+    StaminaPoints : ResourcePool
+    ManaPoints : ResourcePool
   }
 
   DamageType : []

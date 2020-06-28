@@ -129,8 +129,6 @@ proc preloadFont*(path : string) =
     requestChannel.send(ResourceRequest(kind : FontRequest, path : path))
 
 
-preloadFont("pf_ronda_seven.ttf")
-
 
 proc readFromConfig*(cv : ConfigValue, v : var ArxFontRoot) =
     if cv.isStr:

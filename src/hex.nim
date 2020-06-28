@@ -1,5 +1,6 @@
 import glm
 import math
+import hashes
 
 type
     Vec3int = Vec3[int]
@@ -73,6 +74,17 @@ proc `+` *(a, b: CartVec): CartVec =
 proc `-` *(a, b: CartVec): CartVec =
     cartVec(a.x - b.x, a.y - b.y, a.z - b.z)
 
+proc `==` *(a,b: AxialVec): bool =
+    a.q == b.q and a.r == b.r
+
+proc hash*(k : AxialVec) : Hash =
+   var h : Hash 
+   h = h !& k.q
+   h = h !& k.r
+   !$h
+
+proc `$`*(v : AxialVec) : string = "AxialVec(" & $v.q & "," & $v.r & ")"
+
 proc asCubeVec* (v : AxialVec) : CubeVec =
     cubeVec(v.q, -v.q - v.r, v.r)
 
@@ -125,6 +137,11 @@ proc asAxialVec*(c : CartVec) : AxialVec =
     let q = c.x * 1.3333333333f
     let r = (-c.x / 1.5f) + (math.sqrt(3.0f)/1.5f) * c.y
     roundedAxial(q, r)
+
+proc toAxialVec*(v : Vec3f, hexSize : float) : AxialVec =
+    let q = (v.x * 1.33333333f) / hexSize
+    let r = ((-v.x / 1.5f) + ((sqrt(3.0f)/1.5f) * v.y)) / hexSize
+    roundedAxial(q,r)
 
 iterator hexRing*(center : AxialVec, radius : int) : AxialVec =
     let center = center.asCubeVec + CubeDeltas[4] * radius

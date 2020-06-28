@@ -15,6 +15,10 @@ import graphics/fonts
 import options
 import noto
 
+const DefaultFontName* = "ChevyRaySoftsquare.ttf"
+
+resources.preloadFont(DefaultFontName)
+
 type
    SectionKind* = enum
       Text
@@ -77,7 +81,7 @@ proc `==`*(a,b : RichText) : bool =
 
 
 
-proc layout*(richText : RichText, baseColor : RGBA, tint : Option[color.RGBA], defaultFont : ArxFontRoot, size : int, bounds : Recti) : TextLayout =
+proc layout*(richText : RichText, baseColor : RGBA, tint : Option[color.RGBA], defaultFont : ArxFontRoot, size : int, bounds : Recti, pixelScale : int) : TextLayout =
    var minPos : Vec2i = vec2i(0,0)
    var maxPos : Vec2i = vec2i(0,0)
 
@@ -95,10 +99,13 @@ proc layout*(richText : RichText, baseColor : RGBA, tint : Option[color.RGBA], d
          elif defaultFont != nil:
             defaultFont
          else:
-            resources.font("return-of-ganon.regular.ttf")
+            resources.font(DefaultFontName)
+            # resources.font("return-of-ganon.regular.ttf")
+            # resources.font("pf_ronda_seven.ttf")
+            # resources.font("ChevyRaySoftsquare.ttf")
          
          let sectionSize = if section.size == 0.0 : 1.0 else: section.size
-         let font = fontRoot.withPixelSize((size.float * sectionSize * richTextSize).round.int)
+         let font = fontRoot.withPixelSize((size.float * sectionSize * richTextSize).round.int, pixelScale)
          let typesetting = typeset(font, section.text, vec2i(0,0), cursor, bounds.dimensions)
          var effColor = baseColor
          if section.color.isSome:
@@ -109,7 +116,7 @@ proc layout*(richText : RichText, baseColor : RGBA, tint : Option[color.RGBA], d
             effColor = mix(effColor, tint.get, 0.5)
 
          
-         var img = createImage(vec2i(200,100))
+         # var img = createImage(vec2i(200,100))
          for glyphPos in typesetting:
             let glyphInfo = font.glyph(glyphPos.character)
             let rect = glyphPos.rect

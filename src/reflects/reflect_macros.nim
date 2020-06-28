@@ -143,7 +143,7 @@ macro defineReflection*(t: typedesc) =
         var `footype`* {.threadvar.} : `typeDefIdent`
     initProcStmts.add(quote do:
         `footype` = new(`typeDefIdent`)
-        `footype`.name = `typelit`
+        `footype`.typeName = `typelit`
         `footype`.index = `idxlit`
     )
     
@@ -273,6 +273,12 @@ template matchType*(value : untyped, stmts : untyped) =
    block:
       let typeTarget {.inject.} = value
       stmts
+
+macro ifSome*(x : untyped, stmts : untyped) : untyped =
+    result = quote do:
+        if `x`.isSome:
+            let `x` {.inject.} = `x`.get
+            `stmts`
 
 when isMainModule:
     type

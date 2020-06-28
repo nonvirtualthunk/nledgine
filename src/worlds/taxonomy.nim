@@ -6,6 +6,7 @@ import hashes
 import reflect
 import resources
 import strutils
+import options
 
 type
     Taxon* = ref object
@@ -18,6 +19,12 @@ type
         idCounter : int
         taxonsByNameAndNamespace : Table[(string, string), Taxon]
         namespaceParents : Table[string, string]
+
+    Identity* = object
+        name* : Option[string]
+        kind* : Taxon
+
+defineReflection(Identity)
 
 const RootNamespace = "root"
 var UnknownThing* {.threadvar.} : Taxon

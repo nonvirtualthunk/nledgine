@@ -19,7 +19,7 @@ proc applyModifiers*(attack : var Attack, modifier : AttackModifier) =
 
 proc attackCosts*(attack : Attack) : seq[GameEffect] = 
    if attack.actionCost != 0:
-      result.add(GameEffect(kind : GameEffectKind.ChangeResource, target : selfSelector(), resource : taxon("Resources", "actionPoints")))
+      result.add(GameEffect(kind : GameEffectKind.ChangeResource, target : selfSelector(), resource : taxon("ResourcePools", "actionPoints")))
    if attack.staminaCost != 0:
-      result.add(GameEffect(kind : GameEffectKind.ChangeResource, target : selfSelector(), resource : taxon("Resources", "staminaPoints")))
+      result.add(GameEffect(kind : GameEffectKind.ChangeResource, target : selfSelector(), resource : taxon("ResourcePools", "staminaPoints")))
    result.add(attack.additionalCosts)

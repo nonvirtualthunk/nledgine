@@ -1,3 +1,4 @@
+import nimgl/glfw
 import ../engines
 import cameras
 import ../reflect
@@ -20,13 +21,17 @@ proc createCameraComponent*(camera : Camera) : GraphicsComponent =
     )
 
 method initialize(g : CameraComponent, world : World, curView : WorldView, display : DisplayWorld) =
-    display.attachData(CameraData, CameraData(camera : g.initialCamera))
+    g.name = "CameraComponent"
+    display.attachData(CameraData(camera : g.initialCamera))
 
     g.onEvent(UIEvent, evt):
         if not evt.consumed:
             display[CameraData].camera.handleEvent(evt)
 
 method update(g : CameraComponent, world : World, curView : WorldView, display : DisplayWorld, df : float) : seq[DrawCommand] =
-    display[CameraData].camera.update(df)
+    let time = glfwGetTime()
+    let deltaTime = time - display[CameraData].camera.lastUpdated
+    display[CameraData].camera.update(deltaTime / 0.01666666667)
+    display[CameraData].camera.lastUpdated = time
 
     @[]

@@ -1,6 +1,7 @@
 import worlds/taxonomy
 import tables
 import macros
+import options
 
 type
     Library*[T] = ref object
@@ -9,6 +10,12 @@ type
 
 proc `[]`*[T](lib : Library[T], key : Taxon) : T = lib.values[key]
 proc `[]=`*[T](lib : Library[T], key : Taxon, value : T) = lib.values[key] = value
+proc contains*[T](lib : Library[T], key : Taxon) = lib.values.contains(key)
+proc get*[T](lib : Library[T], key : Taxon) : Option[T] = 
+    if lib.values.contains(key):
+        some(lib.values[key])
+    else:
+        none(T)
 
 
 var libraryLoadChannel : Channel[proc() {.gcSafe.}]
@@ -27,10 +34,10 @@ template defineLibrary*[T](loadFn : untyped) =
     var libraryCopyChannel : Channel[Library[T]]
     libraryCopyChannel.open()
     
-    proc loadLibraryFn() {.gcsafe.} =
+    
+    libraryLoadChannel.send(proc () {.gcsafe.} =
         let res = loadFn
-        libraryCopyChannel.send(res)
-    libraryLoadChannel.send(loadLibraryFn)
+        libraryCopyChannel.send(res))
 
     proc library*(t : typedesc[T]) : Library[T] =
         if libraryRef.isNil:
