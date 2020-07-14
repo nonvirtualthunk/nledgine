@@ -10,7 +10,7 @@ import targeting
 import effect_types
 
 
-proc resolveAttack*(character : Entity, selector : AttackSelector) : Option[Attack] =
+proc resolveAttack*(view : WorldView, character : Entity, selector : AttackSelector) : Option[Attack] =
    warn "attack resolution not yet implemented"
    some(Attack())
 

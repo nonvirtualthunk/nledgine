@@ -1,3 +1,4 @@
+import config/config_helpers
 import rich_text
 import graphics
 import graphics/fonts
@@ -8,6 +9,8 @@ import reflect
 import arxmath
 import config
 import strutils
+import sugar
+import windowingsystem/rich_text_layout
 
 export rich_text
 
@@ -16,9 +19,10 @@ type
       widget* : Widget
       text* : Bindable[RichText]
       fontSize* : int
-      font* : ArxFontRoot
-      color* : Bindable[RGBA]
+      font* : Option[ArxFontRoot]
+      color* : Option[Bindable[RGBA]]
       tintColor* : Option[Bindable[RGBA]]
+      horizontalAlignment* : Option[HorizontalAlignment]
 
    TextDisplayRenderer* = ref object of WindowingComponent
 
@@ -28,22 +32,25 @@ defineReflection(TextDisplay)
 proc readFromConfig*(cv : ConfigValue, td : var TextDisplay) =
    readInto(cv["text"], td.text)
    readIntoOrElse(cv["fontSize"], td.fontSize, 12)
-   readInto(cv["font"], td.font)
-   readIntoOrElse(cv["color"], td.color, bindable(rgba(0.0,0.0,0.0,1.0)))
+   readIntoOrElse(cv["font"], td.font, none(ArxFontRoot))
+   readIntoOrElse(cv["color"], td.color, none(Bindable[RGBA]))
    readInto(cv["tintColor"], td.tintColor)
-   echo "Font size ", td.fontSize
+   readInto(cv["horizontalAlignment"], td.horizontalAlignment)
 
 proc computeLayout*(widget : Widget) : TextLayout =
    let TD = widget.data(TextDisplay)
    var bounds = rect(vec2i(0,0), vec2i(10000000,1000000))
    if not widget.width.isIntrinsic:
       bounds.dimensions.x = widget.resolvedDimensions.x - widget.clientOffset.x * 2
-   
-   let tintColor = if TD.tintColor.isSome:
-      some(TD.tintColor.get.value)
-   else:
-      none(RGBA)
-   result = layout(TD.text.value, TD.color.value, tintColor, TD.font, TD.fontSize, bounds, widget.windowingSystem.pixelScale)
+
+   let renderSettings = RichTextRenderSettings(
+      baseColor : TD.color.map(proc (v : Bindable[RGBA]) : RGBA = v.value),
+      tint : TD.tintColor.map(proc (v : Bindable[RGBA]) : RGBA = v.value),
+      defaultFont : TD.font,
+      horizontalAlignment : TD.horizontalAlignment,
+      textPreference : TextPreference.None
+   )
+   result = layout(TD.text.value, TD.fontSize * widget.windowingSystem.pixelScale, bounds, widget.windowingSystem.pixelScale, renderSettings)
    # echo "computed layout: ", result
 
 method render*(ws : TextDisplayRenderer, widget : Widget) : seq[WQuad] =
@@ -61,7 +68,6 @@ method intrinsicSize*(ws : TextDisplayRenderer, widget : Widget, axis : Axis) : 
 
 method readDataFromConfig*(ws : TextDisplayRenderer, cv : ConfigValue, widget : Widget) =
    if cv["type"].asStr("").toLowerAscii == "textdisplay":
-      echo "text display detected"
       if not widget.hasData(TextDisplay):
          var td : TextDisplay
          readFromConfig(cv, td)

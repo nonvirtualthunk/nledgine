@@ -92,9 +92,8 @@ Flags {
     tickDownOn : Move
   }
 
-  // +============================================================+
-  // |                        Internal Flags                      |
-  // +============================================================+
+
+
 
   OnApproachAttack {
     description : "OnApproachAttack"

@@ -11,7 +11,7 @@ import noto
 
 # variantp AxEvent:
 #    EntityTurnStarted()
-   
+
 
 type
    # EventKind* = enum
@@ -27,9 +27,9 @@ type
    #    entity* : Entity
 
    #    case kind* : EventKind:
-   #    of CharacterTurnStartEvent, CharacterTurnEndEvent: 
+   #    of CharacterTurnStartEvent, CharacterTurnEndEvent:
    #       turnNumber* : int
-   #    of CharacterMoveEvent: 
+   #    of CharacterMoveEvent:
    #       fromHex* : AxialVec
    #       toHex* : AxialVec
    #    of AttackEvent:
@@ -48,30 +48,33 @@ type
    #       oldResourceValue* : int
    #       newResourceValue* : int
    AxEvent* = ref object of GameEvent
-      entity* : Entity
+      entity*: Entity
 
    CharacterTurnStartEvent* = ref object of AxEvent
-      turnNumber* : int
+      turnNumber*: int
    CharacterTurnEndEvent* = ref object of AxEvent
-      turnNumber* : int
+      turnNumber*: int
    CharacterMoveEvent* = ref object of AxEvent
-      fromHex* : AxialVec
-      toHex* : AxialVec
+      fromHex*: AxialVec
+      toHex*: AxialVec
    AttackEvent* = ref object of AxEvent
-      attack* : ref Attack
-      targets* : seq[Entity]
+      attack*: ref Attack
+      targets*: seq[Entity]
    StrikeEvent* = ref object of AxEvent
-      targets* : seq[Entity]
-      attack* : ref Attack
-      result* : StrikeResult
+      targets*: seq[Entity]
+      attack*: ref Attack
+      result*: StrikeResult
    FlagChangedEvent* = ref object of AxEvent
-      flag* : Taxon
-      oldValue* : int
-      newValue* : int
+      flag*: Taxon
+      oldValue*: int
+      newValue*: int
    ResourceChangedEvent* = ref object of AxEvent
-      resource* : Taxon
-      oldValue* : int
-      newValue* : int
+      resource*: Taxon
+      oldValue*: int
+      newValue*: int
+   WorldInitializedEvent* = ref object of AxEvent
+
+
 
 
 
@@ -87,10 +90,10 @@ type
       OnDodged
 
    EventCondition* = object
-      case kind* : EventConditionKind
+      case kind*: EventConditionKind
       of OnAttack, OnAttacked, OnHit, OnHitEnemy, OnBlocked, OnMissed, OnDodged:
-         attackSelector* : Option[AttackSelector]
-      of OnTurnStarted, OnTurnEnded: 
+         attackSelector*: Option[AttackSelector]
+      of OnTurnStarted, OnTurnEnded:
          discard
 
 # proc matchesEventKind*(condition : EventCondition) : EventKind =
@@ -104,7 +107,7 @@ type
 #    of OnTurnStarted: CharacterTurnStartEvent
 #    of OnTurnEnded: CharacterTurnEndEvent
 
-proc matchesSelector(view : WorldView, selector : Option[AttackSelector], attack : ref Attack) : bool =
+proc matchesSelector(view: WorldView, selector: Option[AttackSelector], attack: ref Attack): bool =
    selector.isNone or selector.get.matches(view, attack[])
 
 # proc matches*(view : WorldView, condition : EventCondition, event : AxEvent) : seq[Entity] =
@@ -128,33 +131,33 @@ proc matchesSelector(view : WorldView, selector : Option[AttackSelector], attack
 #    of OnTurnEnded:
 #       if event.kind == CharacterTurnEndEvent: result.add(event.entity)
 
-proc matches*(view : WorldView, condition : EventCondition, event : AxEvent) : seq[Entity] =
+proc matches*(view: WorldView, condition: EventCondition, event: AxEvent): seq[Entity] =
    case condition.kind:
    of OnAttacked:
-      ifOfType(event, AttackEvent): 
+      ifOfType(AttackEvent, event):
          if matchesSelector(view, condition.attackSelector, event.attack): result.add(event.targets)
    of OnAttack:
-      ifOfType(event, AttackEvent):
+      ifOfType(AttackEvent, event):
          if matchesSelector(view, condition.attackSelector, event.attack): result.add(event.entity)
    of OnHit:
-      ifOfType(event, StrikeEvent):
+      ifOfType(StrikeEvent, event):
          if event.result.kind == StrikeResultKind.Hit and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.targets)
    of OnHitEnemy:
-      ifOfType(event, StrikeEvent):
+      ifOfType(StrikeEvent, event):
          if event.result.kind == StrikeResultKind.Hit and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.entity)
    of OnMissed:
-      ifOfType(event, StrikeEvent):
+      ifOfType(StrikeEvent, event):
          if event.result.kind == StrikeResultKind.Missed and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.targets)
    of OnDodged:
-      ifOfType(event, StrikeEvent):
+      ifOfType(StrikeEvent, event):
          if event.result.kind == StrikeResultKind.Dodged and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.targets)
    of OnBlocked:
-      ifOfType(event, StrikeEvent):
+      ifOfType(StrikeEvent, event):
          if event.result.kind == StrikeResultKind.Blocked and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.targets)
    of OnTurnStarted:
-      ifOfType(event, CharacterTurnStartEvent): result.add(event.entity)
+      ifOfType(CharacterTurnStartEvent, event): result.add(event.entity)
    of OnTurnEnded:
-      ifOfType(event, CharacterTurnEndEvent): result.add(event.entity)
+      ifOfType(CharacterTurnEndEvent, event): result.add(event.entity)
 
 # proc matches*(condition : EventCondition, entity : Entity, event : AxEvent) : bool =
 #    case condition.kind:
@@ -189,11 +192,11 @@ proc matches*(view : WorldView, condition : EventCondition, event : AxEvent) : s
    #    fromHex* : AxialVec
    #    toHex* : AxialVec
 
-   
 
 
-proc readFromConfig*(cv : ConfigValue, v : var EventCondition) =
-   var condKind : EventConditionKind
+
+proc readFromConfig*(cv: ConfigValue, v: var EventCondition) =
+   var condKind: EventConditionKind
    if cv.isStr:
       case cv.asStr.toLowerAscii:
       of "onattacked": condKind = OnAttacked
@@ -204,7 +207,7 @@ proc readFromConfig*(cv : ConfigValue, v : var EventCondition) =
       of "onblocked": condKind = OnBlocked
       of "onturnstarted": condKind = OnTurnStarted
       of "onturnended": condKind = OnTurnEnded
-      else: warn "invalid configuration string for event condition : ", cv.asStr
+      else: warn &"invalid configuration string for event condition : {cv.asStr}"
 
-      v = EventCondition(kind : condKind)
-   else: warn "invalid configuration for event condition: ", $cv
+      v = EventCondition(kind: condKind)
+   else: warn &"invalid configuration for event condition: {$cv}"

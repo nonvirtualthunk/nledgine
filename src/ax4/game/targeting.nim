@@ -67,7 +67,19 @@ type
 
 
 
-
+proc `==`*(a,b : Selector) : bool =
+   if a.kind != b.kind:
+      false
+   else:
+      case a.kind
+      of SelectionKind.Self: true
+      of SelectionKind.Character: a.characterCount == b.characterCount
+      of SelectionKind.Taxon: a.options == b.options
+      of SelectionKind.Hex: a.hexCount == b.hexCount
+      of SelectionKind.CharactersInShape,SelectionKind.HexesInShape: a.shape == b.shape
+      of SelectionKind.Card: a.cards == b.cards
+      of SelectionKind.CardType: a.cardTypes == b.cardTypes
+      of SelectionKind.Path: a.moveRange == b.moveRange and a.subjectSelector == b.subjectSelector
 
 
 proc selfSelector*() : Selector = 

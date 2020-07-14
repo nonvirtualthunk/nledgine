@@ -3,8 +3,8 @@ import worlds
 import sequtils
 
 variantp SelectionResult:
-   SelectedEntity(entities : seq[Entity])
-   SelectedTaxon(taxons : seq[Taxon])
+   SelectedEntity(entities: seq[Entity])
+   SelectedTaxon(taxons: seq[Taxon])
 
 type SelectionKind* {.pure.} = enum
    Self
@@ -19,14 +19,19 @@ type SelectionKind* {.pure.} = enum
 
 
 type CardLocation* = enum
-      Hand
-      DrawPile
-      DiscardPile
-      ExhaustPile
-      ConsumedPile
+   Hand
+   DrawPile
+   DiscardPile
+   ExhaustPile
+   ConsumedPile
 
 
-proc contains*(s : SelectionResult, e : Entity) : bool =
+proc contains*(s: SelectionResult, e: Entity): bool =
    match s:
       SelectedEntity(entities): entities.contains(e)
       SelectedTaxon(_): false
+
+proc selectedEntities*(s: SelectionResult): seq[Entity] =
+   match s:
+      SelectedEntity(entities): entities
+      SelectedTaxon(_): @[]

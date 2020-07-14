@@ -8,16 +8,16 @@ import tables
 
 type
    FlagComponent = ref object of GameComponent
-        
 
-method initialize(g : FlagComponent, world : World) =
+
+method initialize(g: FlagComponent, world: World) =
    discard
 
-method update(g : FlagComponent, world : World) =
+method update(g: FlagComponent, world: World) =
    discard
 
-method onEvent(g : FlagComponent, world : World, event : Event) =
-   ifOfType(event, AxEvent):
+method onEvent(g: FlagComponent, world: World, event: Event) =
+   ifOfType(AxEvent, event):
       let flagLib = library(FlagBehaviors)
       for flag, info in flagLib.values:
          for behavior in info.behaviors:
@@ -37,7 +37,7 @@ when isMainModule:
    let flagComponent = new FlagComponent
 
    let flag = taxon("Flags", "Dazzled")
-   
+
    let entityA = world.createEntity()
    world.attachData(entityA, Flags())
    modifyFlag(world, entityA, flag, setTo(1))
@@ -45,7 +45,6 @@ when isMainModule:
    echoAssert flagValue(world, entityA, flag) == 1
 
    # flagComponent.onEvent(world, AxEvent(kind : CharacterTurnEndEvent, entity : entityA))
-   flagComponent.onEvent(world, CharacterTurnEndEvent(entity : entityA))
+   flagComponent.onEvent(world, CharacterTurnEndEvent(entity: entityA))
 
    echoAssert flagValue(world, entityA, flag) == 0
-   

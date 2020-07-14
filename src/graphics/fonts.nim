@@ -11,6 +11,10 @@ import vmath
 import layout_fork
 import options
 import strutils
+import strformat
+import graphics/color
+
+{.experimental.}
 
 type
    GlyphInfo* = object
@@ -84,14 +88,16 @@ proc loadArxFont*(path : string) : ArxFontRoot =
          prePath.removeSuffix(".ttf")
          result.prerenderedPath = some(prePath)
 
-
-proc typographyFont(font : ArxFont) : Font =
-   result = font.fontRoot.font
-   if font.fontRoot.useRawSizes:
-      result.size = font.pointSize.float
+proc setFontSize(arxFont : ArxFont, font : Font, pointSize : int) =
+   if arxFont.fontRoot.useRawSizes:
+      font.size = pointSize.float
    else:
-      result.sizePt = font.pointSize.float
-   result.lineHeight = if font.lineHeight != 0: font.lineHeight.float else : (result.ascent - result.descent) * result.scale
+      font.sizePt = pointSize.float
+   font.lineHeight = if arxFont.lineHeight != 0: arxFont.lineHeight.float else : (font.ascent - font.descent) * font.scale
+
+proc typographyFont*(font : ArxFont) : Font =
+   result = font.fontRoot.font
+   setFontSize(font, result, font.pointSize)
    
 proc glyph*(font : ArxFont, character : string) : GlyphInfo =
    if font.glyphs.contains(character):
@@ -106,8 +112,38 @@ proc glyph*(font : ArxFont, character : string) : GlyphInfo =
             if font.fontRoot.prerenderedPath.isSome:
                loadImage(font.fontRoot.prerenderedPath.get & "/chars/" & $int(character[0]) & ".png")
             else:
+               # if font.fontRoot.pixelFont and font.pointSize != font.fontRoot.basePointSize*2:
+               # #    # let prevSize = f.size
+               # #    # let prevLH = f.lineHeight
+               # #    # setFontSize(font, f, font.fontRoot.basePointSize)
+               # #    # echo "prev size : ", prevSize
+               # #    # echo "subsequent size : ", f.size
+               # #    # let multiple = prevSize / f.size
+               #    let baseImg = getGlyphImage(f, character, offsets)
+               # #    # offsets.x *= multiple
+               # #    # offsets.y *= multiple
+               # #    # let retImg = createImage(baseImg.data,glm.vec2i(baseImg.width.int32, baseImg.height.int32), true)
+               # #    # f.size = prevSize
+               # #    # f.lineHeight = prevLH
+               # #    # retImg
+               #    font.fontRoot.withPointSize(font.fontRoot.basePointSize*2, 1).glyph(character).image
+               # else:
                let baseImg = getGlyphImage(f, character, offsets)
-               createImage(baseImg.data,glm.vec2i(baseImg.width.int32, baseImg.height.int32), true)
+               let img = createImage(baseImg.data,glm.vec2i(baseImg.width.int32, baseImg.height.int32), true)
+
+               for x in 0 ..< img.width:
+                  for y in 0 ..< img.height:
+                     let pixel = img[x,y]
+                     pixel.r = 1.0f
+                     pixel.g = 1.0f
+                     pixel.b = 1.0f
+                     # pixel.r = 1.0f
+                     # pixel.g = 1.0f
+                     # pixel.b = 1.0f
+
+               img
+
+      discard font.typographyFont()
       result = GlyphInfo(image : img, offset : glm.vec2f(offsets.x, offsets.y))
       font.glyphs[character] = result
       

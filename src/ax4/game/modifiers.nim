@@ -4,6 +4,7 @@ import tables
 import config
 import strutils
 import arxregex
+import core
 
 type
    ModifierOperation* {.pure.} = enum
@@ -17,15 +18,15 @@ type
       Recover
 
    Modifier*[T] = object
-      operation* : ModifierOperation
-      value* : T
+      operation*: ModifierOperation
+      value*: T
 
 
-proc mergeAdd*[K,V](t1 : var Table[K,V], t2 : Table[K,V]) =
-   for k,v in t2:
+proc mergeAdd*[K, V](t1: var Table[K, V], t2: Table[K, V]) =
+   for k, v in t2:
       t1[k] = t1.getOrDefault(k) + t2
 
-proc apply*[T](modifier : Modifier[T], v : var T) =
+proc apply*[T, U](modifier: Modifier[T], v: var U) =
    case modifier.operation:
    of ModifierOperation.Identity: discard
    of ModifierOperation.Add:
@@ -36,41 +37,44 @@ proc apply*[T](modifier : Modifier[T], v : var T) =
       elif compiles(v.merge(modifier.value)):
          v.mergeAdd(modifier.value)
       else:
-         warn "Add modifier applied to type that does not support it: ", T
+         warn &"Add modifier applied to type that does not support it: {$T}"
    of ModifierOperation.Sub:
       when compiles(v - modifier.value):
          v = v - modifier.value
       elif compiles(v.removeAll(modifier.value)):
          v.removeAll(modifier.value)
       else:
-         warn "Sub modifier applied to type that does not support it: ", T
+         warn &"Sub modifier applied to type that does not support it: {$T}"
    of ModifierOperation.Mul:
       when compiles(v * modifier.value):
          v = v * modifier.value
       else:
-         warn "Mul modifier applied to type that does not support it: ", T
+         warn &"Mul modifier applied to type that does not support it: {$T}"
    of ModifierOperation.Div:
       when compiles(v div modifier.value):
          v = v div modifier.value
       elif compiles(v / modifier.value):
          v = v / modifier.value
       else:
-         warn "Div modifier applied to type that does not support it: ", T
+         warn &"Div modifier applied to type that does not support it: {$T}"
    of ModifierOperation.Set:
-      v = modifier.value
+      when compiles(v = modifier.value):
+         v = modifier.value
+      else:
+         warn &"Set modifier applied to type that does not support it: {$T}"
    of ModifierOperation.Reduce:
       when compiles(v.reduceBy(modifier.value)):
          v.reduceBy(modifier.value)
       else:
-         warn "Reduce modifier applied to type that does not support it: ", T
+         warn &"Reduce modifier applied to type that does not support it: {$T}"
    of ModifierOperation.Recover:
       when compiles(v.recoverBy(modifier.value)):
          v.recoverBy(modifier.value)
       else:
-         warn "Recover modifier applied to type that does not support it: ", T
+         warn &"Recover modifier applied to type that does not support it: {$T}"
 
 const modifierRe = re"(?i)([a-z]+)\s?([0-9-+]+)"
-proc readFromConfig*[T](cv : ConfigValue, v : var Modifier[T]) = 
+proc readFromConfig*[T](cv: ConfigValue, v: var Modifier[T]) =
    if cv.isStr:
       matcher(cv.asStr):
          extractMatches(modifierRe, operationStr, amountStr):
@@ -79,12 +83,14 @@ proc readFromConfig*[T](cv : ConfigValue, v : var Modifier[T]) =
             of "sub": v.operation = ModifierOperation.Sub
             of "div": v.operation = ModifierOperation.Div
             of "mul": v.operation = ModifierOperation.Mul
-            else: warn "unsupported operation str in modifier configuration ", operationStr, " : ", amountStr
+            else: warn &"unsupported operation str in modifier configuration {operationStr} : {amountStr}"
 
             readInto(amountStr.asConf, v.value)
-         warn "Invalid string format for modifier configuration: ", cv.asStr
+         warn &"Invalid string format for modifier configuration: {cv.asStr}"
 
 
-proc add*[T](arg : T) : Modifier[T] = Modifier[T](operation : ModifierOperation.Add, value : arg)
-proc sub*[T](arg : T) : Modifier[T] = Modifier[T](operation : ModifierOperation.Sub, value : arg)
-proc setTo*[T](arg : T) : Modifier[T] = Modifier[T](operation : ModifierOperation.Set, value : arg)
+proc add*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Add, value: arg)
+proc sub*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Sub, value: arg)
+proc reduce*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Reduce, value: arg)
+proc recover*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Recover, value: arg)
+proc setTo*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Set, value: arg)

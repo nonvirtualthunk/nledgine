@@ -1,14 +1,38 @@
+import strformat
+export strformat
 
 const fineEnabled = false
 
-template fine* (msg : varargs[untyped]) =
-    if fineEnabled:
-        echo msg
 
-template info* (msg : varargs[untyped]) =
-    echo msg
+var writeChannel: Channel[string]
+writeChannel.open()
 
-template warn* (msg : varargs[untyped]) =
-    write(stdmsg(), "\u001B[33m")
-    echo msg
-    write(stdmsg(), "\u001B[0m")
+var notoThread: Thread[bool]
+
+proc notoThreadFunc(b: bool) {.thread.} =
+   while true:
+      let str = writeChannel.recv
+      if str == "[!]quit[!]":
+         break
+      echo str
+
+createThread(notoThread, notoThreadFunc, true)
+
+proc quit*() =
+   writeChannel.send("[!]quit[!]")
+
+proc write(v: string) =
+   discard writeChannel.trySend(v)
+
+template fine*(msg: string) =
+   if fineEnabled:
+      write(msg)
+
+template info*(msg: string) =
+   write(msg)
+
+template warn*(msg: string) =
+   var str = "\u001B[33m"
+   str.add(msg)
+   str.add("\u001B[0m")
+   write(str)

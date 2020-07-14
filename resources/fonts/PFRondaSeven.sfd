@@ -1,0 +1,11838 @@
+SplineFontDB: 3.2
+FontName: PFRondaSeven
+FullName: PF Ronda Seven
+FamilyName: PF Ronda Seven
+Weight: Book
+Copyright: Copyright (C) 2007 Yusuke Kamiyamane. All rights reserved.
+Version: 1.1
+ItalicAngle: 0
+UnderlinePosition: -250
+UnderlineWidth: 125
+Ascent: 800
+Descent: 200
+InvalidEm: 0
+sfntRevision: 0x00010042
+LayerCount: 2
+Layer: 0 1 "Back" 1
+Layer: 1 1 "Fore" 0
+XUID: [1021 501 1350407061 2660210]
+StyleMap: 0x0040
+FSType: 0
+OS2Version: 3
+OS2_WeightWidthSlopeOnly: 0
+OS2_UseTypoMetrics: 0
+CreationTime: 1191978435
+ModificationTime: 1593830401
+PfmFamily: 81
+TTFWeight: 400
+TTFWidth: 5
+LineGap: 43
+VLineGap: 0
+Panose: 0 0 4 0 0 0 0 0 0 0
+OS2TypoAscent: 1375
+OS2TypoAOffset: 0
+OS2TypoDescent: -250
+OS2TypoDOffset: 0
+OS2TypoLinegap: 84
+OS2WinAscent: 1375
+OS2WinAOffset: 0
+OS2WinDescent: 250
+OS2WinDOffset: 0
+HheadAscent: 1375
+HheadAOffset: 0
+HheadDescent: -250
+HheadDOffset: 0
+OS2SubXSize: 700
+OS2SubYSize: 650
+OS2SubXOff: 0
+OS2SubYOff: 143
+OS2SupXSize: 700
+OS2SupYSize: 650
+OS2SupXOff: 0
+OS2SupYOff: 453
+OS2StrikeYSize: 125
+OS2StrikeYPos: 250
+OS2CapHeight: 875
+OS2XHeight: 625
+OS2Vendor: '    '
+OS2CodePages: 20000111.40000000
+OS2UnicodeRanges: 800000af.4000004a.00000000.00000000
+Lookup: 258 0 0 "'kern' Horizontal Kerning in Latin lookup 0" { "'kern' Horizontal Kerning in Latin lookup 0 subtable"  } ['kern' ('DFLT' <'dflt' > 'latn' <'dflt' > ) ]
+DEI: 91125
+ShortTable: maxp 16
+  1
+  0
+  230
+  92
+  6
+  0
+  0
+  2
+  0
+  0
+  0
+  0
+  0
+  12
+  0
+  0
+EndShort
+LangName: 1033 "" "" "Regular" "YusukeKamiyamane: PF Ronda Seven: 2007" "" "Version 1.1" "" "" "Yusuke Kamiyamane"
+GaspTable: 1 65535 3 0
+Encoding: UnicodeBmp
+UnicodeInterp: none
+NameList: AGL For New Fonts
+DisplaySize: -48
+AntiAlias: 1
+FitToEm: 0
+WinInfo: 63 21 8
+BeginChars: 65537 230
+
+StartChar: .notdef
+Encoding: 65536 -1 0
+Width: 375
+Flags: W
+LayerCount: 2
+Fore
+Validated: 1
+EndChar
+
+StartChar: d
+Encoding: 100 100 1
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 125 m 1,0,-1
+ 300 125 l 1,1,-1
+ 300 75 l 1,2,-1
+ 250 75 l 1,3,-1
+ 250 0 l 1,4,-1
+ 125 0 l 1,5,-1
+ 125 75 l 1,6,-1
+ 75 75 l 1,7,-1
+ 75 125 l 1,8,-1
+ 0 125 l 1,9,-1
+ 0 500 l 1,10,-1
+ 75 500 l 1,11,-1
+ 75 550 l 1,12,-1
+ 125 550 l 1,13,-1
+ 125 625 l 1,14,-1
+ 375 625 l 1,15,-1
+ 375 875 l 1,16,-1
+ 500 875 l 1,17,-1
+ 500 0 l 1,18,-1
+ 375 0 l 1,19,-1
+ 375 125 l 1,0,-1
+375 225 m 1,20,-1
+ 375 500 l 1,21,-1
+ 125 500 l 1,22,-1
+ 125 125 l 1,23,-1
+ 275 125 l 1,24,-1
+ 275 225 l 1,25,-1
+ 375 225 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: a
+Encoding: 97 97 2
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 125 m 1,0,-1
+ 300 125 l 1,1,-1
+ 300 75 l 1,2,-1
+ 250 75 l 1,3,-1
+ 250 0 l 1,4,-1
+ 125 0 l 1,5,-1
+ 125 75 l 1,6,-1
+ 75 75 l 1,7,-1
+ 75 125 l 1,8,-1
+ 0 125 l 1,9,-1
+ 0 500 l 1,10,-1
+ 75 500 l 1,11,-1
+ 75 550 l 1,12,-1
+ 125 550 l 1,13,-1
+ 125 625 l 1,14,-1
+ 500 625 l 1,15,-1
+ 500 0 l 1,16,-1
+ 375 0 l 1,17,-1
+ 375 125 l 1,0,-1
+375 225 m 1,18,-1
+ 375 500 l 1,19,-1
+ 125 500 l 1,20,-1
+ 125 125 l 1,21,-1
+ 275 125 l 1,22,-1
+ 275 225 l 1,23,-1
+ 375 225 l 1,18,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: b
+Encoding: 98 98 3
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 500 l 1,2,-1
+ 200 500 l 1,3,-1
+ 200 550 l 1,4,-1
+ 250 550 l 1,5,-1
+ 250 625 l 1,6,-1
+ 375 625 l 1,7,-1
+ 375 550 l 1,8,-1
+ 425 550 l 1,9,-1
+ 425 500 l 1,10,-1
+ 500 500 l 1,11,-1
+ 500 125 l 1,12,-1
+ 425 125 l 1,13,-1
+ 425 75 l 1,14,-1
+ 375 75 l 1,15,-1
+ 375 0 l 1,16,-1
+ 0 0 l 1,17,-1
+ 0 875 l 1,0,-1
+125 125 m 1,18,-1
+ 375 125 l 1,19,-1
+ 375 500 l 1,20,-1
+ 225 500 l 1,21,-1
+ 225 400 l 1,22,-1
+ 125 400 l 1,23,-1
+ 125 125 l 1,18,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: o
+Encoding: 111 111 4
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 500 l 1,5,-1
+ 75 500 l 1,6,-1
+ 75 550 l 1,7,-1
+ 125 550 l 1,8,-1
+ 125 625 l 1,9,-1
+ 375 625 l 1,10,-1
+ 375 550 l 1,11,-1
+ 425 550 l 1,12,-1
+ 425 500 l 1,13,-1
+ 500 500 l 1,14,-1
+ 500 125 l 1,15,-1
+ 425 125 l 1,16,-1
+ 425 75 l 1,17,-1
+ 375 75 l 1,18,-1
+ 375 0 l 1,19,-1
+ 125 0 l 1,0,-1
+125 500 m 1,20,-1
+ 125 125 l 1,21,-1
+ 375 125 l 1,22,-1
+ 375 500 l 1,23,-1
+ 125 500 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: p
+Encoding: 112 112 5
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 -250 l 1,1,-1
+ 0 -250 l 1,2,-1
+ 0 625 l 1,3,-1
+ 125 625 l 1,4,-1
+ 125 500 l 1,5,-1
+ 200 500 l 1,6,-1
+ 200 550 l 1,7,-1
+ 250 550 l 1,8,-1
+ 250 625 l 1,9,-1
+ 375 625 l 1,10,-1
+ 375 550 l 1,11,-1
+ 425 550 l 1,12,-1
+ 425 500 l 1,13,-1
+ 500 500 l 1,14,-1
+ 500 125 l 1,15,-1
+ 425 125 l 1,16,-1
+ 425 75 l 1,17,-1
+ 375 75 l 1,18,-1
+ 375 0 l 1,19,-1
+ 125 0 l 1,0,-1
+125 125 m 1,20,-1
+ 375 125 l 1,21,-1
+ 375 500 l 1,22,-1
+ 225 500 l 1,23,-1
+ 225 400 l 1,24,-1
+ 125 400 l 1,25,-1
+ 125 125 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: q
+Encoding: 113 113 6
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 625 m 1,0,-1
+ 500 625 l 1,1,-1
+ 500 -250 l 1,2,-1
+ 375 -250 l 1,3,-1
+ 375 125 l 1,4,-1
+ 300 125 l 1,5,-1
+ 300 75 l 1,6,-1
+ 250 75 l 1,7,-1
+ 250 0 l 1,8,-1
+ 125 0 l 1,9,-1
+ 125 75 l 1,10,-1
+ 75 75 l 1,11,-1
+ 75 125 l 1,12,-1
+ 0 125 l 1,13,-1
+ 0 500 l 1,14,-1
+ 75 500 l 1,15,-1
+ 75 550 l 1,16,-1
+ 125 550 l 1,17,-1
+ 125 625 l 1,0,-1
+375 225 m 1,18,-1
+ 375 500 l 1,19,-1
+ 125 500 l 1,20,-1
+ 125 125 l 1,21,-1
+ 275 125 l 1,22,-1
+ 275 225 l 1,23,-1
+ 375 225 l 1,18,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: r
+Encoding: 114 114 7
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 0 0 l 1,1,-1
+ 0 625 l 1,2,-1
+ 125 625 l 1,3,-1
+ 125 500 l 1,4,-1
+ 200 500 l 1,5,-1
+ 200 550 l 1,6,-1
+ 250 550 l 1,7,-1
+ 250 625 l 1,8,-1
+ 375 625 l 1,9,-1
+ 375 500 l 1,10,-1
+ 225 500 l 1,11,-1
+ 225 400 l 1,12,-1
+ 125 400 l 1,13,-1
+ 125 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: s
+Encoding: 115 115 8
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 125 m 1,0,-1
+ 250 125 l 1,1,-1
+ 250 250 l 1,2,-1
+ 125 250 l 1,3,-1
+ 125 325 l 1,4,-1
+ 75 325 l 1,5,-1
+ 75 375 l 1,6,-1
+ 0 375 l 1,7,-1
+ 0 500 l 1,8,-1
+ 75 500 l 1,9,-1
+ 75 550 l 1,10,-1
+ 125 550 l 1,11,-1
+ 125 625 l 1,12,-1
+ 375 625 l 1,13,-1
+ 375 500 l 1,14,-1
+ 125 500 l 1,15,-1
+ 125 375 l 1,16,-1
+ 250 375 l 1,17,-1
+ 250 300 l 1,18,-1
+ 300 300 l 1,19,-1
+ 300 250 l 1,20,-1
+ 375 250 l 1,21,-1
+ 375 125 l 1,22,-1
+ 300 125 l 1,23,-1
+ 300 75 l 1,24,-1
+ 250 75 l 1,25,-1
+ 250 0 l 1,26,-1
+ 0 0 l 1,27,-1
+ 0 125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: t
+Encoding: 116 116 9
+Width: 500
+Flags: WO
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 850 l 1,2,-1
+ 225 850 l 1,3,-1
+ 225 750 l 1,4,-1
+ 250 750 l 1,5,-1
+ 250 625 l 1,6,-1
+ 375 625 l 1,7,-1
+ 375 499 l 1,8,-1
+ 250 499 l 1,9,-1
+ 250 0 l 1,10,-1
+ 125 0 l 1,11,-1
+ 125 499 l 1,12,-1
+ 0 499 l 1,13,-1
+ 0 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: u
+Encoding: 117 117 10
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 625 m 1,0,-1
+ 500 625 l 1,1,-1
+ 500 0 l 1,2,-1
+ 375 0 l 1,3,-1
+ 375 125 l 1,4,-1
+ 300 125 l 1,5,-1
+ 300 75 l 1,6,-1
+ 250 75 l 1,7,-1
+ 250 0 l 1,8,-1
+ 125 0 l 1,9,-1
+ 125 75 l 1,10,-1
+ 75 75 l 1,11,-1
+ 75 125 l 1,12,-1
+ 0 125 l 1,13,-1
+ 0 625 l 1,14,-1
+ 125 625 l 1,15,-1
+ 125 125 l 1,16,-1
+ 275 125 l 1,17,-1
+ 275 225 l 1,18,-1
+ 375 225 l 1,19,-1
+ 375 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: k
+Encoding: 107 107 11
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 500 m 1,0,-1
+ 375 625 l 1,1,-1
+ 500 625 l 1,2,-1
+ 500 499 l 1,3,-1
+ 375 499 l 1,4,-1
+ 375 374 l 1,5,-1
+ 250 374 l 1,6,-1
+ 250 250 l 1,7,-1
+ 375 250 l 1,8,-1
+ 375 125 l 1,9,-1
+ 500 125 l 1,10,-1
+ 500 0 l 1,11,-1
+ 375 0 l 1,12,-1
+ 375 124 l 1,13,-1
+ 250 124 l 1,14,-1
+ 250 249 l 1,15,-1
+ 125 249 l 1,16,-1
+ 125 0 l 1,17,-1
+ 0 0 l 1,18,-1
+ 0 875 l 1,19,-1
+ 125 875 l 1,20,-1
+ 125 375 l 1,21,-1
+ 250 375 l 1,22,-1
+ 250 500 l 1,23,-1
+ 375 500 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: l
+Encoding: 108 108 12
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 0 0 l 1,1,-1
+ 0 875 l 1,2,-1
+ 125 875 l 1,3,-1
+ 125 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: m
+Encoding: 109 109 13
+Width: 1000
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 0 0 l 1,1,-1
+ 0 625 l 1,2,-1
+ 125 625 l 1,3,-1
+ 125 500 l 1,4,-1
+ 200 500 l 1,5,-1
+ 200 550 l 1,6,-1
+ 250 550 l 1,7,-1
+ 250 625 l 1,8,-1
+ 375 625 l 1,9,-1
+ 375 550 l 1,10,-1
+ 425 550 l 1,11,-1
+ 425 500 l 1,12,-1
+ 575 500 l 1,13,-1
+ 575 550 l 1,14,-1
+ 625 550 l 1,15,-1
+ 625 625 l 1,16,-1
+ 750 625 l 1,17,-1
+ 750 550 l 1,18,-1
+ 800 550 l 1,19,-1
+ 800 500 l 1,20,-1
+ 875 500 l 1,21,-1
+ 875 0 l 1,22,-1
+ 750 0 l 1,23,-1
+ 750 500 l 1,24,-1
+ 600 500 l 1,25,-1
+ 600 400 l 1,26,-1
+ 500 400 l 1,27,-1
+ 500 0 l 1,28,-1
+ 375 0 l 1,29,-1
+ 375 500 l 1,30,-1
+ 225 500 l 1,31,-1
+ 225 400 l 1,32,-1
+ 125 400 l 1,33,-1
+ 125 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: n
+Encoding: 110 110 14
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 0 0 l 1,1,-1
+ 0 625 l 1,2,-1
+ 125 625 l 1,3,-1
+ 125 500 l 1,4,-1
+ 200 500 l 1,5,-1
+ 200 550 l 1,6,-1
+ 250 550 l 1,7,-1
+ 250 625 l 1,8,-1
+ 375 625 l 1,9,-1
+ 375 550 l 1,10,-1
+ 425 550 l 1,11,-1
+ 425 500 l 1,12,-1
+ 500 500 l 1,13,-1
+ 500 0 l 1,14,-1
+ 375 0 l 1,15,-1
+ 375 500 l 1,16,-1
+ 225 500 l 1,17,-1
+ 225 400 l 1,18,-1
+ 125 400 l 1,19,-1
+ 125 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: h
+Encoding: 104 104 15
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 0 0 l 1,1,-1
+ 0 875 l 1,2,-1
+ 125 875 l 1,3,-1
+ 125 500 l 1,4,-1
+ 200 500 l 1,5,-1
+ 200 550 l 1,6,-1
+ 250 550 l 1,7,-1
+ 250 625 l 1,8,-1
+ 375 625 l 1,9,-1
+ 375 550 l 1,10,-1
+ 425 550 l 1,11,-1
+ 425 500 l 1,12,-1
+ 500 500 l 1,13,-1
+ 500 0 l 1,14,-1
+ 375 0 l 1,15,-1
+ 375 500 l 1,16,-1
+ 225 500 l 1,17,-1
+ 225 400 l 1,18,-1
+ 125 400 l 1,19,-1
+ 125 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: i
+Encoding: 105 105 16
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 0 0 l 1,1,-1
+ 0 625 l 1,2,-1
+ 125 625 l 1,3,-1
+ 125 0 l 1,0,-1
+0 875 m 1,4,-1
+ 125 875 l 1,5,-1
+ 125 750 l 1,6,-1
+ 0 750 l 1,7,-1
+ 0 875 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: j
+Encoding: 106 106 17
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 -125 l 1,2,-1
+ 50 -125 l 1,3,-1
+ 50 -175 l 1,4,-1
+ 0 -175 l 1,5,-1
+ 0 -250 l 1,6,-1
+ -125 -250 l 1,7,-1
+ -125 -125 l 1,8,-1
+ 0 -125 l 1,9,-1
+ 0 625 l 1,0,-1
+0 875 m 1,10,-1
+ 125 875 l 1,11,-1
+ 125 750 l 1,12,-1
+ 0 750 l 1,13,-1
+ 0 875 l 1,10,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: e
+Encoding: 101 101 18
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 250 m 1,0,-1
+ 125 125 l 1,1,-1
+ 425 125 l 1,2,-1
+ 425 75 l 1,3,-1
+ 375 75 l 1,4,-1
+ 375 0 l 1,5,-1
+ 125 0 l 1,6,-1
+ 125 75 l 1,7,-1
+ 75 75 l 1,8,-1
+ 75 125 l 1,9,-1
+ 0 125 l 1,10,-1
+ 0 500 l 1,11,-1
+ 75 500 l 1,12,-1
+ 75 550 l 1,13,-1
+ 125 550 l 1,14,-1
+ 125 625 l 1,15,-1
+ 375 625 l 1,16,-1
+ 375 550 l 1,17,-1
+ 425 550 l 1,18,-1
+ 425 500 l 1,19,-1
+ 500 500 l 1,20,-1
+ 500 250 l 1,21,-1
+ 125 250 l 1,0,-1
+125 375 m 1,22,-1
+ 375 375 l 1,23,-1
+ 375 500 l 1,24,-1
+ 125 500 l 1,25,-1
+ 125 375 l 1,22,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: f
+Encoding: 102 102 19
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 0 m 1,0,-1
+ 0 750 l 1,1,-1
+ 75 750 l 1,2,-1
+ 75 800 l 1,3,-1
+ 125 800 l 1,4,-1
+ 125 875 l 1,5,-1
+ 350 875 l 1,6,-1
+ 350 775 l 1,7,-1
+ 250 775 l 1,8,-1
+ 250 750 l 1,9,-1
+ 125 750 l 1,10,-1
+ 125 625 l 1,11,-1
+ 250 625 l 1,12,-1
+ 250 500 l 1,13,-1
+ 125 500 l 1,14,-1
+ 125 0 l 1,15,-1
+ 0 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: y
+Encoding: 121 121 20
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 125 m 1,0,-1
+ 299 125 l 1,1,-1
+ 299 75 l 1,2,-1
+ 249 75 l 1,3,-1
+ 249 0 l 1,4,-1
+ 125 0 l 1,5,-1
+ 125 75 l 1,6,-1
+ 75 75 l 1,7,-1
+ 75 125 l 1,8,-1
+ 0 125 l 1,9,-1
+ 0 625 l 1,10,-1
+ 125 625 l 1,11,-1
+ 125 125 l 1,12,-1
+ 274 125 l 1,13,-1
+ 274 225 l 1,14,-1
+ 375 225 l 1,15,-1
+ 375 625 l 1,16,-1
+ 500 625 l 1,17,-1
+ 500 -125 l 1,18,-1
+ 425 -125 l 1,19,-1
+ 425 -175 l 1,20,-1
+ 375 -175 l 1,21,-1
+ 375 -250 l 1,22,-1
+ 125 -250 l 1,23,-1
+ 125 -175 l 1,24,-1
+ 75 -175 l 1,25,-1
+ 75 -125 l 1,26,-1
+ 375 -125 l 1,27,-1
+ 375 125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: v
+Encoding: 118 118 21
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 125 m 1,0,-1
+ 375 625 l 1,1,-1
+ 500 625 l 1,2,-1
+ 500 125 l 1,3,-1
+ 425 125 l 1,4,-1
+ 425 75 l 1,5,-1
+ 375 75 l 1,6,-1
+ 375 0 l 1,7,-1
+ 125 0 l 1,8,-1
+ 125 75 l 1,9,-1
+ 75 75 l 1,10,-1
+ 75 125 l 1,11,-1
+ 0 125 l 1,12,-1
+ 0 625 l 1,13,-1
+ 125 625 l 1,14,-1
+ 125 125 l 1,15,-1
+ 375 125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: c
+Encoding: 99 99 22
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 500 l 1,5,-1
+ 75 500 l 1,6,-1
+ 75 550 l 1,7,-1
+ 125 550 l 1,8,-1
+ 125 625 l 1,9,-1
+ 375 625 l 1,10,-1
+ 375 550 l 1,11,-1
+ 425 550 l 1,12,-1
+ 425 500 l 1,13,-1
+ 500 500 l 1,14,-1
+ 500 375 l 1,15,-1
+ 375 375 l 1,16,-1
+ 375 500 l 1,17,-1
+ 125 500 l 1,18,-1
+ 125 125 l 1,19,-1
+ 375 125 l 1,20,-1
+ 375 250 l 1,21,-1
+ 500 250 l 1,22,-1
+ 500 125 l 1,23,-1
+ 425 125 l 1,24,-1
+ 425 75 l 1,25,-1
+ 375 75 l 1,26,-1
+ 375 0 l 1,27,-1
+ 125 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: g
+Encoding: 103 103 23
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 125 m 1,0,-1
+ 300 125 l 1,1,-1
+ 300 75 l 1,2,-1
+ 250 75 l 1,3,-1
+ 250 0 l 1,4,-1
+ 125 0 l 1,5,-1
+ 125 75 l 1,6,-1
+ 75 75 l 1,7,-1
+ 75 125 l 1,8,-1
+ 0 125 l 1,9,-1
+ 0 500 l 1,10,-1
+ 75 500 l 1,11,-1
+ 75 550 l 1,12,-1
+ 125 550 l 1,13,-1
+ 125 625 l 1,14,-1
+ 500 625 l 1,15,-1
+ 500 -125 l 1,16,-1
+ 425 -125 l 1,17,-1
+ 425 -175 l 1,18,-1
+ 375 -175 l 1,19,-1
+ 375 -250 l 1,20,-1
+ 125 -250 l 1,21,-1
+ 125 -175 l 1,22,-1
+ 75 -175 l 1,23,-1
+ 75 -125 l 1,24,-1
+ 375 -125 l 1,25,-1
+ 375 125 l 1,0,-1
+125 125 m 1,26,-1
+ 275 125 l 1,27,-1
+ 275 225 l 1,28,-1
+ 375 225 l 1,29,-1
+ 375 500 l 1,30,-1
+ 125 500 l 1,31,-1
+ 125 125 l 1,26,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: w
+Encoding: 119 119 24
+Width: 1000
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 75 m 1,0,-1
+ 375 0 l 1,1,-1
+ 125 0 l 1,2,-1
+ 125 75 l 1,3,-1
+ 75 75 l 1,4,-1
+ 75 125 l 1,5,-1
+ 0 125 l 1,6,-1
+ 0 625 l 1,7,-1
+ 125 625 l 1,8,-1
+ 125 125 l 1,9,-1
+ 375 125 l 1,10,-1
+ 375 625 l 1,11,-1
+ 500 625 l 1,12,-1
+ 500 125 l 1,13,-1
+ 750 125 l 1,14,-1
+ 750 625 l 1,15,-1
+ 875 625 l 1,16,-1
+ 875 125 l 1,17,-1
+ 800 125 l 1,18,-1
+ 800 75 l 1,19,-1
+ 750 75 l 1,20,-1
+ 750 0 l 1,21,-1
+ 500 0 l 1,22,-1
+ 500 124 l 1,23,-1
+ 425 124 l 1,24,-1
+ 425 75 l 1,25,-1
+ 375 75 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: x
+Encoding: 120 120 25
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 400 m 1,0,-1
+ 25 400 l 1,1,-1
+ 25 500 l 1,2,-1
+ 0 500 l 1,3,-1
+ 0 625 l 1,4,-1
+ 125 625 l 1,5,-1
+ 125 425 l 1,6,-1
+ 175 425 l 1,7,-1
+ 175 375 l 1,8,-1
+ 325 375 l 1,9,-1
+ 325 425 l 1,10,-1
+ 375 425 l 1,11,-1
+ 375 625 l 1,12,-1
+ 500 625 l 1,13,-1
+ 500 500 l 1,14,-1
+ 475 500 l 1,15,-1
+ 475 400 l 1,16,-1
+ 375 400 l 1,17,-1
+ 375 225 l 1,18,-1
+ 475 225 l 1,19,-1
+ 475 125 l 1,20,-1
+ 500 125 l 1,21,-1
+ 500 0 l 1,22,-1
+ 375 0 l 1,23,-1
+ 375 200 l 1,24,-1
+ 325 200 l 1,25,-1
+ 325 250 l 1,26,-1
+ 175 250 l 1,27,-1
+ 175 200 l 1,28,-1
+ 125 200 l 1,29,-1
+ 125 0 l 1,30,-1
+ 0 0 l 1,31,-1
+ 0 125 l 1,32,-1
+ 25 125 l 1,33,-1
+ 25 225 l 1,34,-1
+ 125 225 l 1,35,-1
+ 125 400 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: z
+Encoding: 122 122 26
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 125 m 1,0,-1
+ 375 125 l 1,1,-1
+ 375 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 250 l 1,4,-1
+ 125 250 l 1,5,-1
+ 125 375 l 1,6,-1
+ 250 375 l 1,7,-1
+ 250 500 l 1,8,-1
+ 0 500 l 1,9,-1
+ 0 625 l 1,10,-1
+ 375 625 l 1,11,-1
+ 375 374 l 1,12,-1
+ 250 374 l 1,13,-1
+ 250 249 l 1,14,-1
+ 125 249 l 1,15,-1
+ 125 125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: period
+Encoding: 46 46 27
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 125 m 1,0,-1
+ 250 125 l 1,1,-1
+ 250 0 l 1,2,-1
+ 125 0 l 1,3,-1
+ 125 125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: comma
+Encoding: 44 44 28
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 125 m 1,0,-1
+ 250 125 l 1,1,-1
+ 250 -125 l 1,2,-1
+ 175 -125 l 1,3,-1
+ 175 -175 l 1,4,-1
+ 125 -175 l 1,5,-1
+ 125 -225 l 1,6,-1
+ 25 -225 l 1,7,-1
+ 25 -125 l 1,8,-1
+ 125 -125 l 1,9,-1
+ 125 125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: A
+Encoding: 65 65 29
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 625 0 l 1,1,-1
+ 500 0 l 1,2,-1
+ 500 375 l 1,3,-1
+ 125 375 l 1,4,-1
+ 125 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 750 l 1,7,-1
+ 75 750 l 1,8,-1
+ 75 800 l 1,9,-1
+ 125 800 l 1,10,-1
+ 125 875 l 1,11,-1
+ 500 875 l 1,12,-1
+ 500 800 l 1,13,-1
+ 550 800 l 1,14,-1
+ 550 750 l 1,15,-1
+ 625 750 l 1,0,-1
+125 500 m 1,16,-1
+ 500 500 l 1,17,-1
+ 500 750 l 1,18,-1
+ 125 750 l 1,19,-1
+ 125 500 l 1,16,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: B
+Encoding: 66 66 30
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 500 875 l 1,1,-1
+ 500 800 l 1,2,-1
+ 550 800 l 1,3,-1
+ 550 750 l 1,4,-1
+ 625 750 l 1,5,-1
+ 625 500 l 1,6,-1
+ 550 500 l 1,7,-1
+ 550 450 l 1,8,-1
+ 500 450 l 1,9,-1
+ 500 375 l 1,10,-1
+ 625 375 l 1,11,-1
+ 625 125 l 1,12,-1
+ 550 125 l 1,13,-1
+ 550 75 l 1,14,-1
+ 500 75 l 1,15,-1
+ 500 0 l 1,16,-1
+ 0 0 l 1,17,-1
+ 0 875 l 1,0,-1
+125 500 m 1,18,-1
+ 500 500 l 1,19,-1
+ 500 750 l 1,20,-1
+ 125 750 l 1,21,-1
+ 125 500 l 1,18,-1
+500 125 m 1,22,-1
+ 500 374 l 1,23,-1
+ 125 374 l 1,24,-1
+ 125 125 l 1,25,-1
+ 500 125 l 1,22,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: C
+Encoding: 67 67 31
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 750 l 1,5,-1
+ 75 750 l 1,6,-1
+ 75 800 l 1,7,-1
+ 125 800 l 1,8,-1
+ 125 875 l 1,9,-1
+ 500 875 l 1,10,-1
+ 500 800 l 1,11,-1
+ 550 800 l 1,12,-1
+ 550 750 l 1,13,-1
+ 625 750 l 1,14,-1
+ 625 625 l 1,15,-1
+ 500 625 l 1,16,-1
+ 500 750 l 1,17,-1
+ 125 750 l 1,18,-1
+ 125 125 l 1,19,-1
+ 500 125 l 1,20,-1
+ 500 250 l 1,21,-1
+ 625 250 l 1,22,-1
+ 625 125 l 1,23,-1
+ 550 125 l 1,24,-1
+ 550 75 l 1,25,-1
+ 500 75 l 1,26,-1
+ 500 0 l 1,27,-1
+ 125 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: D
+Encoding: 68 68 32
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 500 875 l 1,1,-1
+ 500 800 l 1,2,-1
+ 550 800 l 1,3,-1
+ 550 750 l 1,4,-1
+ 625 750 l 1,5,-1
+ 625 125 l 1,6,-1
+ 550 125 l 1,7,-1
+ 550 75 l 1,8,-1
+ 500 75 l 1,9,-1
+ 500 0 l 1,10,-1
+ 0 0 l 1,11,-1
+ 0 875 l 1,0,-1
+125 750 m 1,12,-1
+ 125 125 l 1,13,-1
+ 500 125 l 1,14,-1
+ 500 750 l 1,15,-1
+ 125 750 l 1,12,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: E
+Encoding: 69 69 33
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 450 m 1,0,-1
+ 500 375 l 1,1,-1
+ 125 375 l 1,2,-1
+ 125 125 l 1,3,-1
+ 625 125 l 1,4,-1
+ 625 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 875 l 1,7,-1
+ 625 875 l 1,8,-1
+ 625 750 l 1,9,-1
+ 125 750 l 1,10,-1
+ 125 500 l 1,11,-1
+ 550 500 l 1,12,-1
+ 550 450 l 1,13,-1
+ 500 450 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: F
+Encoding: 70 70 34
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 450 m 1,0,-1
+ 500 375 l 1,1,-1
+ 125 375 l 1,2,-1
+ 125 0 l 1,3,-1
+ 0 0 l 1,4,-1
+ 0 875 l 1,5,-1
+ 625 875 l 1,6,-1
+ 625 750 l 1,7,-1
+ 125 750 l 1,8,-1
+ 125 500 l 1,9,-1
+ 550 500 l 1,10,-1
+ 550 450 l 1,11,-1
+ 500 450 l 1,0,-1
+EndSplineSet
+Validated: 1
+Kerns2: 38 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 26 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 25 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 24 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 23 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 22 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 21 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 20 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 18 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 14 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 13 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 10 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 9 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 8 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 7 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 6 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 5 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 4 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 2 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 1 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable"
+EndChar
+
+StartChar: G
+Encoding: 71 71 35
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 0 m 1,0,-1
+ 500 125 l 1,1,-1
+ 425 125 l 1,2,-1
+ 425 75 l 1,3,-1
+ 375 75 l 1,4,-1
+ 375 0 l 1,5,-1
+ 125 0 l 1,6,-1
+ 125 75 l 1,7,-1
+ 75 75 l 1,8,-1
+ 75 125 l 1,9,-1
+ 0 125 l 1,10,-1
+ 0 750 l 1,11,-1
+ 75 750 l 1,12,-1
+ 75 800 l 1,13,-1
+ 125 800 l 1,14,-1
+ 125 875 l 1,15,-1
+ 500 875 l 1,16,-1
+ 500 800 l 1,17,-1
+ 550 800 l 1,18,-1
+ 550 750 l 1,19,-1
+ 625 750 l 1,20,-1
+ 625 625 l 1,21,-1
+ 500 625 l 1,22,-1
+ 500 750 l 1,23,-1
+ 125 750 l 1,24,-1
+ 125 125 l 1,25,-1
+ 400 125 l 1,26,-1
+ 400 225 l 1,27,-1
+ 500 225 l 1,28,-1
+ 500 375 l 1,29,-1
+ 375 375 l 1,30,-1
+ 375 400 l 1,31,-1
+ 275 400 l 1,32,-1
+ 275 500 l 1,33,-1
+ 625 500 l 1,34,-1
+ 625 0 l 1,35,-1
+ 500 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: H
+Encoding: 72 72 36
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 375 m 1,0,-1
+ 125 375 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 875 l 1,4,-1
+ 125 875 l 1,5,-1
+ 125 500 l 1,6,-1
+ 500 500 l 1,7,-1
+ 500 875 l 1,8,-1
+ 625 875 l 1,9,-1
+ 625 0 l 1,10,-1
+ 500 0 l 1,11,-1
+ 500 375 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: I
+Encoding: 73 73 37
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 875 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: J
+Encoding: 74 74 38
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 875 m 1,0,-1
+ 500 125 l 1,1,-1
+ 425 125 l 1,2,-1
+ 425 75 l 1,3,-1
+ 375 75 l 1,4,-1
+ 375 0 l 1,5,-1
+ 125 0 l 1,6,-1
+ 125 75 l 1,7,-1
+ 75 75 l 1,8,-1
+ 75 125 l 1,9,-1
+ 0 125 l 1,10,-1
+ 0 250 l 1,11,-1
+ 125 250 l 1,12,-1
+ 125 125 l 1,13,-1
+ 375 125 l 1,14,-1
+ 375 875 l 1,15,-1
+ 500 875 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: K
+Encoding: 75 75 39
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 249 m 1,0,-1
+ 250 249 l 1,1,-1
+ 250 374 l 1,2,-1
+ 125 374 l 1,3,-1
+ 125 0 l 1,4,-1
+ 0 0 l 1,5,-1
+ 0 875 l 1,6,-1
+ 125 875 l 1,7,-1
+ 125 500 l 1,8,-1
+ 250 500 l 1,9,-1
+ 250 625 l 1,10,-1
+ 375 625 l 1,11,-1
+ 375 750 l 1,12,-1
+ 500 750 l 1,13,-1
+ 500 875 l 1,14,-1
+ 625 875 l 1,15,-1
+ 625 749 l 1,16,-1
+ 500 749 l 1,17,-1
+ 500 624 l 1,18,-1
+ 375 624 l 1,19,-1
+ 375 499 l 1,20,-1
+ 250 499 l 1,21,-1
+ 250 375 l 1,22,-1
+ 375 375 l 1,23,-1
+ 375 250 l 1,24,-1
+ 500 250 l 1,25,-1
+ 500 125 l 1,26,-1
+ 625 125 l 1,27,-1
+ 625 0 l 1,28,-1
+ 500 0 l 1,29,-1
+ 500 124 l 1,30,-1
+ 375 124 l 1,31,-1
+ 375 249 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: L
+Encoding: 76 76 40
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 125 l 1,2,-1
+ 500 125 l 1,3,-1
+ 500 0 l 1,4,-1
+ 0 0 l 1,5,-1
+ 0 875 l 1,0,-1
+EndSplineSet
+Validated: 1
+Kerns2: 207 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 50 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 48 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable"
+EndChar
+
+StartChar: M
+Encoding: 77 77 41
+Width: 1000
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 625 m 1,0,-1
+ 625 625 l 1,1,-1
+ 625 750 l 1,2,-1
+ 750 750 l 1,3,-1
+ 750 875 l 1,4,-1
+ 875 875 l 1,5,-1
+ 875 0 l 1,6,-1
+ 750 0 l 1,7,-1
+ 750 624 l 1,8,-1
+ 625 624 l 1,9,-1
+ 625 499 l 1,10,-1
+ 500 499 l 1,11,-1
+ 500 375 l 1,12,-1
+ 375 375 l 1,13,-1
+ 375 499 l 1,14,-1
+ 250 499 l 1,15,-1
+ 250 624 l 1,16,-1
+ 125 624 l 1,17,-1
+ 125 0 l 1,18,-1
+ 0 0 l 1,19,-1
+ 0 875 l 1,20,-1
+ 125 875 l 1,21,-1
+ 125 750 l 1,22,-1
+ 250 750 l 1,23,-1
+ 250 625 l 1,24,-1
+ 375 625 l 1,25,-1
+ 375 500 l 1,26,-1
+ 500 500 l 1,27,-1
+ 500 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: N
+Encoding: 78 78 42
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 0 m 1,0,-1
+ 500 125 l 1,1,-1
+ 375 125 l 1,2,-1
+ 375 275 l 1,3,-1
+ 275 275 l 1,4,-1
+ 275 375 l 1,5,-1
+ 250 375 l 1,6,-1
+ 250 575 l 1,7,-1
+ 200 575 l 1,8,-1
+ 200 625 l 1,9,-1
+ 125 625 l 1,10,-1
+ 125 0 l 1,11,-1
+ 0 0 l 1,12,-1
+ 0 875 l 1,13,-1
+ 125 875 l 1,14,-1
+ 125 750 l 1,15,-1
+ 250 750 l 1,16,-1
+ 250 600 l 1,17,-1
+ 350 600 l 1,18,-1
+ 350 500 l 1,19,-1
+ 375 500 l 1,20,-1
+ 375 300 l 1,21,-1
+ 425 300 l 1,22,-1
+ 425 250 l 1,23,-1
+ 500 250 l 1,24,-1
+ 500 875 l 1,25,-1
+ 625 875 l 1,26,-1
+ 625 0 l 1,27,-1
+ 500 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: O
+Encoding: 79 79 43
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+75 125 m 1,0,-1
+ 0 125 l 1,1,-1
+ 0 750 l 1,2,-1
+ 75 750 l 1,3,-1
+ 75 800 l 1,4,-1
+ 125 800 l 1,5,-1
+ 125 875 l 1,6,-1
+ 500 875 l 1,7,-1
+ 500 800 l 1,8,-1
+ 550 800 l 1,9,-1
+ 550 750 l 1,10,-1
+ 625 750 l 1,11,-1
+ 625 125 l 1,12,-1
+ 550 125 l 1,13,-1
+ 550 75 l 1,14,-1
+ 500 75 l 1,15,-1
+ 500 0 l 1,16,-1
+ 125 0 l 1,17,-1
+ 125 75 l 1,18,-1
+ 75 75 l 1,19,-1
+ 75 125 l 1,0,-1
+125 750 m 1,20,-1
+ 125 125 l 1,21,-1
+ 500 125 l 1,22,-1
+ 500 750 l 1,23,-1
+ 125 750 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: P
+Encoding: 80 80 44
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 500 875 l 1,1,-1
+ 500 800 l 1,2,-1
+ 550 800 l 1,3,-1
+ 550 750 l 1,4,-1
+ 625 750 l 1,5,-1
+ 625 500 l 1,6,-1
+ 550 500 l 1,7,-1
+ 550 450 l 1,8,-1
+ 500 450 l 1,9,-1
+ 500 375 l 1,10,-1
+ 125 375 l 1,11,-1
+ 125 0 l 1,12,-1
+ 0 0 l 1,13,-1
+ 0 875 l 1,0,-1
+125 750 m 1,14,-1
+ 125 500 l 1,15,-1
+ 500 500 l 1,16,-1
+ 500 750 l 1,17,-1
+ 125 750 l 1,14,-1
+EndSplineSet
+Validated: 1
+Kerns2: 38 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable"
+EndChar
+
+StartChar: Q
+Encoding: 81 81 45
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 -50 m 1,0,-1
+ 450 -50 l 1,1,-1
+ 450 0 l 1,2,-1
+ 125 0 l 1,3,-1
+ 125 75 l 1,4,-1
+ 75 75 l 1,5,-1
+ 75 125 l 1,6,-1
+ 0 125 l 1,7,-1
+ 0 750 l 1,8,-1
+ 75 750 l 1,9,-1
+ 75 800 l 1,10,-1
+ 125 800 l 1,11,-1
+ 125 875 l 1,12,-1
+ 500 875 l 1,13,-1
+ 500 800 l 1,14,-1
+ 550 800 l 1,15,-1
+ 550 750 l 1,16,-1
+ 625 750 l 1,17,-1
+ 625 125 l 1,18,-1
+ 550 125 l 1,19,-1
+ 550 75 l 1,20,-1
+ 500 75 l 1,21,-1
+ 500 0 l 1,22,-1
+ 625 0 l 1,23,-1
+ 625 -125 l 1,24,-1
+ 500 -125 l 1,25,-1
+ 500 -50 l 1,0,-1
+125 750 m 1,26,-1
+ 125 125 l 1,27,-1
+ 500 125 l 1,28,-1
+ 500 750 l 1,29,-1
+ 125 750 l 1,26,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: R
+Encoding: 82 82 46
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 249 m 1,0,-1
+ 250 249 l 1,1,-1
+ 250 375 l 1,2,-1
+ 125 375 l 1,3,-1
+ 125 0 l 1,4,-1
+ 0 0 l 1,5,-1
+ 0 875 l 1,6,-1
+ 500 875 l 1,7,-1
+ 500 800 l 1,8,-1
+ 550 800 l 1,9,-1
+ 550 750 l 1,10,-1
+ 625 750 l 1,11,-1
+ 625 500 l 1,12,-1
+ 550 500 l 1,13,-1
+ 550 450 l 1,14,-1
+ 500 450 l 1,15,-1
+ 500 375 l 1,16,-1
+ 375 375 l 1,17,-1
+ 375 250 l 1,18,-1
+ 500 250 l 1,19,-1
+ 500 125 l 1,20,-1
+ 625 125 l 1,21,-1
+ 625 0 l 1,22,-1
+ 500 0 l 1,23,-1
+ 500 124 l 1,24,-1
+ 375 124 l 1,25,-1
+ 375 249 l 1,0,-1
+125 750 m 1,26,-1
+ 125 500 l 1,27,-1
+ 500 500 l 1,28,-1
+ 500 750 l 1,29,-1
+ 125 750 l 1,26,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: S
+Encoding: 83 83 47
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 625 625 l 1,1,-1
+ 500 625 l 1,2,-1
+ 500 750 l 1,3,-1
+ 125 750 l 1,4,-1
+ 125 500 l 1,5,-1
+ 500 500 l 1,6,-1
+ 500 425 l 1,7,-1
+ 550 425 l 1,8,-1
+ 550 375 l 1,9,-1
+ 625 375 l 1,10,-1
+ 625 125 l 1,11,-1
+ 550 125 l 1,12,-1
+ 550 75 l 1,13,-1
+ 500 75 l 1,14,-1
+ 500 0 l 1,15,-1
+ 125 0 l 1,16,-1
+ 125 75 l 1,17,-1
+ 75 75 l 1,18,-1
+ 75 125 l 1,19,-1
+ 0 125 l 1,20,-1
+ 0 250 l 1,21,-1
+ 125 250 l 1,22,-1
+ 125 125 l 1,23,-1
+ 500 125 l 1,24,-1
+ 500 375 l 1,25,-1
+ 125 375 l 1,26,-1
+ 125 450 l 1,27,-1
+ 75 450 l 1,28,-1
+ 75 500 l 1,29,-1
+ 0 500 l 1,30,-1
+ 0 750 l 1,31,-1
+ 75 750 l 1,32,-1
+ 75 800 l 1,33,-1
+ 125 800 l 1,34,-1
+ 125 875 l 1,35,-1
+ 500 875 l 1,36,-1
+ 500 800 l 1,37,-1
+ 550 800 l 1,38,-1
+ 550 750 l 1,39,-1
+ 625 750 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: T
+Encoding: 84 84 48
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 625 875 l 1,1,-1
+ 625 750 l 1,2,-1
+ 375 750 l 1,3,-1
+ 375 0 l 1,4,-1
+ 250 0 l 1,5,-1
+ 250 750 l 1,6,-1
+ 0 750 l 1,7,-1
+ 0 875 l 1,0,-1
+EndSplineSet
+Validated: 1
+Kerns2: 38 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 26 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 25 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 24 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 23 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 22 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 21 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 20 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 18 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 14 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 13 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 10 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 9 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 8 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 7 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 6 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 5 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 4 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 2 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 1 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable"
+EndChar
+
+StartChar: U
+Encoding: 85 85 49
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+75 125 m 1,0,-1
+ 0 125 l 1,1,-1
+ 0 875 l 1,2,-1
+ 125 875 l 1,3,-1
+ 125 125 l 1,4,-1
+ 500 125 l 1,5,-1
+ 500 875 l 1,6,-1
+ 625 875 l 1,7,-1
+ 625 125 l 1,8,-1
+ 550 125 l 1,9,-1
+ 550 75 l 1,10,-1
+ 500 75 l 1,11,-1
+ 500 0 l 1,12,-1
+ 125 0 l 1,13,-1
+ 125 75 l 1,14,-1
+ 75 75 l 1,15,-1
+ 75 125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: V
+Encoding: 86 86 50
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 375 m 1,0,-1
+ 475 375 l 1,1,-1
+ 475 275 l 1,2,-1
+ 376 275 l 1,3,-1
+ 376 0 l 1,4,-1
+ 250 0 l 1,5,-1
+ 250 275 l 1,6,-1
+ 150 275 l 1,7,-1
+ 150 375 l 1,8,-1
+ 125 375 l 1,9,-1
+ 125 575 l 1,10,-1
+ 75 575 l 1,11,-1
+ 75 625 l 1,12,-1
+ 0 625 l 1,13,-1
+ 0 875 l 1,14,-1
+ 125 875 l 1,15,-1
+ 125 600 l 1,16,-1
+ 225 600 l 1,17,-1
+ 225 500 l 1,18,-1
+ 250 500 l 1,19,-1
+ 250 300 l 1,20,-1
+ 300 300 l 1,21,-1
+ 300 250 l 1,22,-1
+ 375 250 l 1,23,-1
+ 375 500 l 1,24,-1
+ 400 500 l 1,25,-1
+ 400 600 l 1,26,-1
+ 500 600 l 1,27,-1
+ 500 875 l 1,28,-1
+ 625 875 l 1,29,-1
+ 625 625 l 1,30,-1
+ 550 625 l 1,31,-1
+ 550 575 l 1,32,-1
+ 500 575 l 1,33,-1
+ 500 375 l 1,0,-1
+EndSplineSet
+Validated: 1
+Kerns2: 38 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable"
+EndChar
+
+StartChar: W
+Encoding: 87 87 51
+Width: 1000
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 75 m 1,0,-1
+ 375 0 l 1,1,-1
+ 125 0 l 1,2,-1
+ 125 75 l 1,3,-1
+ 75 75 l 1,4,-1
+ 75 125 l 1,5,-1
+ 0 125 l 1,6,-1
+ 0 875 l 1,7,-1
+ 125 875 l 1,8,-1
+ 125 125 l 1,9,-1
+ 375 125 l 1,10,-1
+ 375 875 l 1,11,-1
+ 500 875 l 1,12,-1
+ 500 125 l 1,13,-1
+ 750 125 l 1,14,-1
+ 750 875 l 1,15,-1
+ 875 875 l 1,16,-1
+ 875 125 l 1,17,-1
+ 800 125 l 1,18,-1
+ 800 75 l 1,19,-1
+ 750 75 l 1,20,-1
+ 750 0 l 1,21,-1
+ 500 0 l 1,22,-1
+ 500 124 l 1,23,-1
+ 425 124 l 1,24,-1
+ 425 75 l 1,25,-1
+ 375 75 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: X
+Encoding: 88 88 52
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 600 750 l 1,1,-1
+ 600 650 l 1,2,-1
+ 500 650 l 1,3,-1
+ 500 499 l 1,4,-1
+ 375 499 l 1,5,-1
+ 375 375 l 1,6,-1
+ 500 375 l 1,7,-1
+ 500 225 l 1,8,-1
+ 600 225 l 1,9,-1
+ 600 125 l 1,10,-1
+ 625 125 l 1,11,-1
+ 625 0 l 1,12,-1
+ 500 0 l 1,13,-1
+ 500 200 l 1,14,-1
+ 450 200 l 1,15,-1
+ 450 250 l 1,16,-1
+ 375 250 l 1,17,-1
+ 375 375 l 1,18,-1
+ 250 375 l 1,19,-1
+ 250 499 l 1,20,-1
+ 125 499 l 1,21,-1
+ 125 650 l 1,22,-1
+ 25 650 l 1,23,-1
+ 25 750 l 1,24,-1
+ 0 750 l 1,25,-1
+ 0 875 l 1,26,-1
+ 125 875 l 1,27,-1
+ 125 675 l 1,28,-1
+ 175 675 l 1,29,-1
+ 175 625 l 1,30,-1
+ 250 625 l 1,31,-1
+ 250 500 l 1,32,-1
+ 375 500 l 1,33,-1
+ 375 625 l 1,34,-1
+ 450 625 l 1,35,-1
+ 450 675 l 1,36,-1
+ 500 675 l 1,37,-1
+ 500 875 l 1,38,-1
+ 625 875 l 1,39,-1
+ 625 750 l 1,0,-1
+250 375 m 1,40,-1
+ 250 250 l 1,41,-1
+ 175 250 l 1,42,-1
+ 175 200 l 1,43,-1
+ 125 200 l 1,44,-1
+ 125 0 l 1,45,-1
+ 0 0 l 1,46,-1
+ 0 125 l 1,47,-1
+ 25 125 l 1,48,-1
+ 25 225 l 1,49,-1
+ 125 225 l 1,50,-1
+ 125 375 l 1,51,-1
+ 250 375 l 1,40,-1
+EndSplineSet
+Validated: 5
+EndChar
+
+StartChar: Z
+Encoding: 90 90 53
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 250 m 1,0,-1
+ 125 250 l 1,1,-1
+ 125 375 l 1,2,-1
+ 250 375 l 1,3,-1
+ 250 500 l 1,4,-1
+ 375 500 l 1,5,-1
+ 375 625 l 1,6,-1
+ 500 625 l 1,7,-1
+ 500 750 l 1,8,-1
+ 0 750 l 1,9,-1
+ 0 875 l 1,10,-1
+ 625 875 l 1,11,-1
+ 625 624 l 1,12,-1
+ 500 624 l 1,13,-1
+ 500 499 l 1,14,-1
+ 375 499 l 1,15,-1
+ 375 374 l 1,16,-1
+ 250 374 l 1,17,-1
+ 250 249 l 1,18,-1
+ 125 249 l 1,19,-1
+ 125 125 l 1,20,-1
+ 625 125 l 1,21,-1
+ 625 0 l 1,22,-1
+ 0 0 l 1,23,-1
+ 0 250 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: space
+Encoding: 32 32 54
+Width: 375
+Flags: W
+LayerCount: 2
+Fore
+Validated: 1
+EndChar
+
+StartChar: agrave
+Encoding: 224 224 55
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 125 m 1,0,-1
+ 300 125 l 1,1,-1
+ 300 75 l 1,2,-1
+ 250 75 l 1,3,-1
+ 250 0 l 1,4,-1
+ 125 0 l 1,5,-1
+ 125 75 l 1,6,-1
+ 75 75 l 1,7,-1
+ 75 125 l 1,8,-1
+ 0 125 l 1,9,-1
+ 0 500 l 1,10,-1
+ 75 500 l 1,11,-1
+ 75 550 l 1,12,-1
+ 125 550 l 1,13,-1
+ 125 625 l 1,14,-1
+ 500 625 l 1,15,-1
+ 500 0 l 1,16,-1
+ 375 0 l 1,17,-1
+ 375 125 l 1,0,-1
+375 225 m 1,18,-1
+ 375 500 l 1,19,-1
+ 125 500 l 1,20,-1
+ 125 125 l 1,21,-1
+ 275 125 l 1,22,-1
+ 275 225 l 1,23,-1
+ 375 225 l 1,18,-1
+125 875 m 1,24,-1
+ 125 1000 l 1,25,-1
+ 250 1000 l 1,26,-1
+ 250 925 l 1,27,-1
+ 300 925 l 1,28,-1
+ 300 875 l 1,29,-1
+ 350 875 l 1,30,-1
+ 350 775 l 1,31,-1
+ 250 775 l 1,32,-1
+ 250 875 l 1,33,-1
+ 125 875 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: aacute
+Encoding: 225 225 56
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 875 m 1,0,-1
+ 250 775 l 1,1,-1
+ 150 775 l 1,2,-1
+ 150 875 l 1,3,-1
+ 200 875 l 1,4,-1
+ 200 925 l 1,5,-1
+ 250 925 l 1,6,-1
+ 250 1000 l 1,7,-1
+ 375 1000 l 1,8,-1
+ 375 875 l 1,9,-1
+ 250 875 l 1,0,-1
+375 0 m 1,10,-1
+ 500 0 l 1,11,-1
+ 500 625 l 1,12,-1
+ 125 625 l 1,13,-1
+ 125 550 l 1,14,-1
+ 75 550 l 1,15,-1
+ 75 500 l 1,16,-1
+ 0 500 l 1,17,-1
+ 0 125 l 1,18,-1
+ 75 125 l 1,19,-1
+ 75 75 l 1,20,-1
+ 125 75 l 1,21,-1
+ 125 0 l 1,22,-1
+ 250 0 l 1,23,-1
+ 250 75 l 1,24,-1
+ 300 75 l 1,25,-1
+ 300 125 l 1,26,-1
+ 375 125 l 1,27,-1
+ 375 0 l 1,10,-1
+275 225 m 1,28,-1
+ 275 125 l 1,29,-1
+ 125 125 l 1,30,-1
+ 125 500 l 1,31,-1
+ 375 500 l 1,32,-1
+ 375 225 l 1,33,-1
+ 275 225 l 1,28,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: acircumflex
+Encoding: 226 226 57
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 925 m 1,0,-1
+ 425 925 l 1,1,-1
+ 425 875 l 1,2,-1
+ 475 875 l 1,3,-1
+ 475 775 l 1,4,-1
+ 375 775 l 1,5,-1
+ 375 875 l 1,6,-1
+ 125 875 l 1,7,-1
+ 125 775 l 1,8,-1
+ 25 775 l 1,9,-1
+ 25 875 l 1,10,-1
+ 75 875 l 1,11,-1
+ 75 925 l 1,12,-1
+ 125 925 l 1,13,-1
+ 125 1000 l 1,14,-1
+ 375 1000 l 1,15,-1
+ 375 925 l 1,0,-1
+375 0 m 1,16,-1
+ 500 0 l 1,17,-1
+ 500 625 l 1,18,-1
+ 125 625 l 1,19,-1
+ 125 550 l 1,20,-1
+ 75 550 l 1,21,-1
+ 75 500 l 1,22,-1
+ 0 500 l 1,23,-1
+ 0 125 l 1,24,-1
+ 75 125 l 1,25,-1
+ 75 75 l 1,26,-1
+ 125 75 l 1,27,-1
+ 125 0 l 1,28,-1
+ 250 0 l 1,29,-1
+ 250 75 l 1,30,-1
+ 300 75 l 1,31,-1
+ 300 125 l 1,32,-1
+ 375 125 l 1,33,-1
+ 375 0 l 1,16,-1
+275 225 m 1,34,-1
+ 275 125 l 1,35,-1
+ 125 125 l 1,36,-1
+ 125 500 l 1,37,-1
+ 375 500 l 1,38,-1
+ 375 225 l 1,39,-1
+ 275 225 l 1,34,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: atilde
+Encoding: 227 227 58
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 750 m 1,0,-1
+ 250 750 l 1,1,-1
+ 250 874 l 1,2,-1
+ 125 874 l 1,3,-1
+ 125 775 l 1,4,-1
+ 25 775 l 1,5,-1
+ 25 875 l 1,6,-1
+ 75 875 l 1,7,-1
+ 75 925 l 1,8,-1
+ 125 925 l 1,9,-1
+ 125 1000 l 1,10,-1
+ 250 1000 l 1,11,-1
+ 250 875 l 1,12,-1
+ 375 875 l 1,13,-1
+ 375 975 l 1,14,-1
+ 475 975 l 1,15,-1
+ 475 875 l 1,16,-1
+ 425 875 l 1,17,-1
+ 425 825 l 1,18,-1
+ 375 825 l 1,19,-1
+ 375 750 l 1,0,-1
+375 0 m 1,20,-1
+ 500 0 l 1,21,-1
+ 500 625 l 1,22,-1
+ 125 625 l 1,23,-1
+ 125 550 l 1,24,-1
+ 75 550 l 1,25,-1
+ 75 500 l 1,26,-1
+ 0 500 l 1,27,-1
+ 0 125 l 1,28,-1
+ 75 125 l 1,29,-1
+ 75 75 l 1,30,-1
+ 125 75 l 1,31,-1
+ 125 0 l 1,32,-1
+ 250 0 l 1,33,-1
+ 250 75 l 1,34,-1
+ 300 75 l 1,35,-1
+ 300 125 l 1,36,-1
+ 375 125 l 1,37,-1
+ 375 0 l 1,20,-1
+275 225 m 1,38,-1
+ 275 125 l 1,39,-1
+ 125 125 l 1,40,-1
+ 125 500 l 1,41,-1
+ 375 500 l 1,42,-1
+ 375 225 l 1,43,-1
+ 275 225 l 1,38,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: adieresis
+Encoding: 228 228 59
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 750 l 1,2,-1
+ 0 750 l 1,3,-1
+ 0 875 l 1,0,-1
+375 875 m 1,4,-1
+ 500 875 l 1,5,-1
+ 500 750 l 1,6,-1
+ 375 750 l 1,7,-1
+ 375 875 l 1,4,-1
+375 0 m 1,8,-1
+ 500 0 l 1,9,-1
+ 500 625 l 1,10,-1
+ 125 625 l 1,11,-1
+ 125 550 l 1,12,-1
+ 75 550 l 1,13,-1
+ 75 500 l 1,14,-1
+ 0 500 l 1,15,-1
+ 0 125 l 1,16,-1
+ 75 125 l 1,17,-1
+ 75 75 l 1,18,-1
+ 125 75 l 1,19,-1
+ 125 0 l 1,20,-1
+ 250 0 l 1,21,-1
+ 250 75 l 1,22,-1
+ 300 75 l 1,23,-1
+ 300 125 l 1,24,-1
+ 375 125 l 1,25,-1
+ 375 0 l 1,8,-1
+275 225 m 1,26,-1
+ 275 125 l 1,27,-1
+ 125 125 l 1,28,-1
+ 125 500 l 1,29,-1
+ 375 500 l 1,30,-1
+ 375 225 l 1,31,-1
+ 275 225 l 1,26,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: aring
+Encoding: 229 229 60
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 825 m 1,0,-1
+ 375 750 l 1,1,-1
+ 125 750 l 1,2,-1
+ 125 825 l 1,3,-1
+ 75 825 l 1,4,-1
+ 75 875 l 1,5,-1
+ 0 875 l 1,6,-1
+ 0 1000 l 1,7,-1
+ 75 1000 l 1,8,-1
+ 75 1050 l 1,9,-1
+ 125 1050 l 1,10,-1
+ 125 1125 l 1,11,-1
+ 375 1125 l 1,12,-1
+ 375 1050 l 1,13,-1
+ 425 1050 l 1,14,-1
+ 425 1000 l 1,15,-1
+ 500 1000 l 1,16,-1
+ 500 875 l 1,17,-1
+ 425 875 l 1,18,-1
+ 425 825 l 1,19,-1
+ 375 825 l 1,0,-1
+125 875 m 1,20,-1
+ 375 875 l 1,21,-1
+ 375 1000 l 1,22,-1
+ 125 1000 l 1,23,-1
+ 125 875 l 1,20,-1
+375 0 m 1,24,-1
+ 500 0 l 1,25,-1
+ 500 625 l 1,26,-1
+ 125 625 l 1,27,-1
+ 125 550 l 1,28,-1
+ 75 550 l 1,29,-1
+ 75 500 l 1,30,-1
+ 0 500 l 1,31,-1
+ 0 125 l 1,32,-1
+ 75 125 l 1,33,-1
+ 75 75 l 1,34,-1
+ 125 75 l 1,35,-1
+ 125 0 l 1,36,-1
+ 250 0 l 1,37,-1
+ 250 75 l 1,38,-1
+ 300 75 l 1,39,-1
+ 300 125 l 1,40,-1
+ 375 125 l 1,41,-1
+ 375 0 l 1,24,-1
+275 225 m 1,42,-1
+ 275 125 l 1,43,-1
+ 125 125 l 1,44,-1
+ 125 500 l 1,45,-1
+ 375 500 l 1,46,-1
+ 375 225 l 1,47,-1
+ 275 225 l 1,42,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: ccedilla
+Encoding: 231 231 61
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 -125 m 1,0,-1
+ 250 -225 l 1,1,-1
+ 150 -225 l 1,2,-1
+ 150 -125 l 1,3,-1
+ 200 -125 l 1,4,-1
+ 200 -75 l 1,5,-1
+ 250 -75 l 1,6,-1
+ 250 0 l 1,7,-1
+ 125 0 l 1,8,-1
+ 125 75 l 1,9,-1
+ 75 75 l 1,10,-1
+ 75 125 l 1,11,-1
+ 0 125 l 1,12,-1
+ 0 500 l 1,13,-1
+ 75 500 l 1,14,-1
+ 75 550 l 1,15,-1
+ 125 550 l 1,16,-1
+ 125 625 l 1,17,-1
+ 375 625 l 1,18,-1
+ 375 550 l 1,19,-1
+ 425 550 l 1,20,-1
+ 425 500 l 1,21,-1
+ 500 500 l 1,22,-1
+ 500 375 l 1,23,-1
+ 375 375 l 1,24,-1
+ 375 500 l 1,25,-1
+ 125 500 l 1,26,-1
+ 125 125 l 1,27,-1
+ 375 125 l 1,28,-1
+ 375 250 l 1,29,-1
+ 500 250 l 1,30,-1
+ 500 125 l 1,31,-1
+ 425 125 l 1,32,-1
+ 425 75 l 1,33,-1
+ 375 75 l 1,34,-1
+ 375 -125 l 1,35,-1
+ 250 -125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: egrave
+Encoding: 232 232 62
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 875 m 1,0,-1
+ 125 1000 l 1,1,-1
+ 250 1000 l 1,2,-1
+ 250 925 l 1,3,-1
+ 300 925 l 1,4,-1
+ 300 875 l 1,5,-1
+ 350 875 l 1,6,-1
+ 350 775 l 1,7,-1
+ 250 775 l 1,8,-1
+ 250 875 l 1,9,-1
+ 125 875 l 1,0,-1
+75 125 m 1,10,-1
+ 75 75 l 1,11,-1
+ 125 75 l 1,12,-1
+ 125 0 l 1,13,-1
+ 375 0 l 1,14,-1
+ 375 75 l 1,15,-1
+ 425 75 l 1,16,-1
+ 425 125 l 1,17,-1
+ 125 125 l 1,18,-1
+ 125 250 l 1,19,-1
+ 500 250 l 1,20,-1
+ 500 500 l 1,21,-1
+ 425 500 l 1,22,-1
+ 425 550 l 1,23,-1
+ 375 550 l 1,24,-1
+ 375 625 l 1,25,-1
+ 125 625 l 1,26,-1
+ 125 550 l 1,27,-1
+ 75 550 l 1,28,-1
+ 75 500 l 1,29,-1
+ 0 500 l 1,30,-1
+ 0 125 l 1,31,-1
+ 75 125 l 1,10,-1
+125 500 m 1,32,-1
+ 375 500 l 1,33,-1
+ 375 375 l 1,34,-1
+ 125 375 l 1,35,-1
+ 125 500 l 1,32,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: eacute
+Encoding: 233 233 63
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 875 m 1,0,-1
+ 250 775 l 1,1,-1
+ 150 775 l 1,2,-1
+ 150 875 l 1,3,-1
+ 200 875 l 1,4,-1
+ 200 925 l 1,5,-1
+ 250 925 l 1,6,-1
+ 250 1000 l 1,7,-1
+ 375 1000 l 1,8,-1
+ 375 875 l 1,9,-1
+ 250 875 l 1,0,-1
+75 125 m 1,10,-1
+ 75 75 l 1,11,-1
+ 125 75 l 1,12,-1
+ 125 0 l 1,13,-1
+ 375 0 l 1,14,-1
+ 375 75 l 1,15,-1
+ 425 75 l 1,16,-1
+ 425 125 l 1,17,-1
+ 125 125 l 1,18,-1
+ 125 250 l 1,19,-1
+ 500 250 l 1,20,-1
+ 500 500 l 1,21,-1
+ 425 500 l 1,22,-1
+ 425 550 l 1,23,-1
+ 375 550 l 1,24,-1
+ 375 625 l 1,25,-1
+ 125 625 l 1,26,-1
+ 125 550 l 1,27,-1
+ 75 550 l 1,28,-1
+ 75 500 l 1,29,-1
+ 0 500 l 1,30,-1
+ 0 125 l 1,31,-1
+ 75 125 l 1,10,-1
+125 500 m 1,32,-1
+ 375 500 l 1,33,-1
+ 375 375 l 1,34,-1
+ 125 375 l 1,35,-1
+ 125 500 l 1,32,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: ecircumflex
+Encoding: 234 234 64
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 925 m 1,0,-1
+ 425 925 l 1,1,-1
+ 425 875 l 1,2,-1
+ 475 875 l 1,3,-1
+ 475 775 l 1,4,-1
+ 375 775 l 1,5,-1
+ 375 875 l 1,6,-1
+ 125 875 l 1,7,-1
+ 125 775 l 1,8,-1
+ 25 775 l 1,9,-1
+ 25 875 l 1,10,-1
+ 75 875 l 1,11,-1
+ 75 925 l 1,12,-1
+ 125 925 l 1,13,-1
+ 125 1000 l 1,14,-1
+ 375 1000 l 1,15,-1
+ 375 925 l 1,0,-1
+75 125 m 1,16,-1
+ 75 75 l 1,17,-1
+ 125 75 l 1,18,-1
+ 125 0 l 1,19,-1
+ 375 0 l 1,20,-1
+ 375 75 l 1,21,-1
+ 425 75 l 1,22,-1
+ 425 125 l 1,23,-1
+ 125 125 l 1,24,-1
+ 125 250 l 1,25,-1
+ 500 250 l 1,26,-1
+ 500 500 l 1,27,-1
+ 425 500 l 1,28,-1
+ 425 550 l 1,29,-1
+ 375 550 l 1,30,-1
+ 375 625 l 1,31,-1
+ 125 625 l 1,32,-1
+ 125 550 l 1,33,-1
+ 75 550 l 1,34,-1
+ 75 500 l 1,35,-1
+ 0 500 l 1,36,-1
+ 0 125 l 1,37,-1
+ 75 125 l 1,16,-1
+125 500 m 1,38,-1
+ 375 500 l 1,39,-1
+ 375 375 l 1,40,-1
+ 125 375 l 1,41,-1
+ 125 500 l 1,38,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: edieresis
+Encoding: 235 235 65
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 750 l 1,2,-1
+ 0 750 l 1,3,-1
+ 0 875 l 1,0,-1
+375 875 m 1,4,-1
+ 500 875 l 1,5,-1
+ 500 750 l 1,6,-1
+ 375 750 l 1,7,-1
+ 375 875 l 1,4,-1
+75 125 m 1,8,-1
+ 75 75 l 1,9,-1
+ 125 75 l 1,10,-1
+ 125 0 l 1,11,-1
+ 375 0 l 1,12,-1
+ 375 75 l 1,13,-1
+ 425 75 l 1,14,-1
+ 425 125 l 1,15,-1
+ 125 125 l 1,16,-1
+ 125 250 l 1,17,-1
+ 500 250 l 1,18,-1
+ 500 500 l 1,19,-1
+ 425 500 l 1,20,-1
+ 425 550 l 1,21,-1
+ 375 550 l 1,22,-1
+ 375 625 l 1,23,-1
+ 125 625 l 1,24,-1
+ 125 550 l 1,25,-1
+ 75 550 l 1,26,-1
+ 75 500 l 1,27,-1
+ 0 500 l 1,28,-1
+ 0 125 l 1,29,-1
+ 75 125 l 1,8,-1
+125 500 m 1,30,-1
+ 375 500 l 1,31,-1
+ 375 375 l 1,32,-1
+ 125 375 l 1,33,-1
+ 125 500 l 1,30,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: igrave
+Encoding: 236 236 66
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 625 l 1,0,-1
+-125 875 m 1,4,-1
+ -125 1000 l 1,5,-1
+ 0 1000 l 1,6,-1
+ 0 925 l 1,7,-1
+ 50 925 l 1,8,-1
+ 50 875 l 1,9,-1
+ 100 875 l 1,10,-1
+ 100 775 l 1,11,-1
+ 0 775 l 1,12,-1
+ 0 875 l 1,13,-1
+ -125 875 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: iacute
+Encoding: 237 237 67
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 625 l 1,0,-1
+125 875 m 1,4,-1
+ 125 775 l 1,5,-1
+ 25 775 l 1,6,-1
+ 25 875 l 1,7,-1
+ 75 875 l 1,8,-1
+ 75 925 l 1,9,-1
+ 125 925 l 1,10,-1
+ 125 1000 l 1,11,-1
+ 250 1000 l 1,12,-1
+ 250 875 l 1,13,-1
+ 125 875 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: icircumflex
+Encoding: 238 238 68
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 625 l 1,0,-1
+125 925 m 1,4,-1
+ 175 925 l 1,5,-1
+ 175 875 l 1,6,-1
+ 225 875 l 1,7,-1
+ 225 775 l 1,8,-1
+ 125 775 l 1,9,-1
+ 125 875 l 1,10,-1
+ 0 875 l 1,11,-1
+ 0 775 l 1,12,-1
+ -100 775 l 1,13,-1
+ -100 875 l 1,14,-1
+ -50 875 l 1,15,-1
+ -50 925 l 1,16,-1
+ 0 925 l 1,17,-1
+ 0 1000 l 1,18,-1
+ 125 1000 l 1,19,-1
+ 125 925 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: idieresis
+Encoding: 239 239 69
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 625 l 1,0,-1
+-125 875 m 1,4,-1
+ 0 875 l 1,5,-1
+ 0 750 l 1,6,-1
+ -125 750 l 1,7,-1
+ -125 875 l 1,4,-1
+125 875 m 1,8,-1
+ 250 875 l 1,9,-1
+ 250 750 l 1,10,-1
+ 125 750 l 1,11,-1
+ 125 875 l 1,8,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: ograve
+Encoding: 242 242 70
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 500 l 1,5,-1
+ 75 500 l 1,6,-1
+ 75 550 l 1,7,-1
+ 125 550 l 1,8,-1
+ 125 625 l 1,9,-1
+ 375 625 l 1,10,-1
+ 375 550 l 1,11,-1
+ 425 550 l 1,12,-1
+ 425 500 l 1,13,-1
+ 500 500 l 1,14,-1
+ 500 125 l 1,15,-1
+ 425 125 l 1,16,-1
+ 425 75 l 1,17,-1
+ 375 75 l 1,18,-1
+ 375 0 l 1,19,-1
+ 125 0 l 1,0,-1
+125 500 m 1,20,-1
+ 125 125 l 1,21,-1
+ 375 125 l 1,22,-1
+ 375 500 l 1,23,-1
+ 125 500 l 1,20,-1
+125 875 m 1,24,-1
+ 125 1000 l 1,25,-1
+ 250 1000 l 1,26,-1
+ 250 925 l 1,27,-1
+ 300 925 l 1,28,-1
+ 300 875 l 1,29,-1
+ 350 875 l 1,30,-1
+ 350 775 l 1,31,-1
+ 250 775 l 1,32,-1
+ 250 875 l 1,33,-1
+ 125 875 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: oacute
+Encoding: 243 243 71
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 500 l 1,5,-1
+ 75 500 l 1,6,-1
+ 75 550 l 1,7,-1
+ 125 550 l 1,8,-1
+ 125 625 l 1,9,-1
+ 375 625 l 1,10,-1
+ 375 550 l 1,11,-1
+ 425 550 l 1,12,-1
+ 425 500 l 1,13,-1
+ 500 500 l 1,14,-1
+ 500 125 l 1,15,-1
+ 425 125 l 1,16,-1
+ 425 75 l 1,17,-1
+ 375 75 l 1,18,-1
+ 375 0 l 1,19,-1
+ 125 0 l 1,0,-1
+125 500 m 1,20,-1
+ 125 125 l 1,21,-1
+ 375 125 l 1,22,-1
+ 375 500 l 1,23,-1
+ 125 500 l 1,20,-1
+250 875 m 1,24,-1
+ 250 775 l 1,25,-1
+ 150 775 l 1,26,-1
+ 150 875 l 1,27,-1
+ 200 875 l 1,28,-1
+ 200 925 l 1,29,-1
+ 250 925 l 1,30,-1
+ 250 1000 l 1,31,-1
+ 375 1000 l 1,32,-1
+ 375 875 l 1,33,-1
+ 250 875 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: ocircumflex
+Encoding: 244 244 72
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 500 l 1,5,-1
+ 75 500 l 1,6,-1
+ 75 550 l 1,7,-1
+ 125 550 l 1,8,-1
+ 125 625 l 1,9,-1
+ 375 625 l 1,10,-1
+ 375 550 l 1,11,-1
+ 425 550 l 1,12,-1
+ 425 500 l 1,13,-1
+ 500 500 l 1,14,-1
+ 500 125 l 1,15,-1
+ 425 125 l 1,16,-1
+ 425 75 l 1,17,-1
+ 375 75 l 1,18,-1
+ 375 0 l 1,19,-1
+ 125 0 l 1,0,-1
+125 500 m 1,20,-1
+ 125 125 l 1,21,-1
+ 375 125 l 1,22,-1
+ 375 500 l 1,23,-1
+ 125 500 l 1,20,-1
+375 925 m 1,24,-1
+ 425 925 l 1,25,-1
+ 425 875 l 1,26,-1
+ 475 875 l 1,27,-1
+ 475 775 l 1,28,-1
+ 375 775 l 1,29,-1
+ 375 875 l 1,30,-1
+ 125 875 l 1,31,-1
+ 125 775 l 1,32,-1
+ 25 775 l 1,33,-1
+ 25 875 l 1,34,-1
+ 75 875 l 1,35,-1
+ 75 925 l 1,36,-1
+ 125 925 l 1,37,-1
+ 125 1000 l 1,38,-1
+ 375 1000 l 1,39,-1
+ 375 925 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: otilde
+Encoding: 245 245 73
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 500 l 1,5,-1
+ 75 500 l 1,6,-1
+ 75 550 l 1,7,-1
+ 125 550 l 1,8,-1
+ 125 625 l 1,9,-1
+ 375 625 l 1,10,-1
+ 375 550 l 1,11,-1
+ 425 550 l 1,12,-1
+ 425 500 l 1,13,-1
+ 500 500 l 1,14,-1
+ 500 125 l 1,15,-1
+ 425 125 l 1,16,-1
+ 425 75 l 1,17,-1
+ 375 75 l 1,18,-1
+ 375 0 l 1,19,-1
+ 125 0 l 1,0,-1
+125 500 m 1,20,-1
+ 125 125 l 1,21,-1
+ 375 125 l 1,22,-1
+ 375 500 l 1,23,-1
+ 125 500 l 1,20,-1
+375 750 m 1,24,-1
+ 250 750 l 1,25,-1
+ 250 874 l 1,26,-1
+ 125 874 l 1,27,-1
+ 125 775 l 1,28,-1
+ 25 775 l 1,29,-1
+ 25 875 l 1,30,-1
+ 75 875 l 1,31,-1
+ 75 925 l 1,32,-1
+ 125 925 l 1,33,-1
+ 125 1000 l 1,34,-1
+ 250 1000 l 1,35,-1
+ 250 875 l 1,36,-1
+ 375 875 l 1,37,-1
+ 375 975 l 1,38,-1
+ 475 975 l 1,39,-1
+ 475 875 l 1,40,-1
+ 425 875 l 1,41,-1
+ 425 825 l 1,42,-1
+ 375 825 l 1,43,-1
+ 375 750 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: odieresis
+Encoding: 246 246 74
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 750 l 1,2,-1
+ 0 750 l 1,3,-1
+ 0 875 l 1,0,-1
+375 875 m 1,4,-1
+ 500 875 l 1,5,-1
+ 500 750 l 1,6,-1
+ 375 750 l 1,7,-1
+ 375 875 l 1,4,-1
+125 0 m 1,8,-1
+ 125 75 l 1,9,-1
+ 75 75 l 1,10,-1
+ 75 125 l 1,11,-1
+ 0 125 l 1,12,-1
+ 0 500 l 1,13,-1
+ 75 500 l 1,14,-1
+ 75 550 l 1,15,-1
+ 125 550 l 1,16,-1
+ 125 625 l 1,17,-1
+ 375 625 l 1,18,-1
+ 375 550 l 1,19,-1
+ 425 550 l 1,20,-1
+ 425 500 l 1,21,-1
+ 500 500 l 1,22,-1
+ 500 125 l 1,23,-1
+ 425 125 l 1,24,-1
+ 425 75 l 1,25,-1
+ 375 75 l 1,26,-1
+ 375 0 l 1,27,-1
+ 125 0 l 1,8,-1
+125 500 m 1,28,-1
+ 125 125 l 1,29,-1
+ 375 125 l 1,30,-1
+ 375 500 l 1,31,-1
+ 125 500 l 1,28,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: divide
+Encoding: 247 247 75
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 500 m 1,0,-1
+ 625 500 l 1,1,-1
+ 625 375 l 1,2,-1
+ 0 375 l 1,3,-1
+ 0 500 l 1,0,-1
+375 625 m 1,4,-1
+ 250 625 l 1,5,-1
+ 250 750 l 1,6,-1
+ 375 750 l 1,7,-1
+ 375 625 l 1,4,-1
+250 125 m 1,8,-1
+ 250 250 l 1,9,-1
+ 375 250 l 1,10,-1
+ 375 125 l 1,11,-1
+ 250 125 l 1,8,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: multiply
+Encoding: 215 215 76
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 625 m 1,0,-1
+ 500 625 l 1,1,-1
+ 500 750 l 1,2,-1
+ 625 750 l 1,3,-1
+ 625 624 l 1,4,-1
+ 500 624 l 1,5,-1
+ 500 499 l 1,6,-1
+ 375 499 l 1,7,-1
+ 375 375 l 1,8,-1
+ 500 375 l 1,9,-1
+ 500 250 l 1,10,-1
+ 625 250 l 1,11,-1
+ 625 125 l 1,12,-1
+ 500 125 l 1,13,-1
+ 500 249 l 1,14,-1
+ 375 249 l 1,15,-1
+ 375 375 l 1,16,-1
+ 250 375 l 1,17,-1
+ 250 499 l 1,18,-1
+ 125 499 l 1,19,-1
+ 125 624 l 1,20,-1
+ 0 624 l 1,21,-1
+ 0 750 l 1,22,-1
+ 125 750 l 1,23,-1
+ 125 625 l 1,24,-1
+ 250 625 l 1,25,-1
+ 250 500 l 1,26,-1
+ 375 500 l 1,27,-1
+ 375 625 l 1,0,-1
+0 250 m 1,28,-1
+ 125 250 l 1,29,-1
+ 125 375 l 1,30,-1
+ 250 375 l 1,31,-1
+ 250 249 l 1,32,-1
+ 125 249 l 1,33,-1
+ 125 125 l 1,34,-1
+ 0 125 l 1,35,-1
+ 0 250 l 1,28,-1
+EndSplineSet
+Validated: 5
+EndChar
+
+StartChar: ugrave
+Encoding: 249 249 77
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 875 m 1,0,-1
+ 125 1000 l 1,1,-1
+ 250 1000 l 1,2,-1
+ 250 925 l 1,3,-1
+ 300 925 l 1,4,-1
+ 300 875 l 1,5,-1
+ 350 875 l 1,6,-1
+ 350 775 l 1,7,-1
+ 250 775 l 1,8,-1
+ 250 875 l 1,9,-1
+ 125 875 l 1,0,-1
+375 225 m 1,10,-1
+ 275 225 l 1,11,-1
+ 275 125 l 1,12,-1
+ 125 125 l 1,13,-1
+ 125 625 l 1,14,-1
+ 0 625 l 1,15,-1
+ 0 125 l 1,16,-1
+ 75 125 l 1,17,-1
+ 75 75 l 1,18,-1
+ 125 75 l 1,19,-1
+ 125 0 l 1,20,-1
+ 250 0 l 1,21,-1
+ 250 75 l 1,22,-1
+ 300 75 l 1,23,-1
+ 300 125 l 1,24,-1
+ 375 125 l 1,25,-1
+ 375 0 l 1,26,-1
+ 500 0 l 1,27,-1
+ 500 625 l 1,28,-1
+ 375 625 l 1,29,-1
+ 375 225 l 1,10,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: uacute
+Encoding: 250 250 78
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 875 m 1,0,-1
+ 250 775 l 1,1,-1
+ 150 775 l 1,2,-1
+ 150 875 l 1,3,-1
+ 200 875 l 1,4,-1
+ 200 925 l 1,5,-1
+ 250 925 l 1,6,-1
+ 250 1000 l 1,7,-1
+ 375 1000 l 1,8,-1
+ 375 875 l 1,9,-1
+ 250 875 l 1,0,-1
+375 225 m 1,10,-1
+ 275 225 l 1,11,-1
+ 275 125 l 1,12,-1
+ 125 125 l 1,13,-1
+ 125 625 l 1,14,-1
+ 0 625 l 1,15,-1
+ 0 125 l 1,16,-1
+ 75 125 l 1,17,-1
+ 75 75 l 1,18,-1
+ 125 75 l 1,19,-1
+ 125 0 l 1,20,-1
+ 250 0 l 1,21,-1
+ 250 75 l 1,22,-1
+ 300 75 l 1,23,-1
+ 300 125 l 1,24,-1
+ 375 125 l 1,25,-1
+ 375 0 l 1,26,-1
+ 500 0 l 1,27,-1
+ 500 625 l 1,28,-1
+ 375 625 l 1,29,-1
+ 375 225 l 1,10,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: ucircumflex
+Encoding: 251 251 79
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 925 m 1,0,-1
+ 425 925 l 1,1,-1
+ 425 875 l 1,2,-1
+ 475 875 l 1,3,-1
+ 475 775 l 1,4,-1
+ 375 775 l 1,5,-1
+ 375 875 l 1,6,-1
+ 125 875 l 1,7,-1
+ 125 775 l 1,8,-1
+ 25 775 l 1,9,-1
+ 25 875 l 1,10,-1
+ 75 875 l 1,11,-1
+ 75 925 l 1,12,-1
+ 125 925 l 1,13,-1
+ 125 1000 l 1,14,-1
+ 375 1000 l 1,15,-1
+ 375 925 l 1,0,-1
+375 225 m 1,16,-1
+ 275 225 l 1,17,-1
+ 275 125 l 1,18,-1
+ 125 125 l 1,19,-1
+ 125 625 l 1,20,-1
+ 0 625 l 1,21,-1
+ 0 125 l 1,22,-1
+ 75 125 l 1,23,-1
+ 75 75 l 1,24,-1
+ 125 75 l 1,25,-1
+ 125 0 l 1,26,-1
+ 250 0 l 1,27,-1
+ 250 75 l 1,28,-1
+ 300 75 l 1,29,-1
+ 300 125 l 1,30,-1
+ 375 125 l 1,31,-1
+ 375 0 l 1,32,-1
+ 500 0 l 1,33,-1
+ 500 625 l 1,34,-1
+ 375 625 l 1,35,-1
+ 375 225 l 1,16,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: udieresis
+Encoding: 252 252 80
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 750 l 1,2,-1
+ 0 750 l 1,3,-1
+ 0 875 l 1,0,-1
+375 875 m 1,4,-1
+ 500 875 l 1,5,-1
+ 500 750 l 1,6,-1
+ 375 750 l 1,7,-1
+ 375 875 l 1,4,-1
+375 225 m 1,8,-1
+ 275 225 l 1,9,-1
+ 275 125 l 1,10,-1
+ 125 125 l 1,11,-1
+ 125 625 l 1,12,-1
+ 0 625 l 1,13,-1
+ 0 125 l 1,14,-1
+ 75 125 l 1,15,-1
+ 75 75 l 1,16,-1
+ 125 75 l 1,17,-1
+ 125 0 l 1,18,-1
+ 250 0 l 1,19,-1
+ 250 75 l 1,20,-1
+ 300 75 l 1,21,-1
+ 300 125 l 1,22,-1
+ 375 125 l 1,23,-1
+ 375 0 l 1,24,-1
+ 500 0 l 1,25,-1
+ 500 625 l 1,26,-1
+ 375 625 l 1,27,-1
+ 375 225 l 1,8,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: oslash
+Encoding: 248 248 81
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+75 250 m 1,0,-1
+ 0 250 l 1,1,-1
+ 0 500 l 1,2,-1
+ 75 500 l 1,3,-1
+ 75 550 l 1,4,-1
+ 125 550 l 1,5,-1
+ 125 625 l 1,6,-1
+ 375 625 l 1,7,-1
+ 375 550 l 1,8,-1
+ 425 550 l 1,9,-1
+ 425 500 l 1,10,-1
+ 500 500 l 1,11,-1
+ 500 625 l 1,12,-1
+ 625 625 l 1,13,-1
+ 625 499 l 1,14,-1
+ 500 499 l 1,15,-1
+ 500 425 l 1,16,-1
+ 550 425 l 1,17,-1
+ 550 375 l 1,18,-1
+ 625 375 l 1,19,-1
+ 625 125 l 1,20,-1
+ 550 125 l 1,21,-1
+ 550 75 l 1,22,-1
+ 500 75 l 1,23,-1
+ 500 0 l 1,24,-1
+ 250 0 l 1,25,-1
+ 250 75 l 1,26,-1
+ 200 75 l 1,27,-1
+ 200 124 l 1,28,-1
+ 125 124 l 1,29,-1
+ 125 0 l 1,30,-1
+ 0 0 l 1,31,-1
+ 0 125 l 1,32,-1
+ 125 125 l 1,33,-1
+ 125 200 l 1,34,-1
+ 75 200 l 1,35,-1
+ 75 250 l 1,0,-1
+125 250 m 1,36,-1
+ 250 250 l 1,37,-1
+ 250 375 l 1,38,-1
+ 375 375 l 1,39,-1
+ 375 500 l 1,40,-1
+ 125 500 l 1,41,-1
+ 125 250 l 1,36,-1
+375 374 m 1,42,-1
+ 375 249 l 1,43,-1
+ 250 249 l 1,44,-1
+ 250 125 l 1,45,-1
+ 500 125 l 1,46,-1
+ 500 374 l 1,47,-1
+ 375 374 l 1,42,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: ntilde
+Encoding: 241 241 82
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 750 m 1,0,-1
+ 250 750 l 1,1,-1
+ 250 874 l 1,2,-1
+ 125 874 l 1,3,-1
+ 125 775 l 1,4,-1
+ 25 775 l 1,5,-1
+ 25 875 l 1,6,-1
+ 75 875 l 1,7,-1
+ 75 925 l 1,8,-1
+ 125 925 l 1,9,-1
+ 125 1000 l 1,10,-1
+ 250 1000 l 1,11,-1
+ 250 875 l 1,12,-1
+ 375 875 l 1,13,-1
+ 375 975 l 1,14,-1
+ 475 975 l 1,15,-1
+ 475 875 l 1,16,-1
+ 425 875 l 1,17,-1
+ 425 825 l 1,18,-1
+ 375 825 l 1,19,-1
+ 375 750 l 1,0,-1
+125 400 m 1,20,-1
+ 225 400 l 1,21,-1
+ 225 500 l 1,22,-1
+ 375 500 l 1,23,-1
+ 375 0 l 1,24,-1
+ 500 0 l 1,25,-1
+ 500 500 l 1,26,-1
+ 425 500 l 1,27,-1
+ 425 550 l 1,28,-1
+ 375 550 l 1,29,-1
+ 375 625 l 1,30,-1
+ 250 625 l 1,31,-1
+ 250 550 l 1,32,-1
+ 200 550 l 1,33,-1
+ 200 500 l 1,34,-1
+ 125 500 l 1,35,-1
+ 125 625 l 1,36,-1
+ 0 625 l 1,37,-1
+ 0 0 l 1,38,-1
+ 125 0 l 1,39,-1
+ 125 400 l 1,20,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: Igrave
+Encoding: 204 204 83
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 875 l 1,0,-1
+-125 1125 m 1,4,-1
+ -125 1250 l 1,5,-1
+ 0 1250 l 1,6,-1
+ 0 1175 l 1,7,-1
+ 50 1175 l 1,8,-1
+ 50 1125 l 1,9,-1
+ 100 1125 l 1,10,-1
+ 100 1025 l 1,11,-1
+ 0 1025 l 1,12,-1
+ 0 1125 l 1,13,-1
+ -125 1125 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Iacute
+Encoding: 205 205 84
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 875 l 1,0,-1
+125 1125 m 1,4,-1
+ 125 1025 l 1,5,-1
+ 25 1025 l 1,6,-1
+ 25 1125 l 1,7,-1
+ 75 1125 l 1,8,-1
+ 75 1175 l 1,9,-1
+ 125 1175 l 1,10,-1
+ 125 1250 l 1,11,-1
+ 250 1250 l 1,12,-1
+ 250 1125 l 1,13,-1
+ 125 1125 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Icircumflex
+Encoding: 206 206 85
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 875 l 1,0,-1
+125 1175 m 1,4,-1
+ 175 1175 l 1,5,-1
+ 175 1125 l 1,6,-1
+ 225 1125 l 1,7,-1
+ 225 1025 l 1,8,-1
+ 125 1025 l 1,9,-1
+ 125 1125 l 1,10,-1
+ 0 1125 l 1,11,-1
+ 0 1025 l 1,12,-1
+ -100 1025 l 1,13,-1
+ -100 1125 l 1,14,-1
+ -50 1125 l 1,15,-1
+ -50 1175 l 1,16,-1
+ 0 1175 l 1,17,-1
+ 0 1250 l 1,18,-1
+ 125 1250 l 1,19,-1
+ 125 1175 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Idieresis
+Encoding: 207 207 86
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 875 l 1,0,-1
+-125 1125 m 1,4,-1
+ 0 1125 l 1,5,-1
+ 0 1000 l 1,6,-1
+ -125 1000 l 1,7,-1
+ -125 1125 l 1,4,-1
+125 1125 m 1,8,-1
+ 250 1125 l 1,9,-1
+ 250 1000 l 1,10,-1
+ 125 1000 l 1,11,-1
+ 125 1125 l 1,8,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: quotedblleft
+Encoding: 8220 8220 87
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 500 m 1,0,-1
+ 250 500 l 1,1,-1
+ 250 749 l 1,2,-1
+ 125 749 l 1,3,-1
+ 125 500 l 1,4,-1
+ 0 500 l 1,5,-1
+ 0 750 l 1,6,-1
+ 75 750 l 1,7,-1
+ 75 800 l 1,8,-1
+ 125 800 l 1,9,-1
+ 125 850 l 1,10,-1
+ 225 850 l 1,11,-1
+ 225 750 l 1,12,-1
+ 325 750 l 1,13,-1
+ 325 800 l 1,14,-1
+ 375 800 l 1,15,-1
+ 375 850 l 1,16,-1
+ 475 850 l 1,17,-1
+ 475 750 l 1,18,-1
+ 375 750 l 1,19,-1
+ 375 500 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: quotedblright
+Encoding: 8221 8221 88
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 875 m 1,0,-1
+ 250 875 l 1,1,-1
+ 250 625 l 1,2,-1
+ 375 625 l 1,3,-1
+ 375 875 l 1,4,-1
+ 500 875 l 1,5,-1
+ 500 625 l 1,6,-1
+ 425 625 l 1,7,-1
+ 425 575 l 1,8,-1
+ 375 575 l 1,9,-1
+ 375 525 l 1,10,-1
+ 275 525 l 1,11,-1
+ 275 624 l 1,12,-1
+ 175 624 l 1,13,-1
+ 175 575 l 1,14,-1
+ 125 575 l 1,15,-1
+ 125 525 l 1,16,-1
+ 25 525 l 1,17,-1
+ 25 625 l 1,18,-1
+ 125 625 l 1,19,-1
+ 125 875 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: bullet
+Encoding: 8226 8226 89
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 750 l 1,2,-1
+ 500 750 l 1,3,-1
+ 500 625 l 1,4,-1
+ 625 625 l 1,5,-1
+ 625 250 l 1,6,-1
+ 500 250 l 1,7,-1
+ 500 125 l 1,8,-1
+ 125 125 l 1,9,-1
+ 125 250 l 1,10,-1
+ 0 250 l 1,11,-1
+ 0 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: endash
+Encoding: 8211 8211 90
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 500 m 1,0,-1
+ 625 500 l 1,1,-1
+ 625 375 l 1,2,-1
+ 0 375 l 1,3,-1
+ 0 500 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: emdash
+Encoding: 8212 8212 91
+Width: 1000
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 500 m 1,0,-1
+ 875 500 l 1,1,-1
+ 875 375 l 1,2,-1
+ 0 375 l 1,3,-1
+ 0 500 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: tilde
+Encoding: 732 732 92
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 1000 m 1,0,-1
+ 250 1000 l 1,1,-1
+ 250 1124 l 1,2,-1
+ 125 1124 l 1,3,-1
+ 125 1025 l 1,4,-1
+ 25 1025 l 1,5,-1
+ 25 1125 l 1,6,-1
+ 75 1125 l 1,7,-1
+ 75 1175 l 1,8,-1
+ 125 1175 l 1,9,-1
+ 125 1250 l 1,10,-1
+ 250 1250 l 1,11,-1
+ 250 1125 l 1,12,-1
+ 375 1125 l 1,13,-1
+ 375 1225 l 1,14,-1
+ 475 1225 l 1,15,-1
+ 475 1125 l 1,16,-1
+ 425 1125 l 1,17,-1
+ 425 1075 l 1,18,-1
+ 375 1075 l 1,19,-1
+ 375 1000 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: trademark
+Encoding: 8482 8482 93
+Width: 875
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 500 m 1,0,-1
+ 125 500 l 1,1,-1
+ 125 775 l 1,2,-1
+ 25 775 l 1,3,-1
+ 25 875 l 1,4,-1
+ 500 875 l 1,5,-1
+ 500 800 l 1,6,-1
+ 550 800 l 1,7,-1
+ 550 750 l 1,8,-1
+ 625 750 l 1,9,-1
+ 625 875 l 1,10,-1
+ 750 875 l 1,11,-1
+ 750 500 l 1,12,-1
+ 625 500 l 1,13,-1
+ 625 650 l 1,14,-1
+ 525 650 l 1,15,-1
+ 525 750 l 1,16,-1
+ 500 750 l 1,17,-1
+ 500 500 l 1,18,-1
+ 375 500 l 1,19,-1
+ 375 874 l 1,20,-1
+ 350 874 l 1,21,-1
+ 350 775 l 1,22,-1
+ 250 775 l 1,23,-1
+ 250 500 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: scaron
+Encoding: 353 353 94
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 125 m 1,0,-1
+ 375 125 l 1,1,-1
+ 375 250 l 1,2,-1
+ 125 250 l 1,3,-1
+ 125 325 l 1,4,-1
+ 75 325 l 1,5,-1
+ 75 375 l 1,6,-1
+ 0 375 l 1,7,-1
+ 0 500 l 1,8,-1
+ 75 500 l 1,9,-1
+ 75 550 l 1,10,-1
+ 125 550 l 1,11,-1
+ 125 625 l 1,12,-1
+ 500 625 l 1,13,-1
+ 500 500 l 1,14,-1
+ 125 500 l 1,15,-1
+ 125 375 l 1,16,-1
+ 375 375 l 1,17,-1
+ 375 300 l 1,18,-1
+ 425 300 l 1,19,-1
+ 425 250 l 1,20,-1
+ 500 250 l 1,21,-1
+ 500 125 l 1,22,-1
+ 425 125 l 1,23,-1
+ 425 75 l 1,24,-1
+ 375 75 l 1,25,-1
+ 375 0 l 1,26,-1
+ 0 0 l 1,27,-1
+ 0 125 l 1,0,-1
+375 750 m 1,28,-1
+ 125 750 l 1,29,-1
+ 125 825 l 1,30,-1
+ 75 825 l 1,31,-1
+ 75 875 l 1,32,-1
+ 25 875 l 1,33,-1
+ 25 975 l 1,34,-1
+ 125 975 l 1,35,-1
+ 125 875 l 1,36,-1
+ 375 875 l 1,37,-1
+ 375 975 l 1,38,-1
+ 475 975 l 1,39,-1
+ 475 875 l 1,40,-1
+ 425 875 l 1,41,-1
+ 425 825 l 1,42,-1
+ 375 825 l 1,43,-1
+ 375 750 l 1,28,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: guilsinglright
+Encoding: 8250 8250 95
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 249 m 1,0,-1
+ 125 249 l 1,1,-1
+ 125 125 l 1,2,-1
+ 0 125 l 1,3,-1
+ 0 250 l 1,4,-1
+ 125 250 l 1,5,-1
+ 125 375 l 1,6,-1
+ 250 375 l 1,7,-1
+ 250 499 l 1,8,-1
+ 125 499 l 1,9,-1
+ 125 624 l 1,10,-1
+ 0 624 l 1,11,-1
+ 0 750 l 1,12,-1
+ 125 750 l 1,13,-1
+ 125 625 l 1,14,-1
+ 250 625 l 1,15,-1
+ 250 500 l 1,16,-1
+ 375 500 l 1,17,-1
+ 375 374 l 1,18,-1
+ 250 374 l 1,19,-1
+ 250 249 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: oe
+Encoding: 339 339 96
+Width: 1000
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+425 500 m 1,0,-1
+ 500 500 l 1,1,-1
+ 500 625 l 1,2,-1
+ 750 625 l 1,3,-1
+ 750 550 l 1,4,-1
+ 800 550 l 1,5,-1
+ 800 500 l 1,6,-1
+ 875 500 l 1,7,-1
+ 875 250 l 1,8,-1
+ 500 250 l 1,9,-1
+ 500 125 l 1,10,-1
+ 800 125 l 1,11,-1
+ 800 75 l 1,12,-1
+ 750 75 l 1,13,-1
+ 750 0 l 1,14,-1
+ 500 0 l 1,15,-1
+ 500 124 l 1,16,-1
+ 425 124 l 1,17,-1
+ 425 75 l 1,18,-1
+ 375 75 l 1,19,-1
+ 375 0 l 1,20,-1
+ 125 0 l 1,21,-1
+ 125 75 l 1,22,-1
+ 75 75 l 1,23,-1
+ 75 125 l 1,24,-1
+ 0 125 l 1,25,-1
+ 0 500 l 1,26,-1
+ 75 500 l 1,27,-1
+ 75 550 l 1,28,-1
+ 125 550 l 1,29,-1
+ 125 625 l 1,30,-1
+ 375 625 l 1,31,-1
+ 375 550 l 1,32,-1
+ 425 550 l 1,33,-1
+ 425 500 l 1,0,-1
+125 500 m 1,34,-1
+ 125 125 l 1,35,-1
+ 375 125 l 1,36,-1
+ 375 500 l 1,37,-1
+ 125 500 l 1,34,-1
+750 375 m 1,38,-1
+ 750 499 l 1,39,-1
+ 500 499 l 1,40,-1
+ 500 375 l 1,41,-1
+ 750 375 l 1,38,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: breve
+Encoding: 728 728 97
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 1000 m 1,0,-1
+ 125 1000 l 1,1,-1
+ 125 1075 l 1,2,-1
+ 75 1075 l 1,3,-1
+ 75 1125 l 1,4,-1
+ 25 1125 l 1,5,-1
+ 25 1225 l 1,6,-1
+ 125 1225 l 1,7,-1
+ 125 1125 l 1,8,-1
+ 250 1125 l 1,9,-1
+ 250 1225 l 1,10,-1
+ 350 1225 l 1,11,-1
+ 350 1125 l 1,12,-1
+ 300 1125 l 1,13,-1
+ 300 1075 l 1,14,-1
+ 250 1075 l 1,15,-1
+ 250 1000 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: dotaccent
+Encoding: 729 729 98
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 1125 m 1,0,-1
+ 125 1125 l 1,1,-1
+ 125 1000 l 1,2,-1
+ 0 1000 l 1,3,-1
+ 0 1125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: ring
+Encoding: 730 730 99
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 1075 m 1,0,-1
+ 250 1000 l 1,1,-1
+ 125 1000 l 1,2,-1
+ 125 1075 l 1,3,-1
+ 75 1075 l 1,4,-1
+ 75 1125 l 1,5,-1
+ 0 1125 l 1,6,-1
+ 0 1250 l 1,7,-1
+ 75 1250 l 1,8,-1
+ 75 1300 l 1,9,-1
+ 125 1300 l 1,10,-1
+ 125 1375 l 1,11,-1
+ 250 1375 l 1,12,-1
+ 250 1300 l 1,13,-1
+ 300 1300 l 1,14,-1
+ 300 1250 l 1,15,-1
+ 375 1250 l 1,16,-1
+ 375 1125 l 1,17,-1
+ 300 1125 l 1,18,-1
+ 300 1075 l 1,19,-1
+ 250 1075 l 1,0,-1
+125 1125 m 1,20,-1
+ 250 1125 l 1,21,-1
+ 250 1250 l 1,22,-1
+ 125 1250 l 1,23,-1
+ 125 1125 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: ogonek
+Encoding: 731 731 100
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 -125 m 1,0,-1
+ 250 -250 l 1,1,-1
+ 125 -250 l 1,2,-1
+ 125 -175 l 1,3,-1
+ 75 -175 l 1,4,-1
+ 75 -125 l 1,5,-1
+ 25 -125 l 1,6,-1
+ 25 -25 l 1,7,-1
+ 125 -25 l 1,8,-1
+ 125 -125 l 1,9,-1
+ 250 -125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: caron
+Encoding: 711 711 101
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 1000 m 1,0,-1
+ 125 1000 l 1,1,-1
+ 125 1075 l 1,2,-1
+ 75 1075 l 1,3,-1
+ 75 1125 l 1,4,-1
+ 25 1125 l 1,5,-1
+ 25 1225 l 1,6,-1
+ 125 1225 l 1,7,-1
+ 125 1125 l 1,8,-1
+ 250 1125 l 1,9,-1
+ 250 1225 l 1,10,-1
+ 350 1225 l 1,11,-1
+ 350 1125 l 1,12,-1
+ 300 1125 l 1,13,-1
+ 300 1075 l 1,14,-1
+ 250 1075 l 1,15,-1
+ 250 1000 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: dotlessi
+Encoding: 305 305 102
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: colon
+Encoding: 58 58 103
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 125 m 1,0,-1
+ 250 125 l 1,1,-1
+ 250 0 l 1,2,-1
+ 125 0 l 1,3,-1
+ 125 125 l 1,0,-1
+125 625 m 1,4,-1
+ 250 625 l 1,5,-1
+ 250 500 l 1,6,-1
+ 125 500 l 1,7,-1
+ 125 625 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: semicolon
+Encoding: 59 59 104
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 625 m 1,0,-1
+ 250 625 l 1,1,-1
+ 250 500 l 1,2,-1
+ 125 500 l 1,3,-1
+ 125 625 l 1,0,-1
+125 -125 m 1,4,-1
+ 25 -125 l 1,5,-1
+ 25 -225 l 1,6,-1
+ 125 -225 l 1,7,-1
+ 125 -175 l 1,8,-1
+ 175 -175 l 1,9,-1
+ 175 -125 l 1,10,-1
+ 250 -125 l 1,11,-1
+ 250 125 l 1,12,-1
+ 125 125 l 1,13,-1
+ 125 -125 l 1,4,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: asterisk
+Encoding: 42 42 105
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 625 m 1,0,-1
+ 250 875 l 1,1,-1
+ 375 875 l 1,2,-1
+ 375 625 l 1,3,-1
+ 500 625 l 1,4,-1
+ 500 750 l 1,5,-1
+ 625 750 l 1,6,-1
+ 625 624 l 1,7,-1
+ 500 624 l 1,8,-1
+ 500 500 l 1,9,-1
+ 625 500 l 1,10,-1
+ 625 375 l 1,11,-1
+ 500 375 l 1,12,-1
+ 500 499 l 1,13,-1
+ 375 499 l 1,14,-1
+ 375 250 l 1,15,-1
+ 250 250 l 1,16,-1
+ 250 499 l 1,17,-1
+ 125 499 l 1,18,-1
+ 125 375 l 1,19,-1
+ 0 375 l 1,20,-1
+ 0 500 l 1,21,-1
+ 125 500 l 1,22,-1
+ 125 624 l 1,23,-1
+ 0 624 l 1,24,-1
+ 0 750 l 1,25,-1
+ 125 750 l 1,26,-1
+ 125 625 l 1,27,-1
+ 250 625 l 1,0,-1
+375 500 m 1,28,-1
+ 375 624 l 1,29,-1
+ 350 624 l 1,30,-1
+ 350 525 l 1,31,-1
+ 250 525 l 1,32,-1
+ 250 500 l 1,33,-1
+ 375 500 l 1,28,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: plus
+Encoding: 43 43 106
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 500 m 1,0,-1
+ 250 500 l 1,1,-1
+ 250 750 l 1,2,-1
+ 375 750 l 1,3,-1
+ 375 500 l 1,4,-1
+ 625 500 l 1,5,-1
+ 625 374 l 1,6,-1
+ 375 374 l 1,7,-1
+ 375 125 l 1,8,-1
+ 250 125 l 1,9,-1
+ 250 374 l 1,10,-1
+ 0 374 l 1,11,-1
+ 0 500 l 1,0,-1
+375 375 m 1,12,-1
+ 375 499 l 1,13,-1
+ 350 499 l 1,14,-1
+ 350 400 l 1,15,-1
+ 250 400 l 1,16,-1
+ 250 375 l 1,17,-1
+ 375 375 l 1,12,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: hyphen
+Encoding: 45 45 107
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 375 m 1,0,-1
+ 375 375 l 1,1,-1
+ 375 250 l 1,2,-1
+ 0 250 l 1,3,-1
+ 0 375 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: exclam
+Encoding: 33 33 108
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 875 m 1,0,-1
+ 250 875 l 1,1,-1
+ 250 250 l 1,2,-1
+ 125 250 l 1,3,-1
+ 125 875 l 1,0,-1
+125 125 m 1,4,-1
+ 250 125 l 1,5,-1
+ 250 0 l 1,6,-1
+ 125 0 l 1,7,-1
+ 125 125 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: quotedbl
+Encoding: 34 34 109
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 625 l 1,2,-1
+ 0 625 l 1,3,-1
+ 0 875 l 1,0,-1
+250 875 m 1,4,-1
+ 375 875 l 1,5,-1
+ 375 625 l 1,6,-1
+ 250 625 l 1,7,-1
+ 250 875 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: numbersign
+Encoding: 35 35 110
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 875 l 1,2,-1
+ 250 875 l 1,3,-1
+ 250 625 l 1,4,-1
+ 375 625 l 1,5,-1
+ 375 875 l 1,6,-1
+ 500 875 l 1,7,-1
+ 500 625 l 1,8,-1
+ 625 625 l 1,9,-1
+ 625 499 l 1,10,-1
+ 500 499 l 1,11,-1
+ 500 375 l 1,12,-1
+ 625 375 l 1,13,-1
+ 625 249 l 1,14,-1
+ 500 249 l 1,15,-1
+ 500 0 l 1,16,-1
+ 375 0 l 1,17,-1
+ 375 249 l 1,18,-1
+ 250 249 l 1,19,-1
+ 250 0 l 1,20,-1
+ 125 0 l 1,21,-1
+ 125 249 l 1,22,-1
+ 0 249 l 1,23,-1
+ 0 375 l 1,24,-1
+ 125 375 l 1,25,-1
+ 125 499 l 1,26,-1
+ 0 499 l 1,27,-1
+ 0 625 l 1,0,-1
+375 375 m 1,28,-1
+ 375 499 l 1,29,-1
+ 250 499 l 1,30,-1
+ 250 375 l 1,31,-1
+ 375 375 l 1,28,-1
+375 250 m 1,32,-1
+ 500 250 l 1,33,-1
+ 500 374 l 1,34,-1
+ 475 374 l 1,35,-1
+ 475 275 l 1,36,-1
+ 375 275 l 1,37,-1
+ 375 250 l 1,32,-1
+250 250 m 1,38,-1
+ 250 374 l 1,39,-1
+ 225 374 l 1,40,-1
+ 225 275 l 1,41,-1
+ 125 275 l 1,42,-1
+ 125 250 l 1,43,-1
+ 250 250 l 1,38,-1
+375 500 m 1,44,-1
+ 500 500 l 1,45,-1
+ 500 624 l 1,46,-1
+ 475 624 l 1,47,-1
+ 475 525 l 1,48,-1
+ 375 525 l 1,49,-1
+ 375 500 l 1,44,-1
+250 500 m 1,50,-1
+ 250 624 l 1,51,-1
+ 225 624 l 1,52,-1
+ 225 525 l 1,53,-1
+ 125 525 l 1,54,-1
+ 125 500 l 1,55,-1
+ 250 500 l 1,50,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: dollar
+Encoding: 36 36 111
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 625 625 l 1,1,-1
+ 500 625 l 1,2,-1
+ 500 749 l 1,3,-1
+ 375 749 l 1,4,-1
+ 375 500 l 1,5,-1
+ 500 500 l 1,6,-1
+ 500 425 l 1,7,-1
+ 550 425 l 1,8,-1
+ 550 375 l 1,9,-1
+ 625 375 l 1,10,-1
+ 625 125 l 1,11,-1
+ 550 125 l 1,12,-1
+ 550 75 l 1,13,-1
+ 500 75 l 1,14,-1
+ 500 -1 l 1,15,-1
+ 375 -1 l 1,16,-1
+ 375 -125 l 1,17,-1
+ 250 -125 l 1,18,-1
+ 250 -1 l 1,19,-1
+ 125 -1 l 1,20,-1
+ 125 75 l 1,21,-1
+ 75 75 l 1,22,-1
+ 75 125 l 1,23,-1
+ 0 125 l 1,24,-1
+ 0 250 l 1,25,-1
+ 125 250 l 1,26,-1
+ 125 125 l 1,27,-1
+ 250 125 l 1,28,-1
+ 250 374 l 1,29,-1
+ 125 374 l 1,30,-1
+ 125 450 l 1,31,-1
+ 75 450 l 1,32,-1
+ 75 500 l 1,33,-1
+ 0 500 l 1,34,-1
+ 0 750 l 1,35,-1
+ 75 750 l 1,36,-1
+ 75 800 l 1,37,-1
+ 125 800 l 1,38,-1
+ 125 875 l 1,39,-1
+ 250 875 l 1,40,-1
+ 250 1000 l 1,41,-1
+ 375 1000 l 1,42,-1
+ 375 875 l 1,43,-1
+ 500 875 l 1,44,-1
+ 500 800 l 1,45,-1
+ 550 800 l 1,46,-1
+ 550 750 l 1,47,-1
+ 625 750 l 1,0,-1
+250 749 m 1,48,-1
+ 125 749 l 1,49,-1
+ 125 500 l 1,50,-1
+ 250 500 l 1,51,-1
+ 250 749 l 1,48,-1
+500 125 m 1,52,-1
+ 500 374 l 1,53,-1
+ 375 374 l 1,54,-1
+ 375 125 l 1,55,-1
+ 500 125 l 1,52,-1
+375 375 m 1,56,-1
+ 375 499 l 1,57,-1
+ 350 499 l 1,58,-1
+ 350 400 l 1,59,-1
+ 250 400 l 1,60,-1
+ 250 375 l 1,61,-1
+ 375 375 l 1,56,-1
+375 750 m 1,62,-1
+ 375 874 l 1,63,-1
+ 350 874 l 1,64,-1
+ 350 775 l 1,65,-1
+ 250 775 l 1,66,-1
+ 250 750 l 1,67,-1
+ 375 750 l 1,62,-1
+375 0 m 1,68,-1
+ 375 124 l 1,69,-1
+ 350 124 l 1,70,-1
+ 350 25 l 1,71,-1
+ 250 25 l 1,72,-1
+ 250 0 l 1,73,-1
+ 375 0 l 1,68,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: parenleft
+Encoding: 40 40 112
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 150 m 1,0,-1
+ 25 150 l 1,1,-1
+ 25 250 l 1,2,-1
+ 0 250 l 1,3,-1
+ 0 625 l 1,4,-1
+ 25 625 l 1,5,-1
+ 25 725 l 1,6,-1
+ 125 725 l 1,7,-1
+ 125 875 l 1,8,-1
+ 250 875 l 1,9,-1
+ 250 1000 l 1,10,-1
+ 375 1000 l 1,11,-1
+ 375 874 l 1,12,-1
+ 250 874 l 1,13,-1
+ 250 750 l 1,14,-1
+ 175 750 l 1,15,-1
+ 175 700 l 1,16,-1
+ 125 700 l 1,17,-1
+ 125 175 l 1,18,-1
+ 175 175 l 1,19,-1
+ 175 125 l 1,20,-1
+ 250 125 l 1,21,-1
+ 250 0 l 1,22,-1
+ 375 0 l 1,23,-1
+ 375 -125 l 1,24,-1
+ 250 -125 l 1,25,-1
+ 250 -1 l 1,26,-1
+ 125 -1 l 1,27,-1
+ 125 150 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: parenright
+Encoding: 41 41 113
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 -1 m 1,0,-1
+ 125 -1 l 1,1,-1
+ 125 -125 l 1,2,-1
+ 0 -125 l 1,3,-1
+ 0 0 l 1,4,-1
+ 125 0 l 1,5,-1
+ 125 125 l 1,6,-1
+ 200 125 l 1,7,-1
+ 200 175 l 1,8,-1
+ 250 175 l 1,9,-1
+ 250 700 l 1,10,-1
+ 200 700 l 1,11,-1
+ 200 750 l 1,12,-1
+ 125 750 l 1,13,-1
+ 125 874 l 1,14,-1
+ 0 874 l 1,15,-1
+ 0 1000 l 1,16,-1
+ 125 1000 l 1,17,-1
+ 125 875 l 1,18,-1
+ 250 875 l 1,19,-1
+ 250 725 l 1,20,-1
+ 350 725 l 1,21,-1
+ 350 625 l 1,22,-1
+ 375 625 l 1,23,-1
+ 375 250 l 1,24,-1
+ 350 250 l 1,25,-1
+ 350 150 l 1,26,-1
+ 250 150 l 1,27,-1
+ 250 -1 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: less
+Encoding: 60 60 114
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 374 m 1,0,-1
+ 0 374 l 1,1,-1
+ 0 500 l 1,2,-1
+ 125 500 l 1,3,-1
+ 125 625 l 1,4,-1
+ 250 625 l 1,5,-1
+ 250 750 l 1,6,-1
+ 375 750 l 1,7,-1
+ 375 624 l 1,8,-1
+ 250 624 l 1,9,-1
+ 250 499 l 1,10,-1
+ 125 499 l 1,11,-1
+ 125 375 l 1,12,-1
+ 250 375 l 1,13,-1
+ 250 250 l 1,14,-1
+ 375 250 l 1,15,-1
+ 375 125 l 1,16,-1
+ 250 125 l 1,17,-1
+ 250 249 l 1,18,-1
+ 125 249 l 1,19,-1
+ 125 374 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: equal
+Encoding: 61 61 115
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 375 m 1,0,-1
+ 375 375 l 1,1,-1
+ 375 250 l 1,2,-1
+ 0 250 l 1,3,-1
+ 0 375 l 1,0,-1
+0 625 m 1,4,-1
+ 375 625 l 1,5,-1
+ 375 500 l 1,6,-1
+ 0 500 l 1,7,-1
+ 0 625 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: greater
+Encoding: 62 62 116
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 249 m 1,0,-1
+ 125 249 l 1,1,-1
+ 125 125 l 1,2,-1
+ 0 125 l 1,3,-1
+ 0 250 l 1,4,-1
+ 125 250 l 1,5,-1
+ 125 375 l 1,6,-1
+ 250 375 l 1,7,-1
+ 250 499 l 1,8,-1
+ 125 499 l 1,9,-1
+ 125 624 l 1,10,-1
+ 0 624 l 1,11,-1
+ 0 750 l 1,12,-1
+ 125 750 l 1,13,-1
+ 125 625 l 1,14,-1
+ 250 625 l 1,15,-1
+ 250 500 l 1,16,-1
+ 375 500 l 1,17,-1
+ 375 374 l 1,18,-1
+ 250 374 l 1,19,-1
+ 250 249 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: question
+Encoding: 63 63 117
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 750 m 1,0,-1
+ 75 750 l 1,1,-1
+ 75 800 l 1,2,-1
+ 125 800 l 1,3,-1
+ 125 875 l 1,4,-1
+ 500 875 l 1,5,-1
+ 500 800 l 1,6,-1
+ 550 800 l 1,7,-1
+ 550 750 l 1,8,-1
+ 625 750 l 1,9,-1
+ 625 500 l 1,10,-1
+ 550 500 l 1,11,-1
+ 550 450 l 1,12,-1
+ 500 450 l 1,13,-1
+ 500 375 l 1,14,-1
+ 375 375 l 1,15,-1
+ 375 250 l 1,16,-1
+ 250 250 l 1,17,-1
+ 250 375 l 1,18,-1
+ 325 375 l 1,19,-1
+ 325 425 l 1,20,-1
+ 375 425 l 1,21,-1
+ 375 500 l 1,22,-1
+ 500 500 l 1,23,-1
+ 500 750 l 1,24,-1
+ 125 750 l 1,25,-1
+ 125 625 l 1,26,-1
+ 0 625 l 1,27,-1
+ 0 750 l 1,0,-1
+250 125 m 1,28,-1
+ 375 125 l 1,29,-1
+ 375 0 l 1,30,-1
+ 250 0 l 1,31,-1
+ 250 125 l 1,28,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: bracketleft
+Encoding: 91 91 118
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 1000 m 1,0,-1
+ 375 1000 l 1,1,-1
+ 375 875 l 1,2,-1
+ 125 875 l 1,3,-1
+ 125 0 l 1,4,-1
+ 375 0 l 1,5,-1
+ 375 -125 l 1,6,-1
+ 0 -125 l 1,7,-1
+ 0 1000 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: backslash
+Encoding: 92 92 119
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 775 m 1,0,-1
+ 25 775 l 1,1,-1
+ 25 875 l 1,2,-1
+ 0 875 l 1,3,-1
+ 0 1000 l 1,4,-1
+ 125 1000 l 1,5,-1
+ 125 800 l 1,6,-1
+ 175 800 l 1,7,-1
+ 175 750 l 1,8,-1
+ 250 750 l 1,9,-1
+ 250 550 l 1,10,-1
+ 300 550 l 1,11,-1
+ 300 500 l 1,12,-1
+ 375 500 l 1,13,-1
+ 375 350 l 1,14,-1
+ 475 350 l 1,15,-1
+ 475 250 l 1,16,-1
+ 500 250 l 1,17,-1
+ 500 100 l 1,18,-1
+ 600 100 l 1,19,-1
+ 600 0 l 1,20,-1
+ 625 0 l 1,21,-1
+ 625 -125 l 1,22,-1
+ 500 -125 l 1,23,-1
+ 500 75 l 1,24,-1
+ 450 75 l 1,25,-1
+ 450 125 l 1,26,-1
+ 375 125 l 1,27,-1
+ 375 325 l 1,28,-1
+ 325 325 l 1,29,-1
+ 325 375 l 1,30,-1
+ 250 375 l 1,31,-1
+ 250 525 l 1,32,-1
+ 150 525 l 1,33,-1
+ 150 625 l 1,34,-1
+ 125 625 l 1,35,-1
+ 125 775 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: bracketright
+Encoding: 93 93 120
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 0 m 1,0,-1
+ 250 0 l 1,1,-1
+ 250 875 l 1,2,-1
+ 0 875 l 1,3,-1
+ 0 1000 l 1,4,-1
+ 375 1000 l 1,5,-1
+ 375 -125 l 1,6,-1
+ 0 -125 l 1,7,-1
+ 0 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: asciicircum
+Encoding: 94 94 121
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 800 m 1,0,-1
+ 300 800 l 1,1,-1
+ 300 750 l 1,2,-1
+ 350 750 l 1,3,-1
+ 350 650 l 1,4,-1
+ 250 650 l 1,5,-1
+ 250 750 l 1,6,-1
+ 125 750 l 1,7,-1
+ 125 650 l 1,8,-1
+ 25 650 l 1,9,-1
+ 25 750 l 1,10,-1
+ 75 750 l 1,11,-1
+ 75 800 l 1,12,-1
+ 125 800 l 1,13,-1
+ 125 875 l 1,14,-1
+ 250 875 l 1,15,-1
+ 250 800 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: underscore
+Encoding: 95 95 122
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 125 m 1,0,-1
+ 375 125 l 1,1,-1
+ 375 0 l 1,2,-1
+ 0 0 l 1,3,-1
+ 0 125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: braceleft
+Encoding: 123 123 123
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 500 m 1,0,-1
+ 125 500 l 1,1,-1
+ 125 875 l 1,2,-1
+ 200 875 l 1,3,-1
+ 200 925 l 1,4,-1
+ 250 925 l 1,5,-1
+ 250 1000 l 1,6,-1
+ 375 1000 l 1,7,-1
+ 375 875 l 1,8,-1
+ 250 875 l 1,9,-1
+ 250 499 l 1,10,-1
+ 125 499 l 1,11,-1
+ 125 375 l 1,12,-1
+ 250 375 l 1,13,-1
+ 250 0 l 1,14,-1
+ 375 0 l 1,15,-1
+ 375 -125 l 1,16,-1
+ 250 -125 l 1,17,-1
+ 250 -50 l 1,18,-1
+ 200 -50 l 1,19,-1
+ 200 0 l 1,20,-1
+ 125 0 l 1,21,-1
+ 125 374 l 1,22,-1
+ 0 374 l 1,23,-1
+ 0 500 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: bar
+Encoding: 124 124 124
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 1000 m 1,0,-1
+ 125 1000 l 1,1,-1
+ 125 -125 l 1,2,-1
+ 0 -125 l 1,3,-1
+ 0 1000 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: braceright
+Encoding: 125 125 125
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 374 m 1,0,-1
+ 250 374 l 1,1,-1
+ 250 0 l 1,2,-1
+ 175 0 l 1,3,-1
+ 175 -50 l 1,4,-1
+ 125 -50 l 1,5,-1
+ 125 -125 l 1,6,-1
+ 0 -125 l 1,7,-1
+ 0 0 l 1,8,-1
+ 125 0 l 1,9,-1
+ 125 375 l 1,10,-1
+ 250 375 l 1,11,-1
+ 250 499 l 1,12,-1
+ 125 499 l 1,13,-1
+ 125 875 l 1,14,-1
+ 0 875 l 1,15,-1
+ 0 1000 l 1,16,-1
+ 125 1000 l 1,17,-1
+ 125 925 l 1,18,-1
+ 175 925 l 1,19,-1
+ 175 875 l 1,20,-1
+ 250 875 l 1,21,-1
+ 250 500 l 1,22,-1
+ 375 500 l 1,23,-1
+ 375 374 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: asciitilde
+Encoding: 126 126 126
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 625 m 1,0,-1
+ 250 625 l 1,1,-1
+ 250 749 l 1,2,-1
+ 125 749 l 1,3,-1
+ 125 650 l 1,4,-1
+ 25 650 l 1,5,-1
+ 25 750 l 1,6,-1
+ 75 750 l 1,7,-1
+ 75 800 l 1,8,-1
+ 125 800 l 1,9,-1
+ 125 875 l 1,10,-1
+ 250 875 l 1,11,-1
+ 250 750 l 1,12,-1
+ 375 750 l 1,13,-1
+ 375 850 l 1,14,-1
+ 475 850 l 1,15,-1
+ 475 750 l 1,16,-1
+ 425 750 l 1,17,-1
+ 425 700 l 1,18,-1
+ 375 700 l 1,19,-1
+ 375 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: florin
+Encoding: 402 402 127
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 875 l 1,2,-1
+ 200 875 l 1,3,-1
+ 200 925 l 1,4,-1
+ 250 925 l 1,5,-1
+ 250 1000 l 1,6,-1
+ 375 1000 l 1,7,-1
+ 375 875 l 1,8,-1
+ 250 875 l 1,9,-1
+ 250 625 l 1,10,-1
+ 375 625 l 1,11,-1
+ 375 499 l 1,12,-1
+ 250 499 l 1,13,-1
+ 250 0 l 1,14,-1
+ 175 0 l 1,15,-1
+ 175 -50 l 1,16,-1
+ 125 -50 l 1,17,-1
+ 125 -125 l 1,18,-1
+ 0 -125 l 1,19,-1
+ 0 0 l 1,20,-1
+ 125 0 l 1,21,-1
+ 125 499 l 1,22,-1
+ 0 499 l 1,23,-1
+ 0 625 l 1,0,-1
+250 500 m 1,24,-1
+ 250 624 l 1,25,-1
+ 225 624 l 1,26,-1
+ 225 525 l 1,27,-1
+ 125 525 l 1,28,-1
+ 125 500 l 1,29,-1
+ 250 500 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: ellipsis
+Encoding: 8230 8230 128
+Width: 875
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 125 m 1,0,-1
+ 250 125 l 1,1,-1
+ 250 0 l 1,2,-1
+ 125 0 l 1,3,-1
+ 125 125 l 1,0,-1
+625 125 m 1,4,-1
+ 750 125 l 1,5,-1
+ 750 0 l 1,6,-1
+ 625 0 l 1,7,-1
+ 625 125 l 1,4,-1
+375 125 m 1,8,-1
+ 500 125 l 1,9,-1
+ 500 0 l 1,10,-1
+ 375 0 l 1,11,-1
+ 375 125 l 1,8,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: dagger
+Encoding: 8224 8224 129
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 624 l 1,1,-1
+ 125 1000 l 1,2,-1
+ 250 1000 l 1,3,-1
+ 250 624 l 1,4,-1
+ 375 624 l 1,5,-1
+ 375 497 l 1,6,-1
+ 250 497 l 1,7,-1
+ 250 -125 l 1,8,-1
+ 125 -125 l 1,9,-1
+ 125 497 l 1,10,-1
+ 0 499 l 1,11,-1
+ 0 625 l 1,0,-1
+250 499 m 1,12,-1
+ 250 622 l 1,13,-1
+ 225 622 l 1,14,-1
+ 225 524 l 1,15,-1
+ 125 524 l 1,16,-1
+ 125 499 l 1,17,-1
+ 250 499 l 1,12,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: daggerdbl
+Encoding: 8225 8225 130
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 376 m 1,0,-1
+ 125 375 l 1,1,-1
+ 125 497 l 1,2,-1
+ 0 499 l 1,3,-1
+ 0 625 l 1,4,-1
+ 125 624 l 1,5,-1
+ 125 1000 l 1,6,-1
+ 250 1000 l 1,7,-1
+ 250 624 l 1,8,-1
+ 375 624 l 1,9,-1
+ 375 497 l 1,10,-1
+ 250 497 l 1,11,-1
+ 250 375 l 1,12,-1
+ 375 375 l 1,13,-1
+ 375 249 l 1,14,-1
+ 250 249 l 1,15,-1
+ 250 -125 l 1,16,-1
+ 125 -125 l 1,17,-1
+ 125 249 l 1,18,-1
+ 0 250 l 1,19,-1
+ 0 376 l 1,0,-1
+250 499 m 1,20,-1
+ 250 622 l 1,21,-1
+ 225 622 l 1,22,-1
+ 225 524 l 1,23,-1
+ 125 524 l 1,24,-1
+ 125 499 l 1,25,-1
+ 250 499 l 1,20,-1
+250 250 m 1,26,-1
+ 250 374 l 1,27,-1
+ 225 374 l 1,28,-1
+ 225 275 l 1,29,-1
+ 125 275 l 1,30,-1
+ 125 250 l 1,31,-1
+ 250 250 l 1,26,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: circumflex
+Encoding: 710 710 131
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 1175 m 1,0,-1
+ 300 1175 l 1,1,-1
+ 300 1125 l 1,2,-1
+ 350 1125 l 1,3,-1
+ 350 1025 l 1,4,-1
+ 250 1025 l 1,5,-1
+ 250 1125 l 1,6,-1
+ 125 1125 l 1,7,-1
+ 125 1025 l 1,8,-1
+ 25 1025 l 1,9,-1
+ 25 1125 l 1,10,-1
+ 75 1125 l 1,11,-1
+ 75 1175 l 1,12,-1
+ 125 1175 l 1,13,-1
+ 125 1250 l 1,14,-1
+ 250 1250 l 1,15,-1
+ 250 1175 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: guilsinglleft
+Encoding: 8249 8249 132
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 374 m 1,0,-1
+ 0 374 l 1,1,-1
+ 0 500 l 1,2,-1
+ 125 500 l 1,3,-1
+ 125 625 l 1,4,-1
+ 250 625 l 1,5,-1
+ 250 750 l 1,6,-1
+ 375 750 l 1,7,-1
+ 375 624 l 1,8,-1
+ 250 624 l 1,9,-1
+ 250 499 l 1,10,-1
+ 125 499 l 1,11,-1
+ 125 375 l 1,12,-1
+ 250 375 l 1,13,-1
+ 250 250 l 1,14,-1
+ 375 250 l 1,15,-1
+ 375 125 l 1,16,-1
+ 250 125 l 1,17,-1
+ 250 249 l 1,18,-1
+ 125 249 l 1,19,-1
+ 125 374 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: guillemotright
+Encoding: 187 187 133
+Width: 875
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 249 m 1,0,-1
+ 500 249 l 1,1,-1
+ 500 125 l 1,2,-1
+ 375 125 l 1,3,-1
+ 375 250 l 1,4,-1
+ 500 250 l 1,5,-1
+ 500 375 l 1,6,-1
+ 625 375 l 1,7,-1
+ 625 499 l 1,8,-1
+ 500 499 l 1,9,-1
+ 500 624 l 1,10,-1
+ 375 624 l 1,11,-1
+ 375 750 l 1,12,-1
+ 500 750 l 1,13,-1
+ 500 625 l 1,14,-1
+ 625 625 l 1,15,-1
+ 625 500 l 1,16,-1
+ 750 500 l 1,17,-1
+ 750 374 l 1,18,-1
+ 625 374 l 1,19,-1
+ 625 249 l 1,0,-1
+250 249 m 1,20,-1
+ 125 249 l 1,21,-1
+ 125 125 l 1,22,-1
+ 0 125 l 1,23,-1
+ 0 250 l 1,24,-1
+ 125 250 l 1,25,-1
+ 125 375 l 1,26,-1
+ 250 375 l 1,27,-1
+ 250 499 l 1,28,-1
+ 125 499 l 1,29,-1
+ 125 624 l 1,30,-1
+ 0 624 l 1,31,-1
+ 0 750 l 1,32,-1
+ 125 750 l 1,33,-1
+ 125 625 l 1,34,-1
+ 250 625 l 1,35,-1
+ 250 500 l 1,36,-1
+ 375 500 l 1,37,-1
+ 375 374 l 1,38,-1
+ 250 374 l 1,39,-1
+ 250 249 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: macron
+Encoding: 175 175 134
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 1125 m 1,0,-1
+ 375 1125 l 1,1,-1
+ 375 1000 l 1,2,-1
+ 0 1000 l 1,3,-1
+ 0 1125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: degree
+Encoding: 176 176 135
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 575 m 1,0,-1
+ 250 500 l 1,1,-1
+ 125 500 l 1,2,-1
+ 125 575 l 1,3,-1
+ 75 575 l 1,4,-1
+ 75 625 l 1,5,-1
+ 0 625 l 1,6,-1
+ 0 750 l 1,7,-1
+ 75 750 l 1,8,-1
+ 75 800 l 1,9,-1
+ 125 800 l 1,10,-1
+ 125 875 l 1,11,-1
+ 250 875 l 1,12,-1
+ 250 800 l 1,13,-1
+ 300 800 l 1,14,-1
+ 300 750 l 1,15,-1
+ 375 750 l 1,16,-1
+ 375 625 l 1,17,-1
+ 300 625 l 1,18,-1
+ 300 575 l 1,19,-1
+ 250 575 l 1,0,-1
+125 625 m 1,20,-1
+ 250 625 l 1,21,-1
+ 250 750 l 1,22,-1
+ 125 750 l 1,23,-1
+ 125 625 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: plusminus
+Encoding: 177 177 136
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 250 m 1,0,-1
+ 625 250 l 1,1,-1
+ 625 125 l 1,2,-1
+ 0 125 l 1,3,-1
+ 0 250 l 1,0,-1
+0 625 m 1,4,-1
+ 250 625 l 1,5,-1
+ 250 750 l 1,6,-1
+ 375 750 l 1,7,-1
+ 375 625 l 1,8,-1
+ 625 625 l 1,9,-1
+ 625 499 l 1,10,-1
+ 375 499 l 1,11,-1
+ 375 375 l 1,12,-1
+ 250 375 l 1,13,-1
+ 250 499 l 1,14,-1
+ 0 499 l 1,15,-1
+ 0 625 l 1,4,-1
+375 500 m 1,16,-1
+ 375 624 l 1,17,-1
+ 350 624 l 1,18,-1
+ 350 525 l 1,19,-1
+ 250 525 l 1,20,-1
+ 250 500 l 1,21,-1
+ 375 500 l 1,16,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: guillemotleft
+Encoding: 171 171 137
+Width: 875
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 374 m 1,0,-1
+ 0 374 l 1,1,-1
+ 0 500 l 1,2,-1
+ 125 500 l 1,3,-1
+ 125 625 l 1,4,-1
+ 250 625 l 1,5,-1
+ 250 750 l 1,6,-1
+ 375 750 l 1,7,-1
+ 375 624 l 1,8,-1
+ 250 624 l 1,9,-1
+ 250 499 l 1,10,-1
+ 125 499 l 1,11,-1
+ 125 375 l 1,12,-1
+ 250 375 l 1,13,-1
+ 250 250 l 1,14,-1
+ 375 250 l 1,15,-1
+ 375 125 l 1,16,-1
+ 250 125 l 1,17,-1
+ 250 249 l 1,18,-1
+ 125 249 l 1,19,-1
+ 125 374 l 1,0,-1
+500 374 m 1,20,-1
+ 375 374 l 1,21,-1
+ 375 500 l 1,22,-1
+ 500 500 l 1,23,-1
+ 500 625 l 1,24,-1
+ 625 625 l 1,25,-1
+ 625 750 l 1,26,-1
+ 750 750 l 1,27,-1
+ 750 624 l 1,28,-1
+ 625 624 l 1,29,-1
+ 625 499 l 1,30,-1
+ 500 499 l 1,31,-1
+ 500 375 l 1,32,-1
+ 625 375 l 1,33,-1
+ 625 250 l 1,34,-1
+ 750 250 l 1,35,-1
+ 750 125 l 1,36,-1
+ 625 125 l 1,37,-1
+ 625 249 l 1,38,-1
+ 500 249 l 1,39,-1
+ 500 374 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: logicalnot
+Encoding: 172 172 138
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 375 625 l 1,1,-1
+ 375 250 l 1,2,-1
+ 250 250 l 1,3,-1
+ 250 500 l 1,4,-1
+ 0 500 l 1,5,-1
+ 0 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: minus
+Encoding: 8722 8722 139
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 500 m 1,0,-1
+ 375 500 l 1,1,-1
+ 375 375 l 1,2,-1
+ 0 375 l 1,3,-1
+ 0 500 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: dieresis
+Encoding: 168 168 140
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 1125 m 1,0,-1
+ 125 1125 l 1,1,-1
+ 125 1000 l 1,2,-1
+ 0 1000 l 1,3,-1
+ 0 1125 l 1,0,-1
+250 1125 m 1,4,-1
+ 375 1125 l 1,5,-1
+ 375 1000 l 1,6,-1
+ 250 1000 l 1,7,-1
+ 250 1125 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: exclamdown
+Encoding: 161 161 141
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 875 m 1,0,-1
+ 250 875 l 1,1,-1
+ 250 750 l 1,2,-1
+ 125 750 l 1,3,-1
+ 125 875 l 1,0,-1
+125 625 m 1,4,-1
+ 250 625 l 1,5,-1
+ 250 0 l 1,6,-1
+ 125 0 l 1,7,-1
+ 125 625 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: yacute
+Encoding: 253 253 142
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 875 m 1,0,-1
+ 250 775 l 1,1,-1
+ 150 775 l 1,2,-1
+ 150 875 l 1,3,-1
+ 200 875 l 1,4,-1
+ 200 925 l 1,5,-1
+ 250 925 l 1,6,-1
+ 250 1000 l 1,7,-1
+ 375 1000 l 1,8,-1
+ 375 875 l 1,9,-1
+ 250 875 l 1,0,-1
+375 -125 m 1,10,-1
+ 75 -125 l 1,11,-1
+ 75 -175 l 1,12,-1
+ 125 -175 l 1,13,-1
+ 125 -250 l 1,14,-1
+ 375 -250 l 1,15,-1
+ 375 -175 l 1,16,-1
+ 425 -175 l 1,17,-1
+ 425 -125 l 1,18,-1
+ 500 -125 l 1,19,-1
+ 500 625 l 1,20,-1
+ 375 625 l 1,21,-1
+ 375 225 l 1,22,-1
+ 274 225 l 1,23,-1
+ 274 125 l 1,24,-1
+ 125 125 l 1,25,-1
+ 125 625 l 1,26,-1
+ 0 625 l 1,27,-1
+ 0 125 l 1,28,-1
+ 75 125 l 1,29,-1
+ 75 75 l 1,30,-1
+ 125 75 l 1,31,-1
+ 125 0 l 1,32,-1
+ 249 0 l 1,33,-1
+ 249 75 l 1,34,-1
+ 299 75 l 1,35,-1
+ 299 125 l 1,36,-1
+ 375 125 l 1,37,-1
+ 375 -125 l 1,10,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: ydieresis
+Encoding: 255 255 143
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 875 m 1,0,-1
+ 500 875 l 1,1,-1
+ 500 750 l 1,2,-1
+ 375 750 l 1,3,-1
+ 375 875 l 1,0,-1
+0 875 m 1,4,-1
+ 125 875 l 1,5,-1
+ 125 750 l 1,6,-1
+ 0 750 l 1,7,-1
+ 0 875 l 1,4,-1
+375 -125 m 1,8,-1
+ 75 -125 l 1,9,-1
+ 75 -175 l 1,10,-1
+ 125 -175 l 1,11,-1
+ 125 -250 l 1,12,-1
+ 375 -250 l 1,13,-1
+ 375 -175 l 1,14,-1
+ 425 -175 l 1,15,-1
+ 425 -125 l 1,16,-1
+ 500 -125 l 1,17,-1
+ 500 625 l 1,18,-1
+ 375 625 l 1,19,-1
+ 375 225 l 1,20,-1
+ 274 225 l 1,21,-1
+ 274 125 l 1,22,-1
+ 125 125 l 1,23,-1
+ 125 625 l 1,24,-1
+ 0 625 l 1,25,-1
+ 0 125 l 1,26,-1
+ 75 125 l 1,27,-1
+ 75 75 l 1,28,-1
+ 125 75 l 1,29,-1
+ 125 0 l 1,30,-1
+ 249 0 l 1,31,-1
+ 249 75 l 1,32,-1
+ 299 75 l 1,33,-1
+ 299 125 l 1,34,-1
+ 375 125 l 1,35,-1
+ 375 -125 l 1,8,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: Egrave
+Encoding: 200 200 144
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 450 m 1,0,-1
+ 500 375 l 1,1,-1
+ 125 375 l 1,2,-1
+ 125 125 l 1,3,-1
+ 625 125 l 1,4,-1
+ 625 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 875 l 1,7,-1
+ 625 875 l 1,8,-1
+ 625 750 l 1,9,-1
+ 125 750 l 1,10,-1
+ 125 500 l 1,11,-1
+ 550 500 l 1,12,-1
+ 550 450 l 1,13,-1
+ 500 450 l 1,0,-1
+125 1125 m 1,14,-1
+ 125 1250 l 1,15,-1
+ 250 1250 l 1,16,-1
+ 250 1175 l 1,17,-1
+ 300 1175 l 1,18,-1
+ 300 1125 l 1,19,-1
+ 350 1125 l 1,20,-1
+ 350 1025 l 1,21,-1
+ 250 1025 l 1,22,-1
+ 250 1125 l 1,23,-1
+ 125 1125 l 1,14,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Eacute
+Encoding: 201 201 145
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 450 m 1,0,-1
+ 500 375 l 1,1,-1
+ 125 375 l 1,2,-1
+ 125 125 l 1,3,-1
+ 625 125 l 1,4,-1
+ 625 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 875 l 1,7,-1
+ 625 875 l 1,8,-1
+ 625 750 l 1,9,-1
+ 125 750 l 1,10,-1
+ 125 500 l 1,11,-1
+ 550 500 l 1,12,-1
+ 550 450 l 1,13,-1
+ 500 450 l 1,0,-1
+375 1125 m 1,14,-1
+ 375 1025 l 1,15,-1
+ 275 1025 l 1,16,-1
+ 275 1125 l 1,17,-1
+ 325 1125 l 1,18,-1
+ 325 1175 l 1,19,-1
+ 375 1175 l 1,20,-1
+ 375 1250 l 1,21,-1
+ 500 1250 l 1,22,-1
+ 500 1125 l 1,23,-1
+ 375 1125 l 1,14,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Ecircumflex
+Encoding: 202 202 146
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 450 m 1,0,-1
+ 500 375 l 1,1,-1
+ 125 375 l 1,2,-1
+ 125 125 l 1,3,-1
+ 625 125 l 1,4,-1
+ 625 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 875 l 1,7,-1
+ 625 875 l 1,8,-1
+ 625 750 l 1,9,-1
+ 125 750 l 1,10,-1
+ 125 500 l 1,11,-1
+ 550 500 l 1,12,-1
+ 550 450 l 1,13,-1
+ 500 450 l 1,0,-1
+375 1175 m 1,14,-1
+ 425 1175 l 1,15,-1
+ 425 1125 l 1,16,-1
+ 475 1125 l 1,17,-1
+ 475 1025 l 1,18,-1
+ 375 1025 l 1,19,-1
+ 375 1125 l 1,20,-1
+ 250 1125 l 1,21,-1
+ 250 1025 l 1,22,-1
+ 150 1025 l 1,23,-1
+ 150 1125 l 1,24,-1
+ 200 1125 l 1,25,-1
+ 200 1175 l 1,26,-1
+ 250 1175 l 1,27,-1
+ 250 1250 l 1,28,-1
+ 375 1250 l 1,29,-1
+ 375 1175 l 1,14,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Edieresis
+Encoding: 203 203 147
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 450 m 1,0,-1
+ 500 375 l 1,1,-1
+ 125 375 l 1,2,-1
+ 125 125 l 1,3,-1
+ 625 125 l 1,4,-1
+ 625 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 875 l 1,7,-1
+ 625 875 l 1,8,-1
+ 625 750 l 1,9,-1
+ 125 750 l 1,10,-1
+ 125 500 l 1,11,-1
+ 550 500 l 1,12,-1
+ 550 450 l 1,13,-1
+ 500 450 l 1,0,-1
+125 1125 m 1,14,-1
+ 250 1125 l 1,15,-1
+ 250 1000 l 1,16,-1
+ 125 1000 l 1,17,-1
+ 125 1125 l 1,14,-1
+375 1125 m 1,18,-1
+ 500 1125 l 1,19,-1
+ 500 1000 l 1,20,-1
+ 375 1000 l 1,21,-1
+ 375 1125 l 1,18,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Agrave
+Encoding: 192 192 148
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 625 0 l 1,1,-1
+ 500 0 l 1,2,-1
+ 500 375 l 1,3,-1
+ 125 375 l 1,4,-1
+ 125 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 750 l 1,7,-1
+ 75 750 l 1,8,-1
+ 75 800 l 1,9,-1
+ 125 800 l 1,10,-1
+ 125 875 l 1,11,-1
+ 500 875 l 1,12,-1
+ 500 800 l 1,13,-1
+ 550 800 l 1,14,-1
+ 550 750 l 1,15,-1
+ 625 750 l 1,0,-1
+125 500 m 1,16,-1
+ 500 500 l 1,17,-1
+ 500 750 l 1,18,-1
+ 125 750 l 1,19,-1
+ 125 500 l 1,16,-1
+125 1125 m 1,20,-1
+ 125 1250 l 1,21,-1
+ 250 1250 l 1,22,-1
+ 250 1175 l 1,23,-1
+ 300 1175 l 1,24,-1
+ 300 1125 l 1,25,-1
+ 350 1125 l 1,26,-1
+ 350 1025 l 1,27,-1
+ 250 1025 l 1,28,-1
+ 250 1125 l 1,29,-1
+ 125 1125 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Aacute
+Encoding: 193 193 149
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 625 0 l 1,1,-1
+ 500 0 l 1,2,-1
+ 500 375 l 1,3,-1
+ 125 375 l 1,4,-1
+ 125 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 750 l 1,7,-1
+ 75 750 l 1,8,-1
+ 75 800 l 1,9,-1
+ 125 800 l 1,10,-1
+ 125 875 l 1,11,-1
+ 500 875 l 1,12,-1
+ 500 800 l 1,13,-1
+ 550 800 l 1,14,-1
+ 550 750 l 1,15,-1
+ 625 750 l 1,0,-1
+125 500 m 1,16,-1
+ 500 500 l 1,17,-1
+ 500 750 l 1,18,-1
+ 125 750 l 1,19,-1
+ 125 500 l 1,16,-1
+375 1125 m 1,20,-1
+ 375 1025 l 1,21,-1
+ 275 1025 l 1,22,-1
+ 275 1125 l 1,23,-1
+ 325 1125 l 1,24,-1
+ 325 1175 l 1,25,-1
+ 375 1175 l 1,26,-1
+ 375 1250 l 1,27,-1
+ 500 1250 l 1,28,-1
+ 500 1125 l 1,29,-1
+ 375 1125 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Acircumflex
+Encoding: 194 194 150
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 625 0 l 1,1,-1
+ 500 0 l 1,2,-1
+ 500 375 l 1,3,-1
+ 125 375 l 1,4,-1
+ 125 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 750 l 1,7,-1
+ 75 750 l 1,8,-1
+ 75 800 l 1,9,-1
+ 125 800 l 1,10,-1
+ 125 875 l 1,11,-1
+ 500 875 l 1,12,-1
+ 500 800 l 1,13,-1
+ 550 800 l 1,14,-1
+ 550 750 l 1,15,-1
+ 625 750 l 1,0,-1
+125 500 m 1,16,-1
+ 500 500 l 1,17,-1
+ 500 750 l 1,18,-1
+ 125 750 l 1,19,-1
+ 125 500 l 1,16,-1
+375 1175 m 1,20,-1
+ 425 1175 l 1,21,-1
+ 425 1125 l 1,22,-1
+ 475 1125 l 1,23,-1
+ 475 1025 l 1,24,-1
+ 375 1025 l 1,25,-1
+ 375 1125 l 1,26,-1
+ 250 1125 l 1,27,-1
+ 250 1025 l 1,28,-1
+ 150 1025 l 1,29,-1
+ 150 1125 l 1,30,-1
+ 200 1125 l 1,31,-1
+ 200 1175 l 1,32,-1
+ 250 1175 l 1,33,-1
+ 250 1250 l 1,34,-1
+ 375 1250 l 1,35,-1
+ 375 1175 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Atilde
+Encoding: 195 195 151
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 625 0 l 1,1,-1
+ 500 0 l 1,2,-1
+ 500 375 l 1,3,-1
+ 125 375 l 1,4,-1
+ 125 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 750 l 1,7,-1
+ 75 750 l 1,8,-1
+ 75 800 l 1,9,-1
+ 125 800 l 1,10,-1
+ 125 875 l 1,11,-1
+ 500 875 l 1,12,-1
+ 500 800 l 1,13,-1
+ 550 800 l 1,14,-1
+ 550 750 l 1,15,-1
+ 625 750 l 1,0,-1
+125 500 m 1,16,-1
+ 500 500 l 1,17,-1
+ 500 750 l 1,18,-1
+ 125 750 l 1,19,-1
+ 125 500 l 1,16,-1
+275 1125 m 1,20,-1
+ 125 1125 l 1,21,-1
+ 125 1025 l 1,22,-1
+ 25 1025 l 1,23,-1
+ 25 1125 l 1,24,-1
+ 75 1125 l 1,25,-1
+ 75 1175 l 1,26,-1
+ 125 1175 l 1,27,-1
+ 125 1250 l 1,28,-1
+ 250 1250 l 1,29,-1
+ 250 1225 l 1,30,-1
+ 350 1225 l 1,31,-1
+ 350 1125 l 1,32,-1
+ 500 1125 l 1,33,-1
+ 500 1225 l 1,34,-1
+ 600 1225 l 1,35,-1
+ 600 1125 l 1,36,-1
+ 550 1125 l 1,37,-1
+ 550 1075 l 1,38,-1
+ 500 1075 l 1,39,-1
+ 500 1000 l 1,40,-1
+ 375 1000 l 1,41,-1
+ 375 1025 l 1,42,-1
+ 275 1025 l 1,43,-1
+ 275 1125 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Adieresis
+Encoding: 196 196 152
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 625 0 l 1,1,-1
+ 500 0 l 1,2,-1
+ 500 375 l 1,3,-1
+ 125 375 l 1,4,-1
+ 125 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 750 l 1,7,-1
+ 75 750 l 1,8,-1
+ 75 800 l 1,9,-1
+ 125 800 l 1,10,-1
+ 125 875 l 1,11,-1
+ 500 875 l 1,12,-1
+ 500 800 l 1,13,-1
+ 550 800 l 1,14,-1
+ 550 750 l 1,15,-1
+ 625 750 l 1,0,-1
+125 500 m 1,16,-1
+ 500 500 l 1,17,-1
+ 500 750 l 1,18,-1
+ 125 750 l 1,19,-1
+ 125 500 l 1,16,-1
+125 1125 m 1,20,-1
+ 250 1125 l 1,21,-1
+ 250 1000 l 1,22,-1
+ 125 1000 l 1,23,-1
+ 125 1125 l 1,20,-1
+375 1125 m 1,24,-1
+ 500 1125 l 1,25,-1
+ 500 1000 l 1,26,-1
+ 375 1000 l 1,27,-1
+ 375 1125 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Aring
+Encoding: 197 197 153
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 625 0 l 1,1,-1
+ 500 0 l 1,2,-1
+ 500 375 l 1,3,-1
+ 125 375 l 1,4,-1
+ 125 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 750 l 1,7,-1
+ 75 750 l 1,8,-1
+ 75 800 l 1,9,-1
+ 125 800 l 1,10,-1
+ 125 875 l 1,11,-1
+ 500 875 l 1,12,-1
+ 500 800 l 1,13,-1
+ 550 800 l 1,14,-1
+ 550 750 l 1,15,-1
+ 625 750 l 1,0,-1
+125 500 m 1,16,-1
+ 500 500 l 1,17,-1
+ 500 750 l 1,18,-1
+ 125 750 l 1,19,-1
+ 125 500 l 1,16,-1
+375 1075 m 1,20,-1
+ 375 1000 l 1,21,-1
+ 250 1000 l 1,22,-1
+ 250 1075 l 1,23,-1
+ 200 1075 l 1,24,-1
+ 200 1125 l 1,25,-1
+ 125 1125 l 1,26,-1
+ 125 1250 l 1,27,-1
+ 200 1250 l 1,28,-1
+ 200 1300 l 1,29,-1
+ 250 1300 l 1,30,-1
+ 250 1375 l 1,31,-1
+ 375 1375 l 1,32,-1
+ 375 1300 l 1,33,-1
+ 425 1300 l 1,34,-1
+ 425 1250 l 1,35,-1
+ 500 1250 l 1,36,-1
+ 500 1125 l 1,37,-1
+ 425 1125 l 1,38,-1
+ 425 1075 l 1,39,-1
+ 375 1075 l 1,20,-1
+250 1125 m 1,40,-1
+ 375 1125 l 1,41,-1
+ 375 1250 l 1,42,-1
+ 250 1250 l 1,43,-1
+ 250 1125 l 1,40,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: AE
+Encoding: 198 198 154
+Width: 1250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+1000 450 m 1,0,-1
+ 1000 374 l 1,1,-1
+ 625 374 l 1,2,-1
+ 625 125 l 1,3,-1
+ 1125 125 l 1,4,-1
+ 1125 0 l 1,5,-1
+ 500 0 l 1,6,-1
+ 500 374 l 1,7,-1
+ 125 374 l 1,8,-1
+ 125 0 l 1,9,-1
+ 0 0 l 1,10,-1
+ 0 750 l 1,11,-1
+ 75 750 l 1,12,-1
+ 75 800 l 1,13,-1
+ 125 800 l 1,14,-1
+ 125 875 l 1,15,-1
+ 1125 875 l 1,16,-1
+ 1125 750 l 1,17,-1
+ 625 750 l 1,18,-1
+ 625 500 l 1,19,-1
+ 1050 500 l 1,20,-1
+ 1050 450 l 1,21,-1
+ 1000 450 l 1,0,-1
+500 750 m 1,22,-1
+ 125 750 l 1,23,-1
+ 125 500 l 1,24,-1
+ 500 500 l 1,25,-1
+ 500 750 l 1,22,-1
+625 375 m 1,26,-1
+ 625 499 l 1,27,-1
+ 600 499 l 1,28,-1
+ 600 400 l 1,29,-1
+ 500 400 l 1,30,-1
+ 500 375 l 1,31,-1
+ 625 375 l 1,26,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Ccedilla
+Encoding: 199 199 155
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 0 m 1,0,-1
+ 375 -125 l 1,1,-1
+ 250 -125 l 1,2,-1
+ 250 -225 l 1,3,-1
+ 150 -225 l 1,4,-1
+ 150 -125 l 1,5,-1
+ 200 -125 l 1,6,-1
+ 200 -75 l 1,7,-1
+ 250 -75 l 1,8,-1
+ 250 0 l 1,9,-1
+ 125 0 l 1,10,-1
+ 125 75 l 1,11,-1
+ 75 75 l 1,12,-1
+ 75 125 l 1,13,-1
+ 0 125 l 1,14,-1
+ 0 750 l 1,15,-1
+ 75 750 l 1,16,-1
+ 75 800 l 1,17,-1
+ 125 800 l 1,18,-1
+ 125 875 l 1,19,-1
+ 500 875 l 1,20,-1
+ 500 800 l 1,21,-1
+ 550 800 l 1,22,-1
+ 550 750 l 1,23,-1
+ 625 750 l 1,24,-1
+ 625 625 l 1,25,-1
+ 500 625 l 1,26,-1
+ 500 750 l 1,27,-1
+ 125 750 l 1,28,-1
+ 125 125 l 1,29,-1
+ 500 125 l 1,30,-1
+ 500 250 l 1,31,-1
+ 625 250 l 1,32,-1
+ 625 125 l 1,33,-1
+ 550 125 l 1,34,-1
+ 550 75 l 1,35,-1
+ 500 75 l 1,36,-1
+ 500 0 l 1,37,-1
+ 375 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Ograve
+Encoding: 210 210 156
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 750 l 1,5,-1
+ 75 750 l 1,6,-1
+ 75 800 l 1,7,-1
+ 125 800 l 1,8,-1
+ 125 875 l 1,9,-1
+ 500 875 l 1,10,-1
+ 500 800 l 1,11,-1
+ 550 800 l 1,12,-1
+ 550 750 l 1,13,-1
+ 625 750 l 1,14,-1
+ 625 125 l 1,15,-1
+ 550 125 l 1,16,-1
+ 550 75 l 1,17,-1
+ 500 75 l 1,18,-1
+ 500 0 l 1,19,-1
+ 125 0 l 1,0,-1
+125 750 m 1,20,-1
+ 125 125 l 1,21,-1
+ 500 125 l 1,22,-1
+ 500 750 l 1,23,-1
+ 125 750 l 1,20,-1
+125 1125 m 1,24,-1
+ 125 1250 l 1,25,-1
+ 250 1250 l 1,26,-1
+ 250 1175 l 1,27,-1
+ 300 1175 l 1,28,-1
+ 300 1125 l 1,29,-1
+ 350 1125 l 1,30,-1
+ 350 1025 l 1,31,-1
+ 250 1025 l 1,32,-1
+ 250 1125 l 1,33,-1
+ 125 1125 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Oacute
+Encoding: 211 211 157
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 750 l 1,5,-1
+ 75 750 l 1,6,-1
+ 75 800 l 1,7,-1
+ 125 800 l 1,8,-1
+ 125 875 l 1,9,-1
+ 500 875 l 1,10,-1
+ 500 800 l 1,11,-1
+ 550 800 l 1,12,-1
+ 550 750 l 1,13,-1
+ 625 750 l 1,14,-1
+ 625 125 l 1,15,-1
+ 550 125 l 1,16,-1
+ 550 75 l 1,17,-1
+ 500 75 l 1,18,-1
+ 500 0 l 1,19,-1
+ 125 0 l 1,0,-1
+125 750 m 1,20,-1
+ 125 125 l 1,21,-1
+ 500 125 l 1,22,-1
+ 500 750 l 1,23,-1
+ 125 750 l 1,20,-1
+375 1125 m 1,24,-1
+ 375 1025 l 1,25,-1
+ 275 1025 l 1,26,-1
+ 275 1125 l 1,27,-1
+ 325 1125 l 1,28,-1
+ 325 1175 l 1,29,-1
+ 375 1175 l 1,30,-1
+ 375 1250 l 1,31,-1
+ 500 1250 l 1,32,-1
+ 500 1125 l 1,33,-1
+ 375 1125 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Ocircumflex
+Encoding: 212 212 158
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 750 l 1,5,-1
+ 75 750 l 1,6,-1
+ 75 800 l 1,7,-1
+ 125 800 l 1,8,-1
+ 125 875 l 1,9,-1
+ 500 875 l 1,10,-1
+ 500 800 l 1,11,-1
+ 550 800 l 1,12,-1
+ 550 750 l 1,13,-1
+ 625 750 l 1,14,-1
+ 625 125 l 1,15,-1
+ 550 125 l 1,16,-1
+ 550 75 l 1,17,-1
+ 500 75 l 1,18,-1
+ 500 0 l 1,19,-1
+ 125 0 l 1,0,-1
+125 750 m 1,20,-1
+ 125 125 l 1,21,-1
+ 500 125 l 1,22,-1
+ 500 750 l 1,23,-1
+ 125 750 l 1,20,-1
+375 1175 m 1,24,-1
+ 425 1175 l 1,25,-1
+ 425 1125 l 1,26,-1
+ 475 1125 l 1,27,-1
+ 475 1025 l 1,28,-1
+ 375 1025 l 1,29,-1
+ 375 1125 l 1,30,-1
+ 250 1125 l 1,31,-1
+ 250 1025 l 1,32,-1
+ 150 1025 l 1,33,-1
+ 150 1125 l 1,34,-1
+ 200 1125 l 1,35,-1
+ 200 1175 l 1,36,-1
+ 250 1175 l 1,37,-1
+ 250 1250 l 1,38,-1
+ 375 1250 l 1,39,-1
+ 375 1175 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Otilde
+Encoding: 213 213 159
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 750 l 1,5,-1
+ 75 750 l 1,6,-1
+ 75 800 l 1,7,-1
+ 125 800 l 1,8,-1
+ 125 875 l 1,9,-1
+ 500 875 l 1,10,-1
+ 500 800 l 1,11,-1
+ 550 800 l 1,12,-1
+ 550 750 l 1,13,-1
+ 625 750 l 1,14,-1
+ 625 125 l 1,15,-1
+ 550 125 l 1,16,-1
+ 550 75 l 1,17,-1
+ 500 75 l 1,18,-1
+ 500 0 l 1,19,-1
+ 125 0 l 1,0,-1
+125 750 m 1,20,-1
+ 125 125 l 1,21,-1
+ 500 125 l 1,22,-1
+ 500 750 l 1,23,-1
+ 125 750 l 1,20,-1
+275 1125 m 1,24,-1
+ 125 1125 l 1,25,-1
+ 125 1025 l 1,26,-1
+ 25 1025 l 1,27,-1
+ 25 1125 l 1,28,-1
+ 75 1125 l 1,29,-1
+ 75 1175 l 1,30,-1
+ 125 1175 l 1,31,-1
+ 125 1250 l 1,32,-1
+ 250 1250 l 1,33,-1
+ 250 1225 l 1,34,-1
+ 350 1225 l 1,35,-1
+ 350 1125 l 1,36,-1
+ 500 1125 l 1,37,-1
+ 500 1225 l 1,38,-1
+ 600 1225 l 1,39,-1
+ 600 1125 l 1,40,-1
+ 550 1125 l 1,41,-1
+ 550 1075 l 1,42,-1
+ 500 1075 l 1,43,-1
+ 500 1000 l 1,44,-1
+ 375 1000 l 1,45,-1
+ 375 1025 l 1,46,-1
+ 275 1025 l 1,47,-1
+ 275 1125 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Odieresis
+Encoding: 214 214 160
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 1125 m 1,0,-1
+ 250 1125 l 1,1,-1
+ 250 1000 l 1,2,-1
+ 125 1000 l 1,3,-1
+ 125 1125 l 1,0,-1
+375 1125 m 1,4,-1
+ 500 1125 l 1,5,-1
+ 500 1000 l 1,6,-1
+ 375 1000 l 1,7,-1
+ 375 1125 l 1,4,-1
+125 0 m 1,8,-1
+ 125 75 l 1,9,-1
+ 75 75 l 1,10,-1
+ 75 125 l 1,11,-1
+ 0 125 l 1,12,-1
+ 0 750 l 1,13,-1
+ 75 750 l 1,14,-1
+ 75 800 l 1,15,-1
+ 125 800 l 1,16,-1
+ 125 875 l 1,17,-1
+ 500 875 l 1,18,-1
+ 500 800 l 1,19,-1
+ 550 800 l 1,20,-1
+ 550 750 l 1,21,-1
+ 625 750 l 1,22,-1
+ 625 125 l 1,23,-1
+ 550 125 l 1,24,-1
+ 550 75 l 1,25,-1
+ 500 75 l 1,26,-1
+ 500 0 l 1,27,-1
+ 125 0 l 1,8,-1
+125 750 m 1,28,-1
+ 125 125 l 1,29,-1
+ 500 125 l 1,30,-1
+ 500 750 l 1,31,-1
+ 125 750 l 1,28,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Ugrave
+Encoding: 217 217 161
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 1125 m 1,0,-1
+ 125 1250 l 1,1,-1
+ 250 1250 l 1,2,-1
+ 250 1175 l 1,3,-1
+ 300 1175 l 1,4,-1
+ 300 1125 l 1,5,-1
+ 350 1125 l 1,6,-1
+ 350 1025 l 1,7,-1
+ 250 1025 l 1,8,-1
+ 250 1125 l 1,9,-1
+ 125 1125 l 1,0,-1
+75 75 m 1,10,-1
+ 125 75 l 1,11,-1
+ 125 0 l 1,12,-1
+ 500 0 l 1,13,-1
+ 500 75 l 1,14,-1
+ 550 75 l 1,15,-1
+ 550 125 l 1,16,-1
+ 625 125 l 1,17,-1
+ 625 875 l 1,18,-1
+ 500 875 l 1,19,-1
+ 500 125 l 1,20,-1
+ 125 125 l 1,21,-1
+ 125 875 l 1,22,-1
+ 0 875 l 1,23,-1
+ 0 125 l 1,24,-1
+ 75 125 l 1,25,-1
+ 75 75 l 1,10,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: Uacute
+Encoding: 218 218 162
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 1125 m 1,0,-1
+ 375 1025 l 1,1,-1
+ 275 1025 l 1,2,-1
+ 275 1125 l 1,3,-1
+ 325 1125 l 1,4,-1
+ 325 1175 l 1,5,-1
+ 375 1175 l 1,6,-1
+ 375 1250 l 1,7,-1
+ 500 1250 l 1,8,-1
+ 500 1125 l 1,9,-1
+ 375 1125 l 1,0,-1
+75 75 m 1,10,-1
+ 125 75 l 1,11,-1
+ 125 0 l 1,12,-1
+ 500 0 l 1,13,-1
+ 500 75 l 1,14,-1
+ 550 75 l 1,15,-1
+ 550 125 l 1,16,-1
+ 625 125 l 1,17,-1
+ 625 875 l 1,18,-1
+ 500 875 l 1,19,-1
+ 500 125 l 1,20,-1
+ 125 125 l 1,21,-1
+ 125 875 l 1,22,-1
+ 0 875 l 1,23,-1
+ 0 125 l 1,24,-1
+ 75 125 l 1,25,-1
+ 75 75 l 1,10,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: Ucircumflex
+Encoding: 219 219 163
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 1175 m 1,0,-1
+ 425 1175 l 1,1,-1
+ 425 1125 l 1,2,-1
+ 475 1125 l 1,3,-1
+ 475 1025 l 1,4,-1
+ 375 1025 l 1,5,-1
+ 375 1125 l 1,6,-1
+ 250 1125 l 1,7,-1
+ 250 1025 l 1,8,-1
+ 150 1025 l 1,9,-1
+ 150 1125 l 1,10,-1
+ 200 1125 l 1,11,-1
+ 200 1175 l 1,12,-1
+ 250 1175 l 1,13,-1
+ 250 1250 l 1,14,-1
+ 375 1250 l 1,15,-1
+ 375 1175 l 1,0,-1
+75 75 m 1,16,-1
+ 125 75 l 1,17,-1
+ 125 0 l 1,18,-1
+ 500 0 l 1,19,-1
+ 500 75 l 1,20,-1
+ 550 75 l 1,21,-1
+ 550 125 l 1,22,-1
+ 625 125 l 1,23,-1
+ 625 875 l 1,24,-1
+ 500 875 l 1,25,-1
+ 500 125 l 1,26,-1
+ 125 125 l 1,27,-1
+ 125 875 l 1,28,-1
+ 0 875 l 1,29,-1
+ 0 125 l 1,30,-1
+ 75 125 l 1,31,-1
+ 75 75 l 1,16,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: Udieresis
+Encoding: 220 220 164
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 1125 m 1,0,-1
+ 250 1125 l 1,1,-1
+ 250 1000 l 1,2,-1
+ 125 1000 l 1,3,-1
+ 125 1125 l 1,0,-1
+375 1125 m 1,4,-1
+ 500 1125 l 1,5,-1
+ 500 1000 l 1,6,-1
+ 375 1000 l 1,7,-1
+ 375 1125 l 1,4,-1
+75 75 m 1,8,-1
+ 125 75 l 1,9,-1
+ 125 0 l 1,10,-1
+ 500 0 l 1,11,-1
+ 500 75 l 1,12,-1
+ 550 75 l 1,13,-1
+ 550 125 l 1,14,-1
+ 625 125 l 1,15,-1
+ 625 875 l 1,16,-1
+ 500 875 l 1,17,-1
+ 500 125 l 1,18,-1
+ 125 125 l 1,19,-1
+ 125 875 l 1,20,-1
+ 0 875 l 1,21,-1
+ 0 125 l 1,22,-1
+ 75 125 l 1,23,-1
+ 75 75 l 1,8,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: Oslash
+Encoding: 216 216 165
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+124 175 m 1,0,-1
+ 124 325 l 1,1,-1
+ 75 325 l 1,2,-1
+ 75 375 l 1,3,-1
+ 0 375 l 1,4,-1
+ 0 750 l 1,5,-1
+ 75 750 l 1,6,-1
+ 75 800 l 1,7,-1
+ 125 800 l 1,8,-1
+ 125 875 l 1,9,-1
+ 375 875 l 1,10,-1
+ 375 800 l 1,11,-1
+ 425 800 l 1,12,-1
+ 425 750 l 1,13,-1
+ 500 750 l 1,14,-1
+ 500 875 l 1,15,-1
+ 625 875 l 1,16,-1
+ 625 750 l 1,17,-1
+ 550 750 l 1,18,-1
+ 550 700 l 1,19,-1
+ 501 700 l 1,20,-1
+ 501 550 l 1,21,-1
+ 550 550 l 1,22,-1
+ 550 500 l 1,23,-1
+ 625 500 l 1,24,-1
+ 625 125 l 1,25,-1
+ 550 125 l 1,26,-1
+ 550 75 l 1,27,-1
+ 500 75 l 1,28,-1
+ 500 0 l 1,29,-1
+ 250 0 l 1,30,-1
+ 250 75 l 1,31,-1
+ 200 75 l 1,32,-1
+ 200 125 l 1,33,-1
+ 125 125 l 1,34,-1
+ 125 0 l 1,35,-1
+ 0 0 l 1,36,-1
+ 0 125 l 1,37,-1
+ 75 125 l 1,38,-1
+ 75 175 l 1,39,-1
+ 124 175 l 1,0,-1
+500 625 m 1,40,-1
+ 475 625 l 1,41,-1
+ 475 525 l 1,42,-1
+ 375 525 l 1,43,-1
+ 375 375 l 1,44,-1
+ 300 375 l 1,45,-1
+ 300 325 l 1,46,-1
+ 250 325 l 1,47,-1
+ 250 125 l 1,48,-1
+ 500 125 l 1,49,-1
+ 500 625 l 1,40,-1
+125 250 m 1,50,-1
+ 150 250 l 1,51,-1
+ 150 350 l 1,52,-1
+ 250 350 l 1,53,-1
+ 250 500 l 1,54,-1
+ 325 500 l 1,55,-1
+ 325 550 l 1,56,-1
+ 375 550 l 1,57,-1
+ 375 750 l 1,58,-1
+ 125 750 l 1,59,-1
+ 125 250 l 1,50,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Yacute
+Encoding: 221 221 166
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 1125 m 1,0,-1
+ 375 1025 l 1,1,-1
+ 275 1025 l 1,2,-1
+ 275 1125 l 1,3,-1
+ 325 1125 l 1,4,-1
+ 325 1175 l 1,5,-1
+ 375 1175 l 1,6,-1
+ 375 1250 l 1,7,-1
+ 500 1250 l 1,8,-1
+ 500 1125 l 1,9,-1
+ 375 1125 l 1,0,-1
+175 675 m 1,10,-1
+ 125 675 l 1,11,-1
+ 125 875 l 1,12,-1
+ 0 875 l 1,13,-1
+ 0 750 l 1,14,-1
+ 25 750 l 1,15,-1
+ 25 650 l 1,16,-1
+ 125 650 l 1,17,-1
+ 125 499 l 1,18,-1
+ 250 499 l 1,19,-1
+ 250 0 l 1,20,-1
+ 375 0 l 1,21,-1
+ 375 499 l 1,22,-1
+ 500 499 l 1,23,-1
+ 500 650 l 1,24,-1
+ 600 650 l 1,25,-1
+ 600 750 l 1,26,-1
+ 625 750 l 1,27,-1
+ 625 875 l 1,28,-1
+ 500 875 l 1,29,-1
+ 500 675 l 1,30,-1
+ 450 675 l 1,31,-1
+ 450 625 l 1,32,-1
+ 375 625 l 1,33,-1
+ 375 500 l 1,34,-1
+ 250 500 l 1,35,-1
+ 250 625 l 1,36,-1
+ 175 625 l 1,37,-1
+ 175 675 l 1,10,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: eth
+Encoding: 240 240 167
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 625 m 1,0,-1
+ 375 625 l 1,1,-1
+ 375 650 l 1,2,-1
+ 275 650 l 1,3,-1
+ 275 750 l 1,4,-1
+ 250 750 l 1,5,-1
+ 250 874 l 1,6,-1
+ 125 874 l 1,7,-1
+ 125 750 l 1,8,-1
+ 0 750 l 1,9,-1
+ 0 875 l 1,10,-1
+ 125 875 l 1,11,-1
+ 125 999 l 1,12,-1
+ 0 999 l 1,13,-1
+ 0 1125 l 1,14,-1
+ 125 1125 l 1,15,-1
+ 125 1000 l 1,16,-1
+ 250 1000 l 1,17,-1
+ 250 1125 l 1,18,-1
+ 375 1125 l 1,19,-1
+ 375 999 l 1,20,-1
+ 250 999 l 1,21,-1
+ 250 875 l 1,22,-1
+ 375 875 l 1,23,-1
+ 375 675 l 1,24,-1
+ 425 675 l 1,25,-1
+ 425 625 l 1,26,-1
+ 500 625 l 1,27,-1
+ 500 125 l 1,28,-1
+ 425 125 l 1,29,-1
+ 425 75 l 1,30,-1
+ 375 75 l 1,31,-1
+ 375 0 l 1,32,-1
+ 125 0 l 1,33,-1
+ 125 75 l 1,34,-1
+ 75 75 l 1,35,-1
+ 75 125 l 1,36,-1
+ 0 125 l 1,37,-1
+ 0 500 l 1,38,-1
+ 75 500 l 1,39,-1
+ 75 550 l 1,40,-1
+ 125 550 l 1,41,-1
+ 125 625 l 1,0,-1
+125 125 m 1,42,-1
+ 375 125 l 1,43,-1
+ 375 500 l 1,44,-1
+ 125 500 l 1,45,-1
+ 125 125 l 1,42,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: slash
+Encoding: 47 47 168
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 625 m 1,0,-1
+ 475 625 l 1,1,-1
+ 475 525 l 1,2,-1
+ 375 525 l 1,3,-1
+ 375 375 l 1,4,-1
+ 300 375 l 1,5,-1
+ 300 325 l 1,6,-1
+ 250 325 l 1,7,-1
+ 250 125 l 1,8,-1
+ 175 125 l 1,9,-1
+ 175 75 l 1,10,-1
+ 125 75 l 1,11,-1
+ 125 -125 l 1,12,-1
+ 0 -125 l 1,13,-1
+ 0 0 l 1,14,-1
+ 25 0 l 1,15,-1
+ 25 100 l 1,16,-1
+ 125 100 l 1,17,-1
+ 125 250 l 1,18,-1
+ 150 250 l 1,19,-1
+ 150 350 l 1,20,-1
+ 250 350 l 1,21,-1
+ 250 500 l 1,22,-1
+ 325 500 l 1,23,-1
+ 325 550 l 1,24,-1
+ 375 550 l 1,25,-1
+ 375 750 l 1,26,-1
+ 450 750 l 1,27,-1
+ 450 800 l 1,28,-1
+ 500 800 l 1,29,-1
+ 500 1000 l 1,30,-1
+ 625 1000 l 1,31,-1
+ 625 875 l 1,32,-1
+ 600 875 l 1,33,-1
+ 600 775 l 1,34,-1
+ 500 775 l 1,35,-1
+ 500 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+Kerns2: 168 -250 "'kern' Horizontal Kerning in Latin lookup 0 subtable"
+EndChar
+
+StartChar: percent
+Encoding: 37 37 169
+Width: 1000
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 0 0 l 1,1,-1
+ 0 125 l 1,2,-1
+ 125 125 l 1,3,-1
+ 125 250 l 1,4,-1
+ 250 250 l 1,5,-1
+ 250 375 l 1,6,-1
+ 375 375 l 1,7,-1
+ 375 500 l 1,8,-1
+ 500 500 l 1,9,-1
+ 500 625 l 1,10,-1
+ 625 625 l 1,11,-1
+ 625 750 l 1,12,-1
+ 750 750 l 1,13,-1
+ 750 875 l 1,14,-1
+ 875 875 l 1,15,-1
+ 875 749 l 1,16,-1
+ 750 749 l 1,17,-1
+ 750 624 l 1,18,-1
+ 625 624 l 1,19,-1
+ 625 499 l 1,20,-1
+ 500 499 l 1,21,-1
+ 500 374 l 1,22,-1
+ 375 374 l 1,23,-1
+ 375 249 l 1,24,-1
+ 250 249 l 1,25,-1
+ 250 124 l 1,26,-1
+ 125 124 l 1,27,-1
+ 125 0 l 1,0,-1
+500 125 m 1,28,-1
+ 500 250 l 1,29,-1
+ 575 250 l 1,30,-1
+ 575 300 l 1,31,-1
+ 625 300 l 1,32,-1
+ 625 375 l 1,33,-1
+ 750 375 l 1,34,-1
+ 750 300 l 1,35,-1
+ 800 300 l 1,36,-1
+ 800 250 l 1,37,-1
+ 875 250 l 1,38,-1
+ 875 125 l 1,39,-1
+ 800 125 l 1,40,-1
+ 800 75 l 1,41,-1
+ 750 75 l 1,42,-1
+ 750 0 l 1,43,-1
+ 625 0 l 1,44,-1
+ 625 75 l 1,45,-1
+ 575 75 l 1,46,-1
+ 575 125 l 1,47,-1
+ 500 125 l 1,28,-1
+0 625 m 1,48,-1
+ 0 750 l 1,49,-1
+ 75 750 l 1,50,-1
+ 75 800 l 1,51,-1
+ 125 800 l 1,52,-1
+ 125 875 l 1,53,-1
+ 250 875 l 1,54,-1
+ 250 800 l 1,55,-1
+ 300 800 l 1,56,-1
+ 300 750 l 1,57,-1
+ 375 750 l 1,58,-1
+ 375 625 l 1,59,-1
+ 300 625 l 1,60,-1
+ 300 575 l 1,61,-1
+ 250 575 l 1,62,-1
+ 250 500 l 1,63,-1
+ 125 500 l 1,64,-1
+ 125 575 l 1,65,-1
+ 75 575 l 1,66,-1
+ 75 625 l 1,67,-1
+ 0 625 l 1,48,-1
+125 750 m 1,68,-1
+ 125 625 l 1,69,-1
+ 250 625 l 1,70,-1
+ 250 750 l 1,71,-1
+ 125 750 l 1,68,-1
+625 250 m 1,72,-1
+ 625 125 l 1,73,-1
+ 750 125 l 1,74,-1
+ 750 250 l 1,75,-1
+ 625 250 l 1,72,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: ampersand
+Encoding: 38 38 170
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 500 m 1,0,-1
+ 625 375 l 1,1,-1
+ 600 375 l 1,2,-1
+ 600 275 l 1,3,-1
+ 501 275 l 1,4,-1
+ 501 125 l 1,5,-1
+ 625 125 l 1,6,-1
+ 625 0 l 1,7,-1
+ 500 0 l 1,8,-1
+ 500 125 l 1,9,-1
+ 425 125 l 1,10,-1
+ 425 75 l 1,11,-1
+ 375 75 l 1,12,-1
+ 375 0 l 1,13,-1
+ 125 0 l 1,14,-1
+ 125 75 l 1,15,-1
+ 75 75 l 1,16,-1
+ 75 125 l 1,17,-1
+ 0 125 l 1,18,-1
+ 0 375 l 1,19,-1
+ 125 375 l 1,20,-1
+ 125 450 l 1,21,-1
+ 75 450 l 1,22,-1
+ 75 500 l 1,23,-1
+ 0 500 l 1,24,-1
+ 0 750 l 1,25,-1
+ 75 750 l 1,26,-1
+ 75 800 l 1,27,-1
+ 125 800 l 1,28,-1
+ 125 875 l 1,29,-1
+ 375 875 l 1,30,-1
+ 375 800 l 1,31,-1
+ 425 800 l 1,32,-1
+ 425 750 l 1,33,-1
+ 500 750 l 1,34,-1
+ 500 625 l 1,35,-1
+ 425 625 l 1,36,-1
+ 425 575 l 1,37,-1
+ 375 575 l 1,38,-1
+ 375 499 l 1,39,-1
+ 250 499 l 1,40,-1
+ 250 375 l 1,41,-1
+ 375 375 l 1,42,-1
+ 375 300 l 1,43,-1
+ 425 300 l 1,44,-1
+ 425 250 l 1,45,-1
+ 500 250 l 1,46,-1
+ 500 500 l 1,47,-1
+ 625 500 l 1,0,-1
+125 500 m 1,48,-1
+ 250 500 l 1,49,-1
+ 250 625 l 1,50,-1
+ 375 625 l 1,51,-1
+ 375 750 l 1,52,-1
+ 125 750 l 1,53,-1
+ 125 500 l 1,48,-1
+250 250 m 1,54,-1
+ 250 374 l 1,55,-1
+ 125 374 l 1,56,-1
+ 125 125 l 1,57,-1
+ 375 125 l 1,58,-1
+ 375 250 l 1,59,-1
+ 250 250 l 1,54,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: quotesingle
+Encoding: 39 39 171
+Width: 250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 625 l 1,2,-1
+ 0 625 l 1,3,-1
+ 0 875 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: perthousand
+Encoding: 8240 8240 172
+Width: 1250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+875 124 m 1,0,-1
+ 800 124 l 1,1,-1
+ 800 75 l 1,2,-1
+ 750 75 l 1,3,-1
+ 750 0 l 1,4,-1
+ 625 0 l 1,5,-1
+ 625 75 l 1,6,-1
+ 575 75 l 1,7,-1
+ 575 125 l 1,8,-1
+ 500 125 l 1,9,-1
+ 500 250 l 1,10,-1
+ 575 250 l 1,11,-1
+ 575 300 l 1,12,-1
+ 625 300 l 1,13,-1
+ 625 375 l 1,14,-1
+ 750 375 l 1,15,-1
+ 750 300 l 1,16,-1
+ 800 300 l 1,17,-1
+ 800 250 l 1,18,-1
+ 875 250 l 1,19,-1
+ 875 375 l 1,20,-1
+ 1000 375 l 1,21,-1
+ 1000 300 l 1,22,-1
+ 1050 300 l 1,23,-1
+ 1050 250 l 1,24,-1
+ 1125 250 l 1,25,-1
+ 1125 125 l 1,26,-1
+ 1050 125 l 1,27,-1
+ 1050 75 l 1,28,-1
+ 1000 75 l 1,29,-1
+ 1000 0 l 1,30,-1
+ 875 0 l 1,31,-1
+ 875 124 l 1,0,-1
+625 250 m 1,32,-1
+ 625 125 l 1,33,-1
+ 750 125 l 1,34,-1
+ 750 250 l 1,35,-1
+ 625 250 l 1,32,-1
+875 125 m 1,36,-1
+ 1000 125 l 1,37,-1
+ 1000 249 l 1,38,-1
+ 875 249 l 1,39,-1
+ 875 125 l 1,36,-1
+125 0 m 1,40,-1
+ 0 0 l 1,41,-1
+ 0 125 l 1,42,-1
+ 125 125 l 1,43,-1
+ 125 250 l 1,44,-1
+ 250 250 l 1,45,-1
+ 250 375 l 1,46,-1
+ 375 375 l 1,47,-1
+ 375 500 l 1,48,-1
+ 500 500 l 1,49,-1
+ 500 625 l 1,50,-1
+ 625 625 l 1,51,-1
+ 625 750 l 1,52,-1
+ 750 750 l 1,53,-1
+ 750 875 l 1,54,-1
+ 875 875 l 1,55,-1
+ 875 749 l 1,56,-1
+ 750 749 l 1,57,-1
+ 750 624 l 1,58,-1
+ 625 624 l 1,59,-1
+ 625 499 l 1,60,-1
+ 500 499 l 1,61,-1
+ 500 374 l 1,62,-1
+ 375 374 l 1,63,-1
+ 375 249 l 1,64,-1
+ 250 249 l 1,65,-1
+ 250 124 l 1,66,-1
+ 125 124 l 1,67,-1
+ 125 0 l 1,40,-1
+0 625 m 1,68,-1
+ 0 750 l 1,69,-1
+ 75 750 l 1,70,-1
+ 75 800 l 1,71,-1
+ 125 800 l 1,72,-1
+ 125 875 l 1,73,-1
+ 250 875 l 1,74,-1
+ 250 800 l 1,75,-1
+ 300 800 l 1,76,-1
+ 300 750 l 1,77,-1
+ 375 750 l 1,78,-1
+ 375 625 l 1,79,-1
+ 300 625 l 1,80,-1
+ 300 575 l 1,81,-1
+ 250 575 l 1,82,-1
+ 250 500 l 1,83,-1
+ 125 500 l 1,84,-1
+ 125 575 l 1,85,-1
+ 75 575 l 1,86,-1
+ 75 625 l 1,87,-1
+ 0 625 l 1,68,-1
+125 750 m 1,88,-1
+ 125 625 l 1,89,-1
+ 250 625 l 1,90,-1
+ 250 750 l 1,91,-1
+ 125 750 l 1,88,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Scaron
+Encoding: 352 352 173
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 1000 m 1,0,-1
+ 250 1000 l 1,1,-1
+ 250 1075 l 1,2,-1
+ 200 1075 l 1,3,-1
+ 200 1125 l 1,4,-1
+ 150 1125 l 1,5,-1
+ 150 1225 l 1,6,-1
+ 250 1225 l 1,7,-1
+ 250 1125 l 1,8,-1
+ 375 1125 l 1,9,-1
+ 375 1225 l 1,10,-1
+ 475 1225 l 1,11,-1
+ 475 1125 l 1,12,-1
+ 425 1125 l 1,13,-1
+ 425 1075 l 1,14,-1
+ 375 1075 l 1,15,-1
+ 375 1000 l 1,0,-1
+625 750 m 1,16,-1
+ 625 625 l 1,17,-1
+ 500 625 l 1,18,-1
+ 500 750 l 1,19,-1
+ 125 750 l 1,20,-1
+ 125 500 l 1,21,-1
+ 500 500 l 1,22,-1
+ 500 425 l 1,23,-1
+ 550 425 l 1,24,-1
+ 550 375 l 1,25,-1
+ 625 375 l 1,26,-1
+ 625 125 l 1,27,-1
+ 550 125 l 1,28,-1
+ 550 75 l 1,29,-1
+ 500 75 l 1,30,-1
+ 500 0 l 1,31,-1
+ 125 0 l 1,32,-1
+ 125 75 l 1,33,-1
+ 75 75 l 1,34,-1
+ 75 125 l 1,35,-1
+ 0 125 l 1,36,-1
+ 0 250 l 1,37,-1
+ 125 250 l 1,38,-1
+ 125 125 l 1,39,-1
+ 500 125 l 1,40,-1
+ 500 375 l 1,41,-1
+ 125 375 l 1,42,-1
+ 125 450 l 1,43,-1
+ 75 450 l 1,44,-1
+ 75 500 l 1,45,-1
+ 0 500 l 1,46,-1
+ 0 750 l 1,47,-1
+ 75 750 l 1,48,-1
+ 75 800 l 1,49,-1
+ 125 800 l 1,50,-1
+ 125 875 l 1,51,-1
+ 500 875 l 1,52,-1
+ 500 800 l 1,53,-1
+ 550 800 l 1,54,-1
+ 550 750 l 1,55,-1
+ 625 750 l 1,16,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: OE
+Encoding: 338 338 174
+Width: 1250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+1000 450 m 1,0,-1
+ 1000 375 l 1,1,-1
+ 625 375 l 1,2,-1
+ 625 125 l 1,3,-1
+ 1125 125 l 1,4,-1
+ 1125 0 l 1,5,-1
+ 125 0 l 1,6,-1
+ 125 75 l 1,7,-1
+ 75 75 l 1,8,-1
+ 75 125 l 1,9,-1
+ 0 125 l 1,10,-1
+ 0 750 l 1,11,-1
+ 75 750 l 1,12,-1
+ 75 800 l 1,13,-1
+ 125 800 l 1,14,-1
+ 125 875 l 1,15,-1
+ 1125 875 l 1,16,-1
+ 1125 750 l 1,17,-1
+ 625 750 l 1,18,-1
+ 625 500 l 1,19,-1
+ 1050 500 l 1,20,-1
+ 1050 450 l 1,21,-1
+ 1000 450 l 1,0,-1
+125 750 m 1,22,-1
+ 125 125 l 1,23,-1
+ 500 125 l 1,24,-1
+ 500 750 l 1,25,-1
+ 125 750 l 1,22,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Ydieresis
+Encoding: 376 376 175
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 1125 m 1,0,-1
+ 500 1125 l 1,1,-1
+ 500 1000 l 1,2,-1
+ 375 1000 l 1,3,-1
+ 375 1125 l 1,0,-1
+125 1125 m 1,4,-1
+ 250 1125 l 1,5,-1
+ 250 1000 l 1,6,-1
+ 125 1000 l 1,7,-1
+ 125 1125 l 1,4,-1
+175 675 m 1,8,-1
+ 125 675 l 1,9,-1
+ 125 875 l 1,10,-1
+ 0 875 l 1,11,-1
+ 0 750 l 1,12,-1
+ 25 750 l 1,13,-1
+ 25 650 l 1,14,-1
+ 125 650 l 1,15,-1
+ 125 499 l 1,16,-1
+ 250 499 l 1,17,-1
+ 250 0 l 1,18,-1
+ 375 0 l 1,19,-1
+ 375 499 l 1,20,-1
+ 500 499 l 1,21,-1
+ 500 650 l 1,22,-1
+ 600 650 l 1,23,-1
+ 600 750 l 1,24,-1
+ 625 750 l 1,25,-1
+ 625 875 l 1,26,-1
+ 500 875 l 1,27,-1
+ 500 675 l 1,28,-1
+ 450 675 l 1,29,-1
+ 450 625 l 1,30,-1
+ 375 625 l 1,31,-1
+ 375 500 l 1,32,-1
+ 250 500 l 1,33,-1
+ 250 625 l 1,34,-1
+ 175 625 l 1,35,-1
+ 175 675 l 1,8,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: onequarter
+Encoding: 188 188 176
+Width: 1250
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+750 376 m 1,0,-1
+ 875 376 l 1,1,-1
+ 875 501 l 1,2,-1
+ 1000 501 l 1,3,-1
+ 1000 127 l 1,4,-1
+ 1125 127 l 1,5,-1
+ 1125 1 l 1,6,-1
+ 1000 1 l 1,7,-1
+ 1000 -123 l 1,8,-1
+ 875 -123 l 1,9,-1
+ 875 1 l 1,10,-1
+ 625 1 l 1,11,-1
+ 625 251 l 1,12,-1
+ 750 251 l 1,13,-1
+ 750 376 l 1,0,-1
+0 1001 m 1,14,-1
+ 250 1001 l 1,15,-1
+ 250 376 l 1,16,-1
+ 125 376 l 1,17,-1
+ 125 876 l 1,18,-1
+ 0 876 l 1,19,-1
+ 0 1001 l 1,14,-1
+875 127 m 1,20,-1
+ 875 250 l 1,21,-1
+ 750 250 l 1,22,-1
+ 750 127 l 1,23,-1
+ 875 127 l 1,20,-1
+1000 2 m 1,24,-1
+ 1000 126 l 1,25,-1
+ 975 126 l 1,26,-1
+ 975 27 l 1,27,-1
+ 875 27 l 1,28,-1
+ 875 2 l 1,29,-1
+ 1000 2 l 1,24,-1
+250 0 m 1,30,-1
+ 125 0 l 1,31,-1
+ 125 125 l 1,32,-1
+ 250 125 l 1,33,-1
+ 250 250 l 1,34,-1
+ 375 250 l 1,35,-1
+ 375 375 l 1,36,-1
+ 500 375 l 1,37,-1
+ 500 500 l 1,38,-1
+ 625 500 l 1,39,-1
+ 625 625 l 1,40,-1
+ 750 625 l 1,41,-1
+ 750 750 l 1,42,-1
+ 875 750 l 1,43,-1
+ 875 875 l 1,44,-1
+ 1000 875 l 1,45,-1
+ 1000 749 l 1,46,-1
+ 875 749 l 1,47,-1
+ 875 624 l 1,48,-1
+ 750 624 l 1,49,-1
+ 750 499 l 1,50,-1
+ 625 499 l 1,51,-1
+ 625 374 l 1,52,-1
+ 500 374 l 1,53,-1
+ 500 249 l 1,54,-1
+ 375 249 l 1,55,-1
+ 375 124 l 1,56,-1
+ 250 124 l 1,57,-1
+ 250 0 l 1,30,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: onehalf
+Encoding: 189 189 177
+Width: 1375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 1000 m 1,0,-1
+ 250 1000 l 1,1,-1
+ 250 375 l 1,2,-1
+ 125 375 l 1,3,-1
+ 125 875 l 1,4,-1
+ 0 875 l 1,5,-1
+ 0 1000 l 1,0,-1
+875 425 m 1,6,-1
+ 825 425 l 1,7,-1
+ 825 375 l 1,8,-1
+ 750 375 l 1,9,-1
+ 750 250 l 1,10,-1
+ 875 250 l 1,11,-1
+ 875 375 l 1,12,-1
+ 1125 375 l 1,13,-1
+ 1125 250 l 1,14,-1
+ 1000 250 l 1,15,-1
+ 1000 125 l 1,16,-1
+ 875 125 l 1,17,-1
+ 875 0 l 1,18,-1
+ 750 0 l 1,19,-1
+ 750 -125 l 1,20,-1
+ 1250 -125 l 1,21,-1
+ 1250 0 l 1,22,-1
+ 1000 0 l 1,23,-1
+ 1000 124 l 1,24,-1
+ 1125 124 l 1,25,-1
+ 1125 200 l 1,26,-1
+ 1175 200 l 1,27,-1
+ 1175 250 l 1,28,-1
+ 1250 250 l 1,29,-1
+ 1250 375 l 1,30,-1
+ 1175 375 l 1,31,-1
+ 1175 425 l 1,32,-1
+ 1125 425 l 1,33,-1
+ 1125 500 l 1,34,-1
+ 875 500 l 1,35,-1
+ 875 425 l 1,6,-1
+250 124 m 1,36,-1
+ 375 124 l 1,37,-1
+ 375 249 l 1,38,-1
+ 500 249 l 1,39,-1
+ 500 374 l 1,40,-1
+ 625 374 l 1,41,-1
+ 625 499 l 1,42,-1
+ 750 499 l 1,43,-1
+ 750 624 l 1,44,-1
+ 875 624 l 1,45,-1
+ 875 749 l 1,46,-1
+ 1000 749 l 1,47,-1
+ 1000 875 l 1,48,-1
+ 875 875 l 1,49,-1
+ 875 750 l 1,50,-1
+ 750 750 l 1,51,-1
+ 750 625 l 1,52,-1
+ 625 625 l 1,53,-1
+ 625 500 l 1,54,-1
+ 500 500 l 1,55,-1
+ 500 375 l 1,56,-1
+ 375 375 l 1,57,-1
+ 375 250 l 1,58,-1
+ 250 250 l 1,59,-1
+ 250 125 l 1,60,-1
+ 125 125 l 1,61,-1
+ 125 0 l 1,62,-1
+ 250 0 l 1,63,-1
+ 250 124 l 1,36,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: threequarters
+Encoding: 190 190 178
+Width: 1375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 125 625 l 1,1,-1
+ 125 500 l 1,2,-1
+ 375 500 l 1,3,-1
+ 375 624 l 1,4,-1
+ 250 624 l 1,5,-1
+ 250 700 l 1,6,-1
+ 200 700 l 1,7,-1
+ 200 750 l 1,8,-1
+ 375 750 l 1,9,-1
+ 375 875 l 1,10,-1
+ 125 875 l 1,11,-1
+ 125 750 l 1,12,-1
+ 0 750 l 1,13,-1
+ 0 875 l 1,14,-1
+ 75 875 l 1,15,-1
+ 75 925 l 1,16,-1
+ 125 925 l 1,17,-1
+ 125 1000 l 1,18,-1
+ 375 1000 l 1,19,-1
+ 375 925 l 1,20,-1
+ 425 925 l 1,21,-1
+ 425 875 l 1,22,-1
+ 500 875 l 1,23,-1
+ 500 750 l 1,24,-1
+ 425 750 l 1,25,-1
+ 425 700 l 1,26,-1
+ 375 700 l 1,27,-1
+ 375 625 l 1,28,-1
+ 500 625 l 1,29,-1
+ 500 500 l 1,30,-1
+ 425 500 l 1,31,-1
+ 425 450 l 1,32,-1
+ 375 450 l 1,33,-1
+ 375 375 l 1,34,-1
+ 125 375 l 1,35,-1
+ 125 450 l 1,36,-1
+ 75 450 l 1,37,-1
+ 75 500 l 1,38,-1
+ 0 500 l 1,39,-1
+ 0 625 l 1,0,-1
+875 375 m 1,40,-1
+ 1000 375 l 1,41,-1
+ 1000 500 l 1,42,-1
+ 1125 500 l 1,43,-1
+ 1125 126 l 1,44,-1
+ 1250 126 l 1,45,-1
+ 1250 0 l 1,46,-1
+ 1125 0 l 1,47,-1
+ 1125 -124 l 1,48,-1
+ 1000 -124 l 1,49,-1
+ 1000 0 l 1,50,-1
+ 750 0 l 1,51,-1
+ 750 250 l 1,52,-1
+ 875 250 l 1,53,-1
+ 875 375 l 1,40,-1
+1000 126 m 1,54,-1
+ 1000 249 l 1,55,-1
+ 875 249 l 1,56,-1
+ 875 126 l 1,57,-1
+ 1000 126 l 1,54,-1
+1125 1 m 1,58,-1
+ 1125 125 l 1,59,-1
+ 1100 125 l 1,60,-1
+ 1100 26 l 1,61,-1
+ 1000 26 l 1,62,-1
+ 1000 1 l 1,63,-1
+ 1125 1 l 1,58,-1
+375 0 m 1,64,-1
+ 250 0 l 1,65,-1
+ 250 125 l 1,66,-1
+ 375 125 l 1,67,-1
+ 375 250 l 1,68,-1
+ 500 250 l 1,69,-1
+ 500 375 l 1,70,-1
+ 625 375 l 1,71,-1
+ 625 500 l 1,72,-1
+ 750 500 l 1,73,-1
+ 750 625 l 1,74,-1
+ 875 625 l 1,75,-1
+ 875 750 l 1,76,-1
+ 1000 750 l 1,77,-1
+ 1000 875 l 1,78,-1
+ 1125 875 l 1,79,-1
+ 1125 749 l 1,80,-1
+ 1000 749 l 1,81,-1
+ 1000 624 l 1,82,-1
+ 875 624 l 1,83,-1
+ 875 499 l 1,84,-1
+ 750 499 l 1,85,-1
+ 750 374 l 1,86,-1
+ 625 374 l 1,87,-1
+ 625 249 l 1,88,-1
+ 500 249 l 1,89,-1
+ 500 124 l 1,90,-1
+ 375 124 l 1,91,-1
+ 375 0 l 1,64,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: paragraph
+Encoding: 182 182 179
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+75 925 m 1,0,-1
+ 125 925 l 1,1,-1
+ 125 1000 l 1,2,-1
+ 625 1000 l 1,3,-1
+ 625 -125 l 1,4,-1
+ 500 -125 l 1,5,-1
+ 500 875 l 1,6,-1
+ 375 875 l 1,7,-1
+ 375 -125 l 1,8,-1
+ 250 -125 l 1,9,-1
+ 250 375 l 1,10,-1
+ 125 375 l 1,11,-1
+ 125 450 l 1,12,-1
+ 75 450 l 1,13,-1
+ 75 500 l 1,14,-1
+ 0 500 l 1,15,-1
+ 0 875 l 1,16,-1
+ 75 875 l 1,17,-1
+ 75 925 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: periodcentered
+Encoding: 183 183 180
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 500 m 1,0,-1
+ 250 500 l 1,1,-1
+ 250 375 l 1,2,-1
+ 125 375 l 1,3,-1
+ 125 500 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: cedilla
+Encoding: 184 184 181
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 -125 m 1,0,-1
+ 125 -225 l 1,1,-1
+ 25 -225 l 1,2,-1
+ 25 -125 l 1,3,-1
+ 75 -125 l 1,4,-1
+ 75 -75 l 1,5,-1
+ 125 -75 l 1,6,-1
+ 125 0 l 1,7,-1
+ 250 0 l 1,8,-1
+ 250 -125 l 1,9,-1
+ 125 -125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: onesuperior
+Encoding: 185 185 182
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 1250 m 1,0,-1
+ 250 1250 l 1,1,-1
+ 250 625 l 1,2,-1
+ 125 625 l 1,3,-1
+ 125 1125 l 1,4,-1
+ 0 1125 l 1,5,-1
+ 0 1250 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: ordmasculine
+Encoding: 186 186 183
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 575 m 1,0,-1
+ 250 500 l 1,1,-1
+ 125 500 l 1,2,-1
+ 125 575 l 1,3,-1
+ 75 575 l 1,4,-1
+ 75 625 l 1,5,-1
+ 0 625 l 1,6,-1
+ 0 750 l 1,7,-1
+ 75 750 l 1,8,-1
+ 75 800 l 1,9,-1
+ 125 800 l 1,10,-1
+ 125 875 l 1,11,-1
+ 250 875 l 1,12,-1
+ 250 800 l 1,13,-1
+ 300 800 l 1,14,-1
+ 300 750 l 1,15,-1
+ 375 750 l 1,16,-1
+ 375 625 l 1,17,-1
+ 300 625 l 1,18,-1
+ 300 575 l 1,19,-1
+ 250 575 l 1,0,-1
+125 625 m 1,20,-1
+ 250 625 l 1,21,-1
+ 250 750 l 1,22,-1
+ 125 750 l 1,23,-1
+ 125 625 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: twosuperior
+Encoding: 178 178 184
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 1250 m 1,0,-1
+ 375 1250 l 1,1,-1
+ 375 1175 l 1,2,-1
+ 425 1175 l 1,3,-1
+ 425 1125 l 1,4,-1
+ 500 1125 l 1,5,-1
+ 500 1000 l 1,6,-1
+ 425 1000 l 1,7,-1
+ 425 950 l 1,8,-1
+ 375 950 l 1,9,-1
+ 375 874 l 1,10,-1
+ 250 874 l 1,11,-1
+ 250 750 l 1,12,-1
+ 500 750 l 1,13,-1
+ 500 625 l 1,14,-1
+ 0 625 l 1,15,-1
+ 0 750 l 1,16,-1
+ 125 750 l 1,17,-1
+ 125 875 l 1,18,-1
+ 250 875 l 1,19,-1
+ 250 1000 l 1,20,-1
+ 375 1000 l 1,21,-1
+ 375 1125 l 1,22,-1
+ 125 1125 l 1,23,-1
+ 125 1000 l 1,24,-1
+ 0 1000 l 1,25,-1
+ 0 1125 l 1,26,-1
+ 75 1125 l 1,27,-1
+ 75 1175 l 1,28,-1
+ 125 1175 l 1,29,-1
+ 125 1250 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: threesuperior
+Encoding: 179 179 185
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 875 m 1,0,-1
+ 125 875 l 1,1,-1
+ 125 750 l 1,2,-1
+ 375 750 l 1,3,-1
+ 375 874 l 1,4,-1
+ 250 874 l 1,5,-1
+ 250 950 l 1,6,-1
+ 200 950 l 1,7,-1
+ 200 1000 l 1,8,-1
+ 375 1000 l 1,9,-1
+ 375 1125 l 1,10,-1
+ 125 1125 l 1,11,-1
+ 125 1000 l 1,12,-1
+ 0 1000 l 1,13,-1
+ 0 1125 l 1,14,-1
+ 75 1125 l 1,15,-1
+ 75 1175 l 1,16,-1
+ 125 1175 l 1,17,-1
+ 125 1250 l 1,18,-1
+ 375 1250 l 1,19,-1
+ 375 1175 l 1,20,-1
+ 425 1175 l 1,21,-1
+ 425 1125 l 1,22,-1
+ 500 1125 l 1,23,-1
+ 500 1000 l 1,24,-1
+ 425 1000 l 1,25,-1
+ 425 950 l 1,26,-1
+ 375 950 l 1,27,-1
+ 375 875 l 1,28,-1
+ 500 875 l 1,29,-1
+ 500 750 l 1,30,-1
+ 425 750 l 1,31,-1
+ 425 700 l 1,32,-1
+ 375 700 l 1,33,-1
+ 375 625 l 1,34,-1
+ 125 625 l 1,35,-1
+ 125 700 l 1,36,-1
+ 75 700 l 1,37,-1
+ 75 750 l 1,38,-1
+ 0 750 l 1,39,-1
+ 0 875 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: acute
+Encoding: 180 180 186
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 1125 m 1,0,-1
+ 125 1025 l 1,1,-1
+ 25 1025 l 1,2,-1
+ 25 1125 l 1,3,-1
+ 75 1125 l 1,4,-1
+ 75 1175 l 1,5,-1
+ 125 1175 l 1,6,-1
+ 125 1250 l 1,7,-1
+ 250 1250 l 1,8,-1
+ 250 1125 l 1,9,-1
+ 125 1125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: registered
+Encoding: 174 174 187
+Width: 1125
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+750 -125 m 1,0,-1
+ 250 -125 l 1,1,-1
+ 250 -50 l 1,2,-1
+ 200 -50 l 1,3,-1
+ 200 0 l 1,4,-1
+ 125 0 l 1,5,-1
+ 125 75 l 1,6,-1
+ 75 75 l 1,7,-1
+ 75 125 l 1,8,-1
+ 0 125 l 1,9,-1
+ 0 750 l 1,10,-1
+ 75 750 l 1,11,-1
+ 75 800 l 1,12,-1
+ 125 800 l 1,13,-1
+ 125 875 l 1,14,-1
+ 200 875 l 1,15,-1
+ 200 925 l 1,16,-1
+ 250 925 l 1,17,-1
+ 250 1000 l 1,18,-1
+ 750 1000 l 1,19,-1
+ 750 925 l 1,20,-1
+ 800 925 l 1,21,-1
+ 800 875 l 1,22,-1
+ 875 875 l 1,23,-1
+ 875 800 l 1,24,-1
+ 925 800 l 1,25,-1
+ 925 750 l 1,26,-1
+ 1000 750 l 1,27,-1
+ 1000 125 l 1,28,-1
+ 925 125 l 1,29,-1
+ 925 75 l 1,30,-1
+ 875 75 l 1,31,-1
+ 875 0 l 1,32,-1
+ 800 0 l 1,33,-1
+ 800 -50 l 1,34,-1
+ 750 -50 l 1,35,-1
+ 750 -125 l 1,0,-1
+625 250 m 1,36,-1
+ 750 250 l 1,37,-1
+ 750 125 l 1,38,-1
+ 875 125 l 1,39,-1
+ 875 750 l 1,40,-1
+ 750 750 l 1,41,-1
+ 750 875 l 1,42,-1
+ 250 875 l 1,43,-1
+ 250 750 l 1,44,-1
+ 625 750 l 1,45,-1
+ 625 675 l 1,46,-1
+ 675 675 l 1,47,-1
+ 675 625 l 1,48,-1
+ 750 625 l 1,49,-1
+ 750 500 l 1,50,-1
+ 675 500 l 1,51,-1
+ 675 450 l 1,52,-1
+ 625 450 l 1,53,-1
+ 625 250 l 1,36,-1
+500 375 m 1,54,-1
+ 375 375 l 1,55,-1
+ 375 124 l 1,56,-1
+ 250 124 l 1,57,-1
+ 250 0 l 1,58,-1
+ 750 0 l 1,59,-1
+ 750 124 l 1,60,-1
+ 625 124 l 1,61,-1
+ 625 249 l 1,62,-1
+ 500 249 l 1,63,-1
+ 500 375 l 1,54,-1
+250 749 m 1,64,-1
+ 125 749 l 1,65,-1
+ 125 125 l 1,66,-1
+ 250 125 l 1,67,-1
+ 250 749 l 1,64,-1
+625 625 m 1,68,-1
+ 375 625 l 1,69,-1
+ 375 500 l 1,70,-1
+ 625 500 l 1,71,-1
+ 625 625 l 1,68,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: copyright
+Encoding: 169 169 188
+Width: 1125
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+75 750 m 1,0,-1
+ 75 800 l 1,1,-1
+ 125 800 l 1,2,-1
+ 125 875 l 1,3,-1
+ 200 875 l 1,4,-1
+ 200 925 l 1,5,-1
+ 250 925 l 1,6,-1
+ 250 1000 l 1,7,-1
+ 750 1000 l 1,8,-1
+ 750 925 l 1,9,-1
+ 800 925 l 1,10,-1
+ 800 875 l 1,11,-1
+ 875 875 l 1,12,-1
+ 875 800 l 1,13,-1
+ 925 800 l 1,14,-1
+ 925 750 l 1,15,-1
+ 1000 750 l 1,16,-1
+ 1000 125 l 1,17,-1
+ 925 125 l 1,18,-1
+ 925 75 l 1,19,-1
+ 875 75 l 1,20,-1
+ 875 0 l 1,21,-1
+ 800 0 l 1,22,-1
+ 800 -50 l 1,23,-1
+ 750 -50 l 1,24,-1
+ 750 -125 l 1,25,-1
+ 250 -125 l 1,26,-1
+ 250 -50 l 1,27,-1
+ 200 -50 l 1,28,-1
+ 200 0 l 1,29,-1
+ 125 0 l 1,30,-1
+ 125 75 l 1,31,-1
+ 75 75 l 1,32,-1
+ 75 125 l 1,33,-1
+ 0 125 l 1,34,-1
+ 0 750 l 1,35,-1
+ 75 750 l 1,0,-1
+375 750 m 1,36,-1
+ 750 750 l 1,37,-1
+ 750 875 l 1,38,-1
+ 250 875 l 1,39,-1
+ 250 750 l 1,40,-1
+ 125 750 l 1,41,-1
+ 125 125 l 1,42,-1
+ 250 125 l 1,43,-1
+ 250 0 l 1,44,-1
+ 750 0 l 1,45,-1
+ 750 124 l 1,46,-1
+ 375 124 l 1,47,-1
+ 375 200 l 1,48,-1
+ 325 200 l 1,49,-1
+ 325 250 l 1,50,-1
+ 250 250 l 1,51,-1
+ 250 625 l 1,52,-1
+ 325 625 l 1,53,-1
+ 325 675 l 1,54,-1
+ 375 675 l 1,55,-1
+ 375 750 l 1,36,-1
+875 125 m 1,56,-1
+ 875 749 l 1,57,-1
+ 625 749 l 1,58,-1
+ 625 675 l 1,59,-1
+ 675 675 l 1,60,-1
+ 675 625 l 1,61,-1
+ 750 625 l 1,62,-1
+ 750 500 l 1,63,-1
+ 625 500 l 1,64,-1
+ 625 625 l 1,65,-1
+ 375 625 l 1,66,-1
+ 375 250 l 1,67,-1
+ 625 250 l 1,68,-1
+ 625 375 l 1,69,-1
+ 750 375 l 1,70,-1
+ 750 250 l 1,71,-1
+ 675 250 l 1,72,-1
+ 675 200 l 1,73,-1
+ 625 200 l 1,74,-1
+ 625 125 l 1,75,-1
+ 875 125 l 1,56,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: ordfeminine
+Encoding: 170 170 189
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+25 625 m 1,0,-1
+ 0 625 l 1,1,-1
+ 0 750 l 1,2,-1
+ 75 750 l 1,3,-1
+ 75 800 l 1,4,-1
+ 125 800 l 1,5,-1
+ 125 875 l 1,6,-1
+ 375 875 l 1,7,-1
+ 375 500 l 1,8,-1
+ 125 500 l 1,9,-1
+ 125 525 l 1,10,-1
+ 25 525 l 1,11,-1
+ 25 625 l 1,0,-1
+125 625 m 1,12,-1
+ 250 625 l 1,13,-1
+ 250 750 l 1,14,-1
+ 125 750 l 1,15,-1
+ 125 625 l 1,12,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: cent
+Encoding: 162 162 190
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 200 m 1,0,-1
+ 500 124 l 1,1,-1
+ 375 124 l 1,2,-1
+ 375 0 l 1,3,-1
+ 250 0 l 1,4,-1
+ 250 124 l 1,5,-1
+ 125 124 l 1,6,-1
+ 125 200 l 1,7,-1
+ 75 200 l 1,8,-1
+ 75 250 l 1,9,-1
+ 0 250 l 1,10,-1
+ 0 625 l 1,11,-1
+ 75 625 l 1,12,-1
+ 75 675 l 1,13,-1
+ 125 675 l 1,14,-1
+ 125 750 l 1,15,-1
+ 250 750 l 1,16,-1
+ 250 875 l 1,17,-1
+ 375 875 l 1,18,-1
+ 375 750 l 1,19,-1
+ 500 750 l 1,20,-1
+ 500 675 l 1,21,-1
+ 550 675 l 1,22,-1
+ 550 625 l 1,23,-1
+ 625 625 l 1,24,-1
+ 625 500 l 1,25,-1
+ 500 500 l 1,26,-1
+ 500 624 l 1,27,-1
+ 375 624 l 1,28,-1
+ 375 250 l 1,29,-1
+ 500 250 l 1,30,-1
+ 500 375 l 1,31,-1
+ 625 375 l 1,32,-1
+ 625 250 l 1,33,-1
+ 550 250 l 1,34,-1
+ 550 200 l 1,35,-1
+ 500 200 l 1,0,-1
+125 250 m 1,36,-1
+ 250 250 l 1,37,-1
+ 250 624 l 1,38,-1
+ 125 624 l 1,39,-1
+ 125 250 l 1,36,-1
+375 625 m 1,40,-1
+ 375 749 l 1,41,-1
+ 350 749 l 1,42,-1
+ 350 650 l 1,43,-1
+ 250 650 l 1,44,-1
+ 250 625 l 1,45,-1
+ 375 625 l 1,40,-1
+375 125 m 1,46,-1
+ 375 249 l 1,47,-1
+ 350 249 l 1,48,-1
+ 350 150 l 1,49,-1
+ 250 150 l 1,50,-1
+ 250 125 l 1,51,-1
+ 375 125 l 1,46,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Euro
+Encoding: 8364 8364 191
+Width: 875
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 275 m 1,0,-1
+ 375 249 l 1,1,-1
+ 250 249 l 1,2,-1
+ 250 125 l 1,3,-1
+ 625 125 l 1,4,-1
+ 625 250 l 1,5,-1
+ 750 250 l 1,6,-1
+ 750 125 l 1,7,-1
+ 675 125 l 1,8,-1
+ 675 75 l 1,9,-1
+ 625 75 l 1,10,-1
+ 625 0 l 1,11,-1
+ 250 0 l 1,12,-1
+ 250 75 l 1,13,-1
+ 200 75 l 1,14,-1
+ 200 125 l 1,15,-1
+ 125 125 l 1,16,-1
+ 125 249 l 1,17,-1
+ 0 249 l 1,18,-1
+ 0 375 l 1,19,-1
+ 125 375 l 1,20,-1
+ 125 499 l 1,21,-1
+ 0 499 l 1,22,-1
+ 0 625 l 1,23,-1
+ 125 625 l 1,24,-1
+ 125 750 l 1,25,-1
+ 200 750 l 1,26,-1
+ 200 800 l 1,27,-1
+ 250 800 l 1,28,-1
+ 250 875 l 1,29,-1
+ 625 875 l 1,30,-1
+ 625 800 l 1,31,-1
+ 675 800 l 1,32,-1
+ 675 750 l 1,33,-1
+ 750 750 l 1,34,-1
+ 750 625 l 1,35,-1
+ 625 625 l 1,36,-1
+ 625 750 l 1,37,-1
+ 250 750 l 1,38,-1
+ 250 625 l 1,39,-1
+ 475 625 l 1,40,-1
+ 475 525 l 1,41,-1
+ 375 525 l 1,42,-1
+ 375 499 l 1,43,-1
+ 250 499 l 1,44,-1
+ 250 375 l 1,45,-1
+ 475 375 l 1,46,-1
+ 475 275 l 1,47,-1
+ 375 275 l 1,0,-1
+125 500 m 1,48,-1
+ 250 500 l 1,49,-1
+ 250 624 l 1,50,-1
+ 225 624 l 1,51,-1
+ 225 525 l 1,52,-1
+ 125 525 l 1,53,-1
+ 125 500 l 1,48,-1
+125 250 m 1,54,-1
+ 250 250 l 1,55,-1
+ 250 374 l 1,56,-1
+ 225 374 l 1,57,-1
+ 225 275 l 1,58,-1
+ 125 275 l 1,59,-1
+ 125 250 l 1,54,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: at
+Encoding: 64 64 192
+Width: 1125
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 250 m 1,0,-1
+ 550 250 l 1,1,-1
+ 550 200 l 1,2,-1
+ 500 200 l 1,3,-1
+ 500 125 l 1,4,-1
+ 375 125 l 1,5,-1
+ 375 200 l 1,6,-1
+ 325 200 l 1,7,-1
+ 325 250 l 1,8,-1
+ 250 250 l 1,9,-1
+ 250 625 l 1,10,-1
+ 325 625 l 1,11,-1
+ 325 675 l 1,12,-1
+ 375 675 l 1,13,-1
+ 375 750 l 1,14,-1
+ 750 750 l 1,15,-1
+ 750 875 l 1,16,-1
+ 250 875 l 1,17,-1
+ 250 750 l 1,18,-1
+ 125 750 l 1,19,-1
+ 125 125 l 1,20,-1
+ 250 125 l 1,21,-1
+ 250 0 l 1,22,-1
+ 625 0 l 1,23,-1
+ 625 -125 l 1,24,-1
+ 250 -125 l 1,25,-1
+ 250 -50 l 1,26,-1
+ 200 -50 l 1,27,-1
+ 200 0 l 1,28,-1
+ 125 0 l 1,29,-1
+ 125 75 l 1,30,-1
+ 75 75 l 1,31,-1
+ 75 125 l 1,32,-1
+ 0 125 l 1,33,-1
+ 0 750 l 1,34,-1
+ 75 750 l 1,35,-1
+ 75 800 l 1,36,-1
+ 125 800 l 1,37,-1
+ 125 875 l 1,38,-1
+ 200 875 l 1,39,-1
+ 200 925 l 1,40,-1
+ 250 925 l 1,41,-1
+ 250 1000 l 1,42,-1
+ 750 1000 l 1,43,-1
+ 750 925 l 1,44,-1
+ 800 925 l 1,45,-1
+ 800 875 l 1,46,-1
+ 875 875 l 1,47,-1
+ 875 800 l 1,48,-1
+ 925 800 l 1,49,-1
+ 925 750 l 1,50,-1
+ 1000 750 l 1,51,-1
+ 1000 125 l 1,52,-1
+ 925 125 l 1,53,-1
+ 925 75 l 1,54,-1
+ 875 75 l 1,55,-1
+ 875 0 l 1,56,-1
+ 750 0 l 1,57,-1
+ 750 75 l 1,58,-1
+ 700 75 l 1,59,-1
+ 700 125 l 1,60,-1
+ 625 125 l 1,61,-1
+ 625 250 l 1,0,-1
+375 250 m 1,62,-1
+ 525 250 l 1,63,-1
+ 525 350 l 1,64,-1
+ 625 350 l 1,65,-1
+ 625 625 l 1,66,-1
+ 375 625 l 1,67,-1
+ 375 250 l 1,62,-1
+875 125 m 1,68,-1
+ 875 749 l 1,69,-1
+ 750 749 l 1,70,-1
+ 750 125 l 1,71,-1
+ 875 125 l 1,68,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: grave
+Encoding: 96 96 193
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 1125 m 1,0,-1
+ 0 1250 l 1,1,-1
+ 125 1250 l 1,2,-1
+ 125 1175 l 1,3,-1
+ 175 1175 l 1,4,-1
+ 175 1125 l 1,5,-1
+ 225 1125 l 1,6,-1
+ 225 1025 l 1,7,-1
+ 125 1025 l 1,8,-1
+ 125 1125 l 1,9,-1
+ 0 1125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Eth
+Encoding: 208 208 194
+Width: 875
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 500 m 1,0,-1
+ 125 500 l 1,1,-1
+ 125 875 l 1,2,-1
+ 625 875 l 1,3,-1
+ 625 800 l 1,4,-1
+ 675 800 l 1,5,-1
+ 675 750 l 1,6,-1
+ 750 750 l 1,7,-1
+ 750 125 l 1,8,-1
+ 675 125 l 1,9,-1
+ 675 75 l 1,10,-1
+ 625 75 l 1,11,-1
+ 625 0 l 1,12,-1
+ 125 0 l 1,13,-1
+ 125 374 l 1,14,-1
+ 0 374 l 1,15,-1
+ 0 500 l 1,0,-1
+475 500 m 1,16,-1
+ 475 400 l 1,17,-1
+ 375 400 l 1,18,-1
+ 375 374 l 1,19,-1
+ 250 374 l 1,20,-1
+ 250 125 l 1,21,-1
+ 625 125 l 1,22,-1
+ 625 750 l 1,23,-1
+ 250 750 l 1,24,-1
+ 250 500 l 1,25,-1
+ 475 500 l 1,16,-1
+250 375 m 1,26,-1
+ 250 499 l 1,27,-1
+ 225 499 l 1,28,-1
+ 225 400 l 1,29,-1
+ 125 400 l 1,30,-1
+ 125 375 l 1,31,-1
+ 250 375 l 1,26,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Ntilde
+Encoding: 209 209 195
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 0 m 1,0,-1
+ 625 875 l 1,1,-1
+ 500 875 l 1,2,-1
+ 500 250 l 1,3,-1
+ 425 250 l 1,4,-1
+ 425 300 l 1,5,-1
+ 375 300 l 1,6,-1
+ 375 500 l 1,7,-1
+ 350 500 l 1,8,-1
+ 350 600 l 1,9,-1
+ 250 600 l 1,10,-1
+ 250 750 l 1,11,-1
+ 125 750 l 1,12,-1
+ 125 875 l 1,13,-1
+ 0 875 l 1,14,-1
+ 0 0 l 1,15,-1
+ 125 0 l 1,16,-1
+ 125 625 l 1,17,-1
+ 200 625 l 1,18,-1
+ 200 575 l 1,19,-1
+ 250 575 l 1,20,-1
+ 250 375 l 1,21,-1
+ 275 375 l 1,22,-1
+ 275 275 l 1,23,-1
+ 375 275 l 1,24,-1
+ 375 125 l 1,25,-1
+ 500 125 l 1,26,-1
+ 500 0 l 1,27,-1
+ 625 0 l 1,0,-1
+275 1125 m 1,28,-1
+ 125 1125 l 1,29,-1
+ 125 1025 l 1,30,-1
+ 25 1025 l 1,31,-1
+ 25 1125 l 1,32,-1
+ 75 1125 l 1,33,-1
+ 75 1175 l 1,34,-1
+ 125 1175 l 1,35,-1
+ 125 1250 l 1,36,-1
+ 250 1250 l 1,37,-1
+ 250 1225 l 1,38,-1
+ 350 1225 l 1,39,-1
+ 350 1125 l 1,40,-1
+ 500 1125 l 1,41,-1
+ 500 1225 l 1,42,-1
+ 600 1225 l 1,43,-1
+ 600 1125 l 1,44,-1
+ 550 1125 l 1,45,-1
+ 550 1075 l 1,46,-1
+ 500 1075 l 1,47,-1
+ 500 1000 l 1,48,-1
+ 375 1000 l 1,49,-1
+ 375 1025 l 1,50,-1
+ 275 1025 l 1,51,-1
+ 275 1125 l 1,28,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: fraction
+Encoding: 8260 8260 196
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 625 m 1,0,-1
+ 475 625 l 1,1,-1
+ 475 525 l 1,2,-1
+ 375 525 l 1,3,-1
+ 375 375 l 1,4,-1
+ 300 375 l 1,5,-1
+ 300 325 l 1,6,-1
+ 250 325 l 1,7,-1
+ 250 125 l 1,8,-1
+ 175 125 l 1,9,-1
+ 175 75 l 1,10,-1
+ 125 75 l 1,11,-1
+ 125 -125 l 1,12,-1
+ 0 -125 l 1,13,-1
+ 0 0 l 1,14,-1
+ 25 0 l 1,15,-1
+ 25 100 l 1,16,-1
+ 125 100 l 1,17,-1
+ 125 250 l 1,18,-1
+ 150 250 l 1,19,-1
+ 150 350 l 1,20,-1
+ 250 350 l 1,21,-1
+ 250 500 l 1,22,-1
+ 325 500 l 1,23,-1
+ 325 550 l 1,24,-1
+ 375 550 l 1,25,-1
+ 375 750 l 1,26,-1
+ 450 750 l 1,27,-1
+ 450 800 l 1,28,-1
+ 500 800 l 1,29,-1
+ 500 1000 l 1,30,-1
+ 625 1000 l 1,31,-1
+ 625 875 l 1,32,-1
+ 600 875 l 1,33,-1
+ 600 775 l 1,34,-1
+ 500 775 l 1,35,-1
+ 500 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: fi
+Encoding: 64257 64257 197
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 0 m 1,0,-1
+ 375 500 l 1,1,-1
+ 125 500 l 1,2,-1
+ 125 0 l 1,3,-1
+ 0 0 l 1,4,-1
+ 0 750 l 1,5,-1
+ 75 750 l 1,6,-1
+ 75 800 l 1,7,-1
+ 125 800 l 1,8,-1
+ 125 875 l 1,9,-1
+ 250 875 l 1,10,-1
+ 250 750 l 1,11,-1
+ 125 750 l 1,12,-1
+ 125 625 l 1,13,-1
+ 500 625 l 1,14,-1
+ 500 0 l 1,15,-1
+ 375 0 l 1,0,-1
+375 750 m 1,16,-1
+ 375 875 l 1,17,-1
+ 500 875 l 1,18,-1
+ 500 750 l 1,19,-1
+ 375 750 l 1,16,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: fl
+Encoding: 64258 64258 198
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 625 m 1,0,-1
+ 250 625 l 1,1,-1
+ 250 500 l 1,2,-1
+ 125 500 l 1,3,-1
+ 125 0 l 1,4,-1
+ 0 0 l 1,5,-1
+ 0 750 l 1,6,-1
+ 75 750 l 1,7,-1
+ 75 800 l 1,8,-1
+ 125 800 l 1,9,-1
+ 125 875 l 1,10,-1
+ 500 875 l 1,11,-1
+ 500 0 l 1,12,-1
+ 375 0 l 1,13,-1
+ 375 750 l 1,14,-1
+ 125 750 l 1,15,-1
+ 125 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Lslash
+Encoding: 321 321 199
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 499 m 1,0,-1
+ 375 499 l 1,1,-1
+ 375 375 l 1,2,-1
+ 250 375 l 1,3,-1
+ 250 125 l 1,4,-1
+ 625 125 l 1,5,-1
+ 625 0 l 1,6,-1
+ 125 0 l 1,7,-1
+ 125 125 l 1,8,-1
+ 0 125 l 1,9,-1
+ 0 250 l 1,10,-1
+ 125 250 l 1,11,-1
+ 125 875 l 1,12,-1
+ 250 875 l 1,13,-1
+ 250 500 l 1,14,-1
+ 375 500 l 1,15,-1
+ 375 625 l 1,16,-1
+ 500 625 l 1,17,-1
+ 500 750 l 1,18,-1
+ 625 750 l 1,19,-1
+ 625 624 l 1,20,-1
+ 500 624 l 1,21,-1
+ 500 499 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: lslash
+Encoding: 322 322 200
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 625 m 1,0,-1
+ 375 500 l 1,1,-1
+ 250 500 l 1,2,-1
+ 250 0 l 1,3,-1
+ 125 0 l 1,4,-1
+ 125 250 l 1,5,-1
+ 0 250 l 1,6,-1
+ 0 375 l 1,7,-1
+ 125 375 l 1,8,-1
+ 125 875 l 1,9,-1
+ 250 875 l 1,10,-1
+ 250 625 l 1,11,-1
+ 375 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Zcaron
+Encoding: 381 381 201
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 1000 m 1,0,-1
+ 250 1000 l 1,1,-1
+ 250 1075 l 1,2,-1
+ 200 1075 l 1,3,-1
+ 200 1125 l 1,4,-1
+ 150 1125 l 1,5,-1
+ 150 1225 l 1,6,-1
+ 250 1225 l 1,7,-1
+ 250 1125 l 1,8,-1
+ 375 1125 l 1,9,-1
+ 375 1225 l 1,10,-1
+ 475 1225 l 1,11,-1
+ 475 1125 l 1,12,-1
+ 425 1125 l 1,13,-1
+ 425 1075 l 1,14,-1
+ 375 1075 l 1,15,-1
+ 375 1000 l 1,0,-1
+0 0 m 1,16,-1
+ 625 0 l 1,17,-1
+ 625 125 l 1,18,-1
+ 125 125 l 1,19,-1
+ 125 249 l 1,20,-1
+ 250 249 l 1,21,-1
+ 250 374 l 1,22,-1
+ 375 374 l 1,23,-1
+ 375 499 l 1,24,-1
+ 500 499 l 1,25,-1
+ 500 624 l 1,26,-1
+ 625 624 l 1,27,-1
+ 625 875 l 1,28,-1
+ 0 875 l 1,29,-1
+ 0 750 l 1,30,-1
+ 500 750 l 1,31,-1
+ 500 625 l 1,32,-1
+ 375 625 l 1,33,-1
+ 375 500 l 1,34,-1
+ 250 500 l 1,35,-1
+ 250 375 l 1,36,-1
+ 125 375 l 1,37,-1
+ 125 250 l 1,38,-1
+ 0 250 l 1,39,-1
+ 0 0 l 1,16,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: zcaron
+Encoding: 382 382 202
+Width: 500
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 750 m 1,0,-1
+ 125 750 l 1,1,-1
+ 125 825 l 1,2,-1
+ 75 825 l 1,3,-1
+ 75 875 l 1,4,-1
+ 25 875 l 1,5,-1
+ 25 975 l 1,6,-1
+ 125 975 l 1,7,-1
+ 125 875 l 1,8,-1
+ 250 875 l 1,9,-1
+ 250 975 l 1,10,-1
+ 350 975 l 1,11,-1
+ 350 875 l 1,12,-1
+ 300 875 l 1,13,-1
+ 300 825 l 1,14,-1
+ 250 825 l 1,15,-1
+ 250 750 l 1,0,-1
+125 249 m 1,16,-1
+ 250 249 l 1,17,-1
+ 250 374 l 1,18,-1
+ 375 374 l 1,19,-1
+ 375 625 l 1,20,-1
+ 0 625 l 1,21,-1
+ 0 500 l 1,22,-1
+ 250 500 l 1,23,-1
+ 250 375 l 1,24,-1
+ 125 375 l 1,25,-1
+ 125 250 l 1,26,-1
+ 0 250 l 1,27,-1
+ 0 0 l 1,28,-1
+ 375 0 l 1,29,-1
+ 375 125 l 1,30,-1
+ 125 125 l 1,31,-1
+ 125 249 l 1,16,-1
+EndSplineSet
+Validated: 9
+EndChar
+
+StartChar: questiondown
+Encoding: 191 191 203
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 125 m 1,0,-1
+ 550 125 l 1,1,-1
+ 550 75 l 1,2,-1
+ 500 75 l 1,3,-1
+ 500 0 l 1,4,-1
+ 125 0 l 1,5,-1
+ 125 75 l 1,6,-1
+ 75 75 l 1,7,-1
+ 75 125 l 1,8,-1
+ 0 125 l 1,9,-1
+ 0 375 l 1,10,-1
+ 75 375 l 1,11,-1
+ 75 425 l 1,12,-1
+ 125 425 l 1,13,-1
+ 125 500 l 1,14,-1
+ 250 500 l 1,15,-1
+ 250 625 l 1,16,-1
+ 375 625 l 1,17,-1
+ 375 500 l 1,18,-1
+ 300 500 l 1,19,-1
+ 300 450 l 1,20,-1
+ 250 450 l 1,21,-1
+ 250 375 l 1,22,-1
+ 125 375 l 1,23,-1
+ 125 125 l 1,24,-1
+ 500 125 l 1,25,-1
+ 500 250 l 1,26,-1
+ 625 250 l 1,27,-1
+ 625 125 l 1,0,-1
+375 750 m 1,28,-1
+ 250 750 l 1,29,-1
+ 250 875 l 1,30,-1
+ 375 875 l 1,31,-1
+ 375 750 l 1,28,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: germandbls
+Encoding: 223 223 204
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+250 450 m 1,0,-1
+ 200 450 l 1,1,-1
+ 200 500 l 1,2,-1
+ 375 500 l 1,3,-1
+ 375 750 l 1,4,-1
+ 125 750 l 1,5,-1
+ 125 0 l 1,6,-1
+ 0 0 l 1,7,-1
+ 0 750 l 1,8,-1
+ 75 750 l 1,9,-1
+ 75 800 l 1,10,-1
+ 125 800 l 1,11,-1
+ 125 875 l 1,12,-1
+ 375 875 l 1,13,-1
+ 375 800 l 1,14,-1
+ 425 800 l 1,15,-1
+ 425 750 l 1,16,-1
+ 500 750 l 1,17,-1
+ 500 500 l 1,18,-1
+ 425 500 l 1,19,-1
+ 425 450 l 1,20,-1
+ 375 450 l 1,21,-1
+ 375 375 l 1,22,-1
+ 500 375 l 1,23,-1
+ 500 300 l 1,24,-1
+ 550 300 l 1,25,-1
+ 550 250 l 1,26,-1
+ 625 250 l 1,27,-1
+ 625 125 l 1,28,-1
+ 550 125 l 1,29,-1
+ 550 75 l 1,30,-1
+ 500 75 l 1,31,-1
+ 500 0 l 1,32,-1
+ 250 0 l 1,33,-1
+ 250 75 l 1,34,-1
+ 200 75 l 1,35,-1
+ 200 125 l 1,36,-1
+ 500 125 l 1,37,-1
+ 500 250 l 1,38,-1
+ 375 250 l 1,39,-1
+ 375 374 l 1,40,-1
+ 250 374 l 1,41,-1
+ 250 450 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: ae
+Encoding: 230 230 205
+Width: 1000
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+500 125 m 1,0,-1
+ 800 125 l 1,1,-1
+ 800 75 l 1,2,-1
+ 750 75 l 1,3,-1
+ 750 0 l 1,4,-1
+ 500 0 l 1,5,-1
+ 500 75 l 1,6,-1
+ 450 75 l 1,7,-1
+ 450 125 l 1,8,-1
+ 300 125 l 1,9,-1
+ 300 75 l 1,10,-1
+ 250 75 l 1,11,-1
+ 250 0 l 1,12,-1
+ 125 0 l 1,13,-1
+ 125 75 l 1,14,-1
+ 75 75 l 1,15,-1
+ 75 125 l 1,16,-1
+ 0 125 l 1,17,-1
+ 0 500 l 1,18,-1
+ 75 500 l 1,19,-1
+ 75 550 l 1,20,-1
+ 125 550 l 1,21,-1
+ 125 625 l 1,22,-1
+ 375 625 l 1,23,-1
+ 375 500 l 1,24,-1
+ 450 500 l 1,25,-1
+ 450 550 l 1,26,-1
+ 500 550 l 1,27,-1
+ 500 625 l 1,28,-1
+ 750 625 l 1,29,-1
+ 750 550 l 1,30,-1
+ 800 550 l 1,31,-1
+ 800 500 l 1,32,-1
+ 875 500 l 1,33,-1
+ 875 250 l 1,34,-1
+ 500 250 l 1,35,-1
+ 500 125 l 1,0,-1
+125 125 m 1,36,-1
+ 275 125 l 1,37,-1
+ 275 225 l 1,38,-1
+ 375 225 l 1,39,-1
+ 375 499 l 1,40,-1
+ 125 499 l 1,41,-1
+ 125 125 l 1,36,-1
+500 375 m 1,42,-1
+ 750 375 l 1,43,-1
+ 750 500 l 1,44,-1
+ 500 500 l 1,45,-1
+ 500 375 l 1,42,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: mu
+Encoding: 181 181 206
+AltUni2: 0003bc.ffffffff.0
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 -250 m 1,0,-1
+ 0 625 l 1,1,-1
+ 125 625 l 1,2,-1
+ 125 125 l 1,3,-1
+ 275 125 l 1,4,-1
+ 275 225 l 1,5,-1
+ 375 225 l 1,6,-1
+ 375 625 l 1,7,-1
+ 500 625 l 1,8,-1
+ 500 0 l 1,9,-1
+ 375 0 l 1,10,-1
+ 375 125 l 1,11,-1
+ 300 125 l 1,12,-1
+ 300 75 l 1,13,-1
+ 250 75 l 1,14,-1
+ 250 0 l 1,15,-1
+ 125 0 l 1,16,-1
+ 125 -250 l 1,17,-1
+ 0 -250 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Y
+Encoding: 89 89 207
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+175 625 m 1,0,-1
+ 250 625 l 1,1,-1
+ 250 500 l 1,2,-1
+ 375 500 l 1,3,-1
+ 375 625 l 1,4,-1
+ 450 625 l 1,5,-1
+ 450 675 l 1,6,-1
+ 500 675 l 1,7,-1
+ 500 875 l 1,8,-1
+ 625 875 l 1,9,-1
+ 625 750 l 1,10,-1
+ 600 750 l 1,11,-1
+ 600 650 l 1,12,-1
+ 500 650 l 1,13,-1
+ 500 499 l 1,14,-1
+ 375 499 l 1,15,-1
+ 375 0 l 1,16,-1
+ 250 0 l 1,17,-1
+ 250 499 l 1,18,-1
+ 125 499 l 1,19,-1
+ 125 650 l 1,20,-1
+ 25 650 l 1,21,-1
+ 25 750 l 1,22,-1
+ 0 750 l 1,23,-1
+ 0 875 l 1,24,-1
+ 125 875 l 1,25,-1
+ 125 675 l 1,26,-1
+ 175 675 l 1,27,-1
+ 175 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+Kerns2: 38 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 26 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 25 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 24 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 23 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 22 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 21 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 20 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 18 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 14 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 13 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 10 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 9 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 8 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 7 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 6 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 5 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 4 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 2 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable" 1 -125 "'kern' Horizontal Kerning in Latin lookup 0 subtable"
+EndChar
+
+StartChar: currency
+Encoding: 164 164 208
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 250 m 1,0,-1
+ 250 250 l 1,1,-1
+ 250 275 l 1,2,-1
+ 150 275 l 1,3,-1
+ 150 375 l 1,4,-1
+ 125 375 l 1,5,-1
+ 125 500 l 1,6,-1
+ 150 500 l 1,7,-1
+ 150 600 l 1,8,-1
+ 250 600 l 1,9,-1
+ 250 624 l 1,10,-1
+ 0 624 l 1,11,-1
+ 0 750 l 1,12,-1
+ 125 750 l 1,13,-1
+ 125 625 l 1,14,-1
+ 500 625 l 1,15,-1
+ 500 750 l 1,16,-1
+ 625 750 l 1,17,-1
+ 625 624 l 1,18,-1
+ 375 624 l 1,19,-1
+ 375 600 l 1,20,-1
+ 475 600 l 1,21,-1
+ 475 500 l 1,22,-1
+ 500 500 l 1,23,-1
+ 500 375 l 1,24,-1
+ 475 375 l 1,25,-1
+ 475 275 l 1,26,-1
+ 375 275 l 1,27,-1
+ 375 250 l 1,28,-1
+ 625 250 l 1,29,-1
+ 625 125 l 1,30,-1
+ 500 125 l 1,31,-1
+ 500 249 l 1,32,-1
+ 125 249 l 1,33,-1
+ 125 125 l 1,34,-1
+ 0 125 l 1,35,-1
+ 0 250 l 1,0,-1
+250 500 m 1,36,-1
+ 250 375 l 1,37,-1
+ 375 375 l 1,38,-1
+ 375 500 l 1,39,-1
+ 250 500 l 1,36,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: yen
+Encoding: 165 165 209
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+175 625 m 1,0,-1
+ 250 625 l 1,1,-1
+ 250 500 l 1,2,-1
+ 375 500 l 1,3,-1
+ 375 625 l 1,4,-1
+ 450 625 l 1,5,-1
+ 450 675 l 1,6,-1
+ 500 675 l 1,7,-1
+ 500 875 l 1,8,-1
+ 625 875 l 1,9,-1
+ 625 750 l 1,10,-1
+ 600 750 l 1,11,-1
+ 600 650 l 1,12,-1
+ 500 650 l 1,13,-1
+ 500 499 l 1,14,-1
+ 375 499 l 1,15,-1
+ 375 375 l 1,16,-1
+ 625 375 l 1,17,-1
+ 625 249 l 1,18,-1
+ 375 249 l 1,19,-1
+ 375 0 l 1,20,-1
+ 250 0 l 1,21,-1
+ 250 249 l 1,22,-1
+ 0 249 l 1,23,-1
+ 0 375 l 1,24,-1
+ 250 375 l 1,25,-1
+ 250 499 l 1,26,-1
+ 125 499 l 1,27,-1
+ 125 650 l 1,28,-1
+ 25 650 l 1,29,-1
+ 25 750 l 1,30,-1
+ 0 750 l 1,31,-1
+ 0 875 l 1,32,-1
+ 125 875 l 1,33,-1
+ 125 675 l 1,34,-1
+ 175 675 l 1,35,-1
+ 175 625 l 1,0,-1
+375 250 m 1,36,-1
+ 375 374 l 1,37,-1
+ 350 374 l 1,38,-1
+ 350 275 l 1,39,-1
+ 250 275 l 1,40,-1
+ 250 250 l 1,41,-1
+ 375 250 l 1,36,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: brokenbar
+Encoding: 166 166 210
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 375 m 1,0,-1
+ 250 375 l 1,1,-1
+ 250 -125 l 1,2,-1
+ 125 -125 l 1,3,-1
+ 125 375 l 1,0,-1
+250 500 m 1,4,-1
+ 125 500 l 1,5,-1
+ 125 1000 l 1,6,-1
+ 250 1000 l 1,7,-1
+ 250 500 l 1,4,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: section
+Encoding: 167 167 211
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 125 m 1,0,-1
+ 125 125 l 1,1,-1
+ 125 0 l 1,2,-1
+ 375 0 l 1,3,-1
+ 375 125 l 1,4,-1
+ 250 125 l 1,5,-1
+ 250 249 l 1,6,-1
+ 125 249 l 1,7,-1
+ 125 325 l 1,8,-1
+ 75 325 l 1,9,-1
+ 75 375 l 1,10,-1
+ 0 375 l 1,11,-1
+ 0 500 l 1,12,-1
+ 25 500 l 1,13,-1
+ 25 600 l 1,14,-1
+ 125 600 l 1,15,-1
+ 125 700 l 1,16,-1
+ 75 700 l 1,17,-1
+ 75 750 l 1,18,-1
+ 0 750 l 1,19,-1
+ 0 875 l 1,20,-1
+ 75 875 l 1,21,-1
+ 75 925 l 1,22,-1
+ 125 925 l 1,23,-1
+ 125 1000 l 1,24,-1
+ 375 1000 l 1,25,-1
+ 375 925 l 1,26,-1
+ 425 925 l 1,27,-1
+ 425 875 l 1,28,-1
+ 500 875 l 1,29,-1
+ 500 750 l 1,30,-1
+ 375 750 l 1,31,-1
+ 375 875 l 1,32,-1
+ 125 875 l 1,33,-1
+ 125 750 l 1,34,-1
+ 250 750 l 1,35,-1
+ 250 625 l 1,36,-1
+ 375 625 l 1,37,-1
+ 375 550 l 1,38,-1
+ 425 550 l 1,39,-1
+ 425 500 l 1,40,-1
+ 500 500 l 1,41,-1
+ 500 375 l 1,42,-1
+ 475 375 l 1,43,-1
+ 475 275 l 1,44,-1
+ 375 275 l 1,45,-1
+ 375 175 l 1,46,-1
+ 425 175 l 1,47,-1
+ 425 125 l 1,48,-1
+ 500 125 l 1,49,-1
+ 500 0 l 1,50,-1
+ 425 0 l 1,51,-1
+ 425 -50 l 1,52,-1
+ 375 -50 l 1,53,-1
+ 375 -125 l 1,54,-1
+ 125 -125 l 1,55,-1
+ 125 -50 l 1,56,-1
+ 75 -50 l 1,57,-1
+ 75 0 l 1,58,-1
+ 0 0 l 1,59,-1
+ 0 125 l 1,0,-1
+250 500 m 1,60,-1
+ 250 624 l 1,61,-1
+ 175 624 l 1,62,-1
+ 175 575 l 1,63,-1
+ 125 575 l 1,64,-1
+ 125 375 l 1,65,-1
+ 250 375 l 1,66,-1
+ 250 250 l 1,67,-1
+ 325 250 l 1,68,-1
+ 325 300 l 1,69,-1
+ 375 300 l 1,70,-1
+ 375 500 l 1,71,-1
+ 250 500 l 1,60,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: Thorn
+Encoding: 222 222 212
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 -125 m 1,0,-1
+ 0 -125 l 1,1,-1
+ 0 1000 l 1,2,-1
+ 125 1000 l 1,3,-1
+ 125 625 l 1,4,-1
+ 200 625 l 1,5,-1
+ 200 675 l 1,6,-1
+ 250 675 l 1,7,-1
+ 250 750 l 1,8,-1
+ 500 750 l 1,9,-1
+ 500 675 l 1,10,-1
+ 550 675 l 1,11,-1
+ 550 625 l 1,12,-1
+ 625 625 l 1,13,-1
+ 625 250 l 1,14,-1
+ 550 250 l 1,15,-1
+ 550 200 l 1,16,-1
+ 500 200 l 1,17,-1
+ 500 125 l 1,18,-1
+ 250 125 l 1,19,-1
+ 250 200 l 1,20,-1
+ 200 200 l 1,21,-1
+ 200 250 l 1,22,-1
+ 125 250 l 1,23,-1
+ 125 -125 l 1,0,-1
+125 350 m 1,24,-1
+ 225 350 l 1,25,-1
+ 225 250 l 1,26,-1
+ 500 250 l 1,27,-1
+ 500 625 l 1,28,-1
+ 225 625 l 1,29,-1
+ 225 525 l 1,30,-1
+ 125 525 l 1,31,-1
+ 125 350 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: thorn
+Encoding: 254 254 213
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 -125 m 1,0,-1
+ 0 -125 l 1,1,-1
+ 0 750 l 1,2,-1
+ 125 750 l 1,3,-1
+ 125 500 l 1,4,-1
+ 200 500 l 1,5,-1
+ 200 550 l 1,6,-1
+ 250 550 l 1,7,-1
+ 250 625 l 1,8,-1
+ 375 625 l 1,9,-1
+ 375 550 l 1,10,-1
+ 425 550 l 1,11,-1
+ 425 500 l 1,12,-1
+ 500 500 l 1,13,-1
+ 500 125 l 1,14,-1
+ 425 125 l 1,15,-1
+ 425 75 l 1,16,-1
+ 375 75 l 1,17,-1
+ 375 0 l 1,18,-1
+ 250 0 l 1,19,-1
+ 250 75 l 1,20,-1
+ 200 75 l 1,21,-1
+ 200 125 l 1,22,-1
+ 125 125 l 1,23,-1
+ 125 -125 l 1,0,-1
+125 225 m 1,24,-1
+ 225 225 l 1,25,-1
+ 225 125 l 1,26,-1
+ 375 125 l 1,27,-1
+ 375 500 l 1,28,-1
+ 225 500 l 1,29,-1
+ 225 400 l 1,30,-1
+ 125 400 l 1,31,-1
+ 125 225 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: zero
+Encoding: 48 48 214
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+75 125 m 1,0,-1
+ 0 125 l 1,1,-1
+ 0 750 l 1,2,-1
+ 75 750 l 1,3,-1
+ 75 800 l 1,4,-1
+ 125 800 l 1,5,-1
+ 125 875 l 1,6,-1
+ 500 875 l 1,7,-1
+ 500 800 l 1,8,-1
+ 550 800 l 1,9,-1
+ 550 750 l 1,10,-1
+ 625 750 l 1,11,-1
+ 625 125 l 1,12,-1
+ 550 125 l 1,13,-1
+ 550 75 l 1,14,-1
+ 500 75 l 1,15,-1
+ 500 0 l 1,16,-1
+ 125 0 l 1,17,-1
+ 125 75 l 1,18,-1
+ 75 75 l 1,19,-1
+ 75 125 l 1,0,-1
+125 750 m 1,20,-1
+ 125 125 l 1,21,-1
+ 500 125 l 1,22,-1
+ 500 750 l 1,23,-1
+ 125 750 l 1,20,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: one
+Encoding: 49 49 215
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 750 l 1,1,-1
+ 0 750 l 1,2,-1
+ 0 875 l 1,3,-1
+ 250 875 l 1,4,-1
+ 250 0 l 1,5,-1
+ 125 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: two
+Encoding: 50 50 216
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 0 m 1,0,-1
+ 0 125 l 1,1,-1
+ 125 125 l 1,2,-1
+ 125 250 l 1,3,-1
+ 250 250 l 1,4,-1
+ 250 375 l 1,5,-1
+ 375 375 l 1,6,-1
+ 375 500 l 1,7,-1
+ 500 500 l 1,8,-1
+ 500 750 l 1,9,-1
+ 125 750 l 1,10,-1
+ 125 625 l 1,11,-1
+ 0 625 l 1,12,-1
+ 0 750 l 1,13,-1
+ 75 750 l 1,14,-1
+ 75 800 l 1,15,-1
+ 125 800 l 1,16,-1
+ 125 875 l 1,17,-1
+ 500 875 l 1,18,-1
+ 500 800 l 1,19,-1
+ 550 800 l 1,20,-1
+ 550 750 l 1,21,-1
+ 625 750 l 1,22,-1
+ 625 500 l 1,23,-1
+ 550 500 l 1,24,-1
+ 550 450 l 1,25,-1
+ 500 450 l 1,26,-1
+ 500 374 l 1,27,-1
+ 375 374 l 1,28,-1
+ 375 249 l 1,29,-1
+ 250 249 l 1,30,-1
+ 250 125 l 1,31,-1
+ 625 125 l 1,32,-1
+ 625 0 l 1,33,-1
+ 0 0 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: three
+Encoding: 51 51 217
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 625 m 1,0,-1
+ 0 750 l 1,1,-1
+ 75 750 l 1,2,-1
+ 75 800 l 1,3,-1
+ 125 800 l 1,4,-1
+ 125 875 l 1,5,-1
+ 500 875 l 1,6,-1
+ 500 800 l 1,7,-1
+ 550 800 l 1,8,-1
+ 550 750 l 1,9,-1
+ 625 750 l 1,10,-1
+ 625 500 l 1,11,-1
+ 550 500 l 1,12,-1
+ 550 450 l 1,13,-1
+ 500 450 l 1,14,-1
+ 500 375 l 1,15,-1
+ 625 375 l 1,16,-1
+ 625 125 l 1,17,-1
+ 550 125 l 1,18,-1
+ 550 75 l 1,19,-1
+ 500 75 l 1,20,-1
+ 500 0 l 1,21,-1
+ 125 0 l 1,22,-1
+ 125 75 l 1,23,-1
+ 75 75 l 1,24,-1
+ 75 125 l 1,25,-1
+ 0 125 l 1,26,-1
+ 0 250 l 1,27,-1
+ 125 250 l 1,28,-1
+ 125 125 l 1,29,-1
+ 500 125 l 1,30,-1
+ 500 374 l 1,31,-1
+ 250 374 l 1,32,-1
+ 250 450 l 1,33,-1
+ 200 450 l 1,34,-1
+ 200 500 l 1,35,-1
+ 500 500 l 1,36,-1
+ 500 750 l 1,37,-1
+ 125 750 l 1,38,-1
+ 125 625 l 1,39,-1
+ 0 625 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: four
+Encoding: 52 52 218
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 550 m 1,0,-1
+ 125 750 l 1,1,-1
+ 250 750 l 1,2,-1
+ 250 875 l 1,3,-1
+ 500 875 l 1,4,-1
+ 500 375 l 1,5,-1
+ 625 375 l 1,6,-1
+ 625 249 l 1,7,-1
+ 500 249 l 1,8,-1
+ 500 0 l 1,9,-1
+ 375 0 l 1,10,-1
+ 375 249 l 1,11,-1
+ 0 249 l 1,12,-1
+ 0 500 l 1,13,-1
+ 75 500 l 1,14,-1
+ 75 550 l 1,15,-1
+ 125 550 l 1,0,-1
+375 749 m 1,16,-1
+ 250 749 l 1,17,-1
+ 250 625 l 1,18,-1
+ 225 625 l 1,19,-1
+ 225 525 l 1,20,-1
+ 125 525 l 1,21,-1
+ 125 375 l 1,22,-1
+ 375 375 l 1,23,-1
+ 375 749 l 1,16,-1
+500 250 m 1,24,-1
+ 500 374 l 1,25,-1
+ 475 374 l 1,26,-1
+ 475 275 l 1,27,-1
+ 375 275 l 1,28,-1
+ 375 250 l 1,29,-1
+ 500 250 l 1,24,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: five
+Encoding: 53 53 219
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 250 m 1,0,-1
+ 125 250 l 1,1,-1
+ 125 125 l 1,2,-1
+ 500 125 l 1,3,-1
+ 500 375 l 1,4,-1
+ 0 375 l 1,5,-1
+ 0 875 l 1,6,-1
+ 625 875 l 1,7,-1
+ 625 750 l 1,8,-1
+ 125 750 l 1,9,-1
+ 125 500 l 1,10,-1
+ 500 500 l 1,11,-1
+ 500 425 l 1,12,-1
+ 550 425 l 1,13,-1
+ 550 375 l 1,14,-1
+ 625 375 l 1,15,-1
+ 625 125 l 1,16,-1
+ 550 125 l 1,17,-1
+ 550 75 l 1,18,-1
+ 500 75 l 1,19,-1
+ 500 0 l 1,20,-1
+ 125 0 l 1,21,-1
+ 125 75 l 1,22,-1
+ 75 75 l 1,23,-1
+ 75 125 l 1,24,-1
+ 0 125 l 1,25,-1
+ 0 250 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: six
+Encoding: 54 54 220
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+625 750 m 1,0,-1
+ 625 625 l 1,1,-1
+ 500 625 l 1,2,-1
+ 500 750 l 1,3,-1
+ 125 750 l 1,4,-1
+ 125 500 l 1,5,-1
+ 500 500 l 1,6,-1
+ 500 425 l 1,7,-1
+ 550 425 l 1,8,-1
+ 550 375 l 1,9,-1
+ 625 375 l 1,10,-1
+ 625 125 l 1,11,-1
+ 550 125 l 1,12,-1
+ 550 75 l 1,13,-1
+ 500 75 l 1,14,-1
+ 500 0 l 1,15,-1
+ 125 0 l 1,16,-1
+ 125 75 l 1,17,-1
+ 75 75 l 1,18,-1
+ 75 125 l 1,19,-1
+ 0 125 l 1,20,-1
+ 0 750 l 1,21,-1
+ 75 750 l 1,22,-1
+ 75 800 l 1,23,-1
+ 125 800 l 1,24,-1
+ 125 875 l 1,25,-1
+ 500 875 l 1,26,-1
+ 500 800 l 1,27,-1
+ 550 800 l 1,28,-1
+ 550 750 l 1,29,-1
+ 625 750 l 1,0,-1
+125 375 m 1,30,-1
+ 125 125 l 1,31,-1
+ 500 125 l 1,32,-1
+ 500 375 l 1,33,-1
+ 125 375 l 1,30,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: seven
+Encoding: 55 55 221
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+450 675 m 1,0,-1
+ 500 675 l 1,1,-1
+ 500 750 l 1,2,-1
+ 0 750 l 1,3,-1
+ 0 875 l 1,4,-1
+ 625 875 l 1,5,-1
+ 625 750 l 1,6,-1
+ 600 750 l 1,7,-1
+ 600 650 l 1,8,-1
+ 500 650 l 1,9,-1
+ 500 500 l 1,10,-1
+ 475 500 l 1,11,-1
+ 475 400 l 1,12,-1
+ 375 400 l 1,13,-1
+ 375 250 l 1,14,-1
+ 350 250 l 1,15,-1
+ 350 150 l 1,16,-1
+ 250 150 l 1,17,-1
+ 250 0 l 1,18,-1
+ 125 0 l 1,19,-1
+ 125 125 l 1,20,-1
+ 200 125 l 1,21,-1
+ 200 175 l 1,22,-1
+ 250 175 l 1,23,-1
+ 250 375 l 1,24,-1
+ 325 375 l 1,25,-1
+ 325 425 l 1,26,-1
+ 375 425 l 1,27,-1
+ 375 625 l 1,28,-1
+ 450 625 l 1,29,-1
+ 450 675 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: eight
+Encoding: 56 56 222
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 0 m 1,0,-1
+ 125 75 l 1,1,-1
+ 75 75 l 1,2,-1
+ 75 125 l 1,3,-1
+ 0 125 l 1,4,-1
+ 0 375 l 1,5,-1
+ 125 375 l 1,6,-1
+ 125 450 l 1,7,-1
+ 75 450 l 1,8,-1
+ 75 500 l 1,9,-1
+ 0 500 l 1,10,-1
+ 0 750 l 1,11,-1
+ 75 750 l 1,12,-1
+ 75 800 l 1,13,-1
+ 125 800 l 1,14,-1
+ 125 875 l 1,15,-1
+ 500 875 l 1,16,-1
+ 500 800 l 1,17,-1
+ 550 800 l 1,18,-1
+ 550 750 l 1,19,-1
+ 625 750 l 1,20,-1
+ 625 500 l 1,21,-1
+ 550 500 l 1,22,-1
+ 550 450 l 1,23,-1
+ 500 450 l 1,24,-1
+ 500 375 l 1,25,-1
+ 625 375 l 1,26,-1
+ 625 125 l 1,27,-1
+ 550 125 l 1,28,-1
+ 550 75 l 1,29,-1
+ 500 75 l 1,30,-1
+ 500 0 l 1,31,-1
+ 125 0 l 1,0,-1
+125 750 m 1,32,-1
+ 125 500 l 1,33,-1
+ 500 500 l 1,34,-1
+ 500 750 l 1,35,-1
+ 125 750 l 1,32,-1
+125 374 m 1,36,-1
+ 125 125 l 1,37,-1
+ 500 125 l 1,38,-1
+ 500 374 l 1,39,-1
+ 125 374 l 1,36,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: nine
+Encoding: 57 57 223
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+0 250 m 1,0,-1
+ 125 250 l 1,1,-1
+ 125 125 l 1,2,-1
+ 500 125 l 1,3,-1
+ 500 375 l 1,4,-1
+ 125 375 l 1,5,-1
+ 125 450 l 1,6,-1
+ 75 450 l 1,7,-1
+ 75 500 l 1,8,-1
+ 0 500 l 1,9,-1
+ 0 750 l 1,10,-1
+ 75 750 l 1,11,-1
+ 75 800 l 1,12,-1
+ 125 800 l 1,13,-1
+ 125 875 l 1,14,-1
+ 500 875 l 1,15,-1
+ 500 800 l 1,16,-1
+ 550 800 l 1,17,-1
+ 550 750 l 1,18,-1
+ 625 750 l 1,19,-1
+ 625 125 l 1,20,-1
+ 550 125 l 1,21,-1
+ 550 75 l 1,22,-1
+ 500 75 l 1,23,-1
+ 500 0 l 1,24,-1
+ 125 0 l 1,25,-1
+ 125 75 l 1,26,-1
+ 75 75 l 1,27,-1
+ 75 125 l 1,28,-1
+ 0 125 l 1,29,-1
+ 0 250 l 1,0,-1
+500 500 m 1,30,-1
+ 500 750 l 1,31,-1
+ 125 750 l 1,32,-1
+ 125 500 l 1,33,-1
+ 500 500 l 1,30,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: quoteleft
+Encoding: 8216 8216 224
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 500 m 1,0,-1
+ 0 500 l 1,1,-1
+ 0 750 l 1,2,-1
+ 75 750 l 1,3,-1
+ 75 800 l 1,4,-1
+ 125 800 l 1,5,-1
+ 125 850 l 1,6,-1
+ 225 850 l 1,7,-1
+ 225 750 l 1,8,-1
+ 125 750 l 1,9,-1
+ 125 500 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: quoteright
+Encoding: 8217 8217 225
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 875 m 1,0,-1
+ 250 875 l 1,1,-1
+ 250 625 l 1,2,-1
+ 175 625 l 1,3,-1
+ 175 575 l 1,4,-1
+ 125 575 l 1,5,-1
+ 125 525 l 1,6,-1
+ 25 525 l 1,7,-1
+ 25 625 l 1,8,-1
+ 125 625 l 1,9,-1
+ 125 875 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: quotesinglbase
+Encoding: 8218 8218 226
+Width: 375
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 125 m 1,0,-1
+ 250 125 l 1,1,-1
+ 250 -125 l 1,2,-1
+ 175 -125 l 1,3,-1
+ 175 -175 l 1,4,-1
+ 125 -175 l 1,5,-1
+ 125 -225 l 1,6,-1
+ 25 -225 l 1,7,-1
+ 25 -125 l 1,8,-1
+ 125 -125 l 1,9,-1
+ 125 125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: quotedblbase
+Encoding: 8222 8222 227
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 125 m 1,0,-1
+ 250 125 l 1,1,-1
+ 250 -125 l 1,2,-1
+ 375 -125 l 1,3,-1
+ 375 125 l 1,4,-1
+ 500 125 l 1,5,-1
+ 500 -125 l 1,6,-1
+ 425 -125 l 1,7,-1
+ 425 -175 l 1,8,-1
+ 375 -175 l 1,9,-1
+ 375 -225 l 1,10,-1
+ 275 -225 l 1,11,-1
+ 275 -126 l 1,12,-1
+ 175 -126 l 1,13,-1
+ 175 -175 l 1,14,-1
+ 125 -175 l 1,15,-1
+ 125 -225 l 1,16,-1
+ 25 -225 l 1,17,-1
+ 25 -125 l 1,18,-1
+ 125 -125 l 1,19,-1
+ 125 125 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: hungarumlaut
+Encoding: 733 733 228
+Width: 625
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+125 1025 m 1,0,-1
+ 25 1025 l 1,1,-1
+ 25 1125 l 1,2,-1
+ 75 1125 l 1,3,-1
+ 75 1175 l 1,4,-1
+ 125 1175 l 1,5,-1
+ 125 1250 l 1,6,-1
+ 250 1250 l 1,7,-1
+ 250 1125 l 1,8,-1
+ 325 1125 l 1,9,-1
+ 325 1175 l 1,10,-1
+ 375 1175 l 1,11,-1
+ 375 1250 l 1,12,-1
+ 500 1250 l 1,13,-1
+ 500 1125 l 1,14,-1
+ 375 1125 l 1,15,-1
+ 375 1025 l 1,16,-1
+ 275 1025 l 1,17,-1
+ 275 1124 l 1,18,-1
+ 125 1124 l 1,19,-1
+ 125 1025 l 1,0,-1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: sterling
+Encoding: 163 163 229
+Width: 750
+Flags: W
+TtInstrs:
+PUSHW_1
+ 0
+SCANTYPE
+PUSHW_1
+ 4
+SCANTYPE
+PUSHW_1
+ 511
+SCANCTRL
+EndTTInstrs
+LayerCount: 2
+Fore
+SplineSet
+375 400 m 1,0,-1
+ 375 375 l 1,1,-1
+ 250 374 l 1,2,-1
+ 250 125 l 1,3,-1
+ 625 125 l 1,4,-1
+ 625 0 l 1,5,-1
+ 0 0 l 1,6,-1
+ 0 125 l 1,7,-1
+ 125 125 l 1,8,-1
+ 125 374 l 1,9,-1
+ 0 374 l 1,10,-1
+ 0 500 l 1,11,-1
+ 125 500 l 1,12,-1
+ 125 750 l 1,13,-1
+ 200 750 l 1,14,-1
+ 200 800 l 1,15,-1
+ 250 800 l 1,16,-1
+ 250 875 l 1,17,-1
+ 500 875 l 1,18,-1
+ 500 800 l 1,19,-1
+ 550 800 l 1,20,-1
+ 550 750 l 1,21,-1
+ 625 750 l 1,22,-1
+ 625 625 l 1,23,-1
+ 500 625 l 1,24,-1
+ 500 750 l 1,25,-1
+ 250 750 l 1,26,-1
+ 250 500 l 1,27,-1
+ 475 500 l 1,28,-1
+ 475 400 l 1,29,-1
+ 375 400 l 1,0,-1
+250 375 m 1,30,-1
+ 250 499 l 1,31,-1
+ 225 499 l 1,32,-1
+ 225 400 l 1,33,-1
+ 125 400 l 1,34,-1
+ 125 375 l 1,35,-1
+ 250 375 l 1,30,-1
+EndSplineSet
+Validated: 1
+EndChar
+EndChars
+EndSplineFont

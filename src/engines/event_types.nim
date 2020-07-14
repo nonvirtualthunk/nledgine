@@ -6,86 +6,92 @@ import unicode
 import key_codes
 
 type
-    Event* = ref object of RootRef
+   Event* = ref object of RootRef
 
-    GameEventState* = enum
-        PreEvent
-        PostEvent
+   GameEventState* = enum
+      PreEvent
+      PostEvent
 
-    GameEvent* = ref object of Event
-        state* : GameEventState
+   GameEvent* = ref object of Event
+      state*: GameEventState
 
-    EventBuffer* = ref object
-        listenerCursors* : seq[int]
-        discardedEvents* : int
-        events* : Deque[Event]
-        maximumSize* : int
-    
-    KeyModifiers* = object
-        shift* : bool
-        ctrl* : bool
-        alt* : bool
-    
-    UIEvent* = ref object of Event
-        consumed* : bool
-    
-    InputEvent* = ref object of UIEvent
-        modifiers* : KeyModifiers
-    
-    MousePress* = ref object of InputEvent
-        button* : MouseButton
-        position* : Vec2f
+   EventBuffer* = ref object
+      listenerCursors*: seq[int]
+      discardedEvents*: int
+      events*: Deque[Event]
+      maximumSize*: int
 
-    MouseRelease* = ref object of InputEvent
-        button* : MouseButton
-        position* : Vec2f
+   KeyModifiers* = object
+      shift*: bool
+      ctrl*: bool
+      alt*: bool
 
-    MouseMove* = ref object of InputEvent
-        position* : Vec2f
-        delta* : Vec2f
+   UIEvent* = ref object of Event
+      consumed*: bool
 
-    MouseDrag* = ref object of InputEvent
-        button* : MouseButton
-        position* : Vec2f
-        delta* : Vec2f
+   InputEvent* = ref object of UIEvent
+      modifiers*: KeyModifiers
 
-    KeyPress* = ref object of InputEvent
-        key* : KeyCode
+   MousePress* = ref object of InputEvent
+      button*: MouseButton
+      position*: Vec2f
 
-    KeyRelease* = ref object of InputEvent
-        key* : KeyCode
+   MouseRelease* = ref object of InputEvent
+      button*: MouseButton
+      position*: Vec2f
 
-    RuneEnter* = ref object of InputEvent
-        rune* : Rune
+   MouseMove* = ref object of InputEvent
+      position*: Vec2f
+      delta*: Vec2f
 
-    QuitRequest* = ref object of InputEvent
+   MouseDrag* = ref object of InputEvent
+      button*: MouseButton
+      position*: Vec2f
+      delta*: Vec2f
 
-    WindowFocusGained* = ref object of InputEvent
-    WindowFocusLost* = ref object of InputEvent    
+   KeyPress* = ref object of InputEvent
+      key*: KeyCode
+
+   KeyRelease* = ref object of InputEvent
+      key*: KeyCode
+
+   RuneEnter* = ref object of InputEvent
+      rune*: Rune
+
+   QuitRequest* = ref object of InputEvent
+
+   WindowFocusGained* = ref object of InputEvent
+   WindowFocusLost* = ref object of InputEvent
 
 
-proc createEventBuffer*(maximumSize : int = 1000) : EventBuffer =
-    EventBuffer(
-        discardedEvents : 0,
-        maximumSize : maximumSize
-    )
+method isConsumed*(evt: Event): bool {.base.} = false
+method isConsumed*(evt: UIEvent): bool = evt.consumed
 
-proc addEvent*(buffer : EventBuffer, evt : Event) =
-    buffer.events.addLast(evt)
-    while buffer.events.len > buffer.maximumSize:
-        buffer.events.popFirst()
+proc createEventBuffer*(maximumSize: int = 1000): EventBuffer =
+   EventBuffer(
+      discardedEvents: 0,
+      maximumSize: maximumSize
+   )
 
-method toString*(evt : Event) : string {.base} =
-    return $evt[]
+proc addEvent*(buffer: EventBuffer, evt: Event) =
+   buffer.events.addLast(evt)
+   while buffer.events.len > buffer.maximumSize:
+      buffer.events.popFirst()
 
-method toString*(evt : KeyPress) : string =
-    return $evt[]
+method toString*(evt: Event): string {.base.} =
+   return $evt[]
 
-method toString*(evt : KeyRelease) : string =
-    return $evt[]
+method toString*(evt: KeyPress): string =
+   return $evt[]
 
-method toString*(evt : MousePress) : string =
-    return $evt[]
+method toString*(evt: KeyRelease): string =
+   return $evt[]
 
-method toString*(evt : MouseRelease) : string =
-    return $evt[]
+method toString*(evt: MousePress): string =
+   return $evt[]
+
+method toString*(evt: MouseRelease): string =
+   return $evt[]
+
+proc consume*(evt: UIEvent) =
+   evt.consumed = true
