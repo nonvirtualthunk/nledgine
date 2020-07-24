@@ -17,6 +17,7 @@ import windowingsystem/list_widget
 import graphics/core
 import ax4/display/effect_selection_component
 import ax4/game/effects
+import ax4/game/effect_types
 
 type
    CardUIComponent* = ref object of GraphicsComponent
@@ -43,8 +44,6 @@ method initialize(g: CardUIComponent, world: World, curView: WorldView, display:
 
    g.selectedWatcher = watch: display[TacticalUIData].selectedCharacter
    g.worldWatcher = watch: curView.currentTime
-
-   let ws = display[WindowingSystem]
 
 
 proc setHeldCard(g: CardUIComponent, c: Option[Entity]) =
@@ -152,8 +151,17 @@ method onEvent(g: CardUIComponent, world: World, curView: WorldView, display: Di
                   let effectGroup = cardData.cardEffectGroups[groupIndex]
 
                   let playGroup = toEffectPlayGroup(injectedView, selC, card, effectGroup)
-                  let evt = ChooseActiveEffect(effectPlays: some(playGroup))
-                  display.addEvent(evt)
+                  let evt = ChooseActiveEffect(effectPlays: some(playGroup), onSelectionComplete: proc (effectPlays: EffectPlayGroup) =
+                     for play in effectPlays.plays:
+                        echo &"Resolving play: {play}"
+                        if not resolveEffect(world, selC, play):
+                           warn &"effect play could not be properly resolved: {play}"
+                        else:
+                           echo &"Resolved successfully"
+                     moveCard(world, selC, card, CardLocation.DiscardPile)
+                  )
+                  display.addEvent(evt,
+                  )
 
                   if tuid.selectedCharacter.isSome:
                      updateCardWidgetDesiredPositions(g, curView, display, tuid.selectedCharacter.get)
@@ -172,7 +180,6 @@ method update(g: CardUIComponent, world: World, curView: WorldView, display: Dis
          caseSome(selC):
             withView(curView):
                let ws = display[WindowingSystem]
-               let deck = activeDeck(curView, selC)
                let cards = g.effectiveHand(curView, display)
                var toRemove: seq[Entity]
                for card, cardWidget in g.cardWidgets:

@@ -21,6 +21,7 @@ import graphics/image_extras
 import worlds/taxonomy
 import effect_display
 import options
+import ax4/game/ax_events
 
 export effect_display
 export root_types
@@ -52,9 +53,20 @@ type
       combatDeck*: Deck
       activeDeckKind*: DeckKind
 
+   CardMovedEvent* = ref object of AxEvent
+      card*: Entity
+      deckOwner*: Entity
+      fromDeck*: DeckKind
+      fromLocation*: CardLocation
+      toDeck*: DeckKind
+      toLocation*: CardLocation
+
+
+
 
 defineReflection(DeckOwner)
 defineReflection(Card)
+defineNestedReflection(Deck)
 
 
 
@@ -65,6 +77,8 @@ proc activeDeck*(deckOwner: ref DeckOwner): ptr Deck =
 proc activeDeck*(view: WorldView, deckOwner: Entity): ptr Deck =
    activeDeck(view.data(deckOwner, DeckOwner))
 
+
+
 proc createCard*(arch: CardArchetype, world: World): Entity =
    withWorld(world):
       let ent = world.createEntity()
@@ -72,8 +86,63 @@ proc createCard*(arch: CardArchetype, world: World): Entity =
       ent.attachData(arch.identity[])
       ent
 
+iterator decks*(owner: ref DeckOwner): (DeckKind, ptr Deck) =
+   yield (DeckKind.Combat, owner.combatDeck.addr)
+
+proc deckLocation*(view: WorldView, entity: Entity, card: Entity): Option[(DeckKind, CardLocation)] =
+   withView(view):
+      let deckOwner = entity[DeckOwner]
+      for deckKind, deck in deckOwner.decks:
+         for location, cards in deck.cards:
+            if cards.contains(card):
+               return some((deckKind, location))
+      none((DeckKind, CardLocation))
+
+# proc deckField(kind: DeckKind): Field[DeckOwner, Deck] =
+#    case kind:
+#    of DeckKind.Combat: DeckOwner.combatDeck
+
+proc removeCardFromLocation*(world: World, entity: Entity, card: Entity, deckKind: DeckKind, location: CardLocation) =
+   withWorld(world):
+      case deckKind:
+      of DeckKind.Combat:
+         modify(entity, nestedModification(DeckOwner.combatDeck, DeckType.cards.removeFromKey(location, @[card])))
+
+proc removeCardFromCurrentLocation*(world: World, entity: Entity, card: Entity) =
+   let locOpt = deckLocation(world, entity, card)
+   if locOpt.isSome:
+      let (deckKind, location) = locOpt.get
+      removeCardFromLocation(world, entity, card, deckKind, location)
+   else:
+      warn &"cannot move card from current location, not in deck at all: {entity}, {card}"
+
+proc moveCardToLocation*(world: World, entity: Entity, card: Entity, deckKind: DeckKind, location: CardLocation) =
+   withWorld(world):
+      case deckKind:
+      of DeckKind.Combat:
+         modify(entity, nestedModification(DeckOwner.combatDeck, DeckType.cards.appendToKey(location, @[card])))
+
+proc moveCard*(world: World, entity: Entity, card: Entity, fromDeckKind: DeckKind, fromLocation: CardLocation, deckKind: DeckKind, location: CardLocation) =
+   world.eventStmts(CardMovedEvent(entity: entity, deckOwner: entity, card: card, toDeck: deckKind, toLocation: location, fromDeck: fromDeckKind, fromLocation: fromLocation)):
+      removeCardFromLocation(world, entity, card, fromDeckKind, fromLocation)
+      moveCardToLocation(world, entity, card, deckKind, location)
 
 
+proc moveCard*(world: World, entity: Entity, card: Entity, deckKind: DeckKind, location: CardLocation) =
+   let locOpt = deckLocation(world, entity, card)
+   if locOpt.isSome:
+      let (fromDeckKind, fromLocation) = locOpt.get
+      moveCard(world, entity, card, fromDeckKind, fromLocation, deckKind, location)
+   else:
+      warn &"cannot move card from current location, not in deck at all: {entity}, {card}"
+
+proc moveCard*(world: World, entity: Entity, card: Entity, location: CardLocation) =
+   let locOpt = deckLocation(world, entity, card)
+   if locOpt.isSome:
+      let (fromDeckKind, fromLocation) = locOpt.get
+      moveCard(world, entity, card, fromDeckKind, fromLocation, fromDeckKind, location)
+   else:
+      warn &"cannot move card from current location, not in deck at all: {entity}, {card}"
 
 
 
@@ -102,7 +171,8 @@ proc readFromConfig(cv: ConfigValue, v: var Card) =
          v.xp[findTaxon(subK)] = subV.asInt
 
 defineLibrary[CardArchetype]:
-   let lib = new Library[CardArchetype]
+   var lib = new Library[CardArchetype]
+   lib.defaultNamespace = "card types"
 
    let confs = @["BaseCards.sml"]
    for confPath in confs:

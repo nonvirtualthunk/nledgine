@@ -23,6 +23,7 @@ import ax4/game/effects
 import ax4/display/ax_display_events
 import ax4/game/pathfinder
 import ax4/display/data/mapGraphicsData
+import sugar
 
 {.experimental.}
 
@@ -40,9 +41,11 @@ type
       nextSelectionWatcher: Watcher[Option[(int, SelectorKey, Selector)]]
       selectionContext: ref Option[SelectionContext]
       canvas: SimpleCanvas
+      onSelectionComplete: (EffectPlayGroup) -> void
 
    ChooseActiveEffect* = ref object of UIEvent
       effectPlays*: Option[EffectPlayGroup]
+      onSelectionComplete*: (EffectPlayGroup) -> void
 
    SelectionData* = object
       context: ref Option[SelectionContext]
@@ -51,7 +54,7 @@ type
    SelectionChanged* = ref object of Event
 
 
-defineReflection(SelectionData)
+defineDisplayReflection(SelectionData)
 
 proc computeNextSelection(g: EffectSelectionComponent): Option[(int, SelectorKey, Selector)] =
    if g.activeEffectPlays.isSome:
@@ -114,18 +117,18 @@ proc tentativelySelectHex(g: EffectSelectionComponent, world: World, display: Di
    if g.selectionContext.isSome and g.activeEffectPlays.isSome:
       withView(world):
          let ctxt = g.selectionContext.get
-         let plays = g.activeEffectPlays.get
          let play = g.activePlay()
 
          case ctxt.selector.kind:
          of SelectionKind.Path:
             let mover = play.selected[Subject()].selectedEntities[0]
-            let pf = createPathfinder(world)
-            let possiblePath = pf.findPath(mover, mover[Physical].position, hex)
+            let pf = createPathfinder(world, mover)
+            let possiblePath = pf.findPath(PathRequest(fromHex: mover[Physical].position, targetHexes: @[hex]))
             if possiblePath.isSome:
+               let truncPath = possiblePath.get.subPath(ctxt.selector.moveRange)
                var tiles: seq[Entity]
                let map = world[Map]
-               for pos in possiblePath.get.hexes:
+               for pos in truncPath.hexes[1 ..< truncPath.hexes.len]:
                   let tile = map.tileAt(pos)
                   if tile.isSome:
                      tiles.add(tile.get)
@@ -152,8 +155,9 @@ method onEvent(g: EffectSelectionComponent, world: World, curView: WorldView, di
    let selc = tuid.selectedCharacter
 
    matchType(event):
-      extract(ChooseActiveEffect, effectPlays):
+      extract(ChooseActiveEffect, effectPlays, onSelectionComplete):
          echo &"Choosing active effect : {effectPlays}"
+         g.onSelectionComplete = onSelectionComplete
          g.setEffectPlays(display, effectPlays)
       extract(HexMouseEnter, hex):
          g.tentativelySelectHex(world, display, hex)
@@ -205,13 +209,8 @@ method update(g: EffectSelectionComponent, world: World, curView: WorldView, dis
                echo "Active effeect plays, no pending selections, resolving"
                # this is the point where we have all of our selections chosen, time to resolve
                let effectPlays = g.activeEffectPlays.get
-               for play in effectPlays.plays:
-                  echo &"Resolving play: {play}"
-                  if not resolveEffect(world, selC, play):
-                     warn &"effect play could not be properly resolved: {play}"
-                  else:
-                     echo &"Resolved successfully"
-                  g.canvas.swap()
+               g.onSelectionComplete(effectPlays[])
+               g.canvas.swap()
                g.setEffectPlays(display, none(EffectPlayGroup))
             else:
                echo "next selection changed but no active effect plays (expected only once)"

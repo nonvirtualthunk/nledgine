@@ -16,6 +16,8 @@ import options
 import ax4/game/ax_events
 import ax4/game/pathfinder
 import windowingsystem/windowingsystem
+import ax4/game/resource_pools
+import graphics/color
 
 type
    TacticalUIComponent* = ref object of GraphicsComponent
@@ -26,7 +28,7 @@ type
    TacticalUIData* = object
       selectedCharacter*: Option[Entity]
 
-defineReflection(TacticalUIData)
+defineDisplayReflection(TacticalUIData)
 
 template withSelectedCharacter*(display: DisplayWorld, stmts: untyped) =
    let tuid = display[TacticalUIData]
@@ -47,7 +49,44 @@ method initialize(g: TacticalUIComponent, world: World, curView: WorldView, disp
 
 
 proc render(g: TacticalUIComponent, view: WorldView, display: DisplayWorld) =
-   discard
+   withView(view):
+      display.withSelectedCharacter:
+         let AP = taxon("resource pools", "action points")
+
+         let hexSize = mapGraphicsSettings().hexSize.float
+         let hexHeight = hexSize.hexHeight
+
+         var qb = QuadBuilder()
+         qb.centered()
+
+         let dy = cos(relTime().inSeconds * 2.0f) * 0.03f
+         let pos = selC[Physical].position.asCartVec.Vec3f * hexSize + vec3f(0.0f, hexHeight.float * (0.4 + dy), 0.0f)
+         let curAP = selC[ResourcePools].currentResourceValue(AP)
+         let maxAP = selC[ResourcePools].maximumResourceValue(AP)
+         let fractionalImage = if curAP == maxAP:
+            imageLike("ax4/images/ui/selection_arrow.png")
+         else:
+            imageLike(&"ax4/images/ui/selection_arrow_{curAP}_{maxAP}.png")
+         let backgroundImage = image("ax4/images/ui/selection_arrow.png")
+
+         qb.position = pos
+         qb.texture = backgroundImage
+         qb.dimensions = vec2f(backgroundImage.dimensions * 2)
+         qb.color = color.White
+         qb.drawTo(g.canvas)
+
+         if curAP > 0:
+            qb.texture = fractionalImage
+            qb.color = factionData(view, selC).color
+            qb.drawTo(g.canvas)
+
+         g.canvas.swap()
+
+
+
+
+
+
 
 
 method onEvent(g: TacticalUIComponent, world: World, curView: WorldView, display: DisplayWorld, event: Event) =
@@ -69,7 +108,6 @@ method onEvent(g: TacticalUIComponent, world: World, curView: WorldView, display
             g.tentativePath.setTo(none(Path))
 
 method update(g: TacticalUIComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =
-   if g.worldWatcher.hasChanged:
-      g.render(world.view, display)
-   # @[g.canvas.drawCommand(display)]
-   @[]
+   g.render(world.view, display)
+   @[g.canvas.drawCommand(display)]
+   # @[]

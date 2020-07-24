@@ -38,6 +38,6 @@ proc readFromConfig*(cv: ConfigValue, v: var Taxon) =
       v = findTaxon(cv.asStr)
       if v == UnknownThing:
          writeStackTrace()
-         warn "Could not identify taxon, but expected to do so"
+         warn &"Could not identify taxon, but expected to do so: {cv.asStr}"
 
 defineSimpleReadFromConfig(Identity)

@@ -4,73 +4,76 @@ import macros
 import options
 
 type
-    Library*[T] = ref object
-        values* : Table[Taxon,T]
+   Library*[T] = ref object
+      values*: Table[Taxon, T]
+      defaultNamespace*: string
 
 
-proc `[]`*[T](lib : Library[T], key : Taxon) : T = lib.values[key]
-proc `[]=`*[T](lib : Library[T], key : Taxon, value : T) = lib.values[key] = value
-proc contains*[T](lib : Library[T], key : Taxon) = lib.values.contains(key)
-proc get*[T](lib : Library[T], key : Taxon) : Option[T] = 
-    if lib.values.contains(key):
-        some(lib.values[key])
-    else:
-        none(T)
+proc `[]`*[T](lib: Library[T], key: Taxon): T = lib.values[key]
+proc `[]`*[T](lib: Library[T], key: string): T = lib.values[taxon(lib.defaultNamespace, key)]
+proc `[]=`*[T](lib: Library[T], key: Taxon, value: T) = lib.values[key] = value
+proc contains*[T](lib: Library[T], key: Taxon) = lib.values.contains(key)
+proc get*[T](lib: Library[T], key: Taxon): Option[T] =
+   if lib.values.contains(key):
+      some(lib.values[key])
+   else:
+      none(T)
 
 
-var libraryLoadChannel : Channel[proc() {.gcSafe.}]
+var libraryLoadChannel: Channel[proc() {.gcSafe.}]
 libraryLoadChannel.open()
-var libraryLoadThread : Thread[void]
+var libraryLoadThread: Thread[void]
 
 createThread(libraryLoadThread, proc() {.gcSafe.} =
-    while true:
-        let task = libraryLoadChannel.recv
-        task()
+   while true:
+      let task = libraryLoadChannel.recv
+      task()
 )
 
-template defineLibrary*[T](loadFn : untyped) = 
-    # quote do:
-    var libraryRef {.threadvar.} : Library[T]
-    var libraryCopyChannel : Channel[Library[T]]
-    libraryCopyChannel.open()
-    
-    
-    libraryLoadChannel.send(proc () {.gcsafe.} =
-        let res = loadFn
-        libraryCopyChannel.send(res))
+template defineLibrary*[T](loadFn: untyped) =
+   # quote do:
+   var libraryRef {.threadvar.}: Library[T]
+   var libraryCopyChannel: Channel[Library[T]]
+   libraryCopyChannel.open()
 
-    proc library*(t : typedesc[T]) : Library[T] =
-        if libraryRef.isNil:
-            libraryRef = libraryCopyChannel.recv
-            libraryCopyChannel.send(libraryRef)
-        libraryRef
 
-template defineSimpleLibrary*[T](confPath : string, namespace : string) = 
-    defineLibrary[T]:
-        let lib = new Library[T]
+   libraryLoadChannel.send(proc () {.gcsafe.} =
+      let res = loadFn
+      libraryCopyChannel.send(res))
 
-        let confs = config(confPath)
-        if confs[namespace].isEmpty:
-            echo "Simple library load: config did not have top level value \"", namespace, "\""
-        for k,v in confs[namespace]:
-            let key = taxon(namespace, k)
-            var ri : T
-            readInto(v, ri)
-            lib[key] = ri
+   proc library*(t: typedesc[T]): Library[T] =
+      if libraryRef.isNil:
+         libraryRef = libraryCopyChannel.recv
+         libraryCopyChannel.send(libraryRef)
+      libraryRef
 
-        lib
+template defineSimpleLibrary*[T](confPath: string, namespace: string) =
+   defineLibrary[T]:
+      var lib = new Library[T]
+      lib.defaultNamespace = namespace
+
+      let confs = config(confPath)
+      if confs[namespace].isEmpty:
+         echo "Simple library load: config did not have top level value \"", namespace, "\""
+      for k, v in confs[namespace]:
+         let key = taxon(namespace, k)
+         var ri: T
+         readInto(v, ri)
+         lib[key] = ri
+
+      lib
 
 when isMainModule:
 
-    defineLibrary[int] :
-        let lib = new Library[int]
-        lib[taxon("CardTypes", "Slash")] = 2
-        lib
+   defineLibrary[int]:
+      let lib = new Library[int]
+      lib[taxon("CardTypes", "Slash")] = 2
+      lib
 
-    echo library(int)[taxon("CardTypes", "Slash")]
-    var tmpThread : Thread[void]
-    createThread(tmpThread, proc() =
-        echo library(int)[taxon("CardTypes", "Slash")]
-    )
-    
-    tmpThread.joinThread
+   echo library(int)[taxon("CardTypes", "Slash")]
+   var tmpThread: Thread[void]
+   createThread(tmpThread, proc() =
+      echo library(int)[taxon("CardTypes", "Slash")]
+   )
+
+   tmpThread.joinThread

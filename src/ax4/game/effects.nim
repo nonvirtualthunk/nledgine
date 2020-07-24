@@ -24,24 +24,26 @@ proc effectiveAttack*(view: WorldView, character: Entity, effect: GameEffect): O
          some(attack)
       else:
          attack
+   elif effect.kind == GameEffectKind.SimpleAttack:
+      some(effect.attack)
    else:
       warn &"Attempted to resolve effectiveAttack from non-attack effect: {effect}"
       none(Attack)
 
 proc expandCosts*(view: WorldView, character: Entity, effect: GameEffect): seq[GameEffect] =
    case effect.kind:
-   of GameEffectKind.Attack:
+   of GameEffectKind.Attack, GameEffectKind.SimpleAttack:
       for attack in effectiveAttack(view, character, effect):
          result = attackCosts(attack)
    else:
       discard
 
 
-proc selectionsForEffect*(view: WorldView, character: Entity, effect: GameEffect): Table[SelectorKey, Selector] =
+proc selectionsForEffect*(view: WorldView, character: Entity, effect: GameEffect): OrderedTable[SelectorKey, Selector] =
    case effect.kind:
-   of GameEffectKind.Attack:
+   of GameEffectKind.Attack, GameEffectKind.SimpleAttack:
       for attack in effectiveAttack(view, character, effect):
-         result[Primary()] = match attack.target:
+         result[Object()] = match attack.target:
             Single: enemySelector(1)
             Multiple(count): enemySelector(count)
             Shape(shape): charactersInShapeSelector(shape)
@@ -49,7 +51,7 @@ proc selectionsForEffect*(view: WorldView, character: Entity, effect: GameEffect
       result[Object()] = effect.target
    of GameEffectKind.Move:
       result[Subject()] = effect.target
-      result[Object()] = pathSelector(effect.moveRange, Subject())
+      result[Object()] = pathSelector(effect.moveRange, Subject(), effect.desiredDistance)
 
 
 
@@ -65,7 +67,7 @@ proc resolveEffect*(world: World, character: Entity, effectPlay: EffectPlay): bo
          if attack.isSome:
             let attack = attack.get
 
-            let targets = effectPlay.selected[Primary()]
+            let targets = effectPlay.selected[Object()]
             # do attack
       of GameEffectKind.ChangeFlag:
          let flag = effect.flag

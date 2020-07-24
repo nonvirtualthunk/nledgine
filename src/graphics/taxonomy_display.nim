@@ -10,25 +10,25 @@ export library
 
 type
    TaxonomyDisplay* = object
-      icon* : Option[ImageLike]
+      icon*: Option[ImageLike]
 
 defineSimpleReadFromConfig(TaxonomyDisplay)
-      
+
 
 
 defineLibrary[TaxonomyDisplay]:
-   let lib = new Library[TaxonomyDisplay]
+   var lib = new Library[TaxonomyDisplay]
    let conf = resources.config("display/taxonomy_display.sml")
 
-   proc process(keyAccum : string, cv : ConfigValue) =
+   proc process(keyAccum: string, cv: ConfigValue) =
       if cv.isObj:
          if cv.hasField("icon"):
             let t = qualifiedTaxon(keyAccum)
             lib[t] = readInto(cv, TaxonomyDisplay)
          else:
-            for k,v in cv:
+            for k, v in cv:
                process(keyAccum & "." & k, v)
 
-   for k,v in conf["TaxonomyDisplay"]:
+   for k, v in conf["TaxonomyDisplay"]:
       process(k, v)
    lib

@@ -47,6 +47,11 @@ proc rgba*(r: uint8, g: uint8, b: uint8, a: uint8): RGBA =
    result.Vec4u8[2] = b
    result.Vec4u8[3] = a
 
+
+const White* = rgba(255, 255, 255, 255)
+const Black* = rgba(0, 0, 0, 255)
+const Clear* = rgba(255, 255, 255, 0)
+
 proc `$`*(rgba: RGBA): string =
    $rgba.Vec4u8
 

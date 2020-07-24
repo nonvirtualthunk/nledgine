@@ -180,6 +180,11 @@ proc readFromConfig*(v: ConfigValue, x: var int) =
    if v.nonEmpty:
       x = v.asInt
 
+proc readFromConfig*(v: ConfigValue, x: var int16) =
+   if v.nonEmpty:
+      x = v.asInt.int16
+
+
 proc readFromConfig*(v: ConfigValue, x: var uint8) =
    if v.nonEmpty:
       x = v.asInt.uint8

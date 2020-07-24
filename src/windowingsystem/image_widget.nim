@@ -63,7 +63,7 @@ proc readFromConfig*(cv: ConfigValue, v: var ImageDisplay) =
    readIntoOrElse(cv["fractionalScaling"], v.fractionalScaling, false)
    readIntoOrElse(cv["color"], v.color, bindable(rgba(1.0, 1.0, 1.0, 1.0)))
 
-defineReflection(ImageDisplay)
+defineDisplayReflection(ImageDisplay)
 
 
 proc calcSize(ID: ref ImageDisplay, widget: Widget, axis: Axis): int =

@@ -6,7 +6,7 @@ import tables
 
 # var dataTypeIndexesByName {.compileTime.} = newTable[string, int]()
 
-macro defineReflection*(t: typedesc) =
+macro defineReflectionBase*(t: typedesc, display: static[bool], register: static[bool]) =
    result = newStmtList()
 
    let tDesc = getType(getType(t)[1])
@@ -77,11 +77,11 @@ macro defineReflection*(t: typedesc) =
          let `fieldVarName` = new(Field[`typeName`, `fieldType`])
          `fieldVarName`.name = `fieldNameLit`
          `fieldVarName`.index = `fieldIdx`
-         `fieldVarName`.setter = proc (`objIdent`: ref `typeName`, value: `fieldType`) =
+         `fieldVarName`.setter = proc (`objIdent`: var `typeName`, value: `fieldType`) =
             (`objDotExpr` = value)
          `fieldVarName`.getter = proc(`objIdent`: `typeName`): `fieldType` =
             `objDotExpr`
-         `fieldVarName`.varGetter = proc(`objIdent`: ref `typeName`): var `fieldType` =
+         `fieldVarName`.varGetter = proc(`objIdent`: var `typeName`): var `fieldType` =
             result = `objDotExpr`
       )
       fieldIdx.inc
@@ -99,46 +99,16 @@ macro defineReflection*(t: typedesc) =
    #         )]
 
    let typeName = newIdentNode($t)
-   # fieldIdx = 0
-   # for field in tDesc[2].children:
-
-   #     constrValues.add(
-   #         nnkExprColonExpr.newTree(
-   #             newIdentNode($field),
-   #             fieldVarSyms[fieldIdx].copy
-   #         ),
-   #     )
-
-   #     fieldListInitializer.add(
-   #         nnkCast.newTree(
-   #                 nnkRefTy.newTree(
-   #                 nnkBracketExpr.newTree(
-   #                     bindSym("AbstractField"),
-   #                     typeName
-   #                 )
-   #                 ),
-   #                 fieldVarSyms[fieldIdx].copy
-   #             )
-   #     )
-   #     fieldIdx.inc
-
-   # constrValues.add(nnkExprColonExpr.newTree(
-   #         newIdentNode("fields"),
-   #         nnkPrefix.newTree(
-   #             newIdentNode("@"),
-   #             nnkBracket.newTree(
-   #                 fieldListInitializer
-   #             )
-   #         )
-   #         ))
 
    let footype = newIdentNode($t & "Type")
-   # let tdi = quote do:
-   #     let `footype` = new(`typeDefIdent`)
-   #     `footype`.name =
+
+   let counter = if display:
+      displayDataTypeIndexCounter
+   else:
+      dataTypeIndexCounter
 
    let typelit = newLit($t)
-   let idxlit = newIntLitNode(dataTypeIndexCounter)
+   let idxlit = newIntLitNode(counter)
    let typeDefInst = quote do:
       var `footype`* {.threadvar.}: `typeDefIdent`
    initProcStmts.add(quote do:
@@ -147,16 +117,6 @@ macro defineReflection*(t: typedesc) =
       `footype`.index = `idxlit`
    )
 
-
-   # let typeDefInst = nnkLetSection.newTree(
-   #     nnkIdentDefs.newTree(
-   #     footype,
-   #     newEmptyNode(),
-   #     nnkObjConstr.newTree(
-   #         constrValues
-   #     )
-   #     )
-   # )
    result.add(typeDefInst)
 
    fieldIdx = 0
@@ -170,17 +130,26 @@ macro defineReflection*(t: typedesc) =
       )
       fieldIdx.inc
 
-   dataTypeIndexCounter.inc
+   if display:
+      displayDataTypeIndexCounter.inc
+   else:
+      dataTypeIndexCounter.inc
 
-   initProcStmts.add(
-       quote do:
-      worldCallsForAllTypes.add(proc(world: World) =
-         setUpType[`typeName`](world, `fooType`)
-      )
-      displayWorldCallsForAllTypes.add(proc(world: DisplayWorld) =
-         setUpType[`typeName`](world, `fooType`)
-      )
-   )
+   if register:
+      if display:
+         initProcStmts.add(
+            quote do:
+            displayWorldCallsForAllTypes.add(proc(world: DisplayWorld) =
+               setUpType[`typeName`](world, `fooType`)
+            )
+         )
+      else:
+         initProcStmts.add(
+            quote do:
+            worldCallsForAllTypes.add(proc(world: World) =
+               setUpType[`typeName`](world, `fooType`)
+            )
+         )
 
 
    result.add(quote do:
@@ -213,10 +182,19 @@ macro defineReflection*(t: typedesc) =
 #         defineReflection(t)
 
 
+template defineReflection*(t: typedesc) =
+   defineReflectionBase(t, false, true)
+
+template defineDisplayReflection*(t: typedesc) =
+   defineReflectionBase(t, true, true)
+
+template defineNestedReflection*(t: typedesc) =
+   defineReflectionBase(t, false, false)
+
 macro ifOfType*(t: typedesc, x: untyped, stmts: untyped): untyped =
    result = quote do:
       if `x` of `t`:
-         let `x` {.inject.} = `x`.`t`
+         let `x` {.inject used.} = `x`.`t`
          `stmts`
 
 macro ofType*(x: untyped, t: typed, stmts: untyped): untyped =
@@ -305,4 +283,3 @@ when isMainModule:
          echo "i : ", i
       ofType(f1, F1):
          echo "F1 : ", f1.i
-

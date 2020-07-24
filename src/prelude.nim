@@ -59,6 +59,9 @@ proc relTime*(): UnitOfTime =
    let dur = now() - programStartTime
    return inMicroseconds(dur).float.microseconds
 
+proc inSeconds*(u: UnitOfTime): float =
+   u.as(second)
+
 proc `$`*(t: UnitOfTime): string =
    fmt"{t.as(second)}s"
 

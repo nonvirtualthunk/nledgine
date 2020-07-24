@@ -6,6 +6,7 @@ import config
 import game/library
 import resources
 import ax4/game/modifiers
+import ax4/game/ax_events
 
 type
    ResourcePools* = object
@@ -14,32 +15,46 @@ type
    ResourcePoolInfo* = object
       recoveryAmount*: int
 
+   ResourceChangedEvent* = ref object of AxEvent
+      resource*: Taxon
+      oldValue*: int
+      newValue*: int
+
 defineReflection(ResourcePools)
 
 
 proc currentResourceValue*(r: ref ResourcePools, taxon: Taxon): int =
    r.resources.getOrDefault(taxon).currentValue
 
+proc maximumResourceValue*(r: ref ResourcePools, taxon: Taxon): int =
+   r.resources.getOrDefault(taxon).maxValue
+
 proc recoverResource*(world: World, e: Entity, resource: Taxon, amount: int) =
    withWorld world:
       let rsrc = e[ResourcePools]
-      var newV = rsrc.resources.getOrDefault(resource)
+      let oldV = rsrc.resources.getOrDefault(resource)
+      var newV = oldV
       newV.recoverBy(amount)
-      e.modify(ResourcePools.resources.put(resource, newV))
+      world.eventStmts(ResourceChangedEvent(resource: resource, oldValue: oldV.currentValue, newValue: newV.currentValue)):
+         e.modify(ResourcePools.resources.put(resource, newV))
 
 proc payResource*(world: World, e: Entity, resource: Taxon, amount: int) =
    withWorld world:
       let rsrc = e[ResourcePools]
-      var newV = rsrc.resources.getOrDefault(resource)
+      let oldV = rsrc.resources.getOrDefault(resource)
+      var newV = oldV
       newV.reduceBy(amount)
-      e.modify(ResourcePools.resources.put(resource, newV))
+      world.eventStmts(ResourceChangedEvent(resource: resource, oldValue: oldV.currentValue, newValue: newV.currentValue)):
+         e.modify(ResourcePools.resources.put(resource, newV))
 
 proc changeResource*(world: World, e: Entity, resource: Taxon, modifier: Modifier[int]) =
    withWorld world:
       let rsrc = e[ResourcePools]
-      var newV = rsrc.resources.getOrDefault(resource)
+      let oldV = rsrc.resources.getOrDefault(resource)
+      var newV = oldV
       modifier.apply(newV)
-      e.modify(ResourcePools.resources.put(resource, newV))
+      world.eventStmts(ResourceChangedEvent(resource: resource, oldValue: oldV.currentValue, newValue: newV.currentValue)):
+         e.modify(ResourcePools.resources.put(resource, newV))
 
 proc readFromConfig*(cv: ConfigValue, r: var ResourcePoolInfo) =
    let recoveryAmount = cv["recoveryAmount"]
@@ -54,7 +69,8 @@ proc readFromConfig*(cv: ConfigValue, r: var ResourcePoolInfo) =
 
 
 defineLibrary[ResourcePoolInfo]:
-   let lib = new Library[ResourcePoolInfo]
+   var lib = new Library[ResourcePoolInfo]
+   lib.defaultNamespace = "resource pools"
 
    let confs = config("ax4/game/resource_pools.sml")
    for k, v in confs["ResourcePools"]:

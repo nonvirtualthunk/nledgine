@@ -99,8 +99,13 @@ method initialize(g: MapInitializationComponent, world: World) =
             map.setTileAt(hex, tile)
       world.attachData(map)
 
+
+      let playerFaction = world.createEntity()
+      playerFaction.attachData(Faction(color: rgba(0.7f, 0.15f, 0.2f, 1.0f), playerControlled: true))
+
       let tobold = world.createEntity()
       tobold.attachData(Physical())
+      tobold.attachData(Allegiance(faction: playerFaction))
 
       let arch = library(CardArchetype)[taxon("card types", "move")]
       let card1 = arch.createCard(world)
@@ -111,7 +116,9 @@ method initialize(g: MapInitializationComponent, world: World) =
 
       tobold.attachData(deck)
 
-      tobold.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(3), taxon("resource pools", "stamina points"): reduceable(8)}.toTable))
+      tobold.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(3), taxon("resource pools", "stamina points"): reduceable(7)}.toTable))
+
+      tobold.attachData(Character(health: reduceable(6)))
 
       world.addEvent(WorldInitializedEvent())
 

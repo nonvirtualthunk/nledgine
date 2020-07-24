@@ -22,6 +22,12 @@ Taxonomy {
       Human : Humanoid
       MudMonster : Monstrous
       Slime : Monstrous
+      
+   }
+
+   MonsterClass : []
+   MonsterClasses {
+      Slime : MonsterClass
    }
 
    Item : []
@@ -72,15 +78,14 @@ Taxonomy {
    AttackType : []
    AttackTypes {
       PhysicalAttack : AttackType
-      SlashingAttack : PhysicalAttack
-      PiercingAttack : PhysicalAttack
-      BludgeoningAttack : PhysicalAttack
 
       NaturalAttack : AttackType
 
       MeleeAttack : AttackType
       RangedAttack : AttackType
       ReachAttack : AttackType
+
+      SimpleNaturalAttack : [MeleeAttack, NaturalAttack, PhysicalAttack]
    }
 
    Terrain : []

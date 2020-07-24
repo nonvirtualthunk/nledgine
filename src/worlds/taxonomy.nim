@@ -72,7 +72,7 @@ proc hash*(a: Taxon): Hash =
    a.id.hash
 
 proc `$`*(a: Taxon): string =
-   a.namespace & "." & a.name
+   a.namespace.replace(" ", "_") & "." & a.name.replace(" ", "_")
 
 proc `$`*(a: seq[Taxon]): string =
    result = "["

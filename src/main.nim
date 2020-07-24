@@ -39,6 +39,8 @@ var lastMousePosition: Vec2f
 var lastModifiers: KeyModifiers
 var hasFocus: bool
 var mouseButtonsDown: Table[MouseButton, bool]
+var windowSize = vec2i(800, 600)
+var framebufferSize = vec2i(800, 600)
 
 # var activeModifiers = KeyModifiers()
 
@@ -129,15 +131,16 @@ proc mouseButtonProc(window: GLFWWindow, buttonRaw: int32, action: int32, mods: 
       eventChannel.send(MouseRelease(position: lastMousePosition, modifiers: lastModifiers, button: button))
 
 proc mouseMoveProc(window: GLFWWindow, x: float, y: float): void {.cdecl.} =
-   let delta = vec2f(x, y) - lastMousePosition
-   lastMousePosition = vec2f(x, y)
+   if x >= 0 and y >= 0 and x < windowSize.x.float and y < windowSize.y.float:
+      let delta = vec2f(x, y) - lastMousePosition
+      lastMousePosition = vec2f(x, y)
 
-   for button in MouseButton:
-      if mouseButtonsDown.getOrDefault(button, false):
-         eventChannel.send(MouseDrag(position: lastMousePosition, modifiers: lastModifiers, delta: delta, button: button))
-         return
+      for button in MouseButton:
+         if mouseButtonsDown.getOrDefault(button, false):
+            eventChannel.send(MouseDrag(position: lastMousePosition, modifiers: lastModifiers, delta: delta, button: button))
+            return
 
-   eventChannel.send(MouseMove(position: lastMousePosition, modifiers: lastModifiers, delta: delta))
+      eventChannel.send(MouseMove(position: lastMousePosition, modifiers: lastModifiers, delta: delta))
 
 proc charEnterProc(window: GLFWWindow, codePoint: uint32): void {.cdecl.} =
    let rune = codePoint.Rune
@@ -151,9 +154,6 @@ proc focusProc(window: GLFWWindow, focus: bool): void {.cdecl.} =
       else:
          eventChannel.send(WindowFocusLost())
 
-
-var windowSize = vec2i(800, 600)
-var framebufferSize = vec2i(800, 600)
 proc windowSizeCallback(window: GLFWWindow, width: int32, height: int32): void {.cdecl.} =
    windowSize = vec2i(width, height)
    eventChannel.send(WindowResolutionChanged(windowSize: windowSize, framebufferSize: framebufferSize))

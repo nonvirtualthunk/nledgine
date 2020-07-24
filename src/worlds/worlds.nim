@@ -276,7 +276,13 @@ proc attachData*[C] (world: World, dataValue: C) =
 proc modify*[C, T] (world: World, entity: Entity, modification: FieldModification[C, T]) =
    world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
 
+proc modify*[C, T, U] (world: World, entity: Entity, modification: NestedFieldModification[C, T, U]) =
+   world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
+
 proc modify*[C, K, V] (world: World, entity: Entity, modification: TableFieldModification[C, K, V]) =
+   world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
+
+proc modify*[C, T, K, V] (world: World, entity: Entity, modification: NestedTableFieldModification[C, T, K, V]) =
    world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
 
 

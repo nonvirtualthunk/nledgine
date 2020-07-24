@@ -68,13 +68,7 @@ type
       flag*: Taxon
       oldValue*: int
       newValue*: int
-   ResourceChangedEvent* = ref object of AxEvent
-      resource*: Taxon
-      oldValue*: int
-      newValue*: int
    WorldInitializedEvent* = ref object of AxEvent
-
-
 
 
 

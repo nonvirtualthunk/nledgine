@@ -151,7 +151,7 @@ type
 var graphicsContextCommandChannel*: Channel[GraphicsContextCommand]
 graphicsContextCommandChannel.open()
 
-defineReflection(GraphicsContextData)
+defineDisplayReflection(GraphicsContextData)
 
 
 const UnitSquareVertices*: array[4, Vec3f] = [vec3f(0.0f, 0.0f, 0.0f), vec3f(1.0f, 0.0f, 0.0f), vec3f(1.0f, 1.0f, 0.0f), vec3f(0.0f, 1.0f, 0.0f)]

@@ -217,7 +217,7 @@ type
    WidgetFocusLoss* = ref object of WidgetEvent
 
 
-defineReflection(WindowingSystem)
+defineDisplayReflection(WindowingSystem)
 
 const AllEdges = {WidgetEdge.Left, WidgetEdge.Top, WidgetEdge.Right, WidgetEdge.Bottom}
 
@@ -443,15 +443,12 @@ proc parent*(w: Widget): Option[Widget] = w.parent_f
 proc `parent=`*(w: Widget, parent: Option[Widget]) =
    if parent != w.parent_f:
       if w.parent_f.isSome:
-         echo "removing from parent"
          let oldP = w.parent_f.get
          for i in 0 ..< oldP.children.len:
-            echo &"Comparing {w.entity} against {oldP.children[i].entity}"
             if oldP.children[i] == w:
-               echo "removing child at position ", i
                oldP.children.del(i)
                break
-            for e in enumValues(RecalculationFlag): oldP.markForUpdate(e)
+         for e in enumValues(RecalculationFlag): oldP.markForUpdate(e)
 
       w.parent_f = parent
       if parent.isSome:
@@ -1306,6 +1303,6 @@ macro onEvent*(w: Widget, t: typedesc, name: untyped, body: untyped) =
          let world {.inject used.} = worldArg
          let display {.inject used.} = displayWorldArg
          if evt of `t`:
-            let `name` {.inject.} = (`t`)evt
+            let `name` {.inject used.} = (`t`)evt
             `body`
       )
