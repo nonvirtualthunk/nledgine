@@ -32,7 +32,6 @@ defineReflection(Character)
 defineReflection(Physical)
 defineReflection(Allegiance)
 defineReflection(Faction)
-defineReflection(Monster)
 
 
 
@@ -45,3 +44,8 @@ proc factionData*(view: WorldView, entity: Entity): ref Faction =
 proc isPlayerControlled*(view: WorldView, entity: Entity): bool =
    view.data(faction(view, entity), Faction).playerControlled
 
+proc areEnemies*(view: WorldView, a, b: Entity): bool =
+   faction(view, a) != faction(view, b)
+
+proc areFriends*(view: WorldView, a, b: Entity): bool =
+   not areEnemies(view, a, b)

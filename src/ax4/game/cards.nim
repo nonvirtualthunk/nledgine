@@ -8,11 +8,12 @@ import worlds/taxonomy
 import config
 import config/config_helpers
 import tables
-import targeting
+import targeting_types
 import modifiers
 import strutils
 import noto
 import root_types
+import sequtils
 
 import prelude
 import arxregex
@@ -31,6 +32,7 @@ type
       cardEffectGroups*: seq[EffectGroup]
       xp*: Table[Taxon, int]
       image*: ImageLike
+      locked*: bool
 
    CardArchetype* = object
       cardData*: ref Card
@@ -46,9 +48,6 @@ type
    Deck* = object
       cards*: Table[CardLocation, seq[Entity]]
 
-   DeckKind* {.pure.} = enum
-      Combat
-
    DeckOwner* = object
       combatDeck*: Deck
       activeDeckKind*: DeckKind
@@ -61,6 +60,18 @@ type
       toDeck*: DeckKind
       toLocation*: CardLocation
 
+   CardAddedEvent* = ref object of AxEvent
+      card*: Entity
+      deckOwner*: Entity
+      toDeck*: DeckKind
+      toLocation*: CardLocation
+
+   CardRemovedEvent* = ref object of AxEvent
+      card*: Entity
+      deckOwner*: Entity
+      fromDeck*: DeckKind
+      fromLocation*: CardLocation
+
 
 
 
@@ -69,13 +80,18 @@ defineReflection(Card)
 defineNestedReflection(Deck)
 
 
+proc deck*(deckOwner: ref DeckOwner, kind: DeckKind): ptr Deck =
+   case kind
+   of DeckKind.Combat: deckOwner.combatDeck.addr
 
 proc activeDeck*(deckOwner: ref DeckOwner): ptr Deck =
-   case deckOwner.activeDeckKind
-   of DeckKind.Combat: deckOwner.combatDeck.addr
+   deckOwner.deck(deckOwner.activeDeckKind)
 
 proc activeDeck*(view: WorldView, deckOwner: Entity): ptr Deck =
    activeDeck(view.data(deckOwner, DeckOwner))
+
+proc activeDeckKind*(view: WorldView, deckOwner: Entity): DeckKind =
+   view.data(deckOwner, DeckOwner).activeDeckKind
 
 
 
@@ -108,13 +124,14 @@ proc removeCardFromLocation*(world: World, entity: Entity, card: Entity, deckKin
       of DeckKind.Combat:
          modify(entity, nestedModification(DeckOwner.combatDeck, DeckType.cards.removeFromKey(location, @[card])))
 
-proc removeCardFromCurrentLocation*(world: World, entity: Entity, card: Entity) =
+proc removeCardFromCurrentLocation*(world: World, entity: Entity, card: Entity): Option[(DeckKind, CardLocation)] {.discardable.} =
    let locOpt = deckLocation(world, entity, card)
    if locOpt.isSome:
       let (deckKind, location) = locOpt.get
       removeCardFromLocation(world, entity, card, deckKind, location)
    else:
       warn &"cannot move card from current location, not in deck at all: {entity}, {card}"
+   locOpt
 
 proc moveCardToLocation*(world: World, entity: Entity, card: Entity, deckKind: DeckKind, location: CardLocation) =
    withWorld(world):
@@ -127,6 +144,16 @@ proc moveCard*(world: World, entity: Entity, card: Entity, fromDeckKind: DeckKin
       removeCardFromLocation(world, entity, card, fromDeckKind, fromLocation)
       moveCardToLocation(world, entity, card, deckKind, location)
 
+proc addCard*(world: World, entity: Entity, card: Entity, toDeck: DeckKind, toLocation: CardLocation) =
+   world.eventStmts(CardAddedEvent(entity: entity, deckOwner: entity, card: card, toDeck: toDeck, toLocation: toLocation)):
+      moveCardToLocation(world, entity, card, toDeck, toLocation)
+
+proc removeCard*(world: World, entity: Entity, card: Entity) =
+   let locOpt = deckLocation(world, entity, card)
+   if locOpt.isSome:
+      let (deck, loc) = locOpt.get
+      world.eventStmts(CardRemovedEvent(entity: entity, deckOwner: entity, card: card, fromDeck: deck, fromLocation: loc)):
+         removeCardFromLocation(world, entity, card, deck, loc)
 
 proc moveCard*(world: World, entity: Entity, card: Entity, deckKind: DeckKind, location: CardLocation) =
    let locOpt = deckLocation(world, entity, card)
@@ -144,6 +171,12 @@ proc moveCard*(world: World, entity: Entity, card: Entity, location: CardLocatio
    else:
       warn &"cannot move card from current location, not in deck at all: {entity}, {card}"
 
+proc cardsInLocation*(view: WorldView, entity: Entity, deckKind: DeckKind, location: CardLocation): seq[Entity] =
+   let deck = view.data(entity, DeckOwner).deck(deckKind)
+   deck.cards.getOrDefault(location)
+
+proc cardsInLocation*(view: WorldView, entity: Entity, location: CardLocation): seq[Entity] =
+   cardsInLocation(view, entity, activeDeckKind(view, entity), location)
 
 
 # Loading and configuration
@@ -174,7 +207,7 @@ defineLibrary[CardArchetype]:
    var lib = new Library[CardArchetype]
    lib.defaultNamespace = "card types"
 
-   let confs = @["BaseCards.sml"]
+   let confs = @["base_cards.sml"]
    for confPath in confs:
       let conf = resources.config("ax4/game/" & confPath)
       for k, v in conf["Cards"]:
@@ -197,8 +230,11 @@ defineLibrary[CardArchetype]:
 proc cardInfoFor*(view: WorldView, character: Entity, arch: CardArchetype, activeEffectGroup: int): CardInfo =
    let effectGroup = arch.cardData.cardEffectGroups[activeEffectGroup]
 
-   proc cge(effects: seq[GameEffect], active: bool = true): CharacterGameEffects =
-      CharacterGameEffects(character: character, view: view, effects: effects, active: active)
+   proc cge(allEffects: seq[SelectableEffects], active: bool = true): CharacterGameEffects =
+      var netEffects: seq[GameEffect]
+      for effects in allEffects:
+         netEffects.add(effects.effects)
+      CharacterGameEffects(character: character, view: view, effects: netEffects, active: active)
 
    if arch.identity.name.isSome:
       result.name = arch.identity.name.get
@@ -216,7 +252,8 @@ proc cardInfoFor*(view: WorldView, character: Entity, arch: CardArchetype, activ
       result.secondaryCost = cge(@[effectGroup.costs[1]])
 
    for i in 0 ..< arch.cardData.cardEffectGroups.len:
-      result.effects.add(cge(arch.cardData.cardEffectGroups[i].effects, i == activeEffectGroup))
+      let nonCosts = arch.cardData.cardEffectGroups[i].effects.filterIt(not it.isCost)
+      result.effects.add(cge(nonCosts, i == activeEffectGroup))
 
 
 
@@ -234,7 +271,6 @@ when isMainModule:
    let cardArch = lib[taxon("card types", "move")]
 
    let firstCost = cardArch.cardData.cardEffectGroups[0].costs[0]
-   echoAssert firstCost.kind == GameEffectKind.ChangeResource
-   echoAssert firstCost.target == selfSelector()
-   echoAssert firstCost.resource == taxon("resource pools", "actionPoints")
-   echoAssert firstCost.resourceModifier == modifiers.reduce(1)
+   echoAssert firstCost.effects[0].kind == GameEffectKind.ChangeResource
+   echoAssert firstCost.effects[0].resource == taxon("resource pools", "actionPoints")
+   echoAssert firstCost.effects[0].resourceModifier == modifiers.reduce(1)

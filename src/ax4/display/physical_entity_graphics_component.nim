@@ -11,6 +11,8 @@ import ax4/display/data/mapGraphicsData
 import graphics/canvas
 import core
 import ax4/game/resource_pools
+import ax4/game/enemies
+import game/library
 
 type
    PhysicalEntityGraphicsComponent* = ref object of GraphicsComponent
@@ -41,10 +43,15 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
       qb.origin = vec2f(0.5f, 0.0f)
 
       var uiqb = QuadBuilder()
+      let monsterLib = library(MonsterClass)
 
       for physEnt in view.entitiesWithData(Physical):
          let physical = physEnt[Physical]
-         let img = image("ax4/images/oryx/creatures_24x24/oryx_16bit_fantasy_creatures_38.png")
+         var img = image("ax4/images/oryx/creatures_24x24/oryx_16bit_fantasy_creatures_38.png")
+         if physEnt.hasData(Monster):
+            let monster = physEnt[Monster]
+            let mc = monsterLib[monster.monsterClass]
+            img = mc.images[permute(physEnt.id).abs mod mc.images.len]
          let scale = ((hexSize * 0.65).int div img.dimensions.x).float
          let cart = physical.position.asCartVec * hexSize
 

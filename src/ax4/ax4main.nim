@@ -29,6 +29,9 @@ import ax4/game/ax_events
 import ax4/display/effect_selection_component
 import ax4/game/resource_pools
 import core
+import game/library
+import ax4/game/enemies
+import ax4/game/items
 
 type
    PrintComponent = ref object of GameComponent
@@ -103,6 +106,9 @@ method initialize(g: MapInitializationComponent, world: World) =
       let playerFaction = world.createEntity()
       playerFaction.attachData(Faction(color: rgba(0.7f, 0.15f, 0.2f, 1.0f), playerControlled: true))
 
+      let enemyFaction = world.createEntity()
+      enemyFaction.attachData(Faction(color: rgba(0.2f, 0.1f, 0.8f, 1.0f), playerControlled: false))
+
       let tobold = world.createEntity()
       tobold.attachData(Physical())
       tobold.attachData(Allegiance(faction: playerFaction))
@@ -115,10 +121,21 @@ method initialize(g: MapInitializationComponent, world: World) =
       )
 
       tobold.attachData(deck)
-
       tobold.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(3), taxon("resource pools", "stamina points"): reduceable(7)}.toTable))
-
       tobold.attachData(Character(health: reduceable(6)))
+      tobold.attachData(Inventory())
+
+      let spear = createItem(world, taxon("items", "longspear"))
+      equipItem(world, tobold, spear)
+
+
+
+      let slime = world.createEntity()
+      slime.attachData(Physical(position: axialVec(2, 2, 0)))
+      slime.attachData(Allegiance(faction: enemyFaction))
+      slime.attachData(Monster(monsterClass: taxon("monster classes", "slime")))
+      slime.attachData(Character(health: reduceable(3)))
+      slime.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(2), taxon("resource pools", "stamina points"): reduceable(3)}.toTable))
 
       world.addEvent(WorldInitializedEvent())
 

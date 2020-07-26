@@ -151,20 +151,28 @@ method onEvent(g: CardUIComponent, world: World, curView: WorldView, display: Di
                   let effectGroup = cardData.cardEffectGroups[groupIndex]
 
                   let playGroup = toEffectPlayGroup(injectedView, selC, card, effectGroup)
-                  let evt = ChooseActiveEffect(effectPlays: some(playGroup), onSelectionComplete: proc (effectPlays: EffectPlayGroup) =
-                     for play in effectPlays.plays:
-                        echo &"Resolving play: {play}"
-                        if not resolveEffect(world, selC, play):
-                           warn &"effect play could not be properly resolved: {play}"
-                        else:
-                           echo &"Resolved successfully"
-                     moveCard(world, selC, card, CardLocation.DiscardPile)
-                  )
-                  display.addEvent(evt,
-                  )
+                  var valid = true
+                  for effectPlay in playGroup.plays:
+                     if effectPlay.isCost:
+                        if not isEffectPlayable(world, selC, effectPlay):
+                           valid = false
 
-                  if tuid.selectedCharacter.isSome:
-                     updateCardWidgetDesiredPositions(g, curView, display, tuid.selectedCharacter.get)
+                  if valid:
+                     let evt = ChooseActiveEffect(effectPlays: some(playGroup), onSelectionComplete: proc (effectPlays: EffectPlayGroup) =
+                        for play in effectPlays.plays:
+                           echo &"Resolving play: {play}"
+                           if not resolveEffect(world, selC, play):
+                              warn &"effect play could not be properly resolved: {play}"
+                           else:
+                              echo &"Resolved successfully"
+                        moveCard(world, selC, card, CardLocation.DiscardPile)
+                     )
+                     display.addEvent(evt)
+
+                     if tuid.selectedCharacter.isSome:
+                        updateCardWidgetDesiredPositions(g, curView, display, tuid.selectedCharacter.get)
+                  else:
+                     echo &"Not playing card, cannot pay cost"
          ifOfType(SelectionChanged, event):
             g.selectionChanged = true
 

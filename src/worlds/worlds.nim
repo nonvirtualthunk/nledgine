@@ -488,3 +488,4 @@ macro modify*(entity: Entity, expression: untyped): untyped =
 
 
 
+proc id*(entity: Entity): int = entity.int

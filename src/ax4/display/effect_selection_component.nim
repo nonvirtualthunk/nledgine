@@ -67,12 +67,12 @@ proc computeNextSelection(g: EffectSelectionComponent): Option[(int, SelectorKey
 
    none((int, SelectorKey, Selector))
 
-proc selectedFor*(s: ref SelectionData, e: Entity): Option[GameEffect] =
+proc selectedFor*(s: ref SelectionData, e: Entity): Option[SelectableEffects] =
    if s.activeEffectPlays.isSome:
       for play in s.activeEffectPlays.get.plays:
          for selection in play.selected.values:
             if selection.selectedEntities.contains(e):
-               return some(play.effect)
+               return some(play.effects)
 
 proc activeSource*(s: ref SelectionData): Option[Entity] =
    s.activeEffectPlays.map(it => it.source)
@@ -183,8 +183,6 @@ proc renderTentativeSelection(g: EffectSelectionComponent, view: WorldView, ctxt
                qb.dimensions = vec2f(hexSize, hexSize)
 
                qb.drawTo(g.canvas)
-         of SelectionKind.Self:
-            discard
          else:
             warn &"Unsupported tentative selection rendering, type: {ctxt.selector.kind}"
    g.canvas.swap()
@@ -224,11 +222,11 @@ method update(g: EffectSelectionComponent, world: World, curView: WorldView, dis
             if ctx.tentativeSelection.hasChanged or selWatcherChanged:
                g.renderTentativeSelection(curView, ctx, ctx.tentativeSelection)
 
-            case ctx.selector.kind:
-            of SelectionKind.Self:
-               g.select(display, SelectedEntity(@[selC]))
-            else:
-               discard
-               # warn &"selection not supported by effect selection component : {ctx.selector.kind}"
+            # todo: make this a more generalized auto-selection when there's only one option, maybe
+            for restriction in ctx.selector.restrictions.asSeq:
+               if restriction == Self():
+                  g.select(display, SelectedEntity(@[selC]))
+                  break
+
    @[g.canvas.drawCommand(display)]
 

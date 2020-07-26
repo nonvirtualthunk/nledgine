@@ -10,6 +10,7 @@ import strutils
 import arxregex
 import noto
 import tables
+import worlds
 
 type
    ListWidget* = object

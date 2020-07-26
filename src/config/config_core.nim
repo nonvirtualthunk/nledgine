@@ -20,7 +20,7 @@ type
       case kind*: ConfigValueKind
       of String: str*: string
       of Number: num*: float64
-      of Object: fields*: Table[string, ConfigValue]
+      of Object: fields*: OrderedTable[string, ConfigValue]
       of Array: values*: seq[ConfigValue]
       of Empty: discard
       of Bool: truth*: bool
@@ -268,6 +268,15 @@ proc readFromConfig*[K, V](v: ConfigValue, x: var Table[K, V]) =
          subV.readInto(tmpV)
          x[tmpK] = tmpV
 
+proc readFromConfig*[K, V](v: ConfigValue, x: var OrderedTable[K, V]) =
+   if v.nonEmpty:
+      for subK, subV in v:
+         var tmpK: K
+         var tmpV: V
+         asConf(subK).readInto(tmpK)
+         subV.readInto(tmpV)
+         x[tmpK] = tmpV
+
 proc readFromConfig*[T](v: ConfigValue, x: var Option[T]) =
    if v.nonEmpty:
       var tmp: T
@@ -388,7 +397,7 @@ proc parseArray(ctx: var ParseContext): ConfigValue {.gcsafe.} =
 
 
 
-proc fillField(fields: var Table[string, ConfigValue], sections: seq[string], index: int, value: ConfigValue) =
+proc fillField(fields: var OrderedTable[string, ConfigValue], sections: seq[string], index: int, value: ConfigValue) =
    let key = sections[index]
    if index == sections.len-1:
       fields[key] = value
@@ -404,7 +413,7 @@ proc parseObj(ctx: var ParseContext, skipEnclosingBraces: bool = false): ConfigV
    if not skipEnclosingBraces:
       hoconAssert ctx, ctx.next() == '{'
    ctx.skipWhitespace()
-   var fields = Table[string, ConfigValue]()
+   var fields = OrderedTable[string, ConfigValue]()
    while not ctx.finished and ctx.peek() != '}':
       let fieldName = ctx.parseUntil(fieldStartCharacters).strip()
       if ctx.peek() == ':':

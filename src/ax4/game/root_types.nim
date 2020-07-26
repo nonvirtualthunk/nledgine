@@ -7,7 +7,6 @@ variantp SelectionResult:
    SelectedTaxon(taxons: seq[Taxon])
 
 type SelectionKind* {.pure.} = enum
-   Self
    Character
    Hex
    Taxon
@@ -25,6 +24,8 @@ type CardLocation* = enum
    ExhaustPile
    ConsumedPile
 
+type DeckKind* {.pure.} = enum
+   Combat
 
 proc contains*(s: SelectionResult, e: Entity): bool =
    match s:
@@ -35,3 +36,9 @@ proc selectedEntities*(s: SelectionResult): seq[Entity] =
    match s:
       SelectedEntity(entities): entities
       SelectedTaxon(_): @[]
+
+
+proc selectedTaxons*(s: SelectionResult): seq[Taxon] =
+   match s:
+      SelectedEntity(_): @[]
+      SelectedTaxon(taxons): taxons

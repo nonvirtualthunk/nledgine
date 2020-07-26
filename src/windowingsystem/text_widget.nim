@@ -11,6 +11,7 @@ import config
 import strutils
 import sugar
 import windowingsystem/rich_text_layout
+import worlds
 
 export rich_text
 

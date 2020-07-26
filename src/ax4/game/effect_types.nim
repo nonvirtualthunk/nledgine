@@ -6,7 +6,7 @@ import modifiers
 import tables
 import options
 import randomness
-import targeting
+import targeting_types
 import options
 import root_types
 import sugar
@@ -18,10 +18,15 @@ import core
 import config/config_helpers
 import arxregex
 
+type
+   AttackKey* {.pure.} = enum
+      Primary
+      Secondary
+
 variantp AttackSelector:
    AnyAttack
    AttackType(isA: seq[Taxon])
-   FromWeapon(weapon: Entity, index: int)
+   FromWeapon(weapon: Entity, key: AttackKey)
    FromWeaponType(weaponType: seq[Taxon])
 
 variantp AttackTarget:
@@ -44,8 +49,6 @@ type
    #================================
    # Attack stuff
    #================================
-   Weapon* = object
-      attacks*: seq[Attack]
 
    DamageExpression* = object
       dice: DicePool
@@ -97,7 +100,6 @@ type
       AddCard
 
    GameEffect* = object
-      target*: Selector
       case kind*: GameEffectKind:
       of GameEffectKind.Attack:
          attackSelector*: AttackSelector
@@ -115,6 +117,8 @@ type
          resourceModifier*: Modifier[int]
       of GameEffectKind.AddCard:
          cardChoices*: seq[Taxon]
+         toDeck*: DeckKind
+         toLocation*: CardLocation
 
    # Game effect being triggered by a particular character
    CharacterGameEffects* = object
@@ -123,22 +127,27 @@ type
       active*: bool
       effects*: seq[GameEffect]
 
+   # Set of effects that are targeted and applied together, which may or may not be a cost and thefore required before
+   # other effects can be applied. May contain additional information on what the allowed selections are
+   # Examples:
+   # apply 2 weak, 2 vulnerable
+   #    conversely: apply 2 weak to self, apply 2 vulnerable to an enemy
+   # we want to both be able to differentiate between the two, and also not have to select every target individually
+
    SelectableEffects* = object
       effects*: seq[GameEffect]
-      targetSelector*: Selector
+      targetSelector*: Option[Selector]
+      subjectSelector*: Option[Selector]
       isCost*: bool
-
-
 
    EffectGroup* = object
       name*: Option[string]
-      costs*: seq[GameEffect]
-      effects*: seq[GameEffect]
+      effects*: seq[SelectableEffects]
 
    EffectPlay* = object
       isCost*: bool
-      effect*: GameEffect
-      selectors*: Table[SelectorKey, Selector]
+      effects*: SelectableEffects
+      selectors*: OrderedTable[SelectorKey, Selector]
       selected*: Table[SelectorKey, SelectionResult]
 
    EffectPlayGroup* = object
@@ -146,12 +155,8 @@ type
       plays*: seq[EffectPlay]
 
 
-defineReflection(Weapon)
-
-const wordNumberPattern = re"([a-zA-Z0-9]+)\s?\(([0-9]+)\)"
-
 proc `==`*(a, b: GameEffect): bool =
-   if a.kind != b.kind or a.target != b.target:
+   if a.kind != b.kind:
       return false
    case a.kind:
    of GameEffectKind.Attack:
@@ -168,6 +173,12 @@ proc `==`*(a, b: GameEffect): bool =
       a.cardChoices == b.cardChoices
 
 proc `==`*(a, b: EffectPlayGroup): bool = a.plays == b.plays
+
+iterator items*(s: SelectableEffects): GameEffect =
+   for e in s.effects: yield e
+
+proc costs*(s: EffectGroup): seq[SelectableEffects] =
+   s.effects.filterIt(it.isCost)
 
 const simpleDamageExprRegex = re"([0-9]+)d([0-9]+)\s?([+-][0-9]+)?\s?([a-zA-Z]+)"
 
@@ -272,11 +283,11 @@ proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.} =
          extractMatches(wordNumberPattern, word, numberStr):
             let num = numberStr.parseInt()
             if word.toLowerAscii == "move":
-               ge = GameEffect(kind: GameEffectKind.Move, target: selfSelector(), moveRange: num)
+               ge = GameEffect(kind: GameEffectKind.Move, moveRange: num)
             else:
                let rsrcPool = maybeTaxon("ResourcePools", word)
                if rsrcPool.isSome:
-                  ge = GameEffect(kind: GameEffectKind.ChangeResource, target: selfSelector(), resource: rsrcPool.get, resourceModifier: modifiers.reduce(num))
+                  ge = GameEffect(kind: GameEffectKind.ChangeResource, resource: rsrcPool.get, resourceModifier: modifiers.reduce(num))
                else:
                   warn &"unknown word(number) pattern for game effect: {word}, {numberStr}"
          extractMatches(simpleAttackPattern):
@@ -293,16 +304,35 @@ proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.} =
    else:
       warn &"unknown config representation of game effect : {cv}"
 
-defineSimpleReadFromConfig(EffectGroup)
+proc readFromConfig*(cv: ConfigValue, s: var SelectableEffects) =
+   if cv.isStr:
+      s.effects = @[readInto(cv, GameEffect)]
+   else:
+      readFromConfigByField(cv, SelectableEffects, s)
+      readInto(cv["target"], s.targetSelector)
+      readInto(cv["subject"], s.subjectSelector)
+
+proc readFromConfig*(cv: ConfigValue, e: var EffectGroup) =
+   readInto(cv["name"], e.name)
+   readInto(cv["effects"], e.effects)
+   if cv["costs"].nonEmpty:
+      var costs = readInto(cv["costs"], seq[SelectableEffects])
+      for cost in costs.mitems:
+         cost.isCost = true
+      e.effects.add(costs)
+
+proc readFromConfig*(cv: ConfigValue, v: var AttackKey) =
+   v = parseEnum[AttackKey](cv.asStr)
 
 proc matches*(sel: AttackSelector, view: WorldView, attack: Attack): bool =
    match sel:
       AnyAttack: true
       AttackType(isA): isA.all((x) => attack.attackTypes.any(y => y.isA(x)))
-      FromWeapon(weapon, index):
+      FromWeapon(weapon, key):
          warn "FromWeapon(weapon,index) doesn't make sense when doing reverse matching"
          false
       FromWeaponType(weaponType):
          # weaponType.all((x) => )
          warn "FromWeaponType(weaponType) not yet implemented for attack selector"
          false
+

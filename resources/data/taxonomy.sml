@@ -59,20 +59,18 @@ Taxonomy {
       Weapon : Item
       Axe : [Item, SturdyCuttingTool]
 
-      Weapons {
-         MeleeWeapon : Weapon
+      MeleeWeapon : Weapon
 
-         BattleAxe: [MeleeWeapon, Axe]
-         Sword: MeleeWeapon
-         Longsword: Sword
-         Shortsword: Sword
+      BattleAxe: [MeleeWeapon, Axe]
+      Sword: MeleeWeapon
+      Longsword: Sword
+      Shortsword: Sword
 
-         Spear : MeleeWeapon
-         Longspear : Spear
-         Shortspear : Spear
+      Spear : MeleeWeapon
+      Longspear : Spear
+      Shortspear : Spear
 
-         Scythe : [MeleeWeapon, Tool, SturdyCuttingTool]
-      }
+      Scythe : [MeleeWeapon, Tool, SturdyCuttingTool]
    }
 
    AttackType : []

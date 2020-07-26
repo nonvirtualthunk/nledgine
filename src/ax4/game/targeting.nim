@@ -1,177 +1,141 @@
-import patty
+import targeting_types
+export targeting_types
+
+
+import ax4/game/characters
 import worlds
-import root_types
-import hashes
-import config
-import strutils
+import patty
+import ax4/game/map
+import hex
+import ax4/game/cards
+import options
 import noto
-import arxregex
-import strutils
 
-variantp SelectionShape:
-   Hex
-   Line(startDistance: int, length: int)
+import prelude
 
-variantp SelectionRestriction:
-   Enemy
-   Friendly
-   InRange(minRange: int, maxRange: int)
-   EntityChoices(entities: seq[Entity])
-   TaxonChoices(taxons: seq[Taxon])
-   InCardLocation(cardLocation: CardLocation)
-   WithinMoveRange(movePoints: int)
+proc matchesRestriction*(view: WorldView, character: Entity, ent: Entity, res: SelectionRestriction): bool =
+   withView(view):
+      match res:
+         NoRestriction: true
+         Self: ent == character
+         Enemy: areEnemies(view, character, ent)
+         Friendly: areFriends(view, character, ent)
+         InRange(minRange, maxRange):
+            let dist = if ent.hasData(Physical):
+               ent[Physical].position.distance(character[Physical].position).int
+            elif ent.hasData(Tile):
+               ent[Tile].position.distance(character[Physical].position).int
+            else:
+               -1
+            dist >= minRange and dist <= maxRange
+         EntityChoices(entities): entities.contains(ent)
+         TaxonChoices(_): false
+         InCardLocation(targetLocation):
+            if ent.hasData(Card):
+               let targetDeck = activeDeckKind(view, character)
+               let curLoc = deckLocation(view, character, ent)
+               curLoc == some((targetDeck, targetLocation))
+            else:
+               false
+         WithinMoveRange(movePoints):
+            warn &"checking if something is within move range is pretty expensive, not yet implemented"
+            true
+         AllRestrictions(restrictions):
+            for subRes in restrictions:
+               if not matchesRestriction(view, character, ent, subRes):
+                  return false
+            true
 
-variantp SelectorKey:
-   # Primary
-   # Secondary
-   Subject
-   Object
-   SubSelector(index: int, key: ref SelectorKey)
+proc matchesRestriction*(view: WorldView, character: Entity, taxon: Taxon, res: SelectionRestriction): bool =
+   withView(view):
+      match res:
+         NoRestriction: true
+         TaxonChoices(choices): choices.contains(taxon)
+         _: false
 
-# conditions that must be met for something to occur or be allowed
-# currently planned for use with monster AI, i.e. do one moveset when it can see an enemy, one moveset when it can't
-variantp GameCondition:
-   CanSee(inViewCondition: SelectionRestriction)
-   Near(nearCondition: SelectionRestriction, withinDistance: int)
+proc possibleEntityMatchesFromRestriction(view: WorldView, character: Entity, restrictions: SelectionRestriction): Option[seq[Entity]] =
+   withView(view):
+      match restrictions:
+         Self: some(@[character])
+         InRange(minRange, maxRange):
+            var res: seq[Entity]
+            let map = view[Map]
+            let charPos = character[Physical].position
+            for r in minRange .. maxRange:
+               for pos in hexRing(charPos, r):
+                  let t = map.tileAt(pos)
+                  if t.isSome:
+                     res.add(t.get)
 
-type TargetPreferenceKind* = enum
-   Closest
-   Furthest
-   Weakest
-   Strongest
-   Random
+            for ent in view.entitiesWithData(Physical):
+               let dist = ent[Physical].position.distance(charPos).int
+               if dist >= minRange and dist <= maxRange:
+                  res.add(ent)
+            some(res)
+         EntityChoices(entities): some(entities)
+         InCardLocation(targetLocation):
+            some(cardsInLocation(view, character, targetLocation))
+         WithinMoveRange(movePoints):
+            warn &"we could implement a flood search for possible entities within move range, if desired"
+            none(seq[Entity])
+         AllRestrictions(restrictions):
+            var res: Option[seq[Entity]]
+            for subRestriction in restrictions:
+               let subRes = possibleEntityMatchesFromRestriction(view, character, subRestriction)
+               if subRes.isSome:
+                  if res.isSome:
+                     res.get.add(subRes.get)
+                  else:
+                     res = subRes
+            res
+         _: none(seq[Entity])
 
-type TargetPreference* = object
-   kind*: TargetPreferenceKind
-   filters*: seq[SelectionRestriction]
+proc possibleTaxonMatchesFromRestriction(view: WorldView, character: Entity, restrictions: SelectionRestriction): Option[seq[Taxon]] =
+   withView(view):
+      match restrictions:
+         TaxonChoices(choices): some(choices)
+         AllRestrictions(restrictions):
+            var res: Option[seq[Taxon]]
+            for subRestriction in restrictions:
+               let subRes = possibleTaxonMatchesFromRestriction(view, character, subRestriction)
+               if subRes.isSome:
+                  if res.isSome:
+                     res.get.add(subRes.get)
+                  else:
+                     res = subRes
+            res
+         _: none(seq[Taxon])
 
-proc hash*(k: SelectorKey): Hash =
-   var h: Hash = 0
-   match k:
-      # Primary: h = 0.hash
-      # Secondary: h = 1.hash
-      SubSelector(index, subKey):
-         h = h !& index
-         h = h !& hash(subKey[])
-      Subject: h = 2.hash
-      Object: h = 3.hash
-   result = !$h
-
-type
-   Selector* = object
-      restrictions*: seq[SelectionRestriction]
-      case kind*: SelectionKind
-      of SelectionKind.Self: discard
+proc possibleSelections*(view: WorldView, character: Entity, selector: Selector): seq[SelectionResult] =
+   withView(view):
+      case selector.kind:
       of SelectionKind.Character:
-         characterCount*: int
+         for ent in view.entitiesWithData(Character):
+            if matchesRestriction(view, character, ent, selector.restrictions):
+               result.add(SelectedEntity(@[ent]))
       of SelectionKind.Taxon:
-         options*: seq[Taxon]
+         for taxons in possibleTaxonMatchesFromRestriction(view, character, selector.restrictions):
+            for taxon in taxons:
+               if matchesRestriction(view, character, taxon, selector.restrictions):
+                  result.add(SelectedTaxon(@[taxon]))
       of SelectionKind.Hex:
-         hexCount*: int
-      of SelectionKind.CharactersInShape, SelectionKind.HexesInShape:
-         shape*: SelectionShape
+         for entities in possibleEntityMatchesFromRestriction(view, character, selector.restrictions):
+            for entity in entities:
+               if entity.hasData(Tile) and matchesRestriction(view, character, entity, selector.restrictions):
+                  result.add(SelectedEntity(@[entity]))
       of SelectionKind.Card:
-         cards*: seq[Entity]
+         for entities in possibleEntityMatchesFromRestriction(view, character, selector.restrictions):
+            for entity in entities:
+               if entity.hasData(Card) and matchesRestriction(view, character, entity, selector.restrictions):
+                  result.add(SelectedEntity(@[entity]))
       of SelectionKind.CardType:
-         cardTypes*: seq[Taxon]
+         for taxons in possibleTaxonMatchesFromRestriction(view, character, selector.restrictions):
+            for taxon in taxons:
+               if matchesRestriction(view, character, taxon, selector.restrictions):
+                  result.add(SelectedTaxon(@[taxon]))
+      of SelectionKind.CharactersInShape:
+         warn &"possible selections unimplemented for kind: {selector.kind}"
+      of SelectionKind.HexesInShape:
+         warn &"possible selections unimplemented for kind: {selector.kind}"
       of SelectionKind.Path:
-         moveRange*: int
-         desiredDistance*: int
-         subjectSelector*: SelectorKey
-
-
-
-proc `==`*(a, b: Selector): bool =
-   if a.kind != b.kind:
-      false
-   else:
-      case a.kind
-      of SelectionKind.Self: true
-      of SelectionKind.Character: a.characterCount == b.characterCount
-      of SelectionKind.Taxon: a.options == b.options
-      of SelectionKind.Hex: a.hexCount == b.hexCount
-      of SelectionKind.CharactersInShape, SelectionKind.HexesInShape: a.shape == b.shape
-      of SelectionKind.Card: a.cards == b.cards
-      of SelectionKind.CardType: a.cardTypes == b.cardTypes
-      of SelectionKind.Path: a.moveRange == b.moveRange and a.subjectSelector == b.subjectSelector
-
-
-
-
-proc selfSelector*(): Selector =
-   Selector(kind: SelectionKind.Self)
-
-proc enemySelector*(count: int): Selector =
-   Selector(kind: SelectionKind.Character, characterCount: count, restrictions: @[Enemy()])
-
-proc friendlySelector*(count: int): Selector =
-   Selector(kind: SelectionKind.Character, characterCount: count, restrictions: @[Friendly()])
-
-proc charactersInShapeSelector*(shape: SelectionShape): Selector =
-   Selector(kind: SelectionKind.CharactersInShape, shape: shape)
-
-proc pathSelector*(maxMoveRange: int, subjectSelector: SelectorKey, desiredDistance: int): Selector =
-   Selector(kind: SelectionKind.Path, moveRange: maxMoveRange, subjectSelector: subjectSelector)
-
-proc inRange*(sel: var Selector, minRange: int, maxRange: int = 1000): var Selector =
-   sel.restrictions.add(InRange(minRange, maxRange))
-   sel
-
-
-
-
-
-proc readFromConfig*(cv: ConfigValue, v: var TargetPreference) =
-   if not cv.isStr:
-      warn &"non string config value for target preference: {cv}"
-      return
-   let str = cv.asStr.toLowerAscii
-   case str:
-   of "closest": v = TargetPreference(kind: TargetPreferenceKind.Closest, filters: @[])
-   of "closestenemy": v = TargetPreference(kind: TargetPreferenceKind.Closest, filters: @[Enemy()])
-   of "weakest": v = TargetPreference(kind: TargetPreferenceKind.Weakest, filters: @[])
-   of "weakestenemy": v = TargetPreference(kind: TargetPreferenceKind.Weakest, filters: @[Enemy()])
-   of "strongest": v = TargetPreference(kind: TargetPreferenceKind.Strongest, filters: @[])
-   of "strongestenemy": v = TargetPreference(kind: TargetPreferenceKind.Strongest, filters: @[Enemy()])
-   of "furthest": v = TargetPreference(kind: TargetPreferenceKind.Furthest, filters: @[])
-   of "furthestenemy": v = TargetPreference(kind: TargetPreferenceKind.Furthest, filters: @[Enemy()])
-   of "random": v = TargetPreference(kind: TargetPreferenceKind.Random, filters: @[])
-   of "randomenemy": v = TargetPreference(kind: TargetPreferenceKind.Random, filters: @[Enemy()])
-   else: warn &"invalid target preference string: {str}"
-
-
-const enemyRe = re"(?i)enemy"
-const friendlyRe = re"(?i)friendly"
-const inRangeRe = re"(?i)inRange\s?\((\d+),(\d+)\)"
-const withinMoveRangeRe = re"(?i)withinMoveRange\s?\((\d+)\)"
-
-proc readFromConfig*(cv: ConfigValue, v: var SelectionRestriction) =
-   if cv.isStr:
-      let str = cv.asStr
-      matcher(str):
-         extractMatches(enemyRe):
-            v = Enemy()
-         extractMatches(friendlyRe):
-            v = Friendly()
-         extractMatches(inRangeRe, minRange, maxRange):
-            v = InRange(minRange.parseInt, maxRange.parseInt)
-         extractMatches(withinMoveRangeRe, moveRange):
-            v = WithinMoveRange(moveRange.parseInt)
-         warn &"Unrecognized string represeentation of a selection restriction (not all implemented): {str}"
-   else:
-      warn &"Unrecognized config representation of a selection restriction: {cv}"
-
-const canSeeRe = re"(?i)canSee\s?\((.+)\)"
-const nearRe = re"(?i)near\s?\((.+)\s?,\s?(\d+)\)"
-
-proc readFromConfig*(cv: ConfigValue, v: var GameCondition) =
-   if cv.isStr:
-      let str = cv.asStr
-      matcher(str):
-         extractMatches(canSeeRe, seeWhat):
-            v = CanSee(readInto(asConf(seeWhat), SelectionRestriction))
-         extractMatches(nearRe, nearWhat, dist):
-            v = Near(readInto(asConf(nearWhat), SelectionRestriction), dist.parseInt)
-         warn &"Unrecognized string represeentation of a game condition: {str}"
-   else:
-      warn &"Unrecognized config representation of a game condition: {cv}"
+         warn &"possible selections unimplemented for kind: {selector.kind}"
