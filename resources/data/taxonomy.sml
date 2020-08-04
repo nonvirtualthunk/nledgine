@@ -283,6 +283,7 @@ Taxonomy {
 
       Block : PositiveFlag
       Parry : PositiveFlag
+      Armor : PositiveFlag
 
       Tiring : NegativeFlag
       Slow : NegativeFlag
@@ -305,9 +306,10 @@ Taxonomy {
       AccuracyDelta : InternalFlag
       ArmorDelta : InternalFlag
       MovementGainDelta : InternalFlag
-      BlockDelta : InternalFlag
+      EndOfTurnBlockGain : InternalFlag
       OnApproachAttack : InternalFlag
       ZoneOfControlRange : InternalFlag
+      EndOfTurnBlockGain : InternalFlag
    }
 
    Tag : []

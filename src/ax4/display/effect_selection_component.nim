@@ -114,32 +114,46 @@ proc activePlay(g: EffectSelectionComponent): EffectPlay =
    g.activeEffectPlays.get.plays[g.selectionContext.get.playIndex]
 
 proc tentativelySelectHex(g: EffectSelectionComponent, world: World, display: DisplayWorld, hex: AxialVec) =
-   if g.selectionContext.isSome and g.activeEffectPlays.isSome:
-      withView(world):
-         let ctxt = g.selectionContext.get
-         let play = g.activePlay()
+   display.withSelectedCharacter:
+      if g.selectionContext.isSome and g.activeEffectPlays.isSome:
+         withView(world):
+            let ctxt = g.selectionContext.get
+            let play = g.activePlay()
 
-         case ctxt.selector.kind:
-         of SelectionKind.Path:
-            let mover = play.selected[Subject()].selectedEntities[0]
-            let pf = createPathfinder(world, mover)
-            let possiblePath = pf.findPath(PathRequest(fromHex: mover[Physical].position, targetHexes: @[hex]))
-            if possiblePath.isSome:
-               let truncPath = possiblePath.get.subPath(ctxt.selector.moveRange)
-               var tiles: seq[Entity]
-               let map = world[Map]
-               for pos in truncPath.hexes[1 ..< truncPath.hexes.len]:
-                  let tile = map.tileAt(pos)
-                  if tile.isSome:
-                     tiles.add(tile.get)
-                  else:
-                     warn "Non-tile encountered when building out tentative path"
-               ctxt.tentativeSelection.setTo(some(SelectedEntity(tiles)))
+            let newSel = case ctxt.selector.kind:
+            of SelectionKind.Path:
+               let mover = play.selected[Subject()].selectedEntities[0]
+               let pf = createPathfinder(world, mover)
+               let possiblePath = pf.findPath(PathRequest(fromHex: mover[Physical].position, targetHexes: @[hex]))
+               if possiblePath.isSome:
+                  let truncPath = possiblePath.get.subPath(ctxt.selector.moveRange)
+                  var tiles: seq[Entity]
+                  let map = world[Map]
+                  for pos in truncPath.hexes[1 ..< truncPath.hexes.len]:
+                     let tile = map.tileAt(pos)
+                     if tile.isSome:
+                        tiles.add(tile.get)
+                     else:
+                        warn "Non-tile encountered when building out tentative path"
+                  some(SelectedEntity(tiles))
+               else:
+                  none(SelectionResult)
+            of SelectionKind.Character:
+               var charOnHex: Option[SelectionResult]
+               for ent in world.entitiesWithData(Character):
+                  if ent[Physical].position == hex:
+                     charOnHex = some(SelectedEntity(@[ent]))
+                     break
+               charOnHex
             else:
-               ctxt.tentativeSelection.setTo(none(SelectionResult))
-         else:
-            # doesn't do selection by hex
-            discard
+               # doesn't do selection by hex
+               ctxt.tentativeSelection
+
+            if newSel.isSome:
+               if matchesRestriction(world, selC, g.activeEffectPlays.get.source, newSel.get, ctxt.selector.restrictions):
+                  ctxt.tentativeSelection.setTo(newSel)
+            else:
+               ctxt.tentativeSelection.setTo(newSel)
 
 proc confirmSelection(g: EffectSelectionComponent, world: World, display: DisplayWorld) =
    if g.selectionContext.isSome and g.activeEffectPlays.isSome:
@@ -152,7 +166,6 @@ proc confirmSelection(g: EffectSelectionComponent, world: World, display: Displa
 
 method onEvent(g: EffectSelectionComponent, world: World, curView: WorldView, display: DisplayWorld, event: Event) =
    let tuid = display[TacticalUIData]
-   let selc = tuid.selectedCharacter
 
    matchType(event):
       extract(ChooseActiveEffect, effectPlays, onSelectionComplete):
@@ -163,19 +176,23 @@ method onEvent(g: EffectSelectionComponent, world: World, curView: WorldView, di
          g.tentativelySelectHex(world, display, hex)
       extract(HexMouseRelease):
          g.confirmSelection(world, display)
+      extract(KeyPress, key):
+         if key == KeyCode.Escape:
+            g.setEffectPlays(display, none(EffectPlayGroup))
 
-proc renderTentativeSelection(g: EffectSelectionComponent, view: WorldView, ctxt: SelectionContext, sel: Option[SelectionResult]) =
+proc renderTentativeSelection(g: EffectSelectionComponent, view: WorldView, ctxt: SelectionContext, sel: Option[SelectionResult], selC: Entity) =
    if sel.isSome:
+      let hexSize = mapGraphicsSettings().hexSize.float
+      var qb = QuadBuilder()
+
       withView(view):
          let sel = sel.get
          case ctxt.selector.kind:
          of SelectionKind.Path:
-            var qb = QuadBuilder()
             qb.centered()
             let img = image("ax4/images/ui/hex_selection.png")
             qb.texture = img
             qb.color = rgba(1.0f, 1.0f, 1.0f, 1.0f)
-            let hexSize = mapGraphicsSettings().hexSize.float
 
             for ent in sel.selectedEntities:
                let hex = ent[Tile].position
@@ -183,6 +200,22 @@ proc renderTentativeSelection(g: EffectSelectionComponent, view: WorldView, ctxt
                qb.dimensions = vec2f(hexSize, hexSize)
 
                qb.drawTo(g.canvas)
+         of SelectionKind.Character:
+            qb.centered()
+            let img = image("ax4/images/icons/sword1.png")
+            let scale = ((hexSize*0.5f).int div img.dimensions.x).float
+            qb.texture = img
+            qb.color = rgba(1.0f, 1.0f, 1.0f, 1.0f)
+
+            let selCPos = selC[Physical].position
+            for ent in sel.selectedEntities:
+               let targetPos = ent[Physical].position
+               let pos = (selCPos.asCartVec.Vec3f + targetPos.asCartVec.Vec3f) * 0.5 * hexSize
+               qb.position = pos
+               qb.dimensions = vec2f(img.dimensions.x.float * scale, img.dimensions.y.float * scale)
+
+               qb.drawTo(g.canvas)
+
          else:
             warn &"Unsupported tentative selection rendering, type: {ctxt.selector.kind}"
    g.canvas.swap()
@@ -220,13 +253,15 @@ method update(g: EffectSelectionComponent, world: World, curView: WorldView, dis
             let plays = g.activeEffectPlays.get
 
             if ctx.tentativeSelection.hasChanged or selWatcherChanged:
-               g.renderTentativeSelection(curView, ctx, ctx.tentativeSelection)
+               g.renderTentativeSelection(curView, ctx, ctx.tentativeSelection, selC)
 
             # todo: make this a more generalized auto-selection when there's only one option, maybe
             for restriction in ctx.selector.restrictions.asSeq:
                if restriction == Self():
                   g.select(display, SelectedEntity(@[selC]))
                   break
+               if restriction == EffectSource():
+                  g.select(display, SelectedEntity(@[plays.source]))
 
    @[g.canvas.drawCommand(display)]
 

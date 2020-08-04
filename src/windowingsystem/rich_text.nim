@@ -81,7 +81,11 @@ proc `==`*(a, b: RichText): bool =
    a.font == b.font and
    a.sections == b.sections
 
+proc isEmpty*(r: RichText): bool =
+   r.sections.isEmpty
 
+proc nonEmpty*(r: RichText): bool =
+   not isEmpty(r)
 
 
 
@@ -91,11 +95,8 @@ proc richText*(sections: seq[RichTextSection]): RichText =
       size: 1.0f
    )
 
-proc richText*(sections: varargs[RichTextSection]): RichText =
-   var s: seq[RichTextSection] = @[]
-   for section in sections:
-      s.add(section)
-   richText(s)
+proc richText*(section: RichTextSection): RichText =
+   richText(@[section])
 
 proc richText*(texts: varargs[RichText]): RichText =
    var s: seq[RichTextSection] = @[]
@@ -110,6 +111,10 @@ proc `&`*(a, b: RichText): RichText =
 proc add*(a: var RichText, b: RichText) =
    a.sections.add(b.sections)
 
+proc add*(a: var RichText, b, c: RichText) =
+   a.sections.add(b.sections)
+   a.sections.add(c.sections)
+
 proc richText*(str: string, size: float = 1.0f, color: Option[color.RGBA] = some(rgba(0, 0, 0, 255))): RichText =
    richText(RichTextSection(size: size, verticalAlignment: VerticalAlignment.Bottom, kind: SectionKind.Text, text: str, color: color))
 
@@ -118,6 +123,12 @@ proc richText*(img: ImageLike, size: float = 1.0f): RichText =
 
 proc richText*(taxon: Taxon, size: float = 1.0f): RichText =
    richText(RichTextSection(size: size, kind: SectionKind.Taxon, taxon: taxon))
+
+proc richTextSpacing*(spacing: int): RichText =
+   richText(RichTextSection(size: 1.0f, kind: SectionKind.EnsureSpacing, spacing: spacing))
+
+proc richTextVerticalBreak*(offset: int = 0): RichText =
+   richText(RichTextSection(size: 1.0f, kind: SectionKind.VerticalBreak, verticalOffset: offset))
 
 
 

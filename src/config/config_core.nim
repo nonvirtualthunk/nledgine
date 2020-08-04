@@ -482,7 +482,10 @@ proc isBool*(cv: ConfigValue): bool =
    cv.kind == ConfigValueKind.Bool
 
 proc asConf*(str: string): ConfigValue =
-   ConfigValue(kind: ConfigValueKind.String, str: str)
+   try:
+      ConfigValue(kind: ConfigValueKind.Number, num: parseInt(str.strip).float64)
+   except ValueError:
+      ConfigValue(kind: ConfigValueKind.String, str: str)
 
 proc hasField*(v: ConfigValue, str: string): bool =
    v.isObj and v.fields.contains(str)

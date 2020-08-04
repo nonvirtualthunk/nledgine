@@ -1,5 +1,5 @@
 import effect_types
-import attacks
+import combat
 import options
 import worlds
 import tables
@@ -60,6 +60,7 @@ proc selectionsForEffect*(view: WorldView, character: Entity, effects: Selectabl
                Multiple(count): enemySelector(count)
                Shape(shape): charactersInShapeSelector(shape)
             # if we've suppled a target selector here, add its restrictions together with the main attack ones
+            sel.restrictions.add(InRange(attack.minRange, attack.maxRange))
             if effects.targetSelector.isSome:
                sel.restrictions.add(effects.targetSelector.get.restrictions)
             setSelector(Object(), sel)
@@ -71,6 +72,8 @@ proc selectionsForEffect*(view: WorldView, character: Entity, effects: Selectabl
       of GameEffectKind.AddCard:
          setSelector(Subject(), effects.subjectSelector.get(selfSelector()))
          setSelector(Object(), cardTypeSelector(1, effect.cardChoices))
+      of GameEffectKind.MoveCard:
+         setSelector(Subject(), effects.subjectSelector.get(selfCardSelector()))
 
    res
 
@@ -83,13 +86,12 @@ proc resolveEffect*(world: World, character: Entity, effectPlay: EffectPlay): bo
       for effect in effectPlay.effects:
          case effect.kind:
          of GameEffectKind.Attack:
-            warn "Attack not implemented"
             let attack = effectiveAttack(world, character, effect)
             if attack.isSome:
                let attack = attack.get
 
-               let targets = effectPlay.selected[Object()]
-               # do attack
+               let targets = effectPlay.selected[Object()].selectedEntities
+               combat.performAttack(world, character, attack, targets)
          of GameEffectKind.SimpleAttack:
             warn "Simple attack not implemented"
             discard
@@ -128,10 +130,36 @@ proc resolveEffect*(world: World, character: Entity, effectPlay: EffectPlay): bo
                for cardType in selCardTypes:
                   let card = cardLib[cardType].createCard(world)
                   addCard(world, adder, card, effect.toDeck, effect.toLocation)
+         of GameEffectKind.MoveCard:
+            let sel = effectPlay.selected[Subject()].selectedEntities
+            for card in sel:
+               if card[Card].inDeck.isSome:
+                  let deckOwner = card[Card].inDeck.get
+                  let locs = deckLocation(world, deckOwner, card)
+                  if locs.isSome:
+                     let (deck, loc) = locs.get
+                     moveCard(world, card, effect.moveToDeck.get(deck), effect.moveToLocation.get(loc))
+                  else: warn &"MoveCard effect on card that is not in a location in deck :wat:"
+               else: warn &"MoveCard effect on card that is not in a deck :shrug:"
 
 
 proc toEffectPlayGroup*(view: WorldView, character: Entity, source: Entity, effectGroup: EffectGroup): EffectPlayGroup =
    for effects in effectGroup.effects:
+      for effect in effects:
+         if effect.kind == GameEffectKind.Attack or effect.kind == GameEffectKind.SimpleAttack:
+            let attackOpt = effectiveAttack(view, character, effect)
+            if attackOpt.isSome:
+               for cost in attackCosts(attackOpt.get):
+                  let costEffects = SelectableEffects(effects: @[cost], isCost: true)
+                  result.plays.add(
+                     EffectPlay(
+                        isCost: true,
+                        effects: costEffects,
+                        selectors: selectionsForEffect(view, character, costEffects)
+                     )
+                  )
+            else:
+               warn &"converting to effect play group could not resolve attack: {effect}"
       result.plays.add(
          EffectPlay(
             isCost: effects.isCost,
@@ -147,11 +175,11 @@ proc toEffectPlayGroup*(view: WorldView, character: Entity, source: Entity, effe
 
 
 
-proc isEffectPlayable*(view: WorldView, character: Entity, effectPlay: EffectPlay): bool =
+proc isEffectPlayable*(view: WorldView, character: Entity, source: Entity, effectPlay: EffectPlay): bool =
    withView(view):
       var possibleSelections: Table[SelectorKey, seq[SelectionResult]]
       for key, selector in effectPlay.selectors:
-         possibleSelections[key] = possibleSelections(view, character, selector)
+         possibleSelections[key] = targeting.possibleSelections(view, character, source, selector)
 
       for effect in effectPlay.effects:
          let subEffectPlayable = case effect.kind:
@@ -179,6 +207,8 @@ proc isEffectPlayable*(view: WorldView, character: Entity, effectPlay: EffectPla
             else:
                true
          of GameEffectKind.AddCard:
+            true
+         of GameEffectKind.MoveCard:
             true
 
 

@@ -98,7 +98,7 @@ proc toKeyModifiers(mods: int32): KeyModifiers =
    KeyModifiers(shift: shift, alt: alt, ctrl: ctrl)
 
 proc keyDownProc(window: GLFWWindow, key: int32, scancode: int32, action: int32, mods: int32): void {.cdecl.} =
-   if key == GLFWKey.ESCAPE and action == GLFWPress:
+   if key == GLFWKey.Q and action == GLFWPress and (mods.bitand(GLFWModControl) != 0 or mods.bitand(GLFWModSuper) != 0):
       eventChannel.send(QuitRequest())
       window.setWindowShouldClose(true)
 

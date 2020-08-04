@@ -14,10 +14,12 @@ type
       perks*: seq[Taxon]
       health*: Reduceable[int]
 
-
    Physical* = object
       position*: AxialVec
       offset*: CartVec
+
+   Combat* = object
+      blockAmount*: int
 
    Allegiance* = object
       faction*: Entity
@@ -32,6 +34,7 @@ defineReflection(Character)
 defineReflection(Physical)
 defineReflection(Allegiance)
 defineReflection(Faction)
+defineReflection(Combat)
 
 
 

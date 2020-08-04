@@ -18,6 +18,7 @@ type
       # callbacks : seq[CallbackType]
 
    GameComponent* = ref object of RootRef
+      name*: string
       initializePriority*: int
       eventPriority*: int
       eventCallbacks: seq[EventCallback]

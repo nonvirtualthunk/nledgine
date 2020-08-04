@@ -10,7 +10,10 @@ import options
 import core
 import atomics
 import nimgl/opengl
-import graphics.color
+import graphics/color
+import stb_image/write as stbi
+import noto
+import random
 
 
 type
@@ -55,14 +58,14 @@ proc addNewImage(tb: TextureBlock, img: Image)
 proc newTextureBlock*(size: int = 2048, borderWidth: int = 1, gammaCorrection: bool = false): TextureBlock =
    let internalFormat = if gammaCorrection: GL_SRGB_ALPHA
                          else: GL_RGBA
-    TextureBlock(
-       image: images.createImage(vec2i(size, size)),
-       openRects: @[Recti(position: vec2(borderWidth, borderWidth), dimensions: vec2(size - borderWidth * 2, size - borderWidth * 2))],
-       borderWidth: borderWidth,
-       minFilter: GL_NEAREST,
-       magFilter: GL_NEAREST,
-       internalFormat: internalFormat,
-       dataFormat: GL_RGBA
+   TextureBlock(
+      image: images.createImage(vec2i(size, size)),
+      openRects: @[Recti(position: vec2(borderWidth, borderWidth), dimensions: vec2(size - borderWidth * 2, size - borderWidth * 2))],
+      borderWidth: borderWidth,
+      minFilter: GL_NEAREST,
+      magFilter: GL_NEAREST,
+      internalFormat: internalFormat,
+      dataFormat: GL_RGBA
    )
 
 proc toTexCoords(tb: TextureBlock, rect: Recti): ref array[4, Vec2f] =
@@ -93,8 +96,12 @@ proc addNewImage(tb: TextureBlock, img: Image) =
             tb.openRects.del(i)
             break
       # add in the new rects, todo: this is quite naive at the moment, but probably fine for a while, just not terribly efficient at packing
-      tb.openRects.add(rect(chosenRect.position + vec2i(0, requiredSize.y), chosenRect.dimensions - vec2i(0, requiredSize.y)))
-      tb.openRects.add(rect(chosenRect.position + vec2i(requiredSize.x, 0), vec2i(chosenRect.dimensions.x - requiredSize.x, requiredSize.y)))
+      tb.openRects.add(rect(
+         chosenRect.position + vec2i(0, requiredSize.y),
+         chosenRect.dimensions - vec2i(0, requiredSize.y)))
+      tb.openRects.add(rect(
+         chosenRect.position + vec2i(requiredSize.x, 0),
+         vec2i(chosenRect.dimensions.x - requiredSize.x, requiredSize.y)))
 
 
       tb.image.copyFrom(img, chosenRect.position + vec2i(tb.borderWidth, tb.borderWidth))
@@ -103,10 +110,22 @@ proc addNewImage(tb: TextureBlock, img: Image) =
       tb.imageData[img] = ImageData(location: chosenRect.position, dimensions: img.dimensions, revision: img.revision, texPosition: tc[0], texDimensions: tc[2] - tc[0])
       tb.imageTexCoords[img] = tc
    else:
-      warn "Failed to find space for image in texture block"
-      img.save
+      warn &"Failed to find space for image in texture block"
+      for rect in tb.openRects:
+         let color = rgba(rand(255).uint8, rand(255).uint8, rand(255).uint8, 255.uint8)
+         for x in rect.x ..< rect.x + rect.width:
+            for y in rect.y ..< rect.y + rect.height:
+               tb.image[x, y] = color
+      stbi.writePNG(
+         "/tmp/out.png",
+         tb.image.width,
+         tb.image.height,
+         tb.image.channels,
+         tb.image.data
+      )
       raise newException(ValueError, "Could not find space for image in texture block")
 
+proc blankTexCoords*(tb: TextureBlock): ref array[4, Vec2f]
 
 proc `[]`*(tb: TextureBlock, img: Image): ref array[4, Vec2f] =
    result = tb.imageTexCoords.getOrDefault(img, nil)
@@ -124,7 +143,7 @@ proc blankTexCoords*(tb: TextureBlock): ref array[4, Vec2f] =
       tb.blankImage = createImage(vec2i(1, 1))
       tb.blankImage[0, 0] = rgba(1.0f, 1.0f, 1.0f, 1.0f)
       tb.addNewImage(tb.blankImage)
-      tb.blankTexCoords = tb[tb.blankImage]
+      tb.blankTexCoords = tb.imageTexCoords.getOrDefault(tb.blankImage, nil)
    tb.blankTexCoords
 
 proc addImage*(tb: TextureBlock, img: Image) =

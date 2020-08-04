@@ -18,6 +18,8 @@ import ax4/game/cards
 import game/library
 import windowingsystem/windowingsystem_component
 import windowingsystem/list_widget
+import ax4/game/card_display
+import noto
 
 type
    PrintComponent = ref object of GameComponent
@@ -43,9 +45,9 @@ method update(g: PrintComponent, world: World) =
       g.lastPrint = curTime
       let updatesPerSecond = (g.updateCount / 2)
       if updatesPerSecond < 59:
-         info "Updates / second (sub 60) : ", updatesPerSecond
+         info &"Updates / second (sub 60) : {updatesPerSecond}"
       else:
-         fine "Updates / second : ", updatesPerSecond
+         info &"Updates / second : {updatesPerSecond}"
       g.updateCount = 0
 
 method initialize(g: DrawQuadComponent, world: World, curView: WorldView, display: DisplayWorld) =

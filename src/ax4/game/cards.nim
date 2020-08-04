@@ -17,14 +17,11 @@ import sequtils
 
 import prelude
 import arxregex
-import windowingsystem/rich_text
 import graphics/image_extras
 import worlds/taxonomy
-import effect_display
 import options
 import ax4/game/ax_events
 
-export effect_display
 export root_types
 
 type
@@ -33,6 +30,7 @@ type
       xp*: Table[Taxon, int]
       image*: ImageLike
       locked*: bool
+      inDeck*: Option[Entity]
 
    CardArchetype* = object
       cardData*: ref Card
@@ -145,15 +143,20 @@ proc moveCard*(world: World, entity: Entity, card: Entity, fromDeckKind: DeckKin
       moveCardToLocation(world, entity, card, deckKind, location)
 
 proc addCard*(world: World, entity: Entity, card: Entity, toDeck: DeckKind, toLocation: CardLocation) =
-   world.eventStmts(CardAddedEvent(entity: entity, deckOwner: entity, card: card, toDeck: toDeck, toLocation: toLocation)):
-      moveCardToLocation(world, entity, card, toDeck, toLocation)
+   withWorld(world):
+      world.eventStmts(CardAddedEvent(entity: entity, deckOwner: entity, card: card, toDeck: toDeck, toLocation: toLocation)):
+         card.modify(Card.inDeck := some(entity))
+         moveCardToLocation(world, entity, card, toDeck, toLocation)
+
 
 proc removeCard*(world: World, entity: Entity, card: Entity) =
    let locOpt = deckLocation(world, entity, card)
    if locOpt.isSome:
       let (deck, loc) = locOpt.get
-      world.eventStmts(CardRemovedEvent(entity: entity, deckOwner: entity, card: card, fromDeck: deck, fromLocation: loc)):
-         removeCardFromLocation(world, entity, card, deck, loc)
+      withWorld(world):
+         world.eventStmts(CardRemovedEvent(entity: entity, deckOwner: entity, card: card, fromDeck: deck, fromLocation: loc)):
+            card.modify(Card.inDeck := none(Entity))
+            removeCardFromLocation(world, entity, card, deck, loc)
 
 proc moveCard*(world: World, entity: Entity, card: Entity, deckKind: DeckKind, location: CardLocation) =
    let locOpt = deckLocation(world, entity, card)
@@ -171,6 +174,20 @@ proc moveCard*(world: World, entity: Entity, card: Entity, location: CardLocatio
    else:
       warn &"cannot move card from current location, not in deck at all: {entity}, {card}"
 
+proc moveCard*(world: World, card: Entity, toDeck: DeckKind, location: CardLocation) =
+   withView(world):
+      let entity = card[Card].inDeck
+      if entity.isSome:
+         let entity = entity.get
+         let locOpt = deckLocation(world, entity, card)
+         if locOpt.isSome:
+            let (fromDeckKind, fromLocation) = locOpt.get
+            moveCard(world, entity, card, fromDeckKind, fromLocation, fromDeckKind, location)
+         else:
+            warn &"cannot move card from current location, not in deck at all: {entity}, {card}"
+      else:
+         warn &"cannot move card from current location, not in any deck: {entity}, {card}, -> {toDeck}, {location}"
+
 proc cardsInLocation*(view: WorldView, entity: Entity, deckKind: DeckKind, location: CardLocation): seq[Entity] =
    let deck = view.data(entity, DeckOwner).deck(deckKind)
    deck.cards.getOrDefault(location)
@@ -185,6 +202,13 @@ proc cardsInLocation*(view: WorldView, entity: Entity, location: CardLocation): 
 const xpPattern = re"(?i)([a-z]+)\s?->\s?([0-9]+)"
 
 proc readFromConfig(cv: ConfigValue, v: var Card) =
+   if cv["effects"].nonEmpty:
+      let effects = cv["effects"].readInto(seq[GameEffect])
+      v.cardEffectGroups = @[EffectGroup(effects: @[SelectableEffects(effects: effects)])]
+      # if v.cardEffectGroups.isEmpty:
+      #    v.cardEffectGroups.add(EffectGroup())
+      # readInto(cv, v.cardEffectGroups[0])
+      # info &"reading into effect group 0 : {v.cardEffectGroups[0]}"
    readInto(cv["cardEffectGroups"], v.cardEffectGroups)
    readInto(cv["image"], v.image)
    let xpConf = cv["xp"]
@@ -227,43 +251,6 @@ defineLibrary[CardArchetype]:
    lib
 
 
-proc cardInfoFor*(view: WorldView, character: Entity, arch: CardArchetype, activeEffectGroup: int): CardInfo =
-   let effectGroup = arch.cardData.cardEffectGroups[activeEffectGroup]
-
-   proc cge(allEffects: seq[SelectableEffects], active: bool = true): CharacterGameEffects =
-      var netEffects: seq[GameEffect]
-      for effects in allEffects:
-         netEffects.add(effects.effects)
-      CharacterGameEffects(character: character, view: view, effects: netEffects, active: active)
-
-   if arch.identity.name.isSome:
-      result.name = arch.identity.name.get
-   else:
-      result.name = arch.identity.kind.displayName
-
-   if effectGroup.name.isSome:
-      result.name = effectGroup.name.get
-
-   result.image = arch.cardData.image
-
-   if effectGroup.costs.len > 0:
-      result.mainCost = cge(@[effectGroup.costs[0]])
-   if effectGroup.costs.len > 1:
-      result.secondaryCost = cge(@[effectGroup.costs[1]])
-
-   for i in 0 ..< arch.cardData.cardEffectGroups.len:
-      let nonCosts = arch.cardData.cardEffectGroups[i].effects.filterIt(not it.isCost)
-      result.effects.add(cge(nonCosts, i == activeEffectGroup))
-
-
-
-proc cardInfoFor*(view: WorldView, character: Entity, card: Entity, activeEffectGroup: int): CardInfo =
-   withView(view):
-      let arch = CardArchetype(
-         cardData: card[Card],
-         identity: card[Identity],
-      )
-      cardInfoFor(view, character, arch, activeEffectGroup)
 
 when isMainModule:
    let lib = library(CardArchetype)

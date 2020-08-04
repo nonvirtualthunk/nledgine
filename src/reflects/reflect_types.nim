@@ -114,7 +114,7 @@ proc removeFrom[T](v: var seq[T], o: seq[T]) =
    var i = 0
    while i < v.len:
       if o.contains(v[i]):
-         v.del(i)
+         v.delete(i, i)
       else:
          i.inc
 

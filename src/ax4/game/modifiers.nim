@@ -26,6 +26,9 @@ proc mergeAdd*[K, V](t1: var Table[K, V], t2: Table[K, V]) =
    for k, v in t2:
       t1[k] = t1.getOrDefault(k) + t2
 
+proc setTo[T, U](a: var T, b: U) =
+   a = b
+
 proc apply*[T, U](modifier: Modifier[T], v: var U) =
    case modifier.operation:
    of ModifierOperation.Identity: discard
@@ -37,7 +40,7 @@ proc apply*[T, U](modifier: Modifier[T], v: var U) =
       elif compiles(v.merge(modifier.value)):
          v.mergeAdd(modifier.value)
       else:
-         warn &"Add modifier applied to type that does not support it: {$T}"
+         warn &"Add modifier applied to type that does not support it: {$T}, {$U}"
    of ModifierOperation.Sub:
       when compiles(v - modifier.value):
          v = v - modifier.value
@@ -58,10 +61,10 @@ proc apply*[T, U](modifier: Modifier[T], v: var U) =
       else:
          warn &"Div modifier applied to type that does not support it: {$T}"
    of ModifierOperation.Set:
-      when compiles(v = modifier.value):
+      when compiles(setTo(v, modifier.value)):
          v = modifier.value
       else:
-         warn &"Set modifier applied to type that does not support it: {$T}"
+         warn &"Set modifier applied to type that does not support it: {$T}, {$U}"
    of ModifierOperation.Reduce:
       when compiles(v.reduceBy(modifier.value)):
          v.reduceBy(modifier.value)
@@ -73,16 +76,17 @@ proc apply*[T, U](modifier: Modifier[T], v: var U) =
       else:
          warn &"Recover modifier applied to type that does not support it: {$T}"
 
-const modifierRe = re"(?i)([a-z]+)\s?([0-9-+]+)"
+const modifierRe = re"(?i)([a-z+-]+)\s?(.+)"
 proc readFromConfig*[T](cv: ConfigValue, v: var Modifier[T]) =
    if cv.isStr:
       matcher(cv.asStr):
          extractMatches(modifierRe, operationStr, amountStr):
             case operationStr.toLowerAscii:
-            of "add": v.operation = ModifierOperation.Add
-            of "sub": v.operation = ModifierOperation.Sub
+            of "add", "+": v.operation = ModifierOperation.Add
+            of "sub", "-": v.operation = ModifierOperation.Sub
             of "div": v.operation = ModifierOperation.Div
             of "mul": v.operation = ModifierOperation.Mul
+            of "set", "setto": v.operation = ModifierOperation.Set
             else: warn &"unsupported operation str in modifier configuration {operationStr} : {amountStr}"
 
             readInto(amountStr.asConf, v.value)

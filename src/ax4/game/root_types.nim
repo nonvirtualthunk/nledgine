@@ -21,6 +21,7 @@ type CardLocation* = enum
    Hand
    DrawPile
    DiscardPile
+   ExpendPile
    ExhaustPile
    ConsumedPile
 

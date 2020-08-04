@@ -58,12 +58,15 @@ type
       fromHex*: AxialVec
       toHex*: AxialVec
    AttackEvent* = ref object of AxEvent
-      attack*: ref Attack
+      attack*: Attack
       targets*: seq[Entity]
    StrikeEvent* = ref object of AxEvent
-      targets*: seq[Entity]
-      attack*: ref Attack
+      target*: Entity
+      attack*: Attack
       result*: StrikeResult
+   DamageEvent* = ref object of AxEvent
+      damage*: DamageExpressionResult
+
    FlagChangedEvent* = ref object of AxEvent
       flag*: Taxon
       oldValue*: int
@@ -101,8 +104,8 @@ type
 #    of OnTurnStarted: CharacterTurnStartEvent
 #    of OnTurnEnded: CharacterTurnEndEvent
 
-proc matchesSelector(view: WorldView, selector: Option[AttackSelector], attack: ref Attack): bool =
-   selector.isNone or selector.get.matches(view, attack[])
+proc matchesSelector(view: WorldView, selector: Option[AttackSelector], attack: Attack): bool =
+   selector.isNone or selector.get.matches(view, attack)
 
 # proc matches*(view : WorldView, condition : EventCondition, event : AxEvent) : seq[Entity] =
 #    case condition.kind:
@@ -135,19 +138,19 @@ proc matches*(view: WorldView, condition: EventCondition, event: AxEvent): seq[E
          if matchesSelector(view, condition.attackSelector, event.attack): result.add(event.entity)
    of OnHit:
       ifOfType(StrikeEvent, event):
-         if event.result.kind == StrikeResultKind.Hit and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.targets)
+         if event.result.kind == StrikeResultKind.Hit and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.target)
    of OnHitEnemy:
       ifOfType(StrikeEvent, event):
          if event.result.kind == StrikeResultKind.Hit and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.entity)
    of OnMissed:
       ifOfType(StrikeEvent, event):
-         if event.result.kind == StrikeResultKind.Missed and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.targets)
+         if event.result.kind == StrikeResultKind.Missed and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.target)
    of OnDodged:
       ifOfType(StrikeEvent, event):
-         if event.result.kind == StrikeResultKind.Dodged and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.targets)
+         if event.result.kind == StrikeResultKind.Dodged and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.target)
    of OnBlocked:
       ifOfType(StrikeEvent, event):
-         if event.result.kind == StrikeResultKind.Blocked and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.targets)
+         if event.result.kind == StrikeResultKind.Blocked and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.target)
    of OnTurnStarted:
       ifOfType(CharacterTurnStartEvent, event): result.add(event.entity)
    of OnTurnEnded:

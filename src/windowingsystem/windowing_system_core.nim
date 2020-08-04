@@ -122,7 +122,7 @@ type
       resolvedPosition*: Vec3i
       resolvedPartialPosition: Vec3i
       clientOffset*: Vec3i
-      padding*: Vec3i
+      padding*: Vec3i # padding contributes to the client offset
       dimensions: array[2, WidgetDimension]
       resolvedDimensions*: Vec2i
       # drawing caches
@@ -957,18 +957,35 @@ proc widgetContainsPosition*(w: Widget, position: Vec2f): bool =
 
    rp.x <= px and rp.y <= py and rp.x + rd.x >= px and rp.y + rd.y >= py
 
+proc widgetContainsPositionInClientArea*(w: Widget, position: Vec2f): bool =
+   let px = position.x.int
+   let py = position.y.int
+   let rp = w.resolvedPosition + w.clientOffset
+   let rd = w.resolvedDimensions - w.clientOffset.xy * 2
+
+   rp.x <= px and rp.y <= py and rp.x + rd.x >= px and rp.y + rd.y >= py
+
+proc effectiveDimensions*(w: Widget): Vec2i =
+   vec2i(w.resolvedDimensions.x div w.windowingSystem.pixelScale, w.resolvedDimensions.y div w.windowingSystem.pixelScale)
+
+proc effectiveClientDimensions*(w: Widget): Vec2i =
+   vec2i((w.resolvedDimensions.x - w.clientOffset.x*2) div w.windowingSystem.pixelScale,
+   (w.resolvedDimensions.y - w.clientOffset.y * 2) div w.windowingSystem.pixelScale)
+
 proc widgetAtPosition*(ws: WindowingSystemRef, w: Widget, position: Vec2f): Widget =
    # Default the result to the widget itself, we've guaranteed at the call of this function that
    # the provided widget does match, this will dive deeper into children, if warranted
    result = w
    var highestZ = -100000
-   # iterate over the children, finding the child that contains the position with the highest Z
-   for i in countdown(w.children.len-1, 0):
-      let c = w.children[i]
-      if widgetContainsPosition(c, position):
-         if c.resolvedPosition.z > highestZ:
-            highestZ = c.resolvedPosition.z
-            result = c
+
+   if widgetContainsPositionInClientArea(w, position):
+      # iterate over the children, finding the child that contains the position with the highest Z
+      for i in countdown(w.children.len-1, 0):
+         let c = w.children[i]
+         if widgetContainsPosition(c, position):
+            if c.resolvedPosition.z > highestZ:
+               highestZ = c.resolvedPosition.z
+               result = c
    # if we found a child (and therefore updated result) we want to then dive into it to find its
    # highest matching child, but if we didn't find anything we're already done
    if result != w:

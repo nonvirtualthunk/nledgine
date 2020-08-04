@@ -36,6 +36,7 @@ proc render(g: WindowingSystemComponent, display: DisplayWorld) =
    display[WindowingSystem].render(g.vao, g.texture)
 
 method initialize(g: WindowingSystemComponent, world: World, curView: WorldView, display: DisplayWorld) =
+   g.name = "WindowingSystemComponent"
    g.initTime = relTime()
    g.vao = newVAO[WVertex, uint32]()
    g.shader = initShader("shaders/windowing")

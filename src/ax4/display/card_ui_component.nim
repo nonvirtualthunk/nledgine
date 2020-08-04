@@ -18,6 +18,7 @@ import graphics/core
 import ax4/display/effect_selection_component
 import ax4/game/effects
 import ax4/game/effect_types
+import ax4/game/card_display
 
 type
    CardUIComponent* = ref object of GraphicsComponent
@@ -30,6 +31,8 @@ type
       cardActiveOnDrop: bool
       resolvingCard: Option[Entity]
       selectionChanged: bool
+      ignoreMouseOverCard: bool
+      mostRecentMousedOverIndex: int
 
    CardWidget* = object
       widget: Widget
@@ -48,6 +51,9 @@ method initialize(g: CardUIComponent, world: World, curView: WorldView, display:
 
 proc setHeldCard(g: CardUIComponent, c: Option[Entity]) =
    if g.heldCard != c:
+      if g.heldCard.isSome:
+         if g.cardWidgets.hasKey(g.heldCard.get):
+            g.cardWidgets[g.heldCard.get].widget.bindValue("card.active", false)
       g.heldCard = c
       if g.heldCard.isSome:
          disableCursor()
@@ -73,13 +79,22 @@ proc updateCardWidgetDesiredPositions(g: CardUIComponent, view: WorldView, displ
       g.mousedOverCard = none(Entity)
       let ws = display[WindowingSystem]
 
+      let cardGap = 125
+
       let hand = g.effectiveHand(view, display)
       for card, cardWidget in g.cardWidgets.mpairs:
-         let w = cardWidget.widget
-         if w.containsWidget(ws.lastWidgetUnderMouse) and g.heldCard.isNone:
-            g.mousedOverCard = some(card)
-
          let index = hand.find(card)
+         let w = cardWidget.widget
+         if not g.ignoreMouseOverCard and w.containsWidget(ws.lastWidgetUnderMouse) and g.heldCard.isNone:
+            g.mousedOverCard = some(card)
+            g.mostRecentMousedOverIndex = index
+
+      for card, cardWidget in g.cardWidgets.mpairs:
+         let index = hand.find(card)
+         let w = cardWidget.widget
+
+         let totalHandWidth = (hand.len-1) * cardGap + w.effectiveDimensions.x
+         let centeringOffset = (w.parent.get.effectiveClientDimensions.x - totalHandWidth).float * 0.5f
 
          w.identifier = "CardInHand[" & $index & "]"
          if g.heldCard != some(card):
@@ -88,10 +103,14 @@ proc updateCardWidgetDesiredPositions(g: CardUIComponent, view: WorldView, displ
                cardWidget.currentPos.y = w.resolvePosition(Axis.Y, fixedPos(-500, BottomLeft)).float
                cardWidget.initialized = true
 
-            cardWidget.desiredPos.x = w.resolvePosition(Axis.X, fixedPos(index * 100))
+
+            cardWidget.desiredPos.x = w.resolvePosition(Axis.X, fixedPos(index * cardGap + centeringOffset.int))
+
+            let indexPcnt = if hand.len > 1: index.float / (hand.len.float - 1.0f) else: 0.5
+            let yOffset = sin(indexPcnt*3.14159) * (-170.0 * (hand.len.float/5.0))
             if g.mousedOverCard != some(card) or g.heldCard.isSome:
-               cardWidget.desiredPos.y = w.resolvePosition(Axis.Y, fixedPos(-200, BottomLeft))
-               cardWidget.desiredPos.z = w.resolvePosition(Axis.Z, fixedPos((index * 10)))
+               cardWidget.desiredPos.y = w.resolvePosition(Axis.Y, fixedPos(-300, BottomLeft)) + yOffset.int
+               cardWidget.desiredPos.z = w.resolvePosition(Axis.Z, fixedPos((100 - (index-g.mostRecentMousedOverIndex).abs * 10)))
             else:
                cardWidget.desiredPos.y = w.resolvePosition(Axis.Y, fixedPos(0, BottomLeft))
                cardWidget.desiredPos.z = w.resolvePosition(Axis.Z, fixedPos(200))
@@ -140,6 +159,7 @@ method onEvent(g: CardUIComponent, world: World, curView: WorldView, display: Di
             if g.heldCard.isSome:
                let card = g.heldCard.get
                g.setHeldCard(none(Entity))
+               g.ignoreMouseOverCard = true
                event.consume()
                if g.cardActiveOnDrop:
                   g.resolvingCard = some(card)
@@ -154,7 +174,7 @@ method onEvent(g: CardUIComponent, world: World, curView: WorldView, display: Di
                   var valid = true
                   for effectPlay in playGroup.plays:
                      if effectPlay.isCost:
-                        if not isEffectPlayable(world, selC, effectPlay):
+                        if not isEffectPlayable(world, selC, playGroup.source, effectPlay):
                            valid = false
 
                   if valid:
@@ -168,13 +188,13 @@ method onEvent(g: CardUIComponent, world: World, curView: WorldView, display: Di
                         moveCard(world, selC, card, CardLocation.DiscardPile)
                      )
                      display.addEvent(evt)
-
-                     if tuid.selectedCharacter.isSome:
-                        updateCardWidgetDesiredPositions(g, curView, display, tuid.selectedCharacter.get)
                   else:
                      echo &"Not playing card, cannot pay cost"
+               updateCardWidgetDesiredPositions(g, curView, display, selC)
          ifOfType(SelectionChanged, event):
             g.selectionChanged = true
+         ifOfType(MouseMove, event):
+            g.ignoreMouseOverCard = false
 
    # withWorld(world):
    #    matchType(event):
@@ -204,6 +224,7 @@ method update(g: CardUIComponent, world: World, curView: WorldView, display: Dis
                         let widget = ws.desktop.createChild("CardWidgets", "CardWidget")
                         widget.y = fixedPos(0, WidgetOrientation.BottomLeft)
                         widget.onEvent(WidgetMouseMove, move):
+                           g.ignoreMouseOverCard = false
                            move.consume()
                         widget.onEvent(WidgetMouseEnter, enter):
                            updateCardWidgetDesiredPositions(g, curView, display, selC)

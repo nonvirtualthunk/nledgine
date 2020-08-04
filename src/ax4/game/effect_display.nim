@@ -2,11 +2,43 @@ import effect_types
 
 import rich_text
 import worlds
-import attacks
+import combat
 import prelude
 import options
 import graphics/color
 import modifiers
+import prelude
+import noto
+import randomness
+import patty
+import ax4/game/targeting_types
+
+
+
+proc asRichText*(de: DamageExpression): RichText =
+   result = de.dice.asRichText
+   if de.fixed != 0:
+      result.add(richText(toSignedString(de.fixed)))
+   result.add(richText(de.damageType))
+
+proc asRichText*(view: WorldView, character: Entity, attack: Attack): RichText =
+   result.add(richText("Attack "))
+   result.add(richText(&"{attack.accuracy.toSignedString}"))
+   result.add(richText(taxon("game concepts", "accuracy")))
+   result.add(richTextSpacing(4))
+   result.add(attack.damage.asRichText)
+
+   var rangeShape = richText()
+   if attack.minRange > 1 or attack.maxRange > 1:
+      rangeShape.add(richText(&"Range {attack.maxRange}"))
+   match attack.target:
+      Shape(shape): rangeShape.add(shape.asRichText)
+      _: discard
+
+   if rangeShape.nonEmpty: result.add(richTextVerticalBreak(), rangeShape)
+
+
+
 
 
 proc asRichText*(view: WorldView, character: Entity, effect: GameEffect): RichText =
@@ -15,9 +47,11 @@ proc asRichText*(view: WorldView, character: Entity, effect: GameEffect): RichTe
       if character.isSentinel:
          richText(taxon("game concepts", "attack"))
       else:
-         let attack = attacks.resolveAttack(view, character, effect.attackSelector)
+         let attack = combat.resolveAttack(view, character, effect.attackSelector)
          if attack.isSome:
-            richText("actually resolved attack")
+            var attack = attack.get
+            attack.applyModifiers(effect.attackModifier)
+            asRichText(view, character, attack)
          else:
             richText("did not resolve attack")
    of GameEffectKind.Move:

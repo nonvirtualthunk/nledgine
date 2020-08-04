@@ -32,6 +32,8 @@ import core
 import game/library
 import ax4/game/enemies
 import ax4/game/items
+import ax4/game/randomness
+import ax4/game/flags
 
 type
    PrintComponent = ref object of GameComponent
@@ -116,14 +118,16 @@ method initialize(g: MapInitializationComponent, world: World) =
       let arch = library(CardArchetype)[taxon("card types", "move")]
       let card1 = arch.createCard(world)
       let card2 = arch.createCard(world)
+      let piercingStab = library(CardArchetype)[taxon("card types", "piercing stab")].createCard(world)
       let deck = DeckOwner(
-         combatDeck: Deck(cards: {CardLocation.Hand: @[card1, card2]}.toTable)
+         combatDeck: Deck(cards: {CardLocation.Hand: @[card1, card2, piercingStab]}.toTable)
       )
 
       tobold.attachData(deck)
       tobold.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(3), taxon("resource pools", "stamina points"): reduceable(7)}.toTable))
       tobold.attachData(Character(health: reduceable(6)))
       tobold.attachData(Inventory())
+      tobold.attachData(Flags())
 
       let spear = createItem(world, taxon("items", "longspear"))
       equipItem(world, tobold, spear)
@@ -131,15 +135,16 @@ method initialize(g: MapInitializationComponent, world: World) =
 
 
       let slime = world.createEntity()
-      slime.attachData(Physical(position: axialVec(2, 2, 0)))
+      slime.attachData(Physical(position: axialVec(1, 2, 0)))
       slime.attachData(Allegiance(faction: enemyFaction))
       slime.attachData(Monster(monsterClass: taxon("monster classes", "slime")))
-      slime.attachData(Character(health: reduceable(3)))
+      slime.attachData(Character(health: reduceable(9)))
       slime.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(2), taxon("resource pools", "stamina points"): reduceable(3)}.toTable))
+      slime.attachData(Flags())
+
+      world.attachData(RandomizationWorldData())
 
       world.addEvent(WorldInitializedEvent())
-
-      echo "Tobold: ", tobold
 
 
 method update(g: MapInitializationComponent, world: World) = discard

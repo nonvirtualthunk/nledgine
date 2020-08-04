@@ -477,6 +477,7 @@ proc appendToEarliestIdent(n: var NimNode, append: string): bool =
             # echo "Replaced subPiece: ", n[i][0][0]
          else:
             echo "modify won't work"
+         break
    return false
 
 macro modify*(entity: Entity, expression: untyped): untyped =

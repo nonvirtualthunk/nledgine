@@ -42,7 +42,7 @@ TaxonomyDisplay {
 
 
    DamageTypes.Piercing : {
-      icon: ax4/images/icons/piercing.png"
+      icon: ax4/images/icons/piercing.png
    }
    DamageTypes.Slashing : {
       icon: "ax4/images/icons/slashing.png"

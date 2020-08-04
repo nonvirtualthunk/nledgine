@@ -18,4 +18,24 @@ Cards {
          }
       ]
    }
+
+   PiercingStab {
+      name : "Piercing Stab"
+      
+      xp {
+         WeaponSkill : 2
+      }
+
+      effects : [{
+         kind : attack
+
+         attackSelector : [AttackType(ReachAttack), DamageType(Piercing)]
+         attackModifier : {
+            accuracy : -1
+            target : "setTo line(1,2)"
+            minRange : "setTo 1"
+            maxRange : "setTo 1"
+         }
+      }]
+   }
 }

@@ -13,11 +13,12 @@ import noto
 
 import prelude
 
-proc matchesRestriction*(view: WorldView, character: Entity, ent: Entity, res: SelectionRestriction): bool =
+proc matchesRestriction*(view: WorldView, character: Entity, effectSource: Entity, ent: Entity, res: SelectionRestriction): bool =
    withView(view):
       match res:
          NoRestriction: true
          Self: ent == character
+         EffectSource: ent == effectSource
          Enemy: areEnemies(view, character, ent)
          Friendly: areFriends(view, character, ent)
          InRange(minRange, maxRange):
@@ -42,21 +43,32 @@ proc matchesRestriction*(view: WorldView, character: Entity, ent: Entity, res: S
             true
          AllRestrictions(restrictions):
             for subRes in restrictions:
-               if not matchesRestriction(view, character, ent, subRes):
+               if not matchesRestriction(view, character, effectSource, ent, subRes):
                   return false
             true
 
-proc matchesRestriction*(view: WorldView, character: Entity, taxon: Taxon, res: SelectionRestriction): bool =
+proc matchesRestriction*(view: WorldView, character: Entity, effectSource: Entity, taxon: Taxon, res: SelectionRestriction): bool =
    withView(view):
       match res:
          NoRestriction: true
          TaxonChoices(choices): choices.contains(taxon)
          _: false
 
-proc possibleEntityMatchesFromRestriction(view: WorldView, character: Entity, restrictions: SelectionRestriction): Option[seq[Entity]] =
+proc matchesRestriction*(view: WorldView, character: Entity, effectSource: Entity, selRes: SelectionResult, res: SelectionRestriction): bool =
+   match selRes:
+      SelectedEntity(entities):
+         for ent in entities:
+            if not matchesRestriction(view, character, effectSource, ent, res): return false
+      SelectedTaxon(taxons):
+         for taxon in taxons:
+            if not matchesRestriction(view, character, effectSource, taxon, res): return false
+   true
+
+proc possibleEntityMatchesFromRestriction*(view: WorldView, character: Entity, effectSource: Entity, restrictions: SelectionRestriction): Option[seq[Entity]] =
    withView(view):
       match restrictions:
          Self: some(@[character])
+         EffectSource: some(@[effectSource])
          InRange(minRange, maxRange):
             var res: seq[Entity]
             let map = view[Map]
@@ -81,7 +93,7 @@ proc possibleEntityMatchesFromRestriction(view: WorldView, character: Entity, re
          AllRestrictions(restrictions):
             var res: Option[seq[Entity]]
             for subRestriction in restrictions:
-               let subRes = possibleEntityMatchesFromRestriction(view, character, subRestriction)
+               let subRes = possibleEntityMatchesFromRestriction(view, character, effectSource, subRestriction)
                if subRes.isSome:
                   if res.isSome:
                      res.get.add(subRes.get)
@@ -90,14 +102,14 @@ proc possibleEntityMatchesFromRestriction(view: WorldView, character: Entity, re
             res
          _: none(seq[Entity])
 
-proc possibleTaxonMatchesFromRestriction(view: WorldView, character: Entity, restrictions: SelectionRestriction): Option[seq[Taxon]] =
+proc possibleTaxonMatchesFromRestriction*(view: WorldView, character: Entity, effectSource: Entity, restrictions: SelectionRestriction): Option[seq[Taxon]] =
    withView(view):
       match restrictions:
          TaxonChoices(choices): some(choices)
          AllRestrictions(restrictions):
             var res: Option[seq[Taxon]]
             for subRestriction in restrictions:
-               let subRes = possibleTaxonMatchesFromRestriction(view, character, subRestriction)
+               let subRes = possibleTaxonMatchesFromRestriction(view, character, effectSource, subRestriction)
                if subRes.isSome:
                   if res.isSome:
                      res.get.add(subRes.get)
@@ -106,32 +118,32 @@ proc possibleTaxonMatchesFromRestriction(view: WorldView, character: Entity, res
             res
          _: none(seq[Taxon])
 
-proc possibleSelections*(view: WorldView, character: Entity, selector: Selector): seq[SelectionResult] =
+proc possibleSelections*(view: WorldView, character: Entity, effectSource: Entity, selector: Selector): seq[SelectionResult] =
    withView(view):
       case selector.kind:
       of SelectionKind.Character:
          for ent in view.entitiesWithData(Character):
-            if matchesRestriction(view, character, ent, selector.restrictions):
+            if matchesRestriction(view, character, effectSource, ent, selector.restrictions):
                result.add(SelectedEntity(@[ent]))
       of SelectionKind.Taxon:
-         for taxons in possibleTaxonMatchesFromRestriction(view, character, selector.restrictions):
+         for taxons in possibleTaxonMatchesFromRestriction(view, character, effectSource, selector.restrictions):
             for taxon in taxons:
-               if matchesRestriction(view, character, taxon, selector.restrictions):
+               if matchesRestriction(view, character, effectSource, taxon, selector.restrictions):
                   result.add(SelectedTaxon(@[taxon]))
       of SelectionKind.Hex:
-         for entities in possibleEntityMatchesFromRestriction(view, character, selector.restrictions):
+         for entities in possibleEntityMatchesFromRestriction(view, character, effectSource, selector.restrictions):
             for entity in entities:
-               if entity.hasData(Tile) and matchesRestriction(view, character, entity, selector.restrictions):
+               if entity.hasData(Tile) and matchesRestriction(view, character, effectSource, entity, selector.restrictions):
                   result.add(SelectedEntity(@[entity]))
       of SelectionKind.Card:
-         for entities in possibleEntityMatchesFromRestriction(view, character, selector.restrictions):
+         for entities in possibleEntityMatchesFromRestriction(view, character, effectSource, selector.restrictions):
             for entity in entities:
-               if entity.hasData(Card) and matchesRestriction(view, character, entity, selector.restrictions):
+               if entity.hasData(Card) and matchesRestriction(view, character, effectSource, entity, selector.restrictions):
                   result.add(SelectedEntity(@[entity]))
       of SelectionKind.CardType:
-         for taxons in possibleTaxonMatchesFromRestriction(view, character, selector.restrictions):
+         for taxons in possibleTaxonMatchesFromRestriction(view, character, effectSource, selector.restrictions):
             for taxon in taxons:
-               if matchesRestriction(view, character, taxon, selector.restrictions):
+               if matchesRestriction(view, character, effectSource, taxon, selector.restrictions):
                   result.add(SelectedTaxon(@[taxon]))
       of SelectionKind.CharactersInShape:
          warn &"possible selections unimplemented for kind: {selector.kind}"

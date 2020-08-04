@@ -132,11 +132,18 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
                   color: section.color)
             renderSection(copiedSection)
       of SectionKind.Image:
+         let font = overallFont.withPixelSize((effSize).round.int, pixelScale)
+         let typographyFont = font.typographyFont()
+
          let img = section.image.asImage
 
+         let effDim = vec2i(img.dimensions.x * pixelScale, img.dimensions.y * pixelScale)
+         let offset = typographyFont.ascent * (typographyFont.size / typographyFont.unitsPerEm) - effDim.y.float
+         # Note: The offset * 0.5f is probably wrong, we may not be properly accounting for pixelScale at some
+         # level
          addQuad(WQuad(
-            position: vec3f(cursor.x.float, cursor.y.float, 0.0f),
-            dimensions: vec2i(img.dimensions.x * pixelScale, img.dimensions.y * pixelScale),
+            position: vec3f(cursor.x.float, cursor.y.float + offset * 0.5f, 0.0f),
+            dimensions: effDim,
             forward: vec2f(1.0f, 0.0f),
             texCoords: simpleTexCoords(),
             image: img,
@@ -148,13 +155,14 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
             cursor.x = 0
             cursor.y += lineInfo[lineInfo.len-1].maximumHeight.int32
       of VerticalBreak:
-         let lineHeight = (overallFont.baseLineHeight.float * size.float * pixelScale.float).int32
-         cursor.y += lineHeight
+         let font = overallFont.withPixelSize((effSize).round.int, pixelScale)
+         let typographyFont = font.typographyFont()
+
+         cursor.y += typographyFont.lineHeight.int32
          cursor.x = 0
          endLine(true)
       of EnsureSpacing:
-         warn "Ensure spacing in rich text not yet implemented"
-         discard
+         cursor.x += section.spacing.int32
       endQuadGroup()
 
    for section in richText.sections:

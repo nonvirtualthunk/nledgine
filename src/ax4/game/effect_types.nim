@@ -17,6 +17,7 @@ import strutils
 import core
 import config/config_helpers
 import arxregex
+import prelude
 
 type
    AttackKey* {.pure.} = enum
@@ -26,8 +27,10 @@ type
 variantp AttackSelector:
    AnyAttack
    AttackType(isA: seq[Taxon])
+   DamageType(damageType: Taxon)
    FromWeapon(weapon: Entity, key: AttackKey)
    FromWeaponType(weaponType: seq[Taxon])
+   CompoundAttackSelector(selectors: seq[AttackSelector])
 
 variantp AttackTarget:
    Single
@@ -51,16 +54,28 @@ type
    #================================
 
    DamageExpression* = object
-      dice: DicePool
-      fixed: int
-      damageType: Taxon
+      dice*: DicePool
+      fixed*: int
+      damageType*: Taxon
+
+   DamageExpressionResult* = object
+      diceRoll*: DiceRoll
+      fixed*: int
+      damageType*: Taxon
+      reducedBy*: int
 
    ConditionalAttackEffectKind* = enum
       OnHit
       OnMiss
 
+   ConditionalAttackEffectTarget* {.pure.} = enum
+      Target
+      Card
+      Self
+
    ConditionalAttackEffect* = object
       kind*: ConditionalAttackEffectKind
+      target*: ConditionalAttackEffectTarget
       effect*: GameEffect
 
    Attack* = object
@@ -78,7 +93,7 @@ type
       conditionalEffects*: seq[ConditionalAttackEffect]
 
    AttackModifier* = object
-      attackType*: Modifier[Taxon]
+      attackTypes*: Modifier[seq[Taxon]]
       damage*: Modifier[DamageExpression]
       bonusDamage*: Modifier[seq[DamageExpression]]
       minRange*: Modifier[int16]
@@ -87,9 +102,14 @@ type
       strikeCount*: Modifier[int16]
       actionCost*: Modifier[int16]
       staminaCost*: Modifier[int16]
+      target*: Modifier[AttackTarget]
       additionalCosts*: Modifier[seq[GameEffect]]
       conditionalEffects*: Modifier[seq[ConditionalAttackEffect]]
 
+   Defense* = object
+      defense*: int
+      blockAmount*: int
+      damageReduction*: Table[Taxon, int]
 
    GameEffectKind* {.pure.} = enum
       Attack
@@ -98,6 +118,7 @@ type
       ChangeResource
       Move
       AddCard
+      MoveCard
 
    GameEffect* = object
       case kind*: GameEffectKind:
@@ -119,6 +140,10 @@ type
          cardChoices*: seq[Taxon]
          toDeck*: DeckKind
          toLocation*: CardLocation
+      of GameEffectKind.MoveCard:
+         moveToDeck*: Option[DeckKind]
+         moveToLocation*: Option[CardLocation]
+
 
    # Game effect being triggered by a particular character
    CharacterGameEffects* = object
@@ -170,7 +195,9 @@ proc `==`*(a, b: GameEffect): bool =
    of GameEffectKind.ChangeResource:
       a.resource == b.resource and a.resourceModifier == b.resourceModifier
    of GameEffectKind.AddCard:
-      a.cardChoices == b.cardChoices
+      a.cardChoices == b.cardChoices and a.toDeck == b.toDeck and a.toLocation == b.toLocation
+   of GameEffectKind.MoveCard:
+      a.moveToDeck == b.moveToDeck and a.moveToLocation == b.moveToLocation
 
 proc `==`*(a, b: EffectPlayGroup): bool = a.plays == b.plays
 
@@ -179,6 +206,16 @@ iterator items*(s: SelectableEffects): GameEffect =
 
 proc costs*(s: EffectGroup): seq[SelectableEffects] =
    s.effects.filterIt(it.isCost)
+
+proc roll*(s: DamageExpression, r: var Randomizer): DamageExpressionResult =
+   DamageExpressionResult(
+      diceRoll: s.dice.roll(r),
+      fixed: s.fixed,
+      damageType: s.damageType,
+   )
+
+proc total*(s: DamageExpressionResult): int =
+   s.diceRoll.total + s.fixed - s.reducedBy
 
 const simpleDamageExprRegex = re"([0-9]+)d([0-9]+)\s?([+-][0-9]+)?\s?([a-zA-Z]+)"
 
@@ -197,7 +234,7 @@ proc readFromConfig*(cv: ConfigValue, d: var DamageExpression) =
 
 const singleAttackTargetRegex = re"(?i)single"
 const multipleAttackTargetRegex = re"(?i)multiple\s?\((\d+)\)"
-
+const lineTargetRegex = re"(?ix)line\(([\d+]),([\d+])\)"
 
 proc readFromConfig*(cv: ConfigValue, t: var AttackTarget) =
    if cv.isStr:
@@ -207,14 +244,44 @@ proc readFromConfig*(cv: ConfigValue, t: var AttackTarget) =
             t = Single()
          extractMatches(multipleAttackTargetRegex, count):
             t = Multiple(count.parseInt)
+         extractMatches(lineTargetRegex, min, max):
+            t = Shape(Line(min.parseInt, max.parseInt))
          warn &"Unsupported attack target expression: {str}"
    else:
       warn &"unsupported attack target config: {cv}"
+
+const anyAttackRegex = re"(?ix)anyAttack"
+const attackTypeRegex = re"(?ix)attackType\((.+)\)"
+const damageTypeRegex = re"(?ix)damageType\((.+)\)"
+const weaponTypeRegex = re"(?ix)weaponType\((.+)\)"
+
+
+proc readFromConfig*(cv: ConfigValue, s: var AttackSelector) =
+   if cv.isArr:
+      s = CompoundAttackSelector(cv.asArr.mapIt(it.readInto(AttackSelector)))
+   elif cv.isStr:
+      let str = cv.asStr
+      matcher(str):
+         extractMatches(anyAttackRegex): s = AnyAttack()
+         extractMatches(attackTypeRegex, attackTypeStr): s = AttackType(@[taxon("attack types", attackTypeStr)])
+         extractMatches(damageTypeRegex, damageTypeStr): s = DamageType(taxon("damage types", damageTypeStr))
+         extractMatches(weaponTypeRegex, weaponType): s = FromWeaponType(@[taxon("weapon types", weaponType)])
+         warn &"Invalid string format for attack selector: {str}"
+   else:
+      warn &"unsupported attack selector config: {cv}"
+
 
 proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.}
 
 const onHitExpr = re"(?i)onHit\s?\((.+)\)"
 const onMissExpr = re"(?i)onMiss\s?\((.+)\)"
+
+const onHitKindExpr = re"(?ix)onHit"
+const onMissKindExpr = re"(?ix)onHit"
+
+const targetTargetExpr = re"(?ix)target"
+const selfTargetExpr = re"(ix)self"
+const cardTargetExpr = re"(ix)card"
 
 proc readFromConfig*(cv: ConfigValue, e: var ConditionalAttackEffect) =
    if cv.isStr:
@@ -227,6 +294,26 @@ proc readFromConfig*(cv: ConfigValue, e: var ConditionalAttackEffect) =
             e.kind = OnMiss
             readInto(asConf(onMiss), e.effect)
          warn &"Unsupported conditional attack effect expression: {str}"
+   elif cv.isObj:
+      var target = ConditionalAttackEffectTarget.Target
+      if cv["target"].nonEmpty:
+         let str = cv["target"].asStr
+         matcher(str):
+            extractMatches(targetTargetExpr):
+               target = ConditionalAttackEffectTarget.Target
+            extractMatches(selfTargetExpr):
+               target = ConditionalAttackEffectTarget.Self
+            extractMatches(cardTargetExpr):
+               target = ConditionalAttackEffectTarget.Card
+            warn &"Invalid conditional attack effect target: {str}"
+      let effect = cv["effect"].readInto(GameEffect)
+      let str = cv["kind"].asStr
+      matcher(str):
+         extractMatches(onHitKindExpr):
+            e = ConditionalAttackEffect(kind: OnHit, target: target, effect: effect)
+         extractMatches(onMissKindExpr):
+            e = ConditionalAttackEffect(kind: OnMiss, target: target, effect: effect)
+         warn &"Invalid conditional attack effect kind: {str}"
    else:
       warn &"unsupported conditional attack effect config: {cv}"
 
@@ -275,6 +362,7 @@ proc readFromConfig*(cv: ConfigValue, a: var AttackModifier) =
 
 
 const addCardRe = re"(?ix)addcard\((.+)\)"
+const expendRe = re"(?i)expend"
 
 proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.} =
    if cv.isStr:
@@ -294,12 +382,16 @@ proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.} =
             ge = GameEffect(kind: GameEffectKind.SimpleAttack, attack: readInto(asConf(str), Attack))
          extractMatches(addCardRe, cardName):
             ge = GameEffect(kind: GameEffectKind.AddCard, cardChoices: @[taxon("card types", cardName)])
+         extractMatches(expendRe):
+            ge = GameEffect(kind: GameEffectKind.MoveCard, moveToLocation: some(CardLocation.ExpendPile))
          warn &"Unknown string based game effect: {str}"
    elif cv.isObj:
       let kind = cv["kind"].asStr.toLowerAscii
       case kind:
       of "simpleattack":
          ge = GameEffect(kind: GameEffectKind.SimpleAttack, attack: readInto(cv, Attack))
+      of "attack":
+         ge = GameEffect(kind: GameEffectKind.Attack, attackSelector: readInto(cv["attackSelector"], AttackSelector), attackModifier: readInto(cv["attackModifier"], AttackModifier))
       else: warn &"unknown kind for game effect config object: {kind}"
    else:
       warn &"unknown config representation of game effect : {cv}"
@@ -328,11 +420,29 @@ proc matches*(sel: AttackSelector, view: WorldView, attack: Attack): bool =
    match sel:
       AnyAttack: true
       AttackType(isA): isA.all((x) => attack.attackTypes.any(y => y.isA(x)))
+      DamageType(damageType):
+         attack.damage.damageType.isA(damageType)
       FromWeapon(weapon, key):
          warn "FromWeapon(weapon,index) doesn't make sense when doing reverse matching"
          false
+      CompoundAttackSelector(selectors):
+         selectors.all(s => matches(s, view, attack))
       FromWeaponType(weaponType):
          # weaponType.all((x) => )
          warn "FromWeaponType(weaponType) not yet implemented for attack selector"
          false
 
+
+proc applyModifiers*(attack: var Attack, modifier: AttackModifier) =
+   modifier.attackTypes.apply(attack.attackTypes)
+   modifier.damage.apply(attack.damage)
+   modifier.bonusDamage.apply(attack.bonusDamage)
+   modifier.minRange.apply(attack.minRange)
+   modifier.maxRange.apply(attack.maxRange)
+   modifier.accuracy.apply(attack.accuracy)
+   modifier.strikeCount.apply(attack.strikeCount)
+   modifier.actionCost.apply(attack.actionCost)
+   modifier.staminaCost.apply(attack.staminaCost)
+   modifier.target.apply(attack.target)
+   modifier.additionalCosts.apply(attack.additionalCosts)
+   modifier.conditionalEffects.apply(attack.conditionalEffects)

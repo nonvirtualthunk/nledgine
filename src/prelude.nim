@@ -297,3 +297,9 @@ proc `y=`*(v: var Vec3i, t: int) =
 
 proc `z=`*(v: var Vec3i, t: int) =
    v[2] = t.int32
+
+proc toSignedString*[T](t: T): string =
+   if t < 0:
+      $t
+   else:
+      &"+{t}"

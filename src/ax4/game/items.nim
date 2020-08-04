@@ -12,7 +12,6 @@ import worlds/taxonomy
 import resources
 import config/config_helpers
 import ax4/game/cards
-import ax4/game/effect_types
 
 type
    Weapon* = object
@@ -21,8 +20,8 @@ type
       weaponSkills: seq[Taxon]
 
    WeaponAttack* = object
-      name: string
-      attack: Attack
+      name*: string
+      attack*: Attack
 
    Inventory* = object
       equipped*: seq[Entity]
@@ -103,6 +102,9 @@ proc unequipItem*(world: World, character: Entity, item: Entity) =
       else:
          warn &"Attempted to unequip item from inventory that did not contain it"
 
+proc equippedItems*(view: WorldView, character: Entity): seq[Entity] =
+   withView(view):
+      character[Inventory].equipped
 
 defineLibrary[ItemArchetype]:
    var lib = new Library[ItemArchetype]

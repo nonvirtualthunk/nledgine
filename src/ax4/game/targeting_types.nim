@@ -8,6 +8,8 @@ import noto
 import arxregex
 import strutils
 import sequtils
+import rich_text
+import graphics/image_extras
 
 variantp SelectionShape:
    Hex
@@ -16,6 +18,7 @@ variantp SelectionShape:
 variantp SelectionRestriction:
    NoRestriction
    Self
+   EffectSource
    Enemy
    Friendly
    InRange(minRange: int, maxRange: int)
@@ -115,7 +118,8 @@ proc inRange*(sel: var Selector, minRange: int, maxRange: int = 1000): var Selec
 proc cardTypeSelector*(count: int, ofCardTypes: seq[Taxon]): Selector =
    Selector(kind: SelectionKind.CardType, count: count, restrictions: TaxonChoices(ofCardTypes))
 
-
+proc selfCardSelector*(): Selector =
+   Selector(kind: SelectionKind.Card, count: 1, restrictions: EffectSource())
 
 
 
@@ -208,3 +212,12 @@ proc readFromConfig*(cv: ConfigValue, v: var GameCondition) =
          warn &"Unrecognized string represeentation of a game condition: {str}"
    else:
       warn &"Unrecognized config representation of a game condition: {cv}"
+
+proc asRichText*(s: SelectionShape): RichText =
+   match s:
+      Hex:
+         result = richText(imageLike("ax4/images/ui/vertical_hex.png"))
+      Line(startDist, length):
+         for i in 1 ..< startDist + length:
+            if i < startDist: result.add(richText(imageLike("ax4/images/ui/vertical_hex_dashed_outline.png")))
+            else: result.add(richText(imageLike("ax4/images/ui/vertical_hex.png")))
