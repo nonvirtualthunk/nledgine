@@ -91,6 +91,11 @@ proc readFromConfig*[T](cv: ConfigValue, v: var Modifier[T]) =
 
             readInto(amountStr.asConf, v.value)
          warn &"Invalid string format for modifier configuration: {cv.asStr}"
+   elif cv.isNumber:
+      v.operation = ModifierOperation.Add
+      readInto(cv, v.value)
+   else:
+      warn &"Invalid configuration for modifier: {cv}"
 
 
 proc add*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Add, value: arg)

@@ -94,7 +94,7 @@ type
 
    AttackModifier* = object
       attackTypes*: Modifier[seq[Taxon]]
-      damage*: Modifier[DamageExpression]
+      damage*: Modifier[int]
       bonusDamage*: Modifier[seq[DamageExpression]]
       minRange*: Modifier[int16]
       maxRange*: Modifier[int16]
@@ -150,7 +150,7 @@ type
       view*: WorldView
       character*: Entity
       active*: bool
-      effects*: seq[GameEffect]
+      effects*: seq[SelectableEffects]
 
    # Set of effects that are targeted and applied together, which may or may not be a cost and thefore required before
    # other effects can be applied. May contain additional information on what the allowed selections are
@@ -163,6 +163,7 @@ type
       effects*: seq[GameEffect]
       targetSelector*: Option[Selector]
       subjectSelector*: Option[Selector]
+      condition*: GameCondition
       isCost*: bool
 
    EffectGroup* = object
@@ -207,6 +208,9 @@ iterator items*(s: SelectableEffects): GameEffect =
 proc costs*(s: EffectGroup): seq[SelectableEffects] =
    s.effects.filterIt(it.isCost)
 
+proc nonCosts*(s: EffectGroup): seq[SelectableEffects] =
+   s.effects.filterIt(not it.isCost)
+
 proc roll*(s: DamageExpression, r: var Randomizer): DamageExpressionResult =
    DamageExpressionResult(
       diceRoll: s.dice.roll(r),
@@ -217,7 +221,17 @@ proc roll*(s: DamageExpression, r: var Randomizer): DamageExpressionResult =
 proc total*(s: DamageExpressionResult): int =
    s.diceRoll.total + s.fixed - s.reducedBy
 
+proc minDamage*(d: DamageExpression): int =
+   d.dice.minRoll + d.fixed
+
+proc maxDamage*(d: DamageExpression): int =
+   d.dice.maxRoll + d.fixed
+
+proc damageRange*(d: DamageExpression): (int, int) =
+   (d.minDamage, d.maxDamage)
+
 const simpleDamageExprRegex = re"([0-9]+)d([0-9]+)\s?([+-][0-9]+)?\s?([a-zA-Z]+)"
+const simpleFixedDamageExprRegex = re"([+-]?[0-9]+)\s?([a-zA-Z]+)"
 
 proc readFromConfig*(cv: ConfigValue, d: var DamageExpression) =
    if cv.isStr:
@@ -227,6 +241,9 @@ proc readFromConfig*(cv: ConfigValue, d: var DamageExpression) =
             d.dice = dicePool(dice.parseInt, pips.parseInt)
             if bonusStr != "":
                d.fixed = bonusStr.parseInt
+            d.damageType = taxon("DamageTypes", damageType)
+         extractMatches(simpleFixedDamageExprRegex, bonusStr, damageType):
+            d.fixed = bonusStr.parseInt
             d.damageType = taxon("DamageTypes", damageType)
          warn &"Unexpected string format for damage expression: {str}"
    else:
@@ -363,6 +380,8 @@ proc readFromConfig*(cv: ConfigValue, a: var AttackModifier) =
 
 const addCardRe = re"(?ix)addcard\((.+)\)"
 const expendRe = re"(?i)expend"
+const changeFlagRe = re"(?ix)changeflag\((.+),(.+)\)"
+const increaseFlagRe = re"(?ix)increaseflag\((.+),(.+)\)"
 
 proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.} =
    if cv.isStr:
@@ -375,15 +394,29 @@ proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.} =
             else:
                let rsrcPool = maybeTaxon("ResourcePools", word)
                if rsrcPool.isSome:
-                  ge = GameEffect(kind: GameEffectKind.ChangeResource, resource: rsrcPool.get, resourceModifier: modifiers.reduce(num))
+                  if num <= 0:
+                     ge = GameEffect(kind: GameEffectKind.ChangeResource, resource: rsrcPool.get, resourceModifier: modifiers.reduce(-num))
+                  else:
+                     ge = GameEffect(kind: GameEffectKind.ChangeResource, resource: rsrcPool.get, resourceModifier: modifiers.recover(num))
                else:
-                  warn &"unknown word(number) pattern for game effect: {word}, {numberStr}"
+                  let flagOpt = maybeTaxon("flags", word)
+                  if flagOpt.isSome:
+                     if num < 0:
+                        ge = GameEffect(kind: GameEffectKind.ChangeFlag, flag: flagOpt.get, flagModifier: modifiers.sub(-num))
+                     else:
+                        ge = GameEffect(kind: GameEffectKind.ChangeFlag, flag: flagOpt.get, flagModifier: modifiers.add(num))
+                  else:
+                     warn &"unknown word(number) pattern for game effect: {word}, {numberStr}"
          extractMatches(simpleAttackPattern):
             ge = GameEffect(kind: GameEffectKind.SimpleAttack, attack: readInto(asConf(str), Attack))
          extractMatches(addCardRe, cardName):
             ge = GameEffect(kind: GameEffectKind.AddCard, cardChoices: @[taxon("card types", cardName)])
          extractMatches(expendRe):
             ge = GameEffect(kind: GameEffectKind.MoveCard, moveToLocation: some(CardLocation.ExpendPile))
+         extractMatches(changeFlagRe, flag, amount):
+            ge = GameEffect(kind: GameEffectKind.ChangeFlag, flag: taxon("flags", flag), flagModifier: readInto(asConf(amount), Modifier[int]))
+         extractMatches(increaseFlagRe, flag, amount):
+            ge = GameEffect(kind: GameEffectKind.ChangeFlag, flag: taxon("flags", flag), flagModifier: readInto(asConf(amount), Modifier[int]))
          warn &"Unknown string based game effect: {str}"
    elif cv.isObj:
       let kind = cv["kind"].asStr.toLowerAscii
@@ -403,6 +436,7 @@ proc readFromConfig*(cv: ConfigValue, s: var SelectableEffects) =
       readFromConfigByField(cv, SelectableEffects, s)
       readInto(cv["target"], s.targetSelector)
       readInto(cv["subject"], s.subjectSelector)
+      readInto(cv["condition"], s.condition)
 
 proc readFromConfig*(cv: ConfigValue, e: var EffectGroup) =
    readInto(cv["name"], e.name)
@@ -435,7 +469,7 @@ proc matches*(sel: AttackSelector, view: WorldView, attack: Attack): bool =
 
 proc applyModifiers*(attack: var Attack, modifier: AttackModifier) =
    modifier.attackTypes.apply(attack.attackTypes)
-   modifier.damage.apply(attack.damage)
+   modifier.damage.apply(attack.damage.fixed)
    modifier.bonusDamage.apply(attack.bonusDamage)
    modifier.minRange.apply(attack.minRange)
    modifier.maxRange.apply(attack.maxRange)

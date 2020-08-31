@@ -40,4 +40,18 @@ proc readFromConfig*(cv: ConfigValue, v: var Taxon) =
          writeStackTrace()
          warn &"Could not identify taxon, but expected to do so: {cv.asStr}"
 
+proc readFromConfig*(cv: ConfigValue, v: var ComparisonKind) =
+   if cv.isStr:
+      case cv.asStr.toLowerAscii:
+      of ">=", "greatthanorequalto": v = ComparisonKind.GreaterThanOrEqualTo
+      of "<=", "lessthanorequalto": v = ComparisonKind.LessThanOrEqualTo
+      of ">", "greaterthan": v = ComparisonKind.GreaterThan
+      of "<", "lessthan": v = ComparisonKind.LessThan
+      of "==", "equalto": v = ComparisonKind.EqualTo
+      of "!=", "notequalto": v = ComparisonKind.NotEqualTo
+      else:
+         warn &"Invalid string value for comparison kind: {cv.asStr}"
+   else:
+      warn &"Invalid config value for comparison kind: {cv}"
+
 defineSimpleReadFromConfig(Identity)

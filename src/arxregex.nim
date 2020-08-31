@@ -33,7 +33,8 @@ template extractMatches*(r: Regex, var1: untyped, var2: untyped, stmts: untyped)
    var rematch: RegexMatch
    if matchTarget.match(r, rematch):
       if rematch.groupsCount < 2:
-         warn "Attempted to extract 2 matches using regex " & $r & ", but insufficient captures were found"
+         warn "Attempted to extract 2 matches using regex " & $r & "\n\tmatching against \"" & matchTarget & "\", but insufficient captures were found"
+         writeStackTrace()
       let `var1` {.inject.} = firstOrEmpty(matchTarget, rematch.group(0))
       let `var2` {.inject.} = firstOrEmpty(matchTarget, rematch.group(1))
       stmts
@@ -43,7 +44,7 @@ template extractMatches*(r: Regex, var1: untyped, var2: untyped, var3: untyped, 
    var rematch: RegexMatch
    if matchTarget.match(r, rematch):
       if rematch.groupsCount < 3:
-         warn "Attempted to extract 3 matches using regex " & $r & ", but insufficient captures were found"
+         warn "Attempted to extract 3 matches using regex " & $r & "\n\tmatching against \"" & matchTarget & "\", but insufficient captures were found"
       let `var1` {.inject.} = firstOrEmpty(matchTarget, rematch.group(0))
       let `var2` {.inject.} = firstOrEmpty(matchTarget, rematch.group(1))
       let `var3` {.inject.} = firstOrEmpty(matchTarget, rematch.group(2))
@@ -54,7 +55,7 @@ template extractMatches*(r: Regex, var1: untyped, var2: untyped, var3: untyped, 
    var rematch: RegexMatch
    if matchTarget.match(r, rematch):
       if rematch.groupsCount < 4:
-         warn "Attempted to extract 4 matches using regex " & $r & ", but insufficient captures were found"
+         warn "Attempted to extract 4 matches using regex " & $r & "\n\tmatching against \"" & matchTarget & "\", but insufficient captures were found"
       let `var1` {.inject.} = firstOrEmpty(matchTarget, rematch.group(0))
       let `var2` {.inject.} = firstOrEmpty(matchTarget, rematch.group(1))
       let `var3` {.inject.} = firstOrEmpty(matchTarget, rematch.group(2))

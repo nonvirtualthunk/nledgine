@@ -41,7 +41,7 @@ proc asRichText*(view: WorldView, character: Entity, attack: Attack): RichText =
 
 
 
-proc asRichText*(view: WorldView, character: Entity, effect: GameEffect): RichText =
+proc asRichText*(view: WorldView, character: Entity, effect: GameEffect, subjectSelector: Option[Selector], targetSelector: Option[Selector]): RichText =
    case effect.kind:
    of GameEffectKind.Attack:
       if character.isSentinel:
@@ -65,16 +65,62 @@ proc asRichText*(view: WorldView, character: Entity, effect: GameEffect): RichTe
          richText("Gain " & $effect.resourceModifier.value) & richText(effect.resource)
       else:
          richText("unsupported resource operation")
+   of GameEffectKind.ChangeFlag:
+      let selfTargeted = targetSelector.isSome and targetSelector.get.restrictions.containsSelfRestriction
+      case effect.flagModifier.operation:
+      of ModifierOperation.Add, ModifierOperation.Sub:
+         var effDelta = 0
+         effect.flagModifier.apply(effDelta)
+         if effDelta >= 0:
+            if selfTargeted: richText(&"Gain {effDelta}") & richText(effect.flag)
+            else: richText(&"Apply {effDelta}") & richText(effect.flag)
+         else:
+            if selfTargeted: richText(&"Lose {effDelta}") & richText(effect.flag)
+            else: richText(&"Remove {effDelta}") & richText(effect.flag)
+      of ModifierOperation.Mul:
+         let word = case effect.flagModifier.value:
+            of 2: "Double"
+            of 3: "Triple"
+            of 4: "Quadruple"
+            else: &"x{effect.flagModifier.value}"
+
+
+         if selfTargeted: richText(&"{word} your") & richText(effect.flag)
+         else: richText(&"{word} target's") & richText(effect.flag)
+      else:
+         richText("unsupported modifier to flags in effect_display, need to add it")
    else:
       richText("unsupported character game effect")
 
+proc asRichText*(view: WorldView, character: Entity, effect: GameEffect): RichText =
+   asRichText(view, character, effect, none(Selector), none(Selector))
+
+proc asRichText*(view: WorldView, character: Entity, selEff: SelectableEffects): RichText =
+   match selEff.condition:
+      AlwaysTrue: discard
+      _:
+         result.add(richText("If "))
+         result.add(selEff.condition.asRichText())
+         result.add(richText(":"))
+         result.add(richTextVerticalBreak())
+
+   var first = true
+   for effect in selEff.effects:
+      if not first:
+         result.add(richTextVerticalBreak())
+      first = false
+      result.add(asRichText(view, character, effect, selEff.subjectSelector, selEff.targetSelector))
 
 proc asRichText*(cge: CharacterGameEffects): RichText =
    let view = cge.view
    let character = cge.character
 
+   var first = true
    result = richText(@[])
    for effect in cge.effects:
+      if not first:
+         result.add(richTextVerticalBreak())
+      first = false
       result.add(asRichText(view, character, effect))
    if not cge.active:
       result.tint = some(rgba(1.0f, 1.0f, 1.0f, 1.0f))

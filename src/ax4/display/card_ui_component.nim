@@ -163,7 +163,6 @@ method onEvent(g: CardUIComponent, world: World, curView: WorldView, display: Di
                event.consume()
                if g.cardActiveOnDrop:
                   g.resolvingCard = some(card)
-                  echo &"Starting to play card {card}"
 
                   let cw = g.cardWidgets[card]
                   let groupIndex = cw.selectedGroup
@@ -179,13 +178,17 @@ method onEvent(g: CardUIComponent, world: World, curView: WorldView, display: Di
 
                   if valid:
                      let evt = ChooseActiveEffect(effectPlays: some(playGroup), onSelectionComplete: proc (effectPlays: EffectPlayGroup) =
-                        for play in effectPlays.plays:
-                           echo &"Resolving play: {play}"
-                           if not resolveEffect(world, selC, play):
-                              warn &"effect play could not be properly resolved: {play}"
-                           else:
-                              echo &"Resolved successfully"
                         moveCard(world, selC, card, CardLocation.DiscardPile)
+
+                        for play in effectPlays.plays:
+                           if play.isCost:
+                              if not resolveEffect(world, selC, play):
+                                 warn &"effect play could not be properly resolved: {play}"
+
+                        for play in effectPlays.plays:
+                           if not play.isCost:
+                              if not resolveEffect(world, selC, play):
+                                 warn &"effect play could not be properly resolved: {play}"
                      )
                      display.addEvent(evt)
                   else:
@@ -231,8 +234,9 @@ method update(g: CardUIComponent, world: World, curView: WorldView, display: Dis
                         widget.onEvent(WidgetMouseExit, exit):
                            updateCardWidgetDesiredPositions(g, curView, display, selC)
                         widget.onEvent(ListItemMouseOver, listItem):
-                           g.cardWidgets[card].selectedGroup = listItem.index
-                           g.updateCardWidgetBindings(curView, display, card, g.cardWidgets[card], selC)
+                           if g.cardWidgets.hasKey(card):
+                              g.cardWidgets[card].selectedGroup = listItem.index
+                              g.updateCardWidgetBindings(curView, display, card, g.cardWidgets[card], selC)
                         widget.onEvent(WidgetMousePress, press):
                            g.setHeldCard(some(card))
                            g.grabbedPosition = vec2i(press.relativePosition)

@@ -8,11 +8,15 @@ import game/library
 import config
 import resources
 import graphics/image_extras
+import ax4/game/ax_events
+import ax4/game/resource_pools
+import ax4/game/flags
 
 type
    Character* = object
       perks*: seq[Taxon]
       health*: Reduceable[int]
+      sightRange*: int
 
    Physical* = object
       position*: AxialVec
@@ -52,3 +56,8 @@ proc areEnemies*(view: WorldView, a, b: Entity): bool =
 
 proc areFriends*(view: WorldView, a, b: Entity): bool =
    not areEnemies(view, a, b)
+
+iterator entitiesInFaction*(view: WorldView, faction: Entity): Entity =
+   for ent in view.entitiesWithData(Allegiance):
+      if view.data(ent, Allegiance).faction == faction:
+         yield ent

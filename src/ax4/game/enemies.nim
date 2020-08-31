@@ -14,6 +14,8 @@ import strutils
 import noto
 import ax4/game/targeting
 import arxregex
+import options
+import ax4/game/ax_events
 
 
 type
@@ -29,12 +31,20 @@ type
    Monster* = object
       monsterClass*: Taxon
       lastAction*: string
+      nextAction*: Option[string]
 
    MonsterClass* = object
       actions*: Table[string, MonsterAction]
       images*: seq[ImageLike]
 
+   MonsterActionChosenEvent* = ref object of AxEvent
+      action*: Option[string]
+
 defineReflection(Monster)
+
+method toString*(evt: MonsterActionChosenEvent): string =
+   return &"MonsterActionChosen{$evt[]}"
+
 
 # defineSimpleReadFromConfig(MonsterEffect)
 proc readFromConfig*(cv: ConfigValue, m: var MonsterEffect) =

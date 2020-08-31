@@ -128,8 +128,6 @@ proc initialize*(ge: GameEngine) =
 
 
 proc update*(ge: GraphicsEngine, channel: var Channel[DrawCommand], df: float) {.gcsafe.} =
-   ge.currentView.advance(ge.world, ge.world.currentTime)
-
    for evt in ge.gameEventBus.newEvents:
       for comp in ge.components:
          comp.onEvent(ge.world, ge.currentView, ge.displayWorld, evt)

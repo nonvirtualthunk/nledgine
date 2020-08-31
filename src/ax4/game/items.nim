@@ -60,6 +60,15 @@ defineReflection(Inventory)
 defineReflection(Item)
 
 
+method toString*(evt: ItemEquippedEvent): string =
+   return &"ItemEquipped({$evt[]})"
+method toString*(evt: ItemUnequippedEvent): string =
+   return &"ItemUnequipped({$evt[]})"
+method toString*(evt: ItemRemovedFromInventoryEvent): string =
+   return &"ItemRemovedFromInventory({$evt[]})"
+method toString*(evt: ItemPlacedInInventoryEvent): string =
+   return &"ItemPlacedInInventory({$evt[]})"
+
 
 proc removeFromInventory*(world: World, inventory: Entity, item: Entity) =
    withWorld(world):
@@ -135,7 +144,6 @@ proc createItem*(world: World, taxon: Taxon): Entity =
       let lib = library(ItemArchetype)
 
       let arch = lib[taxon]
-      echo &"arch:\n{arch.weaponData[]}"
 
       let ent = world.createEntity()
       var cards: seq[Entity]

@@ -30,6 +30,11 @@ proc imageLike*(img: string): ImageLike =
    else:
       ImageLike(kind: Sentinel)
 
+proc preload*(img: ImageLike) =
+   case img.kind:
+   of ImageLikeKinds.Path: preloadImage(img.path)
+   else: discard
+
 proc `$`*(img: ImageLike): string =
    case img.kind:
    of ImageLikeKinds.Sentinel: "SentinelImage"

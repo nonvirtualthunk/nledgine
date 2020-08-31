@@ -511,7 +511,7 @@ proc width*(w: Widget): WidgetDimension = w.dimensions[0]
 proc height*(w: Widget): WidgetDimension = w.dimensions[1]
 
 # converter toEntity* (w : Widget) : DisplayEntity = w.entity
-proc `$`*(w: Widget): string = "Widget(" & $w.entity.int & ")"
+proc `$`*(w: Widget): string = "Widget(" & $w.entity.id & ")"
 
 proc recalculateDependents(w: Widget, axis: Axis) =
    if w.parent.isSome:
@@ -1225,7 +1225,6 @@ proc bindValue*[T](widget: Widget, key: string, value: T) =
 proc pixelScale*(widget: Widget): int = widget.windowingSystem.pixelScale
 
 proc destroyWidget*(w: Widget) =
-   echo "destroy widget called"
    let ws = w.windowingSystem
    w.parent = none(Widget)
    ws.display.destroyEntity(w.entity)

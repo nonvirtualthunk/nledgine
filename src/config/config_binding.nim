@@ -131,6 +131,7 @@ macro bindValueIntoMacro[T](key: string, v: T, t: typedesc[T], bindings: ref Tab
    if t.getType[1].getTypeImpl.len <= 2:
       error("Invalid type to perform implicit nested bindValueInfo: " & t.getType[1].repr, t)
    for field in t.getType[1].getTypeImpl[2]:
+      echo "\"", field[0].repr, "\""
       let fieldName = newIdentNode($field[0].strVal)
       let fieldAppend = newLit("." & $field[0].strVal)
       stmts.add(quote do:
@@ -176,6 +177,11 @@ proc bindValueInto*[T](key: string, v: T, bindings: ref Table[string, BoundValue
          if curBindings[terminalKey] != bv:
             curBindings[terminalKey] = bv
             result = true
+   elif compiles(isSome(v)): # we're dealing with an option here
+      if v.isSome:
+         result = bindValueInto(key, v.get, bindings)
+      else:
+         result = bindValueInto(key, BoundValue(), bindings)
    else:
       bindValueIntoMacro[T](key, v, T, bindings)
 

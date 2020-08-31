@@ -106,10 +106,31 @@ Taxonomy {
 
    CharacterClass : []
    CharacterClasses {
-      CombatClass : CharacterClass
-      MeleeCombatClass : CombatClass
-      RangedCombatClass : CombatClass
-      MagicClass : CharacterClass
+      Fighter : CharacterClass
+      Rogue : CharacterClass
+
+      FighterSubclass : CharacterClass
+      FighterSpecialization : CharacterClass
+      RogueSubclass : CharacterClass
+      RogueSpecialization : CharacterClass
+
+      Barbarian : FighterSubclass
+      Tactician : FighterSubclass
+      Assassin : [FighterSubclass, RogueSubclass]
+
+      General : FighterSpecialization
+      Berserker : FighterSpecialization
+      GiantSlayer : FighterSpecialization
+      Guardian : FighterSpecialization
+
+      Thief : RogueSubclass
+      Hunter : RogueSubclass
+
+      Tinkerer : RogueSpecialization
+      Alchemist : RogueSpecialization
+      Trapper : RogueSpecialization
+      Ranger : RogueSpecialization
+
    }
 
    Action : []
@@ -172,10 +193,19 @@ Taxonomy {
    DamageType : []
    DamageTypes {
       Physical : DamageType
+      Chemical : DamageType
+      Elemental : DamageType
 
       Piercing : Physical
       Bludgeoning : Physical
       Slashing : Physical
+
+      Poison : Chemical
+
+      Fire : Elemental
+      Ice : Elemental
+
+
       Unknown : DamageType
    }
 
@@ -205,30 +235,40 @@ Taxonomy {
       DefenseCard : SkillCard
       StanceCard : SkillCard
 
+      FighterCard : CardType
+      RogueCard : CardType
+
       NaturalAttackCard : AttackCard
 
       MonsterCard : CardType
       StatusCard : CardType
 
-      Harvest : GatherCard
-      Gather : GatherCard
-      Move : MoveCard
-      Slash : AttackCard
-
-      SwiftStrike : AttackCard
-      PiercingStab : AttackCard
-      FlurryOfBlows : AttackCard
-      SweepingLegStrike : AttackCard
-      RingingBlow : AttackCard
-      DoubleStrike : AttackCard
-      ChargingStrike : AttackCard
-      FlashingPoints : SkillCard
+      SwiftStrike : [AttackCard, FighterCard]
+      PiercingStab : [AttackCard, FighterCard]
+      FlurryOfBlows : [AttackCard, FighterCard]
+      SweepingLegStrike : [AttackCard, FighterCard]
+      RingingBlow : [AttackCard, FighterCard]
+      DoubleStrike : [AttackCard, FighterCard]
+      ChargingStrike : [AttackCard, FighterCard]
+      FlashingPoints : [SkillCard, FighterCard]
 
       Parry : DefenseCard
       Block : DefenseCard
 
-      TurtleStance : StanceCard
-      HedgehogStance : StanceCard
+      TurtleStance : [StanceCard, FighterCard]
+      HedgehogStance : [StanceCard, FighterCard]
+
+
+      Vengeance : [SkillCard, FighterCard]
+      TirelessFury : [SkillCard, FighterCard]
+
+
+
+      Harvest : GatherCard
+      Gather : GatherCard
+      
+      Move : MoveCard
+      FightAnotherDay : MoveCard
 
       SlimeSmash : [MonsterCard, AttackCard]
 
@@ -298,6 +338,11 @@ Taxonomy {
       HedgehogStance : Stance
       TurtleStance : Stance
 
+      Poison : NegativeFlag
+
+      Rage : PositiveFlag
+      Vengeance : PositiveFlag
+
 
       ApCostDelta : InternalFlag
       ApGainDelta : InternalFlag
@@ -310,6 +355,9 @@ Taxonomy {
       OnApproachAttack : InternalFlag
       ZoneOfControlRange : InternalFlag
       EndOfTurnBlockGain : InternalFlag
+      EndOfTurnDamage : InternalFlag
+      DamageReduction : InternalFlag
+      DamageAbsorption : InternalFlag
    }
 
    Tag : []

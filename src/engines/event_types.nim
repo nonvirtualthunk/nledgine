@@ -79,7 +79,7 @@ proc addEvent*(buffer: EventBuffer, evt: Event) =
       buffer.events.popFirst()
 
 method toString*(evt: Event): string {.base.} =
-   return $evt[]
+   return repr(evt)
 
 method toString*(evt: KeyPress): string =
    return $evt[]

@@ -44,3 +44,10 @@ proc moveCharacter*(world: World, character: Entity, toHex: Entity): bool {.disc
             character.modify(Physical.position := toPosition)
       true
 
+
+proc moveCharacter*(world: World, character: Entity, toHex: AxialVec): bool {.discardable.} =
+   let hexEnt = world[Map].tileAt(toHex)
+   if hexEnt.isSome:
+      moveCharacter(world, character, hexEnt.get)
+   else:
+      false

@@ -7,24 +7,25 @@ import tables
 
 
 type
-   FlagComponent = ref object of GameComponent
+   FlagComponent* = ref object of GameComponent
 
 
-method initialize(g: FlagComponent, world: World) =
+method initialize*(g: FlagComponent, world: World) =
    g.name = "FlagComponent"
    discard
 
-method update(g: FlagComponent, world: World) =
+method update*(g: FlagComponent, world: World) =
    discard
 
-method onEvent(g: FlagComponent, world: World, event: Event) =
+method onEvent*(g: FlagComponent, world: World, event: Event) =
    ifOfType(AxEvent, event):
-      let flagLib = library(FlagMetaInfo)
-      for flag, info in flagLib.values:
-         for behavior in info.behaviors:
-            for entity in matches(world, behavior.trigger, event):
-               if not behavior.onlyIfPresent or entity.data(world, Flags).flags.contains(flag):
-                  modifyFlag(world, entity, flag, behavior.modifier)
+      if event.state == PostEvent:
+         let flagLib = library(FlagMetaInfo)
+         for flag, info in flagLib.values:
+            for behavior in info.behaviors:
+               for entity in matches(world, behavior.trigger, event):
+                  if not behavior.onlyIfPresent or entity.data(world, Flags).flags.contains(flag):
+                     modifyFlag(world, entity, flag, behavior.modifier)
 
 
 

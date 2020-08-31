@@ -91,6 +91,12 @@ type
       key*: K
       operation*: TaggedOperation[V]
 
+   TableFieldTableModification*[C, K1, K2, V] = ref object of AbstractModification
+      field*: Field[C, Table[K1, Table[K2, V]]]
+      keyA*: K1
+      keyB*: K2
+      operation*: TaggedOperation[V]
+
    NestedFieldModification*[C, T, U] = ref object of AbstractModification
       field*: Field[C, T]
       nestedField*: Field[T, U]
@@ -124,7 +130,8 @@ proc apply*[T](operation: TaggedOperation[T], value: var T) =
       when compiles(value += operation.arg):
          value += operation.arg
       else:
-         warn &"+= operation on type that does not support it {value}"
+         writeStackTrace()
+         warn &"+= operation on type that does not support it {value}, {$T}, {operation.arg}"
    of OperationKind.Set:
       # "when compiles" gives an invalid result here, indicating that it cannot compile though that is not true
       # when compiles(value = operation.arg):
@@ -169,6 +176,7 @@ method apply*[C](modification: AbstractModification, target: ref C) {.base.} =
    discard
 
 method apply*[C, T](modification: FieldModification[C, T], target: ref C) {.base.} =
+   # Note: known bug with distinct types and generic methods causes them to misbehave in some circumstances
    modification.operation.apply(modification.field.varGetter(target[]))
 
 method apply*[C, T, U](modification: NestedFieldModification[C, T, U], target: ref C) {.base.} =
@@ -176,6 +184,9 @@ method apply*[C, T, U](modification: NestedFieldModification[C, T, U], target: r
 
 method apply*[C, K, V](modification: TableFieldModification[C, K, V], target: ref C) {.base.} =
    modification.operation.apply(modification.field.varGetter(target[]).mgetOrPut(modification.key, default(V)))
+
+method apply*[C, K1, K2, V](modification: TableFieldTableModification[C, K1, K2, V], target: ref C) {.base.} =
+   modification.operation.apply(modification.field.varGetter(target[]).mgetOrPut(modification.keyA, default(Table[K2, V])).mgetOrPut(modification.keyB, default(V)))
 
 method apply*[C, T, K, V](modification: NestedTableFieldModification[C, T, K, V], target: ref C) {.base.} =
    modification.tableModification.applyVar(modification.field.varGetter(target[]))
@@ -197,6 +208,9 @@ method applyVar*[C, T, U](modification: NestedFieldModification[C, T, U], target
 
 method applyVar*[C, K, V](modification: TableFieldModification[C, K, V], target: var C) {.base.} =
    modification.operation.apply(modification.field.varGetter(target).mgetOrPut(modification.key, default(V)))
+
+method applyVar*[C, K1, K2, V](modification: TableFieldTableModification[C, K1, K2, V], target: var C) {.base.} =
+   modification.operation.apply(modification.field.varGetter(target).mgetOrPut(modification.keyA, default(Table[K2, V])).mgetOrPut(modification.keyB, default(V)))
 
 method applyVar*[C, T, K, V](modification: NestedTableFieldModification[C, T, K, V], target: var C) {.base.} =
    modification.tableModification.applyVar(modification.field.varGetter(target))
@@ -221,7 +235,7 @@ proc `+`*[C, T](field: Field[C, T], delta: T): FieldModification[C, T] =
    FieldModification[C, T](operation: TaggedOperation[T](kind: OperationKind.Add, arg: delta), field: field)
 
 proc `+=`*[C, T](field: Field[C, T], delta: T): FieldModification[C, T] =
-   FieldModification[C, T](operation: TaggedOperation[T](kind: OperationKind.Add, arg: delta), field: field)
+   result = FieldModification[C, T](operation: TaggedOperation[T](kind: OperationKind.Add, arg: delta), field: field)
 
 proc `changeMaxBy`*[C, T](field: Field[C, T], delta: T): FieldModification[C, T] =
    FieldModification[C, T](operation: TaggedOperation[T](kind: OperationKind.ChangeMaximum, arg: delta), field: field)
@@ -256,8 +270,14 @@ proc `[]=`*[C, K, V](field: Field[C, Table[K, V]], k: K, v: V): TableFieldModifi
 proc `put`*[C, K, V](field: Field[C, Table[K, V]], k: K, v: V): TableFieldModification[C, K, V] =
    TableFieldModification[C, K, V](key: k, operation: TaggedOperation[V](kind: OperationKind.Set, arg: v), field: field)
 
+proc `put`*[C, K1, K2, V](field: Field[C, Table[K1, Table[K2, V]]], ka: K1, kb: K2, v: V): TableFieldTableModification[C, K1, K2, V] =
+   TableFieldTableModification[C, K1, K2, V](keyA: ka, keyB: kb, operation: TaggedOperation[V](kind: OperationKind.Set, arg: v), field: field)
+
 proc `addToKey`*[C, K, V](field: Field[C, Table[K, V]], k: K, v: V): TableFieldModification[C, K, V] =
    TableFieldModification[C, K, V](key: k, operation: TaggedOperation[V](kind: OperationKind.Add, arg: v), field: field)
+
+proc `addToKey`*[C, K1, K2, V](field: Field[C, Table[K1, Table[K2, V]]], ka: K1, kb: K2, v: V): TableFieldTableModification[C, K1, K2, V] =
+   TableFieldTableModification[C, K1, K2, V](keyA: ka, keyB: kb, operation: TaggedOperation[V](kind: OperationKind.Add, arg: v), field: field)
 
 proc appendToKey*[C, K, V](field: Field[C, Table[K, V]], k: K, v: V): TableFieldModification[C, K, V] =
    TableFieldModification[C, K, V](key: k, operation: TaggedOperation[V](kind: OperationKind.Append, seqArg: v), field: field)

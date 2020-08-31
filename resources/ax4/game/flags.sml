@@ -31,7 +31,7 @@ Flags {
       mechanicalDescription: "reduces move points gained by move cards by 1 per point"
       description : "Slowed down, each point reduces the amount of move gained by move cards by one"
       vagueDescription : "A thickness in the air, a softness in the ground, a weakness in your legs"
-      tickDownOn : EndOfTurn
+      tickDown : OnEndOfTurn
       hidden : false
       countsAsNegativeOne : MovementGainDelta
    }
@@ -42,7 +42,7 @@ Flags {
       vagueDescription : "The blow lays heavy on your mind, the shock in your limbs, the catch in your breath"
       hidden : false
       countsAsNegative : ApGainDelta
-      tickDownOn : EndOfTurn
+      tickDown : OnEndOfTurn
    }
 
    FlashingPoints {
@@ -51,7 +51,7 @@ Flags {
       vagueDescription : "A flash at the eyes, a jab at the chest, they see only your blade. And you."
       resetAtEndOfTurn : false
       hidden : false
-      tickDownOn : EndOfTurn
+      tickDown : OnEndOfTurn
 
       attackModifiers : {
          conditionalEffects : [
@@ -84,7 +84,7 @@ Flags {
          EndOfTurnBlockGain(4)
       ]
 
-      tickDownOn : Attack
+      tickDown : OnAttack
    }
 
    HedgehogStance {
@@ -96,7 +96,7 @@ Flags {
 
       countsAs : OnApproachAttack
 
-      tickDownOn : Move
+      tickDown : OnMove
    }
 
    Armor {
@@ -104,6 +104,29 @@ Flags {
       vagueDescription: ""
 
       countsAs: ArmorDelta
+   }
+
+   Poison {
+      description : "Poison deals poison damage to you at the end of every turn then decreases by 1"
+      vagueDescription: ""
+
+      countsAs: "EndOfTurnDamage[DamageTypes.Poison](1)"
+   }
+
+   Rage {
+      description : "Rage increases your dmage dealt and damage taken by 1"
+      
+      tickDown : OnStartOfTurn
+   }
+
+   Vengeance {
+      description : "Vengeance increases your Rage by 1 each time you are attacked"
+
+      tickDown : OnStartOfTurn
+      behavior : {
+         condition : Attacked
+         effect : changeFlag(Rage, +1)
+      }
    }
 
 
@@ -155,5 +178,23 @@ Flags {
    EndOfTurnBlockGain {
       description : "End of Turn Block Gain"
       hidden : true
+   }
+
+   EndOfTurnDamage {
+      description : "End of Turn Damage"
+      hidden : true
+      keyed : true
+   }
+
+   DamageReduction {
+      description : "Damage Reduction"
+      hidden : true
+      keyed : true
+   }
+
+   DamageAbsorption {
+      description : "Damage Absorption"
+      hidden : true
+      keyed : true
    }
 }

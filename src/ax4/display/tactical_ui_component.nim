@@ -18,11 +18,11 @@ import ax4/game/pathfinder
 import windowingsystem/windowingsystem
 import ax4/game/resource_pools
 import graphics/color
+import ax4/game/turns
 
 type
    TacticalUIComponent* = ref object of GraphicsComponent
       canvas: SimpleCanvas
-      tentativePath: Watchable[Option[Path]]
       worldWatcher: Watcher[WorldEventClock]
 
    TacticalUIData* = object
@@ -80,13 +80,7 @@ proc render(g: TacticalUIComponent, view: WorldView, display: DisplayWorld) =
             qb.color = factionData(view, selC).color
             qb.drawTo(g.canvas)
 
-         g.canvas.swap()
-
-
-
-
-
-
+      g.canvas.swap()
 
 
 method onEvent(g: TacticalUIComponent, world: World, curView: WorldView, display: DisplayWorld, event: Event) =
@@ -96,18 +90,31 @@ method onEvent(g: TacticalUIComponent, world: World, curView: WorldView, display
    withWorld(world):
       matchType(event):
          extract(HexMouseRelease, hex, button, position):
-            if tuid.selectedCharacter.isSome:
-               discard
-            else:
+            # if tuid.selectedCharacter.isSome:
+               # discard
+            # else:
                for entity in world.entitiesWithData(Physical):
                   if entity[Physical].position == hex:
                      if tuid.selectedCharacter != some(entity):
-                        tuid.selectedCharacter = some(entity)
-                        display.addEvent(CharacterSelect(character: entity))
-         extract(CharacterSelect, character):
-            g.tentativePath.setTo(none(Path))
+                        if entity.hasData(Character) and faction(world, entity) == world[TurnData].activeFaction:
+                           tuid.selectedCharacter = some(entity)
+                           display.addEvent(CharacterSelect(character: entity))
+         extract(KeyRelease, key):
+            case key:
+            of KeyCode.Enter, KeyCode.KPEnter:
+               endTurn(world)
+            else: discard
+         extract(FactionTurnEndEvent, faction):
+            if not faction[Faction].playerControlled:
+               tuid.selectedCharacter = none(Entity)
+         extract(FactionTurnStartEvent, faction):
+            if faction[Faction].playerControlled:
+               for ent in entitiesInFaction(world, faction):
+                  tuid.selectedCharacter = some(ent)
+                  break
+
 
 method update(g: TacticalUIComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =
-   g.render(world.view, display)
+   g.render(curView, display)
    @[g.canvas.drawCommand(display)]
    # @[]

@@ -1,5 +1,6 @@
 import reflect
 import prelude
+import ax4/game/randomness
 
 {.experimental.}
 
@@ -107,7 +108,7 @@ when isMainModule:
    defineDisplayReflection(DisplayItem)
 
    # Create a new world to hold our entities
-   let world = createWorld()
+   var world = createWorld()
    # Create a second view of that same world that can be moved through time independently, currently it
    # is pointing at the world at the beginning of time, where it is right now
    let historicalView = world.createView()

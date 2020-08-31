@@ -10,6 +10,7 @@ import options
 type
    Flags* = object
       flags*: Table[Taxon, int]
+      keyedFlags*: Table[Taxon, Table[Taxon, int]]
 
    FlagInfo* = object
       mechanicalDescription*: string

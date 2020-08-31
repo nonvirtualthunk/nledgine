@@ -33,11 +33,13 @@ proc effectiveAttack*(view: WorldView, character: Entity, effect: GameEffect): O
       warn &"Attempted to resolve effectiveAttack from non-attack effect: {effect}"
       none(Attack)
 
-proc expandCosts*(view: WorldView, character: Entity, effect: GameEffect): seq[GameEffect] =
+proc expandCosts*(view: WorldView, character: Entity, effect: GameEffect): seq[SelectableEffects] =
    case effect.kind:
    of GameEffectKind.Attack, GameEffectKind.SimpleAttack:
       for attack in effectiveAttack(view, character, effect):
-         result = attackCosts(attack)
+         let attackCosts = attackCosts(attack)
+         for cost in attackCosts:
+            result.add(SelectableEffects(effects: @[cost], isCost: true))
    else:
       discard
 
@@ -56,16 +58,15 @@ proc selectionsForEffect*(view: WorldView, character: Entity, effects: Selectabl
       of GameEffectKind.Attack, GameEffectKind.SimpleAttack:
          for attack in effectiveAttack(view, character, effect):
             var sel = match attack.target:
-               Single: enemySelector(1)
-               Multiple(count): enemySelector(count)
+               Single: enemySelector(1, InRange(attack.minRange, attack.maxRange))
+               Multiple(count): enemySelector(count, InRange(attack.minRange, attack.maxRange))
                Shape(shape): charactersInShapeSelector(shape)
             # if we've suppled a target selector here, add its restrictions together with the main attack ones
-            sel.restrictions.add(InRange(attack.minRange, attack.maxRange))
             if effects.targetSelector.isSome:
                sel.restrictions.add(effects.targetSelector.get.restrictions)
             setSelector(Object(), sel)
       of GameEffectKind.ChangeFlag, GameEffectKind.ChangeResource:
-         setSelector(Subject(), effects.targetSelector.get(selfSelector()))
+         setSelector(Object(), effects.targetSelector.get(selfSelector()))
       of GameEffectKind.Move:
          setSelector(Subject(), effects.subjectSelector.get(selfSelector()))
          setSelector(Object(), pathSelector(effect.moveRange, Subject(), effect.desiredDistance))
@@ -98,11 +99,10 @@ proc resolveEffect*(world: World, character: Entity, effectPlay: EffectPlay): bo
          of GameEffectKind.ChangeFlag:
             let flag = effect.flag
             let modifier = effect.flagModifier
+            let targets = effectPlay.selected[Object()].selectedEntities
 
-            let flags = character.data(Flags)
-            var curValue = flags.flags.getOrDefault(flag)
-            modifier.apply(curValue)
-            character.modify(Flags.flags.put(flag, curValue))
+            for target in targets:
+               flags.modifyFlag(world, target, flag, modifier)
          of GameEffectKind.Move:
             let selMover = effectPlay.selected[Subject()].selectedEntities
             let selPath = effectPlay.selected[Object()].selectedEntities
@@ -119,7 +119,7 @@ proc resolveEffect*(world: World, character: Entity, effectPlay: EffectPlay): bo
          of GameEffectKind.ChangeResource:
             let rsrc = effect.resource
             let modifier = effect.resourceModifier
-            let targets = effectPlay.selected[Subject()].selectedEntities
+            let targets = effectPlay.selected[Object()].selectedEntities
             for target in targets:
                changeResource(world, target, rsrc, modifier)
          of GameEffectKind.AddCard:

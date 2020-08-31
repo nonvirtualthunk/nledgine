@@ -40,6 +40,11 @@ MonsterClasses {
             ]
          }
       }
+
+      sightRange: 5
+      health: 1d4+6
+      stamina: 3
+      
    }
 
 }

@@ -51,9 +51,17 @@ type
       entity*: Entity
 
    CharacterTurnStartEvent* = ref object of AxEvent
-      turnNumber*: int
+      # turnNumber*: int
    CharacterTurnEndEvent* = ref object of AxEvent
+      # turnNumber*: int
+   FactionTurnStartEvent* = ref object of AxEvent
+      faction*: Entity
+   FactionTurnEndEvent* = ref object of AxEvent
+      faction*: Entity
+
+   FullTurnEndEvent* = ref object of AxEvent
       turnNumber*: int
+
    CharacterMoveEvent* = ref object of AxEvent
       fromHex*: AxialVec
       toHex*: AxialVec
@@ -85,13 +93,38 @@ type
       OnTurnStarted
       OnTurnEnded
       OnDodged
+      OnMove
 
    EventCondition* = object
       case kind*: EventConditionKind
       of OnAttack, OnAttacked, OnHit, OnHitEnemy, OnBlocked, OnMissed, OnDodged:
          attackSelector*: Option[AttackSelector]
-      of OnTurnStarted, OnTurnEnded:
+      of OnTurnStarted, OnTurnEnded, OnMove:
          discard
+
+
+method toString*(evt: AttackEvent): string =
+   return &"Attack({$evt[]})"
+method toString*(evt: StrikeEvent): string =
+   return &"Strike({$evt[]})"
+method toString*(evt: CharacterMoveEvent): string =
+   return &"Move({$evt[]})"
+method toString*(evt: CharacterTurnEndEvent): string =
+   return &"CharacterTurnEnd({$evt[]})"
+method toString*(evt: CharacterTurnStartEvent): string =
+   return &"CharacterTurnStart({$evt[]})"
+method toString*(evt: FactionTurnEndEvent): string =
+   return &"FactionTurnEnd({$evt[]})"
+method toString*(evt: FactionTurnStartEvent): string =
+   return &"FactionTurnStart({$evt[]})"
+method toString*(evt: FlagChangedEvent): string =
+   return &"FlagChanged({$evt[]})"
+method toString*(evt: WorldInitializedEvent): string =
+   return &"WorldInitialized({$evt[]})"
+method toString*(evt: DamageEvent): string =
+   return &"Damage({$evt[]})"
+method toString*(evt: FullTurnEndEvent): string =
+   return &"FullTurnEnd({$evt[]})"
 
 # proc matchesEventKind*(condition : EventCondition) : EventKind =
 #    case condition.kind:
@@ -136,6 +169,8 @@ proc matches*(view: WorldView, condition: EventCondition, event: AxEvent): seq[E
    of OnAttack:
       ifOfType(AttackEvent, event):
          if matchesSelector(view, condition.attackSelector, event.attack): result.add(event.entity)
+   of OnMove:
+      ifOfType(CharacterMoveEvent, event): result.add(event.entity)
    of OnHit:
       ifOfType(StrikeEvent, event):
          if event.result.kind == StrikeResultKind.Hit and matchesSelector(view, condition.attackSelector, event.attack): result.add(event.target)
@@ -197,13 +232,14 @@ proc readFromConfig*(cv: ConfigValue, v: var EventCondition) =
    if cv.isStr:
       case cv.asStr.toLowerAscii:
       of "onattacked": condKind = OnAttacked
-      of "onattack": condKind = OnAttack
+      of "onattack", "attack": condKind = OnAttack
       of "onhit": condKind = OnHit
       of "onhitenemy": condKind = OnHitEnemy
       of "onmissed": condKind = OnMissed
       of "onblocked": condKind = OnBlocked
-      of "onturnstarted": condKind = OnTurnStarted
-      of "onturnended": condKind = OnTurnEnded
+      of "onturnstarted", "startofturn", "onstartofturn": condKind = OnTurnStarted
+      of "onturnended", "endofturn", "onendofturn": condKind = OnTurnEnded
+      of "onmove": condKind = OnMove
       else: warn &"invalid configuration string for event condition : {cv.asStr}"
 
       v = EventCondition(kind: condKind)

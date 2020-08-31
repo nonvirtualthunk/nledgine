@@ -34,6 +34,10 @@ import ax4/game/enemies
 import ax4/game/items
 import ax4/game/randomness
 import ax4/game/flags
+import ax4/game/turns
+import ax4/game/components/flag_component
+import ax4/game/components/ai_component
+import ax4/display/animation_component
 
 type
    PrintComponent = ref object of GameComponent
@@ -58,6 +62,9 @@ method update(g: PrintComponent, world: World) =
          fine &"Updates / second : {updatesPerSecond}"
       g.updateCount = 0
 
+method onEvent(g: PrintComponent, world: World, event: Event) =
+   info &"event: {event.toString}"
+
 method initialize(g: MapInitializationComponent, world: World) =
    let grass = taxon("vegetations", "grass")
    let forest = taxon("vegetations", "forest")
@@ -75,9 +82,9 @@ method initialize(g: MapInitializationComponent, world: World) =
             let tile = world.createEntity()
 
             let terrainKind =
-               if r <= 1: mountains
-               elif r <= 4: hills
-               else: flatland
+               if r <= 7: flatland
+               elif r <= 10: hills
+               else: mountains
 
             var vegetation: seq[Taxon]
 
@@ -119,8 +126,10 @@ method initialize(g: MapInitializationComponent, world: World) =
       let card1 = arch.createCard(world)
       let card2 = arch.createCard(world)
       let piercingStab = library(CardArchetype)[taxon("card types", "piercing stab")].createCard(world)
+      let fightAnotherDay = library(CardArchetype)[taxon("card types", "fight another day")].createCard(world)
+      let vengeance = library(CardArchetype)[taxon("card types", "vengeance")].createCard(world)
       let deck = DeckOwner(
-         combatDeck: Deck(cards: {CardLocation.Hand: @[card1, card2, piercingStab]}.toTable)
+         combatDeck: Deck(cards: {CardLocation.Hand: @[card1, card2, piercingStab, fightAnotherDay, vengeance]}.toTable)
       )
 
       tobold.attachData(deck)
@@ -143,6 +152,7 @@ method initialize(g: MapInitializationComponent, world: World) =
       slime.attachData(Flags())
 
       world.attachData(RandomizationWorldData())
+      world.attachData(TurnData(activeFaction: playerFaction, turnNumber: 1))
 
       world.addEvent(WorldInitializedEvent())
 
@@ -153,7 +163,7 @@ main(GameSetup(
    windowSize: vec2i(1440, 900),
    resizeable: false,
    windowTitle: "Ax4",
-   gameComponents: @[(GameComponent)(PrintComponent()), MapInitializationComponent()],
+   gameComponents: @[(GameComponent)(PrintComponent()), MapInitializationComponent(), FlagComponent(), AIComponent()],
    graphicsComponents: @[
       createCameraComponent(createPixelCamera(mapGraphicsSettings().baseScale)),
       MapGraphicsComponent(),
@@ -163,7 +173,8 @@ main(GameSetup(
       CardUIComponent(),
       MapEventTransformer(),
       EffectSelectionComponent(),
-      createWindowingSystemComponent()
+      createWindowingSystemComponent(),
+      AnimationComponent()
    ]
 ))
 

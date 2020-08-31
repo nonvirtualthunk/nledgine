@@ -12,16 +12,18 @@ import noto
 
 {.experimental.}
 
-type Entity* = distinct int
-type DisplayEntity* = distinct int
+type Entity* = object
+   id*: int
+type DisplayEntity* = object
+   id*: int
 type WorldEventClock* = distinct int
 type WorldModifierClock* = distinct int
 
-const SentinelEntity* = 0.Entity
-const SentinelDisplayEntity* = 0.DisplayEntity
+const SentinelEntity* = Entity(id: 0)
+const SentinelDisplayEntity* = DisplayEntity(id: 0)
 
-let WorldEntity = 1.Entity
-let WorldDisplayEntity = 1.DisplayEntity
+let WorldEntity = Entity(id: 1)
+let WorldDisplayEntity = DisplayEntity(id: 1)
 
 type
    AbstractDataContainer = ref object of RootObj
@@ -70,19 +72,23 @@ converter toView*(world: World): WorldView = world.view
 var worldCallsForAllTypes* {.threadvar.}: seq[proc(world: World) {.gcsafe.}]
 var displayWorldCallsForAllTypes* {.threadvar.}: seq[proc(world: DisplayWorld) {.gcsafe.}]
 
-proc hash*(e: Entity): int = e.int.hash
-proc `==`*(a: Entity, b: Entity): bool {.borrow.}
-proc hash*(e: DisplayEntity): int = e.int.hash
-proc `==`*(a: DisplayEntity, b: DisplayEntity): bool {.borrow.}
+proc hash*(e: Entity): int = e.id.hash
+proc `==`*(a: Entity, b: Entity): bool = a.id == b.id
+proc hash*(e: DisplayEntity): int = e.id.hash
+proc `==`*(a: DisplayEntity, b: DisplayEntity): bool = a.id == b.id
 proc `+`*(a: WorldModifierClock, b: int): WorldModifierClock = return (a.int + b).WorldModifierClock
 proc `-`*(a: WorldModifierClock, b: int): WorldModifierClock = return (a.int - b).WorldModifierClock
 proc `==`*(a, b: WorldEventClock): bool {.borrow.}
 proc `==`*(a, b: WorldModifierClock): bool {.borrow.}
+proc `<`*(a, b: WorldEventClock): bool {.borrow.}
+proc `<`*(a, b: WorldModifierClock): bool {.borrow.}
+proc `<=`*(a, b: WorldEventClock): bool {.borrow.}
+proc `<=`*(a, b: WorldModifierClock): bool {.borrow.}
 
 proc `$`*(e: Entity): string =
-   return $e.int
+   return $e.id
 proc `$`*(e: DisplayEntity): string =
-   return $e.int
+   return $e.id
 
 proc isSentinel*(e: Entity): bool = e == SentinelEntity
 proc isSentinel*(e: DisplayEntity): bool = e == SentinelDisplayEntity
@@ -93,13 +99,13 @@ proc currentTime*(view: WorldView): WorldEventClock =
 proc addModification*(world: World, modification: EntityModification) {.gcsafe.}
 
 proc createEntity*(world: World): Entity {.gcsafe.} =
-   result = world.entityCounter.Entity
+   result = Entity(id: world.entityCounter)
    world.entityCounter.inc
 
    addModification(world, EntityModification(entity: result, dataTypeIndex: -1))
 
 proc createEntity*(world: DisplayWorld): DisplayEntity =
-   result = world.entityCounter.DisplayEntity
+   result = DisplayEntity(id: world.entityCounter)
    world.entities.add(result)
    world.entityCounter.inc
 
@@ -156,15 +162,23 @@ proc postEvent*(world: World, evt: GameEvent): WorldEventClock {.discardable.} =
    evt.state = GameEventState.PostEvent
    world.addEvent(evt)
 
-template eventStmts*(world: World, evt: GameEvent, stmts: typed) =
+template eventStmts*(world: World, evt: GameEvent, stmts: untyped) =
    world.preEvent(evt.deepCopy())
-   stmts
+   block:
+      let injectedView {.inject used.} = world.view
+      let injectedWorld {.inject used.} = world
+      stmts
    world.postEvent(evt)
 
 proc addEvent*(world: DisplayWorld, evt: Event): WorldEventClock {.discardable.} =
    result = world.eventClock
    world.events.addEvent(evt)
    world.eventClock.inc
+
+proc eventAtTime*(view: WorldView, time: WorldEventClock): Event =
+   view.events[time.int]
+
+proc mostRecentEvent*(view: WorldView): Event = view.events[view.events.len - 1]
 
 proc setUpType*[C](world: World, dataType: DataType[C]) =
    if world.view.dataContainers.len <= dataType.index:
@@ -178,6 +192,7 @@ proc setUpType*[C](world: DisplayWorld, dataType: DataType[C]) =
 
 method applyModification(container: AbstractDataContainer, entMod: EntityModification, createNew: bool): bool {.base.} =
    {.warning[LockLevel]: off.}
+   warn "AbstractDataContainer.applyModification base case reached"
    discard
 
 method removeEntity(container: AbstractDataContainer, entity: int) {.base.} =
@@ -190,12 +205,12 @@ method getInitialCreationModificaton(container: AbstractDataContainer, entity: i
 
 
 method applyModification[T](container: DataContainer[T], entMod: EntityModification, createNew: bool): bool {.base.} =
-   var data = container.dataStore.getOrDefault(entMod.entity.int, nil)
+   var data = container.dataStore.getOrDefault(entMod.entity.id, nil)
    # todo: warn when we have no existing data and the modification is not an initial setting mod
    if data == nil:
       if createNew:
          data = new T
-         container.dataStore[entMod.entity.int] = data
+         container.dataStore[entMod.entity.id] = data
          entMod.modification.apply(data)
          true
       else:
@@ -212,7 +227,7 @@ method getInitialCreationModificaton[T](container: DataContainer[T], entity: int
    if data == nil:
       none(EntityModification)
    else:
-      some(EntityModification(entity: entity.Entity, dataTypeIndex: container.dataTypeIndex, modification: InitialAssignmentModification[T](value: data[])))
+      some(EntityModification(entity: Entity(id: entity), dataTypeIndex: container.dataTypeIndex, modification: InitialAssignmentModification[T](value: data[])))
 
 proc destroyEntity*(world: DisplayWorld, entity: DisplayEntity) =
    for i in 0 ..< world.entities.len:
@@ -220,7 +235,7 @@ proc destroyEntity*(world: DisplayWorld, entity: DisplayEntity) =
          world.entities.del(i)
          break
    for c in world.dataContainers:
-      c.removeEntity(entity.int)
+      c.removeEntity(entity.id)
 
 
 proc createView*(world: World): WorldView =
@@ -232,7 +247,7 @@ proc applyModificationToView(view: WorldView, modifier: EntityModification, modi
    else:
       if not view.dataContainers[modifier.dataTypeIndex].applyModification(modifier, false):
          if view.baseView.isSome:
-            let baseCreation = view.baseView.get().dataContainers[modifier.dataTypeIndex].getInitialCreationModificaton(modifier.entity.int)
+            let baseCreation = view.baseView.get().dataContainers[modifier.dataTypeIndex].getInitialCreationModificaton(modifier.entity.id)
             if baseCreation.isSome:
                discard view.dataContainers[modifier.dataTypeIndex].applyModification(baseCreation.get, true)
          discard view.dataContainers[modifier.dataTypeIndex].applyModification(modifier, true)
@@ -282,6 +297,9 @@ proc modify*[C, T, U] (world: World, entity: Entity, modification: NestedFieldMo
 proc modify*[C, K, V] (world: World, entity: Entity, modification: TableFieldModification[C, K, V]) =
    world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
 
+proc modify*[C, K1, K2, V] (world: World, entity: Entity, modification: TableFieldTableModification[C, K1, K2, V]) =
+   world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
+
 proc modify*[C, T, K, V] (world: World, entity: Entity, modification: NestedTableFieldModification[C, T, K, V]) =
    world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
 
@@ -290,7 +308,7 @@ iterator entitiesWithData*[C](view: WorldView, t: typedesc[C]): Entity =
    let dataType = t.getDataType()
    var dc = (DataContainer[C])view.dataContainers[dataType.index]
    for ent in dc.dataStore.keys:
-      yield ent.Entity
+      yield Entity(id: ent)
 
 proc addModification*(world: World, modification: EntityModification) =
    world.modificationContainer.modifications.add(modification)
@@ -300,13 +318,13 @@ proc addModification*(world: World, modification: EntityModification) =
 
 proc data*[C] (view: WorldView, entity: Entity, dataType: DataType[C]): ref C =
    var dc = (DataContainer[C])view.dataContainers[dataType.index]
-   result = dc.dataStore.getOrDefault(entity.int, nil)
+   result = dc.dataStore.getOrDefault(entity.id, nil)
    if result == nil:
       if view.baseView.isSome:
          result = view.baseView.get.data(entity, dataType)
       else:
          writeStackTrace()
-         warn &"Warning: read data[{$C}] for entity {entity.int} that did not have access to data of that type"
+         warn &"Warning: read data[{$C}] for entity {entity.id} that did not have access to data of that type"
          result = dc.defaultValue
 
 proc data*[C] (view: WorldView, entity: Entity, dataType: typedesc[C]): ref C =
@@ -317,23 +335,23 @@ proc data*[C] (view: WorldView, dataType: typedesc[C]): ref C =
 
 proc hasData*[C] (view: WorldView, entity: Entity, dataType: DataType[C]): bool =
    var dc = (DataContainer[C])view.dataContainers[dataType.index]
-   result = dc.dataStore.hasKey(entity.int)
+   result = dc.dataStore.hasKey(entity.id)
    if not result and view.baseView.isSome:
       result = view.baseView.get.hasData(entity, dataType)
 
 proc data*[C] (world: DisplayWorld, entity: DisplayEntity, t: typedesc[C]): ref C =
    let dataType = t.getDataType()
    var dc = (DataContainer[C])world.dataContainers[dataType.index]
-   result = dc.dataStore.getOrDefault(entity.int, nil)
+   result = dc.dataStore.getOrDefault(entity.id, nil)
    # TODO: Consider auto-attaching data to display worlds
    if result == nil:
       writeStackTrace()
-      warn &"Warning: read display data[{$C}] for entity {entity.int} that did not have access to data of that type"
+      warn &"Warning: read display data[{$C}] for entity {entity.id} that did not have access to data of that type"
       result = dc.defaultValue
 
 proc hasData*[C] (world: DisplayWorld, entity: DisplayEntity, t: typedesc[C]): bool =
    var dc = (DataContainer[C])world.dataContainers[t.getDataType().index]
-   result = dc.dataStore.hasKey(entity.int)
+   result = dc.dataStore.hasKey(entity.id)
 
 proc data*[C] (world: DisplayWorld, t: typedesc[C]): ref C =
    data[C](world, WorldDisplayEntity, t)
@@ -343,14 +361,14 @@ proc attachData*[C] (world: DisplayWorld, entity: DisplayEntity, dataValue: C) =
    var dc = (DataContainer[C])world.dataContainers[dataType.index]
    let nv: ref C = new C
    nv[] = dataValue
-   dc.dataStore[entity.int] = nv
+   dc.dataStore[entity.id] = nv
 
 
 proc attachDataInternal[C] (world: DisplayWorld, entity: DisplayEntity, dataType: DataType[C], dataValue: C = C()) =
    var dc = (DataContainer[C])world.dataContainers[dataType.index]
    let nv: ref C = new C
    nv[] = dataValue
-   dc.dataStore[entity.int] = nv
+   dc.dataStore[entity.id] = nv
 
 proc attachData*[C] (world: DisplayWorld, t: typedesc[C]) =
    attachData(world, default(t))
@@ -361,7 +379,7 @@ proc attachData*[C] (world: DisplayWorld, dataValue: C) =
 proc attachDataRef*[C] (world: DisplayWorld, entity: DisplayEntity, dataValue: ref C) =
    echo C, ", dt: ", C.getDataType().index #, " size: ", world.dataContainers.len
    var dc = (DataContainer[C])world.dataContainers[C.getDataType().index]
-   dc.dataStore[entity.int] = dataValue
+   dc.dataStore[entity.id] = dataValue
 
 proc attachDataRef*[C] (world: DisplayWorld, dataValue: ref C) =
    attachDataRef[C](world, WorldDisplayEntity, dataValue)
@@ -487,6 +505,9 @@ macro modify*(entity: Entity, expression: untyped): untyped =
       injectedWorld.modify(`entity`, `argument`)
    # echo "Result: ", result.repr
 
+macro modifyWorld*(world: World, expression: untyped): untyped =
+   var argument = expression.copy
+   discard appendToEarliestIdent(argument, "Type")
+   result = quote do:
+      `world`.modify(WorldEntity, `argument`)
 
-
-proc id*(entity: Entity): int = entity.int

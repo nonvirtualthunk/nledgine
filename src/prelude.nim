@@ -40,7 +40,15 @@ type
 
    Watchable*[T] = object
       value: T
-      hasChangedFlag: bool
+      noChangeFlag: bool
+
+   ComparisonKind* {.pure.} = enum
+      GreaterThanOrEqualTo
+      GreaterThan
+      LessThan
+      LessThanOrEqualTo
+      EqualTo
+      NotEqualTo
 
 
 let programStartTime* = now()
@@ -204,6 +212,8 @@ proc permute*(x: int): int =
 proc isEmpty*[T](s: seq[T]): bool = s.len == 0
 proc nonEmpty*[T](s: seq[T]): bool = s.len != 0
 
+proc nonEmpty*[K, V](t: Table[K, V]): bool = s.len != 0
+
 proc hasChanged*[T](w: var Watcher[T]): bool =
    if w.lastValue.isNone:
       w.lastValue = some(w.function())
@@ -223,16 +233,16 @@ proc peekChanged*[T](w: Watcher[T]): bool =
       w.function() == w.lastValue.get
 
 proc hasChanged*[T](w: var Watchable[T]): bool =
-   result = w.hasChangedFlag
-   w.hasChangedFlag = false
+   result = not w.noChangeFlag
+   w.noChangeFlag = true
 
 proc peekChanged*[T](w: Watchable[T]): bool =
-   result = w.hasChangedFlag
+   result = not w.noChangeFlag
 
 proc setTo*[T](w: var Watchable[T], v: T) =
    if w.value != v:
       w.value = v
-      w.hasChangedFlag = true
+      w.noChangeFlag = false
 
 converter toWatchedValue*[T](w: Watchable[T]): T = w.value
 
@@ -303,3 +313,33 @@ proc toSignedString*[T](t: T): string =
       $t
    else:
       &"+{t}"
+
+proc normalizeSafe*(v: Vec3f): Vec3f =
+   let l = v.length
+   if l > 0.0:
+      v.normalize
+   else:
+      v
+
+template ifPresent*[T](opt: Option[T], stmts: untyped) =
+   if opt.isSome:
+      let it {.inject.} = opt.get
+      stmts
+
+template ifPresent*[T](opt: Option[T], varName: untyped, stmts: untyped) =
+   if opt.isSome:
+      let `varName` {.inject.} = opt.get
+      stmts
+
+proc addOpt*[T](s: var seq[T], opt: Option[T]) =
+   if opt.isSome:
+      s.add(opt.get)
+
+proc isTrueFor*[T](comp: ComparisonKind, a: T, b: T): bool =
+   case comp:
+   of ComparisonKind.GreaterThan: a > b
+   of ComparisonKind.GreaterThanOrEqualTo: a >= b
+   of ComparisonKind.LessThan: a < b
+   of ComparisonKind.LessThanOrEqualTo: a <= b
+   of ComparisonKind.EqualTo: a == b
+   of ComparisonKind.NotEqualTo: a != b

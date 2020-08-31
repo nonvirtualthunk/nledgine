@@ -24,9 +24,14 @@ type
 proc axialVec*(q: int, r: int, z: int = 0): AxialVec =
    vec3(q, r, z).AxialVec
 
+const AxialZero* = Vec3int().AxialVec
+
 const AxialDeltas* = [axialVec(1, 0), axialVec(1, -1), axialVec(0, -1),
                     axialVec(-1, 0), axialVec(-1, 1), axialVec(0, 1),
                     axialVec(0, 0)]
+
+proc axialDelta*(d: HexDirection): AxialVec =
+   AxialDeltas[d.ord]
 
 proc cubeVec*(x, y, z: int, d: int = 0): CubeVec =
    vec4(x, y, z, d).CubeVec
@@ -35,6 +40,9 @@ const CubeDeltas* = [cubeVec(1, -1, 0), cubeVec(1, 0, -1), cubeVec(0, 1, -1), cu
 
 proc cartVec*[XT, YT, ZT](x: XT, y: YT, z: ZT): CartVec =
    vec3f(x.float, y.float, z.float).CartVec
+
+proc cartVec*(v: Vec3f): CartVec =
+   v.CartVec
 
 proc q*(v: AxialVec): int = v.Vec3int.x
 proc r*(v: AxialVec): int = v.Vec3int.y
@@ -55,6 +63,9 @@ proc `+` *(a, b: AxialVec): AxialVec =
 
 proc `-` *(a, b: AxialVec): AxialVec =
    axialVec(a.q - b.q, a.r - b.r, a.z - b.z)
+
+proc `*` *(a: AxialVec, b: int): AxialVec =
+   axialVec(a.q * b, a.r * b, a.z * b)
 
 proc `+` *(a, b: CubeVec): CubeVec =
    cubeVec(a.x + b.x, a.y + b.y, a.z + b.z, a.d + b.d)
@@ -110,6 +121,8 @@ proc asCartesian*(v: AxialVec): CartVec =
 proc asCartVec*(v: AxialVec): CartVec =
    asCartesian(v)
 
+proc asVec3f(c: CubeVec): Vec3f = vec3f(c.x.float, c.y.float, c.z.float)
+
 proc roundedCube(x, y, z: float): CubeVec =
    var rx = x.round
    var ry = y.round
@@ -162,3 +175,30 @@ iterator hexRing*(center: AxialVec, radius: int): AxialVec =
 
 
 proc hexHeight*(hexSize: float): float = hexSize / 1.1547005f
+
+proc sideClosestTo*(a, b, tiebreaker: AxialVec): HexDirection =
+   if a == b:
+      return HexDirection.Center
+   let selfCube = a.asCubeVec.asVec3f
+   let deltaA = b.asCubeVec.asVec3f - selfCube
+   let deltaB = tieBreaker.asCubeVec.asVec3f - selfCube
+   let delta = deltaA + deltaB * 0.01f
+   let a = delta.x - delta.y
+   let b = delta.y - delta.z
+   let c = delta.z - delta.x
+
+   if a.abs > b.abs and a.abs > c.abs:
+      if a < 0.0f:
+         HexDirection.LowerLeft
+      else:
+         HexDirection.UpperRight
+   elif b.abs > a.abs and b.abs > c.abs:
+      if b < 0.0f:
+         HexDirection.Top
+      else:
+         HexDirection.Bottom
+   else:
+      if c < 0.0:
+         HexDirection.LowerRight
+      else:
+         HexDirection.UpperLeft

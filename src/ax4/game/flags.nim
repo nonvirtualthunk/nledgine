@@ -30,6 +30,7 @@ type
 
    FlagMetaInfo* = object
       behaviors*: seq[FlagBehavior]
+      keyedEquivalences*: Table[Taxon, seq[FlagEquivalence]]
       equivalences*: seq[FlagEquivalence]
       attackModifiers*: seq[AttackModifier]
 
@@ -62,6 +63,8 @@ proc readFromConfig*(c: ConfigValue, v: var FlagMetaInfo) =
       ))
 
 
+const flagEquivPattern = re"(?x)([a-zA-Z0-9]+)(?:\[(.+)\])?\(([0-9]+)\)"
+
 defineLibrary[FlagMetaInfo]:
    var lib = new Library[FlagMetaInfo]
    lib.defaultNamespace = "flags"
@@ -71,6 +74,7 @@ defineLibrary[FlagMetaInfo]:
    for k, v in confs["Flags"]:
       let key = taxon("Flags", k)
       flagInfo[key] = readInto(v, FlagMetaInfo)
+      echo &"Flag meta info[{key}]: {flagInfo[key]}"
 
    for k, c in confs["Flags"]:
       let key = taxon("Flags", k)
@@ -86,13 +90,19 @@ defineLibrary[FlagMetaInfo]:
          for ssv in subConf.asArr:
             var mulAmount = 1
             var flagName = ssv.asStr
+            var flagArg = none(Taxon)
             matcher(ssv.asStr):
-               extractMatches(wordNumberPattern, word, number):
+               extractMatches(flagEquivPattern, word, arg, number):
                   flagName = word
                   mulAmount = number.parseInt
+                  if arg != "":
+                     flagArg = some(qualifiedTaxon(arg))
 
             let equivalentTo = taxon("flags", flagName)
-            flagInfo[equivalentTo].equivalences.add(FlagEquivalence(flag: key, adder: add, multiplier: mul * mulAmount))
+            if flagArg.isSome:
+               flagInfo.mgetOrPut(equivalentTo, FlagMetaInfo()).keyedEquivalences.mgetOrPut(flagArg.get, default(seq[FlagEquivalence])).add(FlagEquivalence(flag: key, adder: add, multiplier: mul * mulAmount))
+            else:
+               flagInfo.mgetOrPut(equivalentTo, FlagMetaInfo()).equivalences.add(FlagEquivalence(flag: key, adder: add, multiplier: mul * mulAmount))
 
    for k, v in flagInfo:
       lib[k] = v
@@ -100,7 +110,10 @@ defineLibrary[FlagMetaInfo]:
    lib
 
 
-proc modifyFlag*(world: World, entity: Entity, flag: Taxon, modifier: Modifier[int]) =
+proc modifyFlag*(world: World, entity: Entity, flag: Taxon, arg: Option[Taxon], modifier: Modifier[int]) =
+   if (modifier.operation == ModifierOperation.Add or modifier.operation == ModifierOperation.Sub) and modifier.value == 0:
+      return
+
    withWorld(world):
       let flagInfo = library(FlagInfo).get(flag).get(FlagInfo())
       var cur = entity.data(flags.Flags).flags.getOrDefault(flag)
@@ -112,26 +125,52 @@ proc modifyFlag*(world: World, entity: Entity, flag: Taxon, modifier: Modifier[i
          cur = min(flagInfo.maxValue.get, cur)
 
       world.eventStmts(FlagChangedEvent(flag: flag, oldValue: oldV, newValue: cur)):
-         entity.modify(Flags.flags.put(flag, cur))
+         if arg.isSome:
+            entity.modify(Flags.keyedFlags.put(flag, arg.get, cur))
+         else:
+            entity.modify(Flags.flags.put(flag, cur))
 
-proc rawFlagValue*(flags: ref Flags, flag: Taxon): int =
-   flags.flags.getOrDefault(flag)
+proc modifyFlag*(world: World, entity: Entity, flag: Taxon, modifier: Modifier[int]) =
+   modifyFlag(world, entity, flag, none(Taxon), modifier)
 
-proc rawFlagValue*(view: WorldView, entity: Entity, flag: Taxon): int =
-   rawFlagValue(view.data(entity, Flags), flag)
+proc rawFlagValue*(flags: ref Flags, flag: Taxon, arg: Option[Taxon] = none(Taxon)): int =
+   if arg.isSome:
+      flags.keyedFlags.getOrDefault(flag).getOrDefault(arg.get)
+   else:
+      flags.flags.getOrDefault(flag)
 
-proc flagValue*(flags: ref Flags, flag: Taxon): int =
-   var cur = rawFlagValue(flags, flag)
+proc rawFlagValue*(view: WorldView, entity: Entity, flag: Taxon, arg: Option[Taxon] = none(Taxon)): int =
+   rawFlagValue(view.data(entity, Flags), flag, arg)
+
+proc flagValue*(flags: ref Flags, flag: Taxon, arg: Option[Taxon] = none(Taxon)): int =
+   var cur = rawFlagValue(flags, flag, arg)
    let lib = library(FlagMetaInfo)
    let meta = lib.get(flag).get(FlagMetaInfo())
-   for equiv in meta.equivalences:
-      let v = flagValue(flags, equiv.flag)
-      cur += v * equiv.multiplier + sgn(v) * equiv.adder
+   if arg.isSome:
+      for equiv in meta.keyedEquivalences.getOrDefault(arg.get):
+         let v = flagValue(flags, equiv.flag)
+         cur += v * equiv.multiplier + sgn(v) * equiv.adder
+   else:
+      for equiv in meta.equivalences:
+         let v = flagValue(flags, equiv.flag)
+         cur += v * equiv.multiplier + sgn(v) * equiv.adder
 
    cur
 
-proc flagValue*(view: WorldView, entity: Entity, flag: Taxon): int =
+proc flagValue*(flags: ref Flags, flag: string, arg: Option[Taxon] = none(Taxon)): int =
+   flagValue(flags, taxon("flags", flag), arg)
+
+proc flagValue*(view: WorldView, entity: Entity, flag: Taxon, arg: Option[Taxon] = none(Taxon)): int =
    withView(view):
       let flags = view.data(entity, Flags)
       flagValue(flags, flag)
 
+proc flagValues*(view: WorldView, entity: Entity): Table[Taxon, int] =
+   view.data(entity, Flags).flags
+
+
+
+proc keyedFlagValues*(flags: ref Flags, flag: string): Table[Taxon, int] =
+   let flag = taxon("flags", flag)
+   for key in flags.keyedFlags.getOrDefault(flag).keys:
+      result[key] = flagValue(flags, flag, some(key))

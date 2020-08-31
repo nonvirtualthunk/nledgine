@@ -10,6 +10,13 @@ import hex
 import ax4/game/cards
 import options
 import noto
+import sequtils
+import algorithm
+import ax4/game/randomness
+import patty
+import ax4/game/flags
+import prelude
+import core
 
 import prelude
 
@@ -151,3 +158,53 @@ proc possibleSelections*(view: WorldView, character: Entity, effectSource: Entit
          warn &"possible selections unimplemented for kind: {selector.kind}"
       of SelectionKind.Path:
          warn &"possible selections unimplemented for kind: {selector.kind}"
+
+
+proc sortByPreference*(view: WorldView, character: Entity, entities: seq[Entity], preference: TargetPreference): seq[Entity] =
+   withView(view):
+      var entitiesWithSortValue: seq[(Entity, float)]
+      case preference.kind:
+      of TargetPreferenceKind.Random:
+         var r = randomizer(view)
+         for ent in entities:
+            entitiesWithSortValue.add((ent, r.nextFloat))
+      of TargetPreferenceKind.Closest, TargetPreferenceKind.Furthest:
+         let startPos = character[Physical].position
+         let mult = if preference.kind == TargetPreferenceKind.Closest: 1.0 else: -1.0
+         for ent in entities:
+            let dist = ent[Physical].position.distance(startPos).float
+            entitiesWithSortValue.add((ent, dist * mult))
+      else:
+         warn &"Unsupported target preference : {preference.kind}"
+
+      entitiesWithSortValue.sort((a, b) => cmp(a[1], b[1]))
+      for tup in entitiesWithSortValue:
+         result.add(tup[0])
+
+proc isConditionMet*(view: WorldView, character: Entity, cond: GameCondition): bool =
+   withView(view):
+      match cond:
+         AlwaysTrue:
+            return true
+         HasFlag(flag, comparison, referenceValue):
+            let flagValue = flags.flagValue(view, character, flag)
+            return comparison.isTrueFor(flagValue, referenceValue)
+         IsDamaged(truth):
+            let damaged = character[Character].health.currentValue < character[Character].health.maxValue
+            return damaged == truth
+         CanSee(restriction):
+            let sightRange = character[Character].sightRange
+            let charPos = character[Physical].position
+            for ent in view.entitiesWithData(Character):
+               let dist = ent[Physical].position.distance(charPos)
+               if dist <= sightRange.float:
+                  if matchesRestriction(view, character, character, ent, restriction):
+                     return true
+         Near(restriction, targetDist):
+            let charPos = character[Physical].position
+            for ent in view.entitiesWithData(Character):
+               let dist = ent[Physical].position.distance(charPos).float
+               if dist <= targetDist.float:
+                  if matchesRestriction(view, character, character, ent, restriction):
+                     return true
+      false

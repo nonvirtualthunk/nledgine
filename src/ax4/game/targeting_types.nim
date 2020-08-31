@@ -10,6 +10,8 @@ import strutils
 import sequtils
 import rich_text
 import graphics/image_extras
+import prelude
+import config/config_helpers
 
 variantp SelectionShape:
    Hex
@@ -37,9 +39,13 @@ variantp SelectorKey:
 
 # conditions that must be met for something to occur or be allowed
 # currently planned for use with monster AI, i.e. do one moveset when it can see an enemy, one moveset when it can't
+# Also useful for conditional effects on cards, i.e. gain 1 stamina, if not at full health, gain 2 stamina
 variantp GameCondition:
+   AlwaysTrue
    CanSee(inViewCondition: SelectionRestriction)
    Near(nearCondition: SelectionRestriction, withinDistance: int)
+   HasFlag(flag: Taxon, comparison: ComparisonKind, value: int)
+   IsDamaged(truth: bool)
 
 type TargetPreferenceKind* = enum
    Closest
@@ -87,20 +93,26 @@ proc `==`*(a, b: Selector): bool =
       of SelectionKind.Path: a.moveRange == b.moveRange and a.subjectSelector == b.subjectSelector
 
 
-proc merge*(a, b: SelectionRestriction): SelectionRestriction
+proc merge*(a, b: SelectionRestriction): SelectionRestriction {.gcsafe.}
 
-proc `and`*(a, b: SelectionRestriction): SelectionRestriction =
+proc `and`*(a, b: SelectionRestriction): SelectionRestriction {.gcsafe.} =
    merge(a, b)
+
 proc add*(a: var SelectionRestriction, b: SelectionRestriction) =
-   a = a and b
+   if a == NoRestriction():
+      a = b
+   elif b == NoRestriction():
+      discard
+   else:
+      a = a and b
 
 
 
 proc selfSelector*(): Selector =
    Selector(kind: SelectionKind.Character, count: 1, restrictions: Self())
 
-proc enemySelector*(count: int): Selector =
-   Selector(kind: SelectionKind.Character, count: count, restrictions: Enemy())
+proc enemySelector*(count: int, res: SelectionRestriction = NoRestriction()): Selector =
+   Selector(kind: SelectionKind.Character, count: count, restrictions: Enemy() and res)
 
 proc friendlySelector*(count: int): Selector =
    Selector(kind: SelectionKind.Character, count: count, restrictions: Friendly())
@@ -111,7 +123,7 @@ proc charactersInShapeSelector*(shape: SelectionShape): Selector =
 proc pathSelector*(maxMoveRange: int, subjectSelector: SelectorKey, desiredDistance: int): Selector =
    Selector(kind: SelectionKind.Path, moveRange: maxMoveRange, subjectSelector: subjectSelector)
 
-proc inRange*(sel: var Selector, minRange: int, maxRange: int = 1000): var Selector =
+proc inRange*(sel: var Selector, minRange: int, maxRange: int = 1000): Selector =
    sel.restrictions.add(InRange(minRange, maxRange))
    sel
 
@@ -121,6 +133,9 @@ proc cardTypeSelector*(count: int, ofCardTypes: seq[Taxon]): Selector =
 proc selfCardSelector*(): Selector =
    Selector(kind: SelectionKind.Card, count: 1, restrictions: EffectSource())
 
+proc withRestriction*(s: var Selector, sr: SelectionRestriction): Selector =
+   s.restrictions.add(sr)
+   s
 
 
 proc readFromConfig*(cv: ConfigValue, s: var Selector) =
@@ -193,13 +208,24 @@ proc asSeq*(a: SelectionRestriction): seq[SelectionRestriction] =
       AllRestrictions(res): res
       _: @[a]
 
-proc merge*(a, b: SelectionRestriction): SelectionRestriction =
-   var resSeq = a.asSeq
-   resSeq.add(b.asSeq)
-   AllRestrictions(resSeq)
+proc merge*(a, b: SelectionRestriction): SelectionRestriction {.gcsafe.} =
+   if a == NoRestriction():
+      b
+   elif b == NoRestriction():
+      a
+   else:
+      var resSeq = a.asSeq
+      resSeq.add(b.asSeq)
+      AllRestrictions(resSeq)
 
 const canSeeRe = re"(?i)canSee\s?\((.+)\)"
 const nearRe = re"(?i)near\s?\((.+)\s?,\s?(\d+)\)"
+const hasFlagRe = re"(?ix)hasFlag\((.+)\)"
+const hasFlagValueRe = re"(?ix)hasFlagValue\((.+),([+-]?\d+)\)"
+const noFlagValueRe = re"(?ix)noFlagValue\((.+)\)"
+const isDamagedRe = re"(?ix)(?:is)?damaged"
+const undamagedRe = re"undamaged"
+
 
 proc readFromConfig*(cv: ConfigValue, v: var GameCondition) =
    if cv.isStr:
@@ -209,9 +235,39 @@ proc readFromConfig*(cv: ConfigValue, v: var GameCondition) =
             v = CanSee(readInto(asConf(seeWhat), SelectionRestriction))
          extractMatches(nearRe, nearWhat, dist):
             v = Near(readInto(asConf(nearWhat), SelectionRestriction), dist.parseInt)
+         extractMatches(hasFlagRe, flag):
+            v = HasFlag(taxon("flags", flag), ComparisonKind.GreaterThan, 0)
+         extractMatches(hasFlagValueRe, flag, value):
+            v = HasFlag(taxon("flags", flag), ComparisonKind.GreaterThanOrEqualTo, value.parseInt)
+         extractMatches(noFlagValueRe, flag):
+            v = HasFlag(taxon("flags", flag), ComparisonKind.EqualTo, 0)
+         extractMatches(isDamagedRe):
+            v = IsDamaged(true)
+         extractMatches(undamagedRe):
+            v = IsDamaged(false)
          warn &"Unrecognized string represeentation of a game condition: {str}"
    else:
       warn &"Unrecognized config representation of a game condition: {cv}"
+
+proc asRichText*(cond: GameCondition): RichText =
+   match cond:
+      AlwaysTrue: richText("true")
+      HasFlag(flag, comparison, value):
+         let (compWord, amountChange) = case comparison:
+         of ComparisonKind.LessThan: ("less than", 0)
+         of ComparisonKind.LessThanOrEqualTo: ("less than", 1)
+         of ComparisonKind.GreaterThan: ("at least", 1)
+         of ComparisonKind.GreaterThanOrEqualTo: ("at least", 0)
+         of ComparisonKind.EqualTo: ("exactly", 0)
+         of ComparisonKind.NotEqualTo: ("not exactly", 0)
+
+         richText(&"has {compWord} {value + amountChange}") & richText(flag)
+      IsDamaged(truth):
+         if truth:
+            richText("damaged")
+         else:
+            richText("undamaged")
+      _: richText(&"unimplemented rich text for GameCondition {cond}")
 
 proc asRichText*(s: SelectionShape): RichText =
    match s:
@@ -221,3 +277,9 @@ proc asRichText*(s: SelectionShape): RichText =
          for i in 1 ..< startDist + length:
             if i < startDist: result.add(richText(imageLike("ax4/images/ui/vertical_hex_dashed_outline.png")))
             else: result.add(richText(imageLike("ax4/images/ui/vertical_hex.png")))
+
+proc containsSelfRestriction*(s: SelectionRestriction): bool =
+   match s:
+      Self: true
+      AllRestrictions(subres): subres.anyIt(it.containsSelfRestriction())
+      _: false

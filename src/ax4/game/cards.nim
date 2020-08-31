@@ -21,6 +21,7 @@ import graphics/image_extras
 import worlds/taxonomy
 import options
 import ax4/game/ax_events
+import ax4/game/randomness
 
 export root_types
 
@@ -38,8 +39,8 @@ type
 
    CardInfo* = object
       name*: string
-      mainCost*: CharacterGameEffects
-      secondaryCost*: CharacterGameEffects
+      mainCost*: Option[CharacterGameEffects]
+      secondaryCost*: Option[CharacterGameEffects]
       image*: ImageLike
       effects*: seq[CharacterGameEffects]
 
@@ -70,12 +71,31 @@ type
       fromDeck*: DeckKind
       fromLocation*: CardLocation
 
+   HandDrawnEvent* = ref object of AxEvent
+      deckOwner*: Entity
+      deck*: DeckKind
+
+   ShuffleEvent* = ref object of AxEvent
+      deckOwner*: Entity
+      deck*: DeckKind
+      location*: CardLocation
 
 
 
 defineReflection(DeckOwner)
 defineReflection(Card)
 defineNestedReflection(Deck)
+
+method toString*(evt: CardAddedEvent): string =
+   return &"CardAdded({$evt[]})"
+method toString*(evt: CardRemovedEvent): string =
+   return &"CardRemoved({$evt[]})"
+method toString*(evt: CardMovedEvent): string =
+   return &"CardMoved({$evt[]})"
+method toString*(evt: HandDrawnEvent): string =
+   return &"HandDrawn{$evt[]}"
+method toString*(evt: ShuffleEvent): string =
+   return &"Shuffle{$evt[]}"
 
 
 proc deck*(deckOwner: ref DeckOwner, kind: DeckKind): ptr Deck =
@@ -131,23 +151,36 @@ proc removeCardFromCurrentLocation*(world: World, entity: Entity, card: Entity):
       warn &"cannot move card from current location, not in deck at all: {entity}, {card}"
    locOpt
 
-proc moveCardToLocation*(world: World, entity: Entity, card: Entity, deckKind: DeckKind, location: CardLocation) =
+# Unconditionally places the given card in the given location in this owner/deck
+proc addCardToLocation(world: World, entity: Entity, card: Entity, deckKind: DeckKind, location: CardLocation) =
    withWorld(world):
       case deckKind:
       of DeckKind.Combat:
          modify(entity, nestedModification(DeckOwner.combatDeck, DeckType.cards.appendToKey(location, @[card])))
 
+
+# Move card from the given deck/location to a desired deck/location
 proc moveCard*(world: World, entity: Entity, card: Entity, fromDeckKind: DeckKind, fromLocation: CardLocation, deckKind: DeckKind, location: CardLocation) =
    world.eventStmts(CardMovedEvent(entity: entity, deckOwner: entity, card: card, toDeck: deckKind, toLocation: location, fromDeck: fromDeckKind, fromLocation: fromLocation)):
       removeCardFromLocation(world, entity, card, fromDeckKind, fromLocation)
-      moveCardToLocation(world, entity, card, deckKind, location)
+      addCardToLocation(world, entity, card, deckKind, location)
 
+# Add a card not at all present in the deck owner to a deck/location within it
 proc addCard*(world: World, entity: Entity, card: Entity, toDeck: DeckKind, toLocation: CardLocation) =
    withWorld(world):
       world.eventStmts(CardAddedEvent(entity: entity, deckOwner: entity, card: card, toDeck: toDeck, toLocation: toLocation)):
          card.modify(Card.inDeck := some(entity))
-         moveCardToLocation(world, entity, card, toDeck, toLocation)
+         addCardToLocation(world, entity, card, toDeck, toLocation)
 
+# Move a card from its existing location in this deck owner to a different deck/location, no-op if already there
+proc moveCardToLocation*(world: World, entity: Entity, card: Entity, deckKind: DeckKind, location: CardLocation) =
+   let curDeckLoc = deckLocation(world, entity, card)
+   if curDeckLoc.isSome:
+      let (curDeck, curLoc) = curDeckLoc.get
+      if curDeck != deckKind or curLoc != location:
+         moveCard(world, entity, card, curDeck, curLoc, deckKind, location)
+   else:
+      warn &"Trying to move card {card} to location {location} in {deckKind} but it is not present on deck owner at all"
 
 proc removeCard*(world: World, entity: Entity, card: Entity) =
    let locOpt = deckLocation(world, entity, card)
@@ -195,6 +228,58 @@ proc cardsInLocation*(view: WorldView, entity: Entity, deckKind: DeckKind, locat
 proc cardsInLocation*(view: WorldView, entity: Entity, location: CardLocation): seq[Entity] =
    cardsInLocation(view, entity, activeDeckKind(view, entity), location)
 
+proc shuffle*(world: World, entity: Entity, deck: DeckKind, location: CardLocation) =
+   var r = randomizer(world)
+   var cards = cardsInLocation(world, entity, deck, location)
+   var newCards: seq[Entity]
+   while cards.nonEmpty:
+      let index = r.nextInt(cards.len)
+      let card = cards[index]
+      cards.del(index)
+      newCards.add(card)
+   world.eventStmts(ShuffleEvent(deckOwner: entity, entity: entity, deck: deck, location: location)):
+      case deck:
+      of DeckKind.Combat:
+         modify(entity, nestedModification(DeckOwner.combatDeck, DeckType.cards.put(location, newCards)))
+
+
+proc moveAllCardsBetweenLocations*(world: World, entity: Entity, deck: DeckKind, fromLocation: CardLocation, toLocation: CardLocation, shuffle: bool) =
+   for card in cardsInLocation(world, entity, deck, fromLocation):
+      moveCardToLocation(world, entity, card, deck, toLocation)
+   if shuffle:
+      shuffle(world, entity, deck, toLocation)
+
+
+proc drawCard*(world: World, entity: Entity, deck: DeckKind) =
+   var drawPile = cardsInLocation(world, entity, deck, CardLocation.DrawPile)
+   if drawPile.isEmpty:
+      moveAllCardsBetweenLocations(world, entity, deck, CardLocation.DiscardPile, CardLocation.DrawPile, shuffle = true)
+      drawPile = cardsInLocation(world, entity, deck, CardLocation.DrawPile)
+   if drawPile.nonEmpty:
+      moveCardToLocation(world, entity, drawPile[drawPile.len - 1], deck, CardLocation.Hand)
+   else:
+      warn &"Could not draw any cards, no cards to draw"
+
+proc drawHand*(world: World, entity: Entity, deck: DeckKind) =
+   world.eventStmts(HandDrawnEvent(entity: entity, deckOwner: entity, deck: deck)):
+      var cardsToDraw = 6
+
+      let drawPile = cardsInLocation(world, entity, deck, CardLocation.DrawPile)
+      let discardPile = cardsInLocation(world, entity, deck, CardLocation.DiscardPile)
+      for card in (discardPile & drawPile):
+         if cardsToDraw > 0 and card[Card].locked:
+            cardsToDraw.dec
+            moveCardToLocation(world, entity, card, deck, CardLocation.Hand)
+
+      for i in 0 ..< cardsToDraw:
+         drawCard(world, entity, deck)
+
+      let hand = cardsInLocation(world, entity, deck, CardLocation.Hand)
+      for i in 0 ..< hand.len:
+         echo "InHand: ", hand[i]
+
+
+
 
 # Loading and configuration
 
@@ -209,6 +294,23 @@ proc readFromConfig(cv: ConfigValue, v: var Card) =
       #    v.cardEffectGroups.add(EffectGroup())
       # readInto(cv, v.cardEffectGroups[0])
       # info &"reading into effect group 0 : {v.cardEffectGroups[0]}"
+   if cv["costs"].nonEmpty:
+      let costs = cv["costs"].readInto(seq[GameEffect])
+      let selEff = SelectableEffects(effects: costs, isCost: true)
+      if v.cardEffectGroups.isEmpty:
+         v.cardEffectGroups = @[EffectGroup(effects: @[selEff])]
+      else:
+         v.cardEffectGroups[v.cardEffectGroups.len - 1].effects.add(selEff)
+
+   if cv["conditionalEffects"].nonEmpty:
+      let condEffects = cv["conditionalEffects"]["effects"].readInto(seq[GameEffect])
+      let cond = cv["conditionalEffects"]["condition"].readInto(GameCondition)
+      let selEff = SelectableEffects(effects: condEffects, condition: cond)
+      if v.cardEffectGroups.isEmpty:
+         v.cardEffectGroups = @[EffectGroup(effects: @[selEff])]
+      else:
+         v.cardEffectGroups[v.cardEffectGroups.len - 1].effects.add(selEff)
+
    readInto(cv["cardEffectGroups"], v.cardEffectGroups)
    readInto(cv["image"], v.image)
    let xpConf = cv["xp"]
@@ -245,6 +347,8 @@ defineLibrary[CardArchetype]:
          arch.cardData[] = readInto(v, Card)
          arch.identity[] = identity
 
+         arch.cardData.image.preload()
+
          lib[cardTaxon] = arch
 
 
@@ -256,6 +360,8 @@ when isMainModule:
    let lib = library(CardArchetype)
 
    let cardArch = lib[taxon("card types", "move")]
+
+   echo "Card arch: ", cardArch.cardData[]
 
    let firstCost = cardArch.cardData.cardEffectGroups[0].costs[0]
    echoAssert firstCost.effects[0].kind == GameEffectKind.ChangeResource

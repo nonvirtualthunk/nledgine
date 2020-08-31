@@ -7,6 +7,7 @@ import game/library
 import resources
 import ax4/game/modifiers
 import ax4/game/ax_events
+import strformat
 
 type
    ResourcePools* = object
@@ -23,6 +24,9 @@ type
 defineReflection(ResourcePools)
 
 
+method toString*(evt: ResourceChangedEvent): string =
+   return &"ResourceChangedEvent({$evt[]})"
+
 proc currentResourceValue*(r: ref ResourcePools, taxon: Taxon): int =
    r.resources.getOrDefault(taxon).currentValue
 
@@ -30,6 +34,8 @@ proc maximumResourceValue*(r: ref ResourcePools, taxon: Taxon): int =
    r.resources.getOrDefault(taxon).maxValue
 
 proc recoverResource*(world: World, e: Entity, resource: Taxon, amount: int) =
+   if amount == 0: return
+
    withWorld world:
       let rsrc = e[ResourcePools]
       let oldV = rsrc.resources.getOrDefault(resource)
@@ -39,6 +45,8 @@ proc recoverResource*(world: World, e: Entity, resource: Taxon, amount: int) =
          e.modify(ResourcePools.resources.put(resource, newV))
 
 proc payResource*(world: World, e: Entity, resource: Taxon, amount: int) =
+   if amount == 0: return
+
    withWorld world:
       let rsrc = e[ResourcePools]
       let oldV = rsrc.resources.getOrDefault(resource)
@@ -48,6 +56,8 @@ proc payResource*(world: World, e: Entity, resource: Taxon, amount: int) =
          e.modify(ResourcePools.resources.put(resource, newV))
 
 proc changeResource*(world: World, e: Entity, resource: Taxon, modifier: Modifier[int]) =
+   if (modifier.operation == ModifierOperation.Add or modifier.operation == ModifierOperation.Sub) and modifier.value == 0: return
+
    withWorld world:
       let rsrc = e[ResourcePools]
       let oldV = rsrc.resources.getOrDefault(resource)
