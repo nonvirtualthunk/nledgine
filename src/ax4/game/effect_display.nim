@@ -51,6 +51,8 @@ proc asRichText*(view: WorldView, character: Entity, effect: GameEffect, subject
          if attack.isSome:
             var attack = attack.get
             attack.applyModifiers(effect.attackModifier)
+            let extraModifiers = attackModifierFromFlags(view, character)
+            attack.applyModifiers(extraModifiers)
             asRichText(view, character, attack)
          else:
             richText("did not resolve attack")

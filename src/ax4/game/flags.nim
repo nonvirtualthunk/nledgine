@@ -23,12 +23,15 @@ type
       adder*: int
       multiplier*: int
 
+
+
    FlagBehavior* = object
-      modifier*: Modifier[int]
+      effect*: GameEffect
       trigger*: EventCondition
       onlyIfPresent*: bool
 
    FlagMetaInfo* = object
+      flag*: Taxon
       behaviors*: seq[FlagBehavior]
       keyedEquivalences*: Table[Taxon, seq[FlagEquivalence]]
       equivalences*: seq[FlagEquivalence]
@@ -38,8 +41,8 @@ type
 
 
 proc readFromConfig*(c: ConfigValue, v: var FlagBehavior) =
-   warn &"Reading flag behavior directly from conf has not yet been implemented, cv: {c}"
-   discard
+   v.onlyIfPresent = true
+   readFromConfigByField(c, FlagBehavior, v)
 
 proc readFromConfig*(c: ConfigValue, v: var FlagMetaInfo) =
    c["behaviors"].readInto(v.behaviors)
@@ -47,19 +50,19 @@ proc readFromConfig*(c: ConfigValue, v: var FlagMetaInfo) =
       v.behaviors.add(FlagBehavior(
          onlyIfPresent: true,
          trigger: readInto(c["tickDown"], EventCondition),
-         modifier: Modifier[int](operation: ModifierOperation.Sub, value: 1)
+         effect: changeFlagEffect(v.flag, Modifier[int](operation: ModifierOperation.Sub, value: 1))
       ))
    if c["resetAtEndOfTurn"].asBool(orElse = false):
       v.behaviors.add(FlagBehavior(
          onlyIfPresent: true,
          trigger: EventCondition(kind: EventConditionKind.OnTurnEnded),
-         modifier: Modifier[int](operation: ModifierOperation.Set, value: 0)
+         effect: changeFlagEffect(v.flag, Modifier[int](operation: ModifierOperation.Set, value: 0))
       ))
    if c["resetAtStartOfTurn"].asBool(orElse = false):
       v.behaviors.add(FlagBehavior(
          onlyIfPresent: true,
          trigger: EventCondition(kind: EventConditionKind.OnTurnStarted),
-         modifier: Modifier[int](operation: ModifierOperation.Set, value: 0)
+         effect: changeFlagEffect(v.flag, Modifier[int](operation: ModifierOperation.Set, value: 0))
       ))
 
 
@@ -73,8 +76,10 @@ defineLibrary[FlagMetaInfo]:
    var flagInfo: Table[Taxon, FlagMetaInfo]
    for k, v in confs["Flags"]:
       let key = taxon("Flags", k)
-      flagInfo[key] = readInto(v, FlagMetaInfo)
-      echo &"Flag meta info[{key}]: {flagInfo[key]}"
+      var flagMeta = FlagMetaInfo(flag: key)
+      v.readInto(flagMeta)
+      flagInfo[key] = flagMeta
+      info &"Flag meta info[{key}]: {flagInfo[key]}"
 
    for k, c in confs["Flags"]:
       let key = taxon("Flags", k)

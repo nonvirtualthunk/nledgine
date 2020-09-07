@@ -7,6 +7,8 @@ import noto
 import glm
 import options
 
+const ConfigParsingDebug = false
+
 type
    ConfigValueKind {.pure.} = enum
       Empty
@@ -34,7 +36,8 @@ type
 template noAutoLoad* {.pragma.}
 
 let fieldStartCharacters = {':', '{'}
-let fieldValueEndCharacters = {'\n', ',', ']'}
+let fieldValueEndCharactersInArr = {'\n', ',', ']'}
+let fieldValueEndCharactersInObj = {'\n'}
 
 macro hoconAssert(ctx: ParseContext, b: typed) =
    result = quote do:
@@ -355,7 +358,7 @@ proc parseUntil(ctx: var ParseContext, chars: set[char]): string =
 proc skipWhitespace(ctx: var ParseContext) =
    ctx.cursor += skipWhitespace(ctx.str, ctx.cursor)
 
-proc parseValue(ctx: var ParseContext): ConfigValue {.gcsafe.}
+proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue {.gcsafe.}
 
 proc parseString(ctx: var ParseContext): ConfigValue =
    hoconAssert ctx, ctx.next() == '"'
@@ -391,7 +394,10 @@ proc parseArray(ctx: var ParseContext): ConfigValue {.gcsafe.} =
       if ctx.peek() == ']':
          ctx.advance()
          break
-      let value = parseValue(ctx)
+      info ConfigParsingDebug, &"Parsing array value[{values.len}]"
+      indentLogs(ConfigParsingDebug)
+      let value = parseValue(ctx, true)
+      unindentLogs(ConfigParsingDebug)
       values.add(value)
    result = ConfigValue(kind: ConfigValueKind.Array, values: values)
 
@@ -418,7 +424,11 @@ proc parseObj(ctx: var ParseContext, skipEnclosingBraces: bool = false): ConfigV
       let fieldName = ctx.parseUntil(fieldStartCharacters).strip()
       if ctx.peek() == ':':
          ctx.advance()
-      let fieldValue = parseValue(ctx)
+
+      info ConfigParsingDebug, &"Parsing field value {fieldName}"
+      indentLogs(ConfigParsingDebug)
+      let fieldValue = parseValue(ctx, false)
+      unindentLogs(ConfigParsingDebug)
 
       if fieldName.contains("."):
          let fieldNameSections = fieldName.split(".")
@@ -433,7 +443,7 @@ proc parseObj(ctx: var ParseContext, skipEnclosingBraces: bool = false): ConfigV
    result = ConfigValue(kind: ConfigValueKind.Object, fields: fields)
 
 
-proc parseValue(ctx: var ParseContext): ConfigValue =
+proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
    ctx.skipWhitespace()
    result = case ctx.peek():
    of '{':
@@ -443,7 +453,10 @@ proc parseValue(ctx: var ParseContext): ConfigValue =
    of '[':
       parseArray(ctx)
    else:
-      let rawValue = ctx.parseUntil(fieldValueEndCharacters)
+      let rawValue = if underArr:
+         ctx.parseUntil(fieldValueEndCharactersInArr)
+      else:
+         ctx.parseUntil(fieldValueEndCharactersInObj)
       if cmpIgnoreCase(rawValue, "true") == 0:
          ConfigValue(kind: ConfigValueKind.Bool, truth: true)
       elif cmpIgnoreCase(rawValue, "false") == 0:

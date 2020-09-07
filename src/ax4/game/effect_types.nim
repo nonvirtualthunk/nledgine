@@ -202,6 +202,9 @@ proc `==`*(a, b: GameEffect): bool =
 
 proc `==`*(a, b: EffectPlayGroup): bool = a.plays == b.plays
 
+proc changeFlagEffect*(flag: Taxon, modifier: Modifier[int]): GameEffect =
+   GameEffect(kind: GameEffectKind.ChangeFlag, flag: flag, flagModifier: modifier)
+
 iterator items*(s: SelectableEffects): GameEffect =
    for e in s.effects: yield e
 

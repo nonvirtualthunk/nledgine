@@ -24,7 +24,7 @@ type
 defineReflection(ResourcePools)
 
 
-method toString*(evt: ResourceChangedEvent): string =
+method toString*(evt: ResourceChangedEvent, view: WorldView): string =
    return &"ResourceChangedEvent({$evt[]})"
 
 proc currentResourceValue*(r: ref ResourcePools, taxon: Taxon): int =

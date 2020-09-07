@@ -9,6 +9,7 @@ import strutils
 import bitops
 import strformat
 import tables
+import sets
 
 export metric
 export sugar
@@ -213,6 +214,8 @@ proc isEmpty*[T](s: seq[T]): bool = s.len == 0
 proc nonEmpty*[T](s: seq[T]): bool = s.len != 0
 
 proc nonEmpty*[K, V](t: Table[K, V]): bool = s.len != 0
+proc nonEmpty*[K](t: HashSet[K]): bool = t.len != 0
+proc isEmpty*[K](t: HashSet[K]): bool = t.len == 0
 
 proc hasChanged*[T](w: var Watcher[T]): bool =
    if w.lastValue.isNone:

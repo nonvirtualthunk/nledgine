@@ -91,6 +91,14 @@ TaxonomyDisplay {
       icon : "ax4/images/icons/hedgehog.png"
    }
 
+   Flags.Vengeance : {
+      icon: "ax4/images/icons/vengeance.png"
+   }
+
+   Flags.Rage : {
+      icon: "ax4/images/icons/rage.png"
+   }
+
    ResourcePools.ActionPoints : {
       icon : "ax4/images/icons/action_point.png"
    }

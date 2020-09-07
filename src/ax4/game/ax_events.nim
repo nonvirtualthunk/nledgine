@@ -79,6 +79,9 @@ type
       flag*: Taxon
       oldValue*: int
       newValue*: int
+
+   EntityEnteredWorldEvent* = ref object of AxEvent
+
    WorldInitializedEvent* = ref object of AxEvent
 
 
@@ -103,28 +106,33 @@ type
          discard
 
 
-method toString*(evt: AttackEvent): string =
+method toString*(evt: AxEvent, view: WorldView): string {.base.} =
+   return repr(evt)
+
+method toString*(evt: AttackEvent, view: WorldView): string =
    return &"Attack({$evt[]})"
-method toString*(evt: StrikeEvent): string =
+method toString*(evt: StrikeEvent, view: WorldView): string =
    return &"Strike({$evt[]})"
-method toString*(evt: CharacterMoveEvent): string =
+method toString*(evt: CharacterMoveEvent, view: WorldView): string =
    return &"Move({$evt[]})"
-method toString*(evt: CharacterTurnEndEvent): string =
+method toString*(evt: CharacterTurnEndEvent, view: WorldView): string =
    return &"CharacterTurnEnd({$evt[]})"
-method toString*(evt: CharacterTurnStartEvent): string =
+method toString*(evt: CharacterTurnStartEvent, view: WorldView): string =
    return &"CharacterTurnStart({$evt[]})"
-method toString*(evt: FactionTurnEndEvent): string =
+method toString*(evt: FactionTurnEndEvent, view: WorldView): string =
    return &"FactionTurnEnd({$evt[]})"
-method toString*(evt: FactionTurnStartEvent): string =
+method toString*(evt: FactionTurnStartEvent, view: WorldView): string =
    return &"FactionTurnStart({$evt[]})"
-method toString*(evt: FlagChangedEvent): string =
+method toString*(evt: FlagChangedEvent, view: WorldView): string =
    return &"FlagChanged({$evt[]})"
-method toString*(evt: WorldInitializedEvent): string =
+method toString*(evt: WorldInitializedEvent, view: WorldView): string =
    return &"WorldInitialized({$evt[]})"
-method toString*(evt: DamageEvent): string =
+method toString*(evt: DamageEvent, view: WorldView): string =
    return &"Damage({$evt[]})"
-method toString*(evt: FullTurnEndEvent): string =
+method toString*(evt: FullTurnEndEvent, view: WorldView): string =
    return &"FullTurnEnd({$evt[]})"
+method toString*(evt: EntityEnteredWorldEvent, view: WorldView): string =
+   return &"EntityEnteredWorldEvent{$evt[]}"
 
 # proc matchesEventKind*(condition : EventCondition) : EventKind =
 #    case condition.kind:

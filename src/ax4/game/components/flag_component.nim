@@ -3,6 +3,8 @@ import worlds
 import engines
 import ax4/game/ax_events
 import tables
+import ax4/game/effects
+import noto
 
 
 
@@ -24,8 +26,10 @@ method onEvent*(g: FlagComponent, world: World, event: Event) =
          for flag, info in flagLib.values:
             for behavior in info.behaviors:
                for entity in matches(world, behavior.trigger, event):
-                  if not behavior.onlyIfPresent or entity.data(world, Flags).flags.contains(flag):
-                     modifyFlag(world, entity, flag, behavior.modifier)
+                  if not behavior.onlyIfPresent or rawFlagValue(world, entity, flag) > 0:
+                     # modifyFlag(world, entity, flag, behavior.modifier)
+                     if not resolveSimpleEffect(world, entity, behavior.effect):
+                        warn &"Flag behavior for {flag}, triggered by {behavior.trigger}, effect: {behavior.effect} could not be resolved"
 
 
 

@@ -86,15 +86,15 @@ defineReflection(DeckOwner)
 defineReflection(Card)
 defineNestedReflection(Deck)
 
-method toString*(evt: CardAddedEvent): string =
+method toString*(evt: CardAddedEvent, view: WorldView): string =
    return &"CardAdded({$evt[]})"
-method toString*(evt: CardRemovedEvent): string =
+method toString*(evt: CardRemovedEvent, view: WorldView): string =
    return &"CardRemoved({$evt[]})"
-method toString*(evt: CardMovedEvent): string =
+method toString*(evt: CardMovedEvent, view: WorldView): string =
    return &"CardMoved({$evt[]})"
-method toString*(evt: HandDrawnEvent): string =
+method toString*(evt: HandDrawnEvent, view: WorldView): string =
    return &"HandDrawn{$evt[]}"
-method toString*(evt: ShuffleEvent): string =
+method toString*(evt: ShuffleEvent, view: WorldView): string =
    return &"Shuffle{$evt[]}"
 
 
@@ -273,10 +273,6 @@ proc drawHand*(world: World, entity: Entity, deck: DeckKind) =
 
       for i in 0 ..< cardsToDraw:
          drawCard(world, entity, deck)
-
-      let hand = cardsInLocation(world, entity, deck, CardLocation.Hand)
-      for i in 0 ..< hand.len:
-         echo "InHand: ", hand[i]
 
 
 

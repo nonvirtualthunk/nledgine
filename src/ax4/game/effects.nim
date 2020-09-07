@@ -24,6 +24,9 @@ proc effectiveAttack*(view: WorldView, character: Entity, effect: GameEffect): O
       if attack.isSome:
          var attack = attack.get
          attack.applyModifiers(effect.attackModifier)
+         let extraModifiers = attackModifierFromFlags(view, character)
+         attack.applyModifiers(extraModifiers)
+
          some(attack)
       else:
          attack
@@ -217,3 +220,14 @@ proc isEffectPlayable*(view: WorldView, character: Entity, source: Entity, effec
       true
 
 
+
+proc resolveSimpleEffect*(world: World, character: Entity, effect: GameEffect): bool =
+   var play = EffectPlay(effects: SelectableEffects(effects: @[effect]))
+   play.selectors = selectionsForEffect(world, character, play.effects)
+   for selKey, sel in play.selectors:
+      if sel.restrictions.containsSelfRestriction:
+         play.selected[selKey] = SelectedEntity(@[character])
+      else:
+         warn &"Simple effect resolution can only use unambiguous selectors (i.e. ones with self restrictions)"
+         return false
+   resolveEffect(world, character, play)

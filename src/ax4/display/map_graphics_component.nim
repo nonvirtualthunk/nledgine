@@ -15,6 +15,10 @@ import game/library
 import options
 import noto
 import events
+import ax4/game/vision
+import ax4/game/characters
+import sets
+import ax4/game/ax_events
 
 type
    MapGraphicsComponent* = ref object of GraphicsComponent
@@ -23,6 +27,8 @@ type
       shader: Shader
       imagesByKind: Table[Taxon, Image]
       cullWatcher: Watcher[int]
+      needsVisionUpdate: bool
+      lastProcessedEventTime: WorldEventClock
       hexSize: float
 
       overlayVao: VAO[SimpleVertex, uint16]
@@ -41,8 +47,20 @@ method initialize(g: MapGraphicsComponent, world: World, curView: WorldView, dis
 
    g.overlayVao = newVAO[SimpleVertex, uint16]()
 
+method onEvent*(g: MapGraphicsComponent, world: World, curView: WorldView, display: DisplayWorld, event: Event) =
+   # withView(world):
+   #    ifOfType(AxEvent, event):
+   #       if event.state == PostEvent:
+   #          matcher(event):
+   #             extract(VisionChangedEvent, entity):
+   #                if entity.hasData(Faction) and entity[Faction].playerControlled:
+   #                   g.needsVisionUpdate = true
+   #                   info "Marking for vision update"
+   discard
 
 proc render(g: MapGraphicsComponent, view: WorldView, display: DisplayWorld) =
+   g.needsVisionUpdate = false
+
    withView(view):
       var vi = 0
       var ii = 0
@@ -54,8 +72,15 @@ proc render(g: MapGraphicsComponent, view: WorldView, display: DisplayWorld) =
 
       var vegInfoByComp = newTable[(Taxon, Taxon), TilesetGraphicsInfo]()
 
+
+      var vision = playerVisionContext(view)
+
       let map = view.data(Map)
       for hex in cullingData.hexesByCartesianCoord:
+         if not vision.isRevealed(hex): continue
+
+         var fogOfWar = not vision.isVisible(hex)
+
          let tileEntOpt = map.tileAt(hex)
          if tileEntOpt.isSome:
             let tileEnt = tileEntOpt.get
@@ -88,13 +113,16 @@ proc render(g: MapGraphicsComponent, view: WorldView, display: DisplayWorld) =
                for q in 0 ..< 4:
                   let vt = g.vao[vi+q]
                   vt.vertex = cart.Vec3f + CenteredUnitSquareVertices[q] * g.hexSize
-                  vt.color = rgba(1.0f, 1.0f, 1.0f, 1.0f)
+                  if fogOfWar:
+                     vt.color = rgba(0.5f, 0.5f, 0.5f, 1.0f)
+                  else:
+                     vt.color = rgba(1.0f, 1.0f, 1.0f, 1.0f)
                   vt.texCoords = tc[q]
                g.vao.addIQuad(ii, vi)
       g.vao.swap()
 
 proc needsUpdate(g: MapGraphicsComponent): bool =
-   g.cullWatcher.hasChanged
+   g.cullWatcher.hasChanged or g.needsVisionUpdate
 
 # method onEvent(g : MapGraphicsComponent, world : World, curView : WorldView, display : DisplayWorld, event : Event) =
 #     ifOfType(event, MouseMove):
@@ -114,8 +142,21 @@ proc needsUpdate(g: MapGraphicsComponent): bool =
 #         g.overlayVao.swap()
 
 method update(g: MapGraphicsComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =
-   if g.needsUpdate:
-      g.render(world.view, display)
+   withView(curView):
+      while g.lastProcessedEventTime < curView.currentTime:
+         let event = curView.eventAtTime(g.lastProcessedEventTime)
+         ifOfType(AxEvent, event):
+            if event.state == PostEvent:
+               matcher(event):
+                  extract(VisionChangedEvent, entity):
+                     if entity.hasData(Faction) and entity[Faction].playerControlled:
+                        g.needsVisionUpdate = true
+                        info "Marking for vision update"
+         g.lastProcessedEventTime += 1
+
+   if curView.hasData(Map):
+      if g.needsUpdate:
+         g.render(curView, display)
 
    @[
        draw(g.vao, g.shader, @[g.texture], display[CameraData].camera),

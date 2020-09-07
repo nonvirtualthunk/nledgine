@@ -61,3 +61,9 @@ iterator entitiesInFaction*(view: WorldView, faction: Entity): Entity =
    for ent in view.entitiesWithData(Allegiance):
       if view.data(ent, Allegiance).faction == faction:
          yield ent
+
+iterator playerFactions*(view: WorldView): Entity =
+   withView(view):
+      for ent in view.entitiesWithData(Faction):
+         if ent[Faction].playerControlled:
+            yield ent

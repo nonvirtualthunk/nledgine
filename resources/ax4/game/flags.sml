@@ -117,16 +117,18 @@ Flags {
       description : "Rage increases your dmage dealt and damage taken by 1"
       
       tickDown : OnStartOfTurn
+
+      countsAsOne : [DamageBonus, ExtraDamageTaken]
    }
 
    Vengeance {
-      description : "Vengeance increases your Rage by 1 each time you are attacked"
+      description : "Vengeance increases your Rage by 2 each time you are attacked"
 
       tickDown : OnStartOfTurn
-      behavior : {
-         condition : Attacked
-         effect : changeFlag(Rage, +1)
-      }
+      behaviors : [{
+         trigger : OnAttacked
+         effect : changeFlag(Rage, +2)
+      }]
    }
 
 
@@ -192,9 +194,27 @@ Flags {
       keyed : true
    }
 
+   ExtraDamageTaken {
+      description : "Extra Damage Taken"
+      hidden : true
+      keyed : false
+   }
+
+   DamageBonus {
+      description: "Extra Damage Dealt"
+      hidden : true
+      keyed : false
+   }
+
    DamageAbsorption {
       description : "Damage Absorption"
       hidden : true
       keyed : true
+   }
+
+   SightRangeDelta {
+      description: "Sight Range Delta"
+      hidden: true
+      keyed: false
    }
 }

@@ -28,6 +28,7 @@ type CardLocation* = enum
 type DeckKind* {.pure.} = enum
    Combat
 
+
 proc contains*(s: SelectionResult, e: Entity): bool =
    match s:
       SelectedEntity(entities): entities.contains(e)

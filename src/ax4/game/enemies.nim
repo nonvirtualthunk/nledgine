@@ -42,7 +42,7 @@ type
 
 defineReflection(Monster)
 
-method toString*(evt: MonsterActionChosenEvent): string =
+method toString*(evt: MonsterActionChosenEvent, view: WorldView): string =
    return &"MonsterActionChosen{$evt[]}"
 
 

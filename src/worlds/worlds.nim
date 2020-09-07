@@ -57,6 +57,7 @@ type
       currentTime*: WorldEventClock
       entityCounter: int
       eventModificationTimes: seq[WorldModifierClock] # the "current modifier time" when the event was created, all modifications < that time are included
+      eventCallbacks*: seq[(Event) -> void]
 
    DisplayWorld* = ref object
       entities: seq[DisplayEntity]
@@ -84,6 +85,7 @@ proc `<`*(a, b: WorldEventClock): bool {.borrow.}
 proc `<`*(a, b: WorldModifierClock): bool {.borrow.}
 proc `<=`*(a, b: WorldEventClock): bool {.borrow.}
 proc `<=`*(a, b: WorldModifierClock): bool {.borrow.}
+proc `+=`*(a: var WorldEventClock, d: int) = a = (a.int + d).WorldEventClock
 
 proc `$`*(e: Entity): string =
    return $e.id
@@ -153,6 +155,8 @@ proc addEvent*(world: World, evt: Event): WorldEventClock {.discardable.} =
    world.eventModificationTimes.add(world.modificationContainer.modificationClock)
    addEventToView(world.view, evt, world.currentTime)
    world.currentTime.inc
+   for callback in world.eventCallbacks:
+      callback(evt)
 
 proc preEvent*(world: World, evt: GameEvent): WorldEventClock {.discardable.} =
    evt.state = GameEventState.PreEvent
@@ -161,6 +165,11 @@ proc preEvent*(world: World, evt: GameEvent): WorldEventClock {.discardable.} =
 proc postEvent*(world: World, evt: GameEvent): WorldEventClock {.discardable.} =
    evt.state = GameEventState.PostEvent
    world.addEvent(evt)
+
+proc addFullEvent*(world: World, evt: GameEvent): WorldEventClock {.discardable.} =
+   let copy = evt.deepCopy()
+   preEvent(world, evt)
+   postEvent(world, copy)
 
 template eventStmts*(world: World, evt: GameEvent, stmts: untyped) =
    world.preEvent(evt.deepCopy())
@@ -339,6 +348,12 @@ proc hasData*[C] (view: WorldView, entity: Entity, dataType: DataType[C]): bool 
    if not result and view.baseView.isSome:
       result = view.baseView.get.hasData(entity, dataType)
 
+proc hasData*[C] (view: WorldView, dataType: DataType[C]): bool =
+   hasData(view, WorldEntity, dataType)
+
+proc hasData*[C] (view: WorldView, dataType: typedesc[C]): bool =
+   hasData(view, WorldEntity, dataType.getDataType())
+
 proc data*[C] (world: DisplayWorld, entity: DisplayEntity, t: typedesc[C]): ref C =
    let dataType = t.getDataType()
    var dc = (DataContainer[C])world.dataContainers[dataType.index]
@@ -443,6 +458,8 @@ macro attachData*[T](entity: DisplayEntity, t: T): untyped =
 macro hasData*(entity: Entity, t: typedesc): untyped =
    let dataTypeIdent = newIdentNode($t & "Type")
    result = quote do:
+      when not compiles(injectedView):
+         {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
       injectedView.hasData(`entity`, `dataTypeIdent`)
       # when compiles(view.hasData(`entity`, `dataTypeIdent`)):
       #    view.hasData(`entity`, `dataTypeIdent`)

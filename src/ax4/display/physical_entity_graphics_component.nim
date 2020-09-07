@@ -20,6 +20,10 @@ import ax4/game/effect_types
 import ax4/game/flags
 import ax4/display/ax_display_events
 import reflect
+import ax4/display/tactical_ui_component
+import graphics/taxonomy_display
+import ax4/game/vision
+import sets
 
 type
    PhysicalEntityGraphicsComponent* = ref object of GraphicsComponent
@@ -64,17 +68,28 @@ proc drawFlagUI(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Di
       qb.color = rgba(1.0, 1.0, 1.0, percent)
 
       for flag, value in flagValues(view, entity):
+         let lib = library(TaxonomyDisplay)
+         let tdisp = lib.get(flag)
+         if tdisp.isSome and tdisp.get.icon.isSome:
+            qb.texture = tdisp.get.icon.get
+         else:
+            qb.texture = image("ax4/images/icons/question_mark_small_outlined.png")
+
          qb.position = iconPos
          qb.dimensions = vec2f(16.0f, 16.0f)
-         qb.texture = image("ax4/images/icons/question_mark_small_outlined.png")
+
          qb.drawTo(g.uiCanvas)
          iconPos.x += 8
 
-         let numImg = image(&"ax4/images/ui/numerals/{value + 1}_outlined.png")
-         qb.position = iconPos - vec3f(0.0f, 8.0f, 0.0f)
-         qb.dimensions = vec2f(numImg.dimensions) * 0.5
-         qb.texture = numImg
-         qb.drawTo(g.uiCanvas)
+         let numStr = $value
+         for c in numStr:
+            let numImg = image(&"ax4/images/ui/numerals/{value}_outlined.png")
+            qb.position = iconPos - vec3f(0.0f, 8.0f, 0.0f)
+            qb.dimensions = vec2f(numImg.dimensions) * 0.5
+            qb.texture = numImg
+            qb.drawTo(g.uiCanvas)
+            iconPos.x += qb.dimensions.x
+         iconPos.x += 10
 
 
 
@@ -88,6 +103,8 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
    let stamina = taxon("resource pools", "stamina points")
 
    withView(view):
+      var vision = playerVisionContext(view)
+
       let hexSize = g.hexSize
       let hexHeight = hexSize.hexHeight
 
@@ -99,6 +116,8 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
 
       for physEnt in view.entitiesWithData(Physical):
          let physical = physEnt[Physical]
+         if not vision.isVisible(physical.position): continue
+
          var charImg = image("ax4/images/oryx/creatures_24x24/oryx_16bit_fantasy_creatures_38.png")
          if physEnt.hasData(Monster):
             let monster = physEnt[Monster]
@@ -230,6 +249,9 @@ proc updateFlagUI(g: PhysicalEntityGraphicsComponent, view: WorldView, display: 
    g.mousedOverHex.ifPresent(hex):
       entityAt(view, hex).ifPresent(mousedOverEnt):
          desiredFlagDisplay[mousedOverEnt] = 1.0
+
+   display.withSelectedCharacter:
+      desiredFlagDisplay[selC] = 1.0
 
    for ent in desiredFlagDisplay.keys:
       if not g.curFlagDisplay.hasKey(ent):

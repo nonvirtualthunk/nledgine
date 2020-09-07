@@ -73,6 +73,8 @@ proc hash*(k: SelectorKey): Hash =
 type
    Selector* = object
       restrictions*: SelectionRestriction
+      all*: bool # indicates that all targets matching the restriction should be selected
+                 # Note ^^ not yet implemented, but should be at some point for implementation of unambiguous effects selections other than self
       case kind*: SelectionKind
       of SelectionKind.Character, SelectionKind.Taxon, SelectionKind.Hex, SelectionKind.Card, SelectionKind.CardType:
          count*: int

@@ -199,8 +199,8 @@ macro ifOfType*(t: typedesc, x: untyped, stmts: untyped): untyped =
 
 macro ofType*(x: untyped, t: typed, stmts: untyped): untyped =
    result = quote do:
-      if typeTarget of `t`:
-         let `x` {.inject.} = typeTarget.`t`
+      if matchTarget of `t`:
+         let `x` {.inject.} = matchTarget.`t`
          `stmts`
          break
    # let cond = quote do:
@@ -215,47 +215,47 @@ macro ofType*(x: untyped, t: typed, stmts: untyped): untyped =
 
 macro extract*(t: typed, stmts: untyped): untyped =
    result = quote do:
-      if typeTarget of `t`:
+      if matchTarget of `t`:
          `stmts`
          break
 
 macro extract*(t: typed, field1: untyped, stmts: untyped): untyped =
    result = quote do:
-      if typeTarget of `t`:
-         let `field1` {.inject.} = typeTarget.`t`.`field1`
+      if matchTarget of `t`:
+         let `field1` {.inject.} = matchTarget.`t`.`field1`
          `stmts`
          break
 
 macro extract*(t: typed, field1: untyped, field2: untyped, stmts: untyped): untyped =
    result = quote do:
-      if typeTarget of `t`:
-         let `field1` {.inject.} = typeTarget.`t`.`field1`
-         let `field2` {.inject.} = typeTarget.`t`.`field2`
+      if matchTarget of `t`:
+         let `field1` {.inject.} = matchTarget.`t`.`field1`
+         let `field2` {.inject.} = matchTarget.`t`.`field2`
          `stmts`
          break
 
 macro extract*(t: typed, field1: untyped, field2: untyped, field3: untyped, stmts: untyped): untyped =
    result = quote do:
-      if typeTarget of `t`:
-         let `field1` {.inject.} = typeTarget.`t`.`field1`
-         let `field2` {.inject.} = typeTarget.`t`.`field2`
-         let `field3` {.inject.} = typeTarget.`t`.`field3`
+      if matchTarget of `t`:
+         let `field1` {.inject.} = matchTarget.`t`.`field1`
+         let `field2` {.inject.} = matchTarget.`t`.`field2`
+         let `field3` {.inject.} = matchTarget.`t`.`field3`
          `stmts`
          break
 
 macro extract*(t: typed, field1: untyped, field2: untyped, field3: untyped, field4: untyped, stmts: untyped): untyped =
    result = quote do:
-      if typeTarget of `t`:
-         let `field1` {.inject.} = typeTarget.`t`.`field1`
-         let `field2` {.inject.} = typeTarget.`t`.`field2`
-         let `field3` {.inject.} = typeTarget.`t`.`field3`
-         let `field4` {.inject.} = typeTarget.`t`.`field4`
+      if matchTarget of `t`:
+         let `field1` {.inject.} = matchTarget.`t`.`field1`
+         let `field2` {.inject.} = matchTarget.`t`.`field2`
+         let `field3` {.inject.} = matchTarget.`t`.`field3`
+         let `field4` {.inject.} = matchTarget.`t`.`field4`
          `stmts`
          break
 
 template matchType*(value: untyped, stmts: untyped) =
    block:
-      let typeTarget {.inject.} = value
+      let matchTarget {.inject.} = value
       stmts
 
 macro ifSome*(x: untyped, stmts: untyped): untyped =

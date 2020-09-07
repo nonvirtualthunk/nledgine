@@ -69,7 +69,7 @@ proc effectiveHand(g: CardUIComponent, view: WorldView, display: DisplayWorld): 
             result.add(card)
 
 
-proc updateCardWidgetBindings(g: CardUIComponent, view: WorldView, display: DisplayWorld, card: Entity, w: CardWidget, selC: Entity) =
+proc updateCardWidgetBindings(g: CardUIComponent, view: WorldView, display: DisplayWorld, card: Entity, w: CardWidget, selC: Entity) {.gcsafe.} =
    let cardInfo = cardInfoFor(view, selC, card, w.selectedGroup)
    w.widget.bindValue("card", cardInfo)
 

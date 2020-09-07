@@ -38,11 +38,16 @@ import ax4/game/turns
 import ax4/game/components/flag_component
 import ax4/game/components/ai_component
 import ax4/display/animation_component
+import ax4/game/vision
+import worlds/gamedebug
+import ax4/game/ax_events
+import strutils
 
 type
    PrintComponent = ref object of GameComponent
       updateCount: int
       lastPrint: UnitOfTime
+      mostRecentEventStr: string
 
    MapInitializationComponent = ref object of GameComponent
 
@@ -63,7 +68,21 @@ method update(g: PrintComponent, world: World) =
       g.updateCount = 0
 
 method onEvent(g: PrintComponent, world: World, event: Event) =
-   info &"event: {event.toString}"
+   ifOfType(AxEvent, event):
+      let eventStr = toString(event, world)
+      if event.state == GameEventState.PreEvent:
+         info("> " & eventStr)
+         indentLogs()
+      else:
+         unindentLogs()
+
+         let adjustedPrev = g.mostRecentEventStr.replace("PreEvent", "")
+         let adjustedNew = eventStr.replace("PostEvent", "")
+
+         if adjustedPrev != adjustedNew:
+            info("< " & eventStr)
+
+      g.mostRecentEventStr = eventStr
 
 method initialize(g: MapInitializationComponent, world: World) =
    let grass = taxon("vegetations", "grass")
@@ -114,9 +133,13 @@ method initialize(g: MapInitializationComponent, world: World) =
 
       let playerFaction = world.createEntity()
       playerFaction.attachData(Faction(color: rgba(0.7f, 0.15f, 0.2f, 1.0f), playerControlled: true))
+      playerFaction.attachData(Vision())
+      playerFaction.attachData(DebugData(name: "Player Faction"))
 
       let enemyFaction = world.createEntity()
       enemyFaction.attachData(Faction(color: rgba(0.2f, 0.1f, 0.8f, 1.0f), playerControlled: false))
+      enemyFaction.attachData(Vision())
+      enemyFaction.attachData(DebugData(name: "Enemy Faction"))
 
       let tobold = world.createEntity()
       tobold.attachData(Physical())
@@ -137,9 +160,12 @@ method initialize(g: MapInitializationComponent, world: World) =
       tobold.attachData(Character(health: reduceable(6)))
       tobold.attachData(Inventory())
       tobold.attachData(Flags())
+      tobold.attachData(Vision())
+      tobold.attachData(DebugData(name: "Tobold"))
 
       let spear = createItem(world, taxon("items", "longspear"))
       equipItem(world, tobold, spear)
+      world.addFullEvent(EntityEnteredWorldEvent(entity: tobold))
 
 
 
@@ -150,11 +176,14 @@ method initialize(g: MapInitializationComponent, world: World) =
       slime.attachData(Character(health: reduceable(9)))
       slime.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(2), taxon("resource pools", "stamina points"): reduceable(3)}.toTable))
       slime.attachData(Flags())
+      slime.attachData(Vision())
+      slime.attachData(DebugData(name: "Slime"))
+      world.addFullEvent(EntityEnteredWorldEvent(entity: slime))
 
       world.attachData(RandomizationWorldData())
       world.attachData(TurnData(activeFaction: playerFaction, turnNumber: 1))
 
-      world.addEvent(WorldInitializedEvent())
+      world.addFullEvent(WorldInitializedEvent())
 
 
 method update(g: MapInitializationComponent, world: World) = discard
@@ -163,7 +192,13 @@ main(GameSetup(
    windowSize: vec2i(1440, 900),
    resizeable: false,
    windowTitle: "Ax4",
-   gameComponents: @[(GameComponent)(PrintComponent()), MapInitializationComponent(), FlagComponent(), AIComponent()],
+   gameComponents: @[
+      (GameComponent)(PrintComponent()),
+      MapInitializationComponent(),
+      FlagComponent(),
+      AIComponent(),
+      VisionComponent()
+   ],
    graphicsComponents: @[
       createCameraComponent(createPixelCamera(mapGraphicsSettings().baseScale)),
       MapGraphicsComponent(),

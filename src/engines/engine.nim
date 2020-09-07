@@ -46,12 +46,15 @@ type
       displayWorld*: DisplayWorld
 
 
+proc processEvents(ge: GameEngine) {.gcsafe.}
 
 proc newGameEngine*(): GameEngine =
-   result = GameEngine()
+   let ge = GameEngine()
+   result = ge
    result.components = @[]
    result.world = createWorld()
    result.eventBus = createEventBus(result.world)
+   result.world.eventCallbacks.add((e: Event) => processEvents(ge))
 
 proc newGraphicsEngine*(gameEngine: GameEngine): GraphicsEngine {.gcsafe.} =
    result = GraphicsEngine()
@@ -109,16 +112,23 @@ macro onEvent*(g: GraphicsComponent, t: typedesc, name: untyped, body: untyped) 
 
 
 proc update*(ge: GameEngine) =
-   for evt in ge.eventBus.newEvents:
-      for comp in ge.components:
-         comp.onEvent(ge.world, evt)
-         for callback in comp.eventCallbacks:
-            callback(ge.world, evt)
+   # for evt in ge.eventBus.newEvents:
+   #    for comp in ge.components:
+   #       comp.onEvent(ge.world, evt)
+   #       for callback in comp.eventCallbacks:
+   #          callback(ge.world, evt)
 
    for comp in ge.components:
       let t = relTime()
       let dt = t - comp.lastUpdated
       comp.update(ge.world)
+
+proc processEvents(ge: GameEngine) =
+   for evt in ge.eventBus.newEvents:
+      for comp in ge.components:
+         comp.onEvent(ge.world, evt)
+         for callback in comp.eventCallbacks:
+            callback(ge.world, evt)
 
 proc initialize*(ge: GameEngine) =
    ge.components = ge.components.sortedByIt(it.initializePriority * -1)

@@ -23,11 +23,12 @@ let physicalDamage = taxon("damage types", "physical")
 let armorDelta = taxon("flags", "armor delta")
 let blockFlag = taxon("flags", "block")
 
+
 type
    BlockGainedEvent* = ref object of AxEvent
       amountGained*: int
 
-method toString*(evt: BlockGainedEvent): string =
+method toString*(evt: BlockGainedEvent, view: WorldView): string =
    return &"BlockGained({$evt[]})"
 
 proc availableAttacks*(view: WorldView, character: Entity): seq[Attack] =
@@ -60,13 +61,17 @@ proc resolveAttack*(view: WorldView, character: Entity, selector: AttackSelector
             return some(attack)
       none(Attack)
 
+proc attackModifierFromFlags*(view: WorldView, character: Entity): AttackModifier =
+   result.damage = add(flags.flagValue(view, character, taxon("flags", "damage bonus")))
+   result.accuracy = add(flags.flagValue(view, character, taxon("flags", "accuracy delta")).int16)
+
 
 
 proc attackCosts*(attack: Attack): seq[GameEffect] =
    if attack.actionCost != 0:
-      result.add(GameEffect(kind: GameEffectKind.ChangeResource, resource: taxon("ResourcePools", "actionPoints"), resourceModifier: reduce(attack.actionCost.int)))
+      result.add(GameEffect(kind: GameEffectKind.ChangeResource, resource: taxon("resource pools", "action points"), resourceModifier: reduce(attack.actionCost.int)))
    if attack.staminaCost != 0:
-      result.add(GameEffect(kind: GameEffectKind.ChangeResource, resource: taxon("ResourcePools", "staminaPoints"), resourceModifier: reduce(attack.staminaCost.int)))
+      result.add(GameEffect(kind: GameEffectKind.ChangeResource, resource: taxon("resource pools", "stamina points"), resourceModifier: reduce(attack.staminaCost.int)))
    result.add(attack.additionalCosts)
 
 proc defenseFor*(view: WorldView, character: Entity): Defense =
@@ -136,6 +141,7 @@ proc performAttack*(world: World, character: Entity, attack: Attack, targets: se
 
                if baseRoll + attack.accuracy - defense.defense > 0:
                   var damage = attack.damage.roll(randomizer)
+                  damage.fixed += flags.flagValue(world, character, taxon("flags", "ExtraDamageTaken"))
                   let blockReduction = computeBlockAmount(world, target, damage)
 
                   let strikeResult = if blockReduction > 0:

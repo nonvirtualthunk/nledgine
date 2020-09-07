@@ -60,13 +60,13 @@ defineReflection(Inventory)
 defineReflection(Item)
 
 
-method toString*(evt: ItemEquippedEvent): string =
+method toString*(evt: ItemEquippedEvent, view: WorldView): string =
    return &"ItemEquipped({$evt[]})"
-method toString*(evt: ItemUnequippedEvent): string =
+method toString*(evt: ItemUnequippedEvent, view: WorldView): string =
    return &"ItemUnequipped({$evt[]})"
-method toString*(evt: ItemRemovedFromInventoryEvent): string =
+method toString*(evt: ItemRemovedFromInventoryEvent, view: WorldView): string =
    return &"ItemRemovedFromInventory({$evt[]})"
-method toString*(evt: ItemPlacedInInventoryEvent): string =
+method toString*(evt: ItemPlacedInInventoryEvent, view: WorldView): string =
    return &"ItemPlacedInInventory({$evt[]})"
 
 

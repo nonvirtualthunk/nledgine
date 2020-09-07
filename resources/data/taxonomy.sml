@@ -358,6 +358,9 @@ Taxonomy {
       EndOfTurnDamage : InternalFlag
       DamageReduction : InternalFlag
       DamageAbsorption : InternalFlag
+      ExtraDamageTaken : InternalFlag
+      DamageBonus : InternalFlag
+      SightRangeDelta : InternalFlag
    }
 
    Tag : []
