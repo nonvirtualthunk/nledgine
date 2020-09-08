@@ -145,7 +145,9 @@ method onEvent*(g: AIComponent, world: World, event: Event) =
             if state == GameEventState.PostEvent:
                if not faction[Faction].playerControlled:
                   for entity in entitiesInFaction(world, faction):
-                     act(world, entity)
+                     if not entity[Character].dead:
+                        act(world, entity)
                   for entity in entitiesInFaction(world, faction):
-                     think(world, entity)
+                     if not entity[Character].dead:
+                        think(world, entity)
                   endTurn(world)

@@ -52,7 +52,7 @@ method initialize(g: PhysicalEntityGraphicsComponent, world: World, curView: Wor
 proc entityBasePos(g: PhysicalEntityGraphicsComponent, physical: ref Physical): Vec3f =
    let cart = physical.position.asCartVec * g.hexSize
    let hexHeight = g.hexSize.hexHeight
-   cart.Vec3f - vec3f(0.0f, hexHeight * 0.4f, 0.0f)
+   cart.Vec3f - vec3f(0.0f, hexHeight * 0.5f, 0.0f)
 
 
 
@@ -160,6 +160,22 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
             uiqb.dimensions = vec2f(vertContent.dimensions.x.float * barScale.float, maxContentHeight.float * pcntHP)
             uiqb.drawTo(g.canvas)
 
+            let healthString = &"{curHP}/{maxHP}"
+            var healthTextPos = healthBarPos + vec3f(-12.0f, healthBarDim.y, 0.0f)
+            uiqb.color = rgba(0.8f, 0.1f, 0.1f, 1.0f)
+            for c in healthString:
+               let img = if c == '/':
+                     image(&"ax4/images/ui/numerals/slash_outlined.png")
+                  else:
+                     image(&"ax4/images/ui/numerals/{c}_outlined.png")
+               uiqb.position = healthTextPos
+               uiqb.texture = img
+               uiqb.dimensions = vec2f(img.dimensions)
+               healthTextPos.x += uiqb.dimensions.x
+               uiqb.drawTo(g.canvas)
+
+
+
             if physEnt.hasData(ResourcePools):
                let rsrc = physEnt[ResourcePools]
                let currentStamina = rsrc.currentResourceValue(stamina)
@@ -229,7 +245,7 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
                   else:
                      totalWidth += img[0].dimensions.x * img[1]
 
-               mqb.position = entBasePos + vec3f(totalWidth.float * -0.5f, charImg.dimensions.y.float * scale, 0.0f)
+               mqb.position = entBasePos + vec3f(totalWidth.float * -0.5f, charImg.dimensions.y.float * scale + 16, 0.0f)
                mqb.color = White
 
                for img in images:

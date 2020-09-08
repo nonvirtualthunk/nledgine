@@ -13,7 +13,7 @@ MonsterClasses {
                },
                {
                   target : ClosestEnemy
-                  effect : +1 1d4+1 Bludgeoning x2 (SimpleNaturalAttack)
+                  effect : +1 1d2 Bludgeoning (SimpleNaturalAttack)
                }
             ]
          },
@@ -42,7 +42,7 @@ MonsterClasses {
       }
 
       sightRange: 5
-      health: 1d4+6
+      health: 1d3+3
       stamina: 3
       
    }

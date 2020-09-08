@@ -111,29 +111,32 @@ method toString*(evt: AxEvent, view: WorldView): string {.base.} =
    return repr(evt)
 
 method toString*(evt: AttackEvent, view: WorldView): string =
-   return &"Attack({$evt[]})"
+   return &"Attack{$evt[]}"
 method toString*(evt: StrikeEvent, view: WorldView): string =
-   return &"Strike({$evt[]})"
+   return &"Strike{$evt[]}"
 method toString*(evt: CharacterMoveEvent, view: WorldView): string =
-   return &"Move({$evt[]})"
+   return &"Move{$evt[]}"
 method toString*(evt: CharacterTurnEndEvent, view: WorldView): string =
-   return &"CharacterTurnEnd({$evt[]})"
+   return &"CharacterTurnEnd{$evt[]}"
 method toString*(evt: CharacterTurnStartEvent, view: WorldView): string =
-   return &"CharacterTurnStart({$evt[]})"
+   return &"CharacterTurnStart{$evt[]}"
 method toString*(evt: FactionTurnEndEvent, view: WorldView): string =
-   return &"FactionTurnEnd({$evt[]})"
+   return &"FactionTurnEnd{$evt[]}"
 method toString*(evt: FactionTurnStartEvent, view: WorldView): string =
-   return &"FactionTurnStart({$evt[]})"
+   return &"FactionTurnStart{$evt[]}"
 method toString*(evt: FlagChangedEvent, view: WorldView): string =
-   return &"FlagChanged({$evt[]})"
+   return &"FlagChanged{$evt[]}"
 method toString*(evt: WorldInitializedEvent, view: WorldView): string =
-   return &"WorldInitialized({$evt[]})"
+   return &"WorldInitialized{$evt[]}"
 method toString*(evt: DamageEvent, view: WorldView): string =
-   return &"Damage({$evt[]})"
+   return &"Damage{$evt[]}"
 method toString*(evt: FullTurnEndEvent, view: WorldView): string =
-   return &"FullTurnEnd({$evt[]})"
+   return &"FullTurnEnd{$evt[]}"
 method toString*(evt: EntityEnteredWorldEvent, view: WorldView): string =
    return &"EntityEnteredWorldEvent{$evt[]}"
+method toString*(evt: EntityDied, view: WorldView): string =
+   return &"EntityDied{$evt[]}"
+
 
 # proc matchesEventKind*(condition : EventCondition) : EventKind =
 #    case condition.kind:
