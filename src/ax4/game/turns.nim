@@ -56,7 +56,6 @@ proc startFactionTurn(world: World, faction: Entity) =
       for entity in entitiesInFaction(world, faction):
          if entity.hasData(Character):
             startCharacterTurn(world, entity)
-      echo "Setting active faction to ", faction
       world.modifyWorld(TurnData.activeFaction := faction)
 
 proc endTurn*(world: World) =

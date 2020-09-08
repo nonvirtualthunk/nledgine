@@ -74,6 +74,7 @@ type
       result*: StrikeResult
    DamageEvent* = ref object of AxEvent
       damage*: DamageExpressionResult
+   DiedEvent* = ref object of AxEvent
 
    FlagChangedEvent* = ref object of AxEvent
       flag*: Taxon

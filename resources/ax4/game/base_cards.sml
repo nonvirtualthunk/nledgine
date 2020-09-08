@@ -34,6 +34,7 @@ Cards {
 
    PiercingStab {
       name : "Piercing Stab"
+      image : ax4/images/card_images/piercingStab.png
       
       rarity : common
 
@@ -133,6 +134,7 @@ Cards {
       rarity : uncommon
 
       xp : Fighter -> 2
+
 
       effects : [StaminaPoints(1)]
       conditionalEffects : {

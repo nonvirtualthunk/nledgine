@@ -12,6 +12,7 @@ import worlds/taxonomy
 import resources
 import config/config_helpers
 import ax4/game/cards
+import graphics/image_extras
 
 type
    Weapon* = object
@@ -152,6 +153,7 @@ proc createItem*(world: World, taxon: Taxon): Entity =
          for i in 0 ..< arch.weaponData.attackCardCount:
             let card = world.createEntity()
             var cardData: Card
+            cardData.image = imageLike("ax4/images/card_images/slash.png")
 
             for key, attack in arch.weaponData.attacks:
                cardData.cardEffectGroups.add(EffectGroup(

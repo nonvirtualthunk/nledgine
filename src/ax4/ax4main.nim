@@ -38,6 +38,7 @@ import ax4/game/turns
 import ax4/game/components/flag_component
 import ax4/game/components/ai_component
 import ax4/display/animation_component
+import ax4/game/components/conditions_component
 import ax4/game/vision
 import worlds/gamedebug
 import ax4/game/ax_events
@@ -197,7 +198,8 @@ main(GameSetup(
       MapInitializationComponent(),
       FlagComponent(),
       AIComponent(),
-      VisionComponent()
+      VisionComponent(),
+      ConditionsComponent(),
    ],
    graphicsComponents: @[
       createCameraComponent(createPixelCamera(mapGraphicsSettings().baseScale)),

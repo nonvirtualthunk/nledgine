@@ -13,12 +13,12 @@ type
    CartVec* {.borrow: `.`.} = distinct Vec3float
 
    HexDirection* {.pure.} = enum
-      UpperRight,
-      LowerRight,
-      Bottom,
-      LowerLeft,
-      UpperLeft,
-      Top,
+      UpperRight, #0
+      LowerRight, #1
+      Bottom,     #2
+      LowerLeft,  #3
+      UpperLeft,  #4
+      Top,        #5
       Center
 
 proc axialVec*(q: int, r: int, z: int = 0): AxialVec =
@@ -121,9 +121,10 @@ proc asCartesian*(v: AxialVec): CartVec =
 proc asCartVec*(v: AxialVec): CartVec =
    asCartesian(v)
 
-proc asVec3f(c: CubeVec): Vec3f = vec3f(c.x.float, c.y.float, c.z.float)
+proc asVec3f*(c: CubeVec): Vec3f = vec3f(c.x.float, c.y.float, c.z.float)
 
-proc roundedCube(x, y, z: float): CubeVec =
+
+proc roundedCube*(x, y, z: float): CubeVec =
    var rx = x.round
    var ry = y.round
    var rz = z.round
@@ -182,10 +183,14 @@ proc sideClosestTo*(a, b, tiebreaker: AxialVec): HexDirection =
    let selfCube = a.asCubeVec.asVec3f
    let deltaA = b.asCubeVec.asVec3f - selfCube
    let deltaB = tieBreaker.asCubeVec.asVec3f - selfCube
-   let delta = deltaA + deltaB * 0.01f
-   let a = delta.x - delta.y
-   let b = delta.y - delta.z
-   let c = delta.z - delta.x
+   let delta = (deltaA + deltaB * 0.01f).normalize()
+
+   let a = delta.x - delta.y # 0
+   let b = delta.y - delta.z # 3
+   let c = delta.z - delta.x # -3
+
+   # if c is largest, and c < 0
+   #
 
    if a.abs > b.abs and a.abs > c.abs:
       if a < 0.0f:

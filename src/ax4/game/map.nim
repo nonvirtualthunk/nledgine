@@ -5,6 +5,7 @@ import glm
 import game/library
 import resources
 import ax4/game/characters
+import prelude
 
 
 type
@@ -67,6 +68,50 @@ proc createMap*(dimensions: Vec2i): Map =
 defineReflection(Tile)
 defineReflection(Map)
 
+type MapView* = object
+   view: WorldView
+   map: ref Map
+   terrainInfo: Library[TerrainInfo]
+   vegetationInfo: Library[VegetationInfo]
+
+proc mapView*(view: WorldView): MapView =
+   MapView(
+      view: view,
+      map: view[Map],
+      terrainInfo: library(TerrainInfo),
+      vegetationInfo: library(VegetationInfo)
+   )
+
+proc terrainInfoAt*(map: MapView, hex: AxialVec): Option[TerrainInfo] =
+   withView(map.view):
+      let tileOpt = map.map.tileAt(hex.q, hex.r)
+      if tileOpt.isSome:
+         let tile = tileOpt.get
+         some(map.terrainInfo[tile[Tile].terrain])
+      else:
+         none(TerrainInfo)
+
+
+iterator vegetationInfoAt*(map: MapView, hex: AxialVec): VegetationInfo =
+   withView(map.view):
+      let tileOpt = map.map.tileAt(hex.q, hex.r)
+      if tileOpt.isSome:
+         let tile = tileOpt.get
+         for vegType in tile[Tile].vegetation:
+            yield map.vegetationInfo[vegType]
+
+proc elevationAt*(map: MapView, hex: AxialVec): int =
+   let infoOpt = map.terrainInfoAt(hex)
+   if infoOpt.isSome:
+      infoOpt.get.elevation
+   else:
+      0
+
+proc totalCoverAt*(map: MapView, hex: AxialVec): int =
+   for terrainInfo in map.terrainInfoAt(hex):
+      result += terrainInfo.cover
+   for vegInfo in map.vegetationInfoAt(hex):
+      result += vegInfo.cover
 
 
 proc entityAt*(view: WorldView, hex: AxialVec): Option[Entity] =

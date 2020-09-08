@@ -22,7 +22,7 @@ Terrains {
 
    Hills: {
       fertility : 0
-      cover : 1
+      cover : 0
       elevation : 1
       moveCost : 2
       graphics {
@@ -37,7 +37,7 @@ Terrains {
 
    Mountains: {
       fertility : -1
-      cover : 1
+      cover : 0
       elevation : 2
       moveCost : 3
 
@@ -59,7 +59,7 @@ Terrains {
 
    Plateaus : {
       fertility : 0
-      cover : 1
+      cover : 0
       elevation : 1
       moveCost : 2
       kind : plateaus

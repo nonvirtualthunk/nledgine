@@ -96,7 +96,7 @@ method onEvent(g: TacticalUIComponent, world: World, curView: WorldView, display
                for entity in world.entitiesWithData(Physical):
                   if entity[Physical].position == hex:
                      if tuid.selectedCharacter != some(entity):
-                        if entity.hasData(Character) and faction(world, entity) == world[TurnData].activeFaction:
+                        if entity.hasData(Character) and faction(world, entity) == world[TurnData].activeFaction and not entity[Character].dead:
                            tuid.selectedCharacter = some(entity)
                            display.addEvent(CharacterSelect(character: entity))
          extract(KeyRelease, key):
@@ -110,8 +110,9 @@ method onEvent(g: TacticalUIComponent, world: World, curView: WorldView, display
          extract(FactionTurnStartEvent, faction):
             if faction[Faction].playerControlled:
                for ent in entitiesInFaction(world, faction):
-                  tuid.selectedCharacter = some(ent)
-                  break
+                  if not ent[Character].dead:
+                     tuid.selectedCharacter = some(ent)
+                     break
 
 
 method update(g: TacticalUIComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =

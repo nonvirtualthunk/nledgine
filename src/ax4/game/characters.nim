@@ -17,6 +17,7 @@ type
       perks*: seq[Taxon]
       health*: Reduceable[int]
       sightRange*: int
+      dead*: bool
 
    Physical* = object
       position*: AxialVec

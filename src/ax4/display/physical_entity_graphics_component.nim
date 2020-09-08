@@ -68,28 +68,29 @@ proc drawFlagUI(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Di
       qb.color = rgba(1.0, 1.0, 1.0, percent)
 
       for flag, value in flagValues(view, entity):
-         let lib = library(TaxonomyDisplay)
-         let tdisp = lib.get(flag)
-         if tdisp.isSome and tdisp.get.icon.isSome:
-            qb.texture = tdisp.get.icon.get
-         else:
-            qb.texture = image("ax4/images/icons/question_mark_small_outlined.png")
+         if value > 0:
+            let lib = library(TaxonomyDisplay)
+            let tdisp = lib.get(flag)
+            if tdisp.isSome and tdisp.get.icon.isSome:
+               qb.texture = tdisp.get.icon.get
+            else:
+               qb.texture = image("ax4/images/icons/question_mark_small_outlined.png")
 
-         qb.position = iconPos
-         qb.dimensions = vec2f(16.0f, 16.0f)
+            qb.position = iconPos
+            qb.dimensions = vec2f(24.0f, 24.0f)
 
-         qb.drawTo(g.uiCanvas)
-         iconPos.x += 8
-
-         let numStr = $value
-         for c in numStr:
-            let numImg = image(&"ax4/images/ui/numerals/{value}_outlined.png")
-            qb.position = iconPos - vec3f(0.0f, 8.0f, 0.0f)
-            qb.dimensions = vec2f(numImg.dimensions) * 0.5
-            qb.texture = numImg
             qb.drawTo(g.uiCanvas)
-            iconPos.x += qb.dimensions.x
-         iconPos.x += 10
+            iconPos.x += qb.dimensions.x - 8
+
+            let numStr = $value
+            for c in numStr:
+               let numImg = image(&"ax4/images/ui/numerals/{value}_outlined.png")
+               qb.position = iconPos - vec3f(0.0f, 8.0f, 0.0f)
+               qb.dimensions = vec2f(numImg.dimensions) * 0.5
+               qb.texture = numImg
+               qb.drawTo(g.uiCanvas)
+               iconPos.x += qb.dimensions.x
+            iconPos.x += 10
 
 
 
@@ -118,22 +119,24 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
          let physical = physEnt[Physical]
          if not vision.isVisible(physical.position): continue
 
-         var charImg = image("ax4/images/oryx/creatures_24x24/oryx_16bit_fantasy_creatures_38.png")
-         if physEnt.hasData(Monster):
-            let monster = physEnt[Monster]
-            let mc = monsterLib[monster.monsterClass]
-            charImg = mc.images[permute(physEnt.id).abs mod mc.images.len]
-         let scale = ((hexSize * 0.65).int div charImg.dimensions.x).float
-
          let entBasePos = g.entityBasePos(physical)
 
-         qb.texture = charImg
-         qb.position = entBasePos
-         qb.dimensions = charImg.dimensions.Vec2f * scale
-         qb.color = rgba(1.0f, 1.0f, 1.0f, 1.0f)
-         qb.drawTo(g.canvas)
-
          if physEnt.hasData(Character):
+            if physEnt[Character].dead: continue
+
+            var charImg = image("ax4/images/oryx/creatures_24x24/oryx_16bit_fantasy_creatures_38.png")
+            if physEnt.hasData(Monster):
+               let monster = physEnt[Monster]
+               let mc = monsterLib[monster.monsterClass]
+               charImg = mc.images[permute(physEnt.id).abs mod mc.images.len]
+            let scale = ((hexSize * 0.65).int div charImg.dimensions.x).float
+
+            qb.texture = charImg
+            qb.position = entBasePos
+            qb.dimensions = charImg.dimensions.Vec2f * scale
+            qb.color = rgba(1.0f, 1.0f, 1.0f, 1.0f)
+            qb.drawTo(g.canvas)
+
             let barScale = ((hexHeight * 0.7).int div vertFrame.dimensions.y)
             let barHeight = vertFrame.dimensions.y * barScale
 
@@ -175,69 +178,69 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
                      uiqb.drawTo(g.canvas)
                   uiqb.position.y += uiqb.dimensions.y - barScale.float
 
-         if physEnt.hasData(Monster):
-            var mqb = QuadBuilder()
-            let monster = physEnt[Monster]
-            let mc = monsterLib[monster.monsterClass]
+            if physEnt.hasData(Monster):
+               var mqb = QuadBuilder()
+               let monster = physEnt[Monster]
+               let mc = monsterLib[monster.monsterClass]
 
-            var previewElements: seq[PreviewElement]
-            if monster.nextAction.isSome:
-               let actionKey = monster.nextAction.get
-               let action = mc.actions[actionKey]
-               var first = true
-               for monsterEffect in action.effects:
-                  if not first:
-                     previewElements.add(Spacing())
+               var previewElements: seq[PreviewElement]
+               if monster.nextAction.isSome:
+                  let actionKey = monster.nextAction.get
+                  let action = mc.actions[actionKey]
+                  var first = true
+                  for monsterEffect in action.effects:
+                     if not first:
+                        previewElements.add(Spacing())
 
-                  let effect = monsterEffect.effect
-                  case effect.kind:
-                  of GameEffectKind.Move:
-                     previewElements.add(Image("ax4/images/icons/monster_move.png"))
-                     previewElements.add(Text($effect.moveRange))
-                  of GameEffectKind.SimpleAttack:
-                     previewElements.add(Text(effect.attack.accuracy.toSignedString))
-                     previewElements.add(Image("ax4/images/icons/piercing.png"))
-                     previewElements.add(Spacing())
-                     let (minDmg, maxDmg) = effect.attack.damage.damageRange
-                     previewElements.add(Text(&"{minDmg}-{maxDmg}"))
+                     let effect = monsterEffect.effect
+                     case effect.kind:
+                     of GameEffectKind.Move:
+                        previewElements.add(Image("ax4/images/icons/monster_move.png"))
+                        previewElements.add(Text($effect.moveRange))
+                     of GameEffectKind.SimpleAttack:
+                        previewElements.add(Text(effect.attack.accuracy.toSignedString))
+                        previewElements.add(Image("ax4/images/icons/piercing.png"))
+                        previewElements.add(Spacing())
+                        let (minDmg, maxDmg) = effect.attack.damage.damageRange
+                        previewElements.add(Text(&"{minDmg}-{maxDmg}"))
+                     else:
+                        discard
+                     first = false
+               else:
+                  previewElements.add(Image("ax4/images/icons/question_mark_small_outlined.png"))
+
+               var images: seq[(Image, int)]
+
+               var spacingWidth = 0
+               for elem in previewElements:
+                  match elem:
+                     Image(img):
+                        images.add((image(img), 1))
+                     Text(text):
+                        for c in text:
+                           images.add((image(&"ax4/images/ui/numerals/{c}_outlined.png"), 1))
+                     Spacing():
+                        images.add((nil, 1))
+
+               var totalWidth = 0
+               for img in images:
+                  if img[0] == nil:
+                     totalWidth += 8
                   else:
-                     discard
-                  first = false
-            else:
-               previewElements.add(Image("ax4/images/icons/question_mark_small_outlined.png"))
+                     totalWidth += img[0].dimensions.x * img[1]
 
-            var images: seq[(Image, int)]
+               mqb.position = entBasePos + vec3f(totalWidth.float * -0.5f, charImg.dimensions.y.float * scale, 0.0f)
+               mqb.color = White
 
-            var spacingWidth = 0
-            for elem in previewElements:
-               match elem:
-                  Image(img):
-                     images.add((image(img), 1))
-                  Text(text):
-                     for c in text:
-                        images.add((image(&"ax4/images/ui/numerals/{c}_outlined.png"), 1))
-                  Spacing():
-                     images.add((nil, 1))
+               for img in images:
+                  if img[0] != nil:
+                     mqb.texture = img[0]
+                     mqb.dimensions = vec2f(img[0].dimensions.x*img[1], img[0].dimensions.y*img[1])
+                     mqb.drawTo(g.canvas)
 
-            var totalWidth = 0
-            for img in images:
-               if img[0] == nil:
-                  totalWidth += 8
-               else:
-                  totalWidth += img[0].dimensions.x * img[1]
-
-            mqb.position = entBasePos + vec3f(totalWidth.float * -0.5f, charImg.dimensions.y.float * scale, 0.0f)
-            mqb.color = White
-
-            for img in images:
-               if img[0] != nil:
-                  mqb.texture = img[0]
-                  mqb.dimensions = vec2f(img[0].dimensions.x*img[1], img[0].dimensions.y*img[1])
-                  mqb.drawTo(g.canvas)
-
-                  mqb.position.x += mqb.dimensions.x
-               else:
-                  mqb.position.x += 8
+                     mqb.position.x += mqb.dimensions.x
+                  else:
+                     mqb.position.x += 8
 
       g.canvas.swap()
 

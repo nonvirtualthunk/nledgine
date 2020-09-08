@@ -233,7 +233,7 @@ proc main*(setup: GameSetup) =
          lastViewport = framebufferSize
 
       glfwPollEvents()
-      glClearColor(0.0f, 0.5f, 0.5f, 1.0f)
+      glClearColor(0.35f, 0.176f, 0.11, 1.0f)
       glClear(GL_COLOR_BUFFER_BIT)
 
       if hasFocus:

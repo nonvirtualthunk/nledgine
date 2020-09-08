@@ -40,7 +40,7 @@ method initialize(g: WindowingSystemComponent, world: World, curView: WorldView,
    g.initTime = relTime()
    g.vao = newVAO[WVertex, uint32]()
    g.shader = initShader("shaders/windowing")
-   g.texture = newTextureBlock(1024, 1, false)
+   g.texture = newTextureBlock(2048, 1, false)
    let windowingSystem = createWindowingSystem(display)
    windowingSystem.rootConfigPath = "ax4/widgets/"
    windowingSystem.pixelScale = 2
