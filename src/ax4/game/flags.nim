@@ -79,7 +79,7 @@ defineLibrary[FlagMetaInfo]:
       var flagMeta = FlagMetaInfo(flag: key)
       v.readInto(flagMeta)
       flagInfo[key] = flagMeta
-      info &"Flag meta info[{key}]: {flagInfo[key]}"
+      fine &"Flag meta info[{key}]: {flagInfo[key]}"
 
    for k, c in confs["Flags"]:
       let key = taxon("Flags", k)

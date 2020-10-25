@@ -6,11 +6,13 @@ Classes {
    }
 
    Barbarian {
+      specializationOf: Fighter
       cardRewards : [Vengeance, Tireless]
    }
 
    Tactician {
-
+      specializationOf: Fighter
+      
    }
 
 

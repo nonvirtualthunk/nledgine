@@ -134,7 +134,7 @@ method toString*(evt: FullTurnEndEvent, view: WorldView): string =
    return &"FullTurnEnd{$evt[]}"
 method toString*(evt: EntityEnteredWorldEvent, view: WorldView): string =
    return &"EntityEnteredWorldEvent{$evt[]}"
-method toString*(evt: EntityDied, view: WorldView): string =
+method toString*(evt: DiedEvent, view: WorldView): string =
    return &"EntityDied{$evt[]}"
 
 
