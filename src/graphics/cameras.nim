@@ -31,7 +31,7 @@ proc createPixelCamera*(scale: int): Camera =
        translation: vec2f(0.0f, 0.0f),
        delta: vec2f(0.0f, 0.0f),
        scale: scale,
-       moveSpeed: 100.0f,
+       moveSpeed: 200.0f,
        initialized: true
    )
 

@@ -9,7 +9,6 @@ import config
 import config/config_helpers
 import tables
 import targeting_types
-import modifiers
 import strutils
 import noto
 import root_types
@@ -50,6 +49,7 @@ type
    DeckOwner* = object
       combatDeck*: Deck
       activeDeckKind*: DeckKind
+      cardsPlayedThisTurn*: seq[Entity]
 
    CardMovedEvent* = ref object of AxEvent
       card*: Entity
@@ -273,7 +273,6 @@ proc drawHand*(world: World, entity: Entity, deck: DeckKind) =
 
       for i in 0 ..< cardsToDraw:
          drawCard(world, entity, deck)
-
 
 
 

@@ -66,8 +66,6 @@ type
       entityCounter: int
       eventClock: WorldEventClock
 
-
-
 converter toView*(world: World): WorldView = world.view
 
 var worldCallsForAllTypes* {.threadvar.}: seq[proc(world: World) {.gcsafe.}]
@@ -455,12 +453,11 @@ macro attachData*[T](entity: DisplayEntity, t: T): untyped =
       attachDataInternal(injectedDisplayWorld, `entity`, `dataTypeIdent`, `t`)
       # attachData[`T`](injectedDisplayWorld, `entity`, typedesc[`T`], `t`)
 
-macro hasData*(entity: Entity, t: typedesc): untyped =
-   let dataTypeIdent = newIdentNode($t & "Type")
+macro hasData*(entity: Entity, t: typedesc): bool =
    result = quote do:
       when not compiles(injectedView):
          {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
-      injectedView.hasData(`entity`, `dataTypeIdent`)
+      injectedView.hasData(`entity`, `t`.getDataType())
       # when compiles(view.hasData(`entity`, `dataTypeIdent`)):
       #    view.hasData(`entity`, `dataTypeIdent`)
       # else:
@@ -527,4 +524,3 @@ macro modifyWorld*(world: World, expression: untyped): untyped =
    discard appendToEarliestIdent(argument, "Type")
    result = quote do:
       `world`.modify(WorldEntity, `argument`)
-

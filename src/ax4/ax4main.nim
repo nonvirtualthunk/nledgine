@@ -43,6 +43,8 @@ import ax4/game/vision
 import worlds/gamedebug
 import ax4/game/ax_events
 import strutils
+import ax4/game/game_logic
+import ax4/display/reward_ui_component
 
 type
    PrintComponent = ref object of GameComponent
@@ -95,6 +97,7 @@ method initialize(g: MapInitializationComponent, world: World) =
 
    let noise = newNoise()
 
+   world.attachData(RandomizationWorldData())
    withWorld(world):
       var map = createMap(vec2i(50, 50))
       for r in 0 ..< 15:
@@ -158,7 +161,15 @@ method initialize(g: MapInitializationComponent, world: World) =
 
       tobold.attachData(deck)
       tobold.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(3), taxon("resource pools", "stamina points"): reduceable(7)}.toTable))
-      tobold.attachData(Character(health: reduceable(6)))
+      tobold.attachData(Character(
+         health: reduceable(6),
+         pendingRewards: @[CharacterRewardChoice(options: @[
+            CardReward(taxon("card types", "piercing stab")),
+            CardReward(taxon("card types", "vengeance")),
+            CardReward(taxon("card types", "fight another day")),
+            CardReward(taxon("card types", "double strike"))
+         ])],
+      ))
       tobold.attachData(Inventory())
       tobold.attachData(Flags())
       tobold.attachData(Vision())
@@ -170,24 +181,15 @@ method initialize(g: MapInitializationComponent, world: World) =
 
 
 
-      let slime = world.createEntity()
-      slime.attachData(Physical(position: axialVec(1, 2, 0)))
-      slime.attachData(Allegiance(faction: enemyFaction))
-      slime.attachData(Monster(monsterClass: taxon("monster classes", "slime")))
-      slime.attachData(Character(health: reduceable(9)))
-      slime.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(2), taxon("resource pools", "stamina points"): reduceable(3)}.toTable))
-      slime.attachData(Flags())
-      slime.attachData(Vision())
-      slime.attachData(DebugData(name: "Slime"))
-      world.addFullEvent(EntityEnteredWorldEvent(entity: slime))
+      let slime = createMonster(world, enemyFaction, taxon("monster classes", "slime"))
+      slime.modify(Monster.xp += 40)
+      placeCharacterInWorld(world, slime, axialVec(1, 2, 0))
 
-      world.attachData(RandomizationWorldData())
       world.attachData(TurnData(activeFaction: playerFaction, turnNumber: 1))
 
       world.addFullEvent(WorldInitializedEvent())
 
 
-method update(g: MapInitializationComponent, world: World) = discard
 
 main(GameSetup(
    windowSize: vec2i(1440, 900),
@@ -211,7 +213,8 @@ main(GameSetup(
       MapEventTransformer(),
       EffectSelectionComponent(),
       createWindowingSystemComponent(),
-      AnimationComponent()
+      AnimationComponent(),
+      RewardUIComponent()
    ]
 ))
 

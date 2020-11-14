@@ -21,6 +21,11 @@ proc asRichText*(de: DamageExpression): RichText =
       result.add(richText(toSignedString(de.fixed)))
    result.add(richText(de.damageType))
 
+proc asRichText*(target: AttackTarget): RichText =
+   match target:
+      Shape(shape): shape.asRichText
+      _: richText()
+
 proc asRichText*(view: WorldView, character: Entity, attack: Attack): RichText =
    result.add(richText("Attack "))
    result.add(richText(&"{attack.accuracy.toSignedString}"))
@@ -31,11 +36,59 @@ proc asRichText*(view: WorldView, character: Entity, attack: Attack): RichText =
    var rangeShape = richText()
    if attack.minRange > 1 or attack.maxRange > 1:
       rangeShape.add(richText(&"Range {attack.maxRange}"))
-   match attack.target:
-      Shape(shape): rangeShape.add(shape.asRichText)
-      _: discard
+   rangeShape.add(attack.target.asRichText)
 
    if rangeShape.nonEmpty: result.add(richTextVerticalBreak(), rangeShape)
+
+
+proc asRichText*(modifier: Modifier[int16]): RichText =
+   case modifier.operation:
+   of ModifierOperation.Identity: richText()
+   of ModifierOperation.Add: richText(modifier.value.toSignedString)
+   of ModifierOperation.Sub: richText((modifier.value * -1).toSignedString)
+   of ModifierOperation.Mul: richText(&"x{modifier.value}")
+   of ModifierOperation.Div: richText(&"/{modifier.value}")
+   of ModifierOperation.Set: richText(&"{modifier.value}")
+   of ModifierOperation.Reduce: richText(&"reduce by {modifier.value}")
+   of ModifierOperation.Recover: richText(&"recover by {modifier.value}")
+
+
+proc asRichText*(view: WorldView, attack: AttackModifier): RichText =
+   if attack.accuracy.operation != ModifierOperation.Identity:
+      result.add(attack.accuracy.asRichText)
+      result.add(richText(taxon("game concepts", "accuracy")))
+      result.add(richTextVerticalBreak())
+   if attack.damage.operation != ModifierOperation.Identity:
+      result.add(attack.damage.asRichText)
+      result.add(richText(" damage"))
+      result.add(richTextVerticalBreak())
+   if attack.minRange.operation != ModifierOperation.Identity:
+      result.add(attack.minRange.asRichText)
+      result.add(richText(" minimum range"))
+      result.add(richTextVerticalBreak())
+   if attack.maxRange.operation != ModifierOperation.Identity:
+      result.add(attack.maxRange.asRichText)
+      result.add(richText(" maximum range"))
+      result.add(richTextVerticalBreak())
+   if attack.strikeCount.notIdentity:
+      result.add(attack.strikeCount.asRichText)
+      result.add(richText(" strikes"))
+      result.add(richTextVerticalBreak())
+   if attack.actionCost.notIdentity or attack.staminaCost.notIdentity:
+      if attack.actionCost.notIdentity:
+         result.add(attack.actionCost.asRichText)
+         result.add(richText(taxon("resource pools", "action points")))
+      if attack.staminaCost.notIdentity:
+         result.add(attack.staminaCost.asRichText)
+         result.add(richText(taxon("resource pools", "stamina points")))
+      result.add(richTextVerticalBreak())
+   if attack.target.notIdentity:
+      if attack.target.operation != ModifierOperation.Set:
+         warn &"An operation other than 'set' doesn't make sense for targets in attack modifiers"
+      else:
+         result.add(richText("target "))
+         result.add(attack.target.value.asRichText)
+
 
 
 
@@ -45,7 +98,10 @@ proc asRichText*(view: WorldView, character: Entity, effect: GameEffect, subject
    case effect.kind:
    of GameEffectKind.Attack:
       if character.isSentinel:
-         richText(taxon("game concepts", "attack"))
+         var res = richText(taxon("game concepts", "attack"))
+         res.add(richTextVerticalBreak())
+         res.add(asRichText(view, effect.attackModifier))
+         res
       else:
          let attack = combat.resolveAttack(view, character, effect.attackSelector)
          if attack.isSome:

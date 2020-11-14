@@ -60,6 +60,7 @@ type
       of Proportional:
          proportion: float
          proportionalRelativeTo: WidgetOrientation
+         proportionalAnchorTo: WidgetOrientation
       of Absolute:
          absoluteOffset: int
       of Centered:
@@ -125,6 +126,7 @@ type
       padding*: Vec3i # padding contributes to the client offset
       dimensions: array[2, WidgetDimension]
       resolvedDimensions*: Vec2i
+      showing_f: Bindable[bool]
       # drawing caches
       preVertices: seq[WVertex]
       postVertices: seq[WVertex]
@@ -226,6 +228,18 @@ proc childByIdentifier*(e: Widget, identifier: string): Option[Widget] =
       if c.identifier == identifier:
          return some(c)
    none(Widget)
+
+proc descendantByIdentifier*(e: Widget, identifier: string): Option[Widget] =
+   let childMatch = e.childByIdentifier(identifier)
+   if childMatch.isSome:
+      childMatch
+   else:
+      for c in e.children:
+         let descMatch = c.descendantByIdentifier(identifier)
+         if descMatch.isSome:
+            return descMatch
+      none(Widget)
+
 
 # =========================================================================================
 
@@ -332,8 +346,8 @@ proc intrinsic*(): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.I
 proc centered*(): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Centered)
 proc absolutePos*(pos: int): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Absolute, absoluteOffset: pos)
 proc fixedPos*(pos: int, relativeTo: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Fixed, fixedOffset: pos, fixedRelativeTo: relativeTo)
-proc proportionalPos*(proportion: float, relativeTo: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
-   WidgetPosition(kind: WidgetPositionKind.Proportional, proportion: proportion, proportionalRelativeTo: relativeTo)
+proc proportionalPos*(proportion: float, relativeTo: WidgetOrientation = WidgetOrientation.TopLeft, anchorTo: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
+   WidgetPosition(kind: WidgetPositionKind.Proportional, proportion: proportion, proportionalRelativeTo: relativeTo, proportionalAnchorTo: anchorTo)
 proc relativePos*(relativeTo: Widget, offset: int32, anchorPoint: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
    WidgetPosition(kind: WidgetPositionKind.Relative, relativeToWidget: relativeTo, relativeOffset: offset, relativeToWidgetAnchorPoint: anchorPoint)
 proc relativePos*(relativeTo: Widget, offset: int, anchorPoint: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
@@ -349,7 +363,7 @@ proc `==`*(a, b: WidgetPosition): bool =
    of WidgetPositionKind.Fixed:
       a.fixedOffset == b.fixedOffset and a.fixedRelativeTo == b.fixedRelativeTo
    of WidgetPositionKind.Proportional:
-      a.proportion == b.proportion and a.proportionalRelativeTo == b.proportionalRelativeTo
+      a.proportion == b.proportion and a.proportionalRelativeTo == b.proportionalRelativeTo and a.proportionalAnchorTo == b.proportionalAnchorTo
    of WidgetPositionKind.Absolute:
       a.absoluteOffset == b.absoluteOffset
    of WidgetPositionKind.Centered:
@@ -399,7 +413,7 @@ iterator dependentOn(p: WidgetPosition, axis: Axis, widget: Widget, parent: Widg
    of WidgetPositionKind.Proportional:
       yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
       yield (widget: parent, kind: DependencyKind.Position, axis: axis)
-      if isFarSide(axis, p.proportionalRelativeTo):
+      if isFarSide(axis, p.proportionalRelativeTo) or p.proportionalAnchorTo == WidgetOrientation.Center:
          yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
    of WidgetPositionKind.Centered:
       yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
@@ -466,6 +480,7 @@ proc createWidget*(ws: WindowingSystemRef, parent: Widget = nil): Widget =
    result.windowingSystem = ws
    result.entity = ws.display.createEntity()
    result.dimensions = [WidgetDimension(kind: WidgetDimensionKind.Intrinsic), WidgetDimension(kind: WidgetDimensionKind.Intrinsic)]
+   result.showing_f = bindable(true)
    if parent.isNil:
       result.parent = ws.desktop
    else:
@@ -506,6 +521,13 @@ proc `height=`*(w: Widget, p: WidgetDimension) =
       w.markForUpdate(RecalculationFlag.DimensionsY)
       w.markForUpdate(RecalculationFlag.DependentY)
    # w.markForUpdate(Axis.Y)
+
+proc `showing=`*(w: Widget, b: Bindable[bool]) =
+   if w.showing_f != b:
+      w.showing_f = b
+      for e in enumValues(RecalculationFlag): w.markForUpdate(e)
+
+proc showing*(w: Widget): Bindable[bool] = w.showing_f
 
 proc width*(w: Widget): WidgetDimension = w.dimensions[0]
 proc height*(w: Widget): WidgetDimension = w.dimensions[1]
@@ -591,11 +613,17 @@ proc resolvePositionValue(w: Widget, axis: Axis, pos: WidgetPosition): int =
       else:
          parentV + pos.fixedOffset * w.windowingSystem.pixelScale
    of WidgetPositionKind.Proportional:
-      if isFarSide(axis, pos.proportionalRelativeTo):
+      var primaryPoint = if isFarSide(axis, pos.proportionalRelativeTo):
          parentV + parentD - (parentD.float * pos.proportion).int - w.resolvedDimensions[axis]
       else:
          if axis == Axis.Y: echo fmt"parentD: {parentD}, proportion: {pos.proportion}"
          parentV + (parentD.float * pos.proportion).int
+
+      # if the widget is anchored at the center, shift so the primary point is at the center
+      if pos.proportionalAnchorTo == WidgetOrientation.Center:
+         primaryPoint - w.resolvedDimensions[axis] div 2
+      else:
+         primaryPoint
    of WidgetPositionKind.Centered:
       parentV + (parentD - w.resolvedDimensions[axis]) div 2
    of WidgetPositionKind.Relative:
@@ -906,21 +934,24 @@ proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock) =
          addQuadToWidget(w, tb, quad, w.resolvedPosition.xy + w.clientOffset.xy)
 
 proc render(ws: WindowingSystemRef, w: Widget, vao: VAO[WVertex, uint32], tb: TextureBlock, vi, ii: var int) =
-   fine &"Rendering widget {w}"
-   for i in 0 ..< (w.preVertices.len div 4):
-      for q in 0 ..< 4:
-         vao[vi+q][] = w.preVertices[i*4+q]
-      vao.addIQuad(ii, vi)
+   if w.showing:
+      fine &"Rendering widget {w}"
+      for i in 0 ..< (w.preVertices.len div 4):
+         for q in 0 ..< 4:
+            vao[vi+q][] = w.preVertices[i*4+q]
+         vao.addIQuad(ii, vi)
 
-   sort(w.children) do (a, b: Widget) -> int: cmp(a.resolvedPosition.z, b.resolvedPosition.z)
+      sort(w.children) do (a, b: Widget) -> int: cmp(a.resolvedPosition.z, b.resolvedPosition.z)
 
-   for child in w.children:
-      render(ws, child, vao, tb, vi, ii)
+      for child in w.children:
+         render(ws, child, vao, tb, vi, ii)
 
-   for i in 0 ..< (w.postVertices.len div 4):
-      for q in 0 ..< 4:
-         vao[vi+q][] = w.postVertices[i*4+q]
-      vao.addIQuad(ii, vi)
+      for i in 0 ..< (w.postVertices.len div 4):
+         for q in 0 ..< 4:
+            vao[vi+q][] = w.postVertices[i*4+q]
+         vao.addIQuad(ii, vi)
+   else:
+      fine &"Not rendering widget {w}, not showing"
 
 proc render*(ws: WindowingSystemRef, vao: VAO[WVertex, uint32], textureBlock: TextureBlock) =
    if vao.revision < ws.renderRevision:
@@ -931,8 +962,6 @@ proc render*(ws: WindowingSystemRef, vao: VAO[WVertex, uint32], textureBlock: Te
       fine "Swapping ui vao"
       vao.swap()
       vao.revision = ws.renderRevision
-
-
 
 proc data*[T](widget: Widget, t: typedesc[T]): ref T =
    widget.windowingSystem.display.data(widget.entity, t)
@@ -982,7 +1011,7 @@ proc widgetAtPosition*(ws: WindowingSystemRef, w: Widget, position: Vec2f): Widg
       # iterate over the children, finding the child that contains the position with the highest Z
       for i in countdown(w.children.len-1, 0):
          let c = w.children[i]
-         if widgetContainsPosition(c, position):
+         if c.showing and widgetContainsPosition(c, position):
             if c.resolvedPosition.z > highestZ:
                highestZ = c.resolvedPosition.z
                result = c
@@ -1155,16 +1184,17 @@ proc readFromConfig*(cv: ConfigValue, e: var Widget) =
 
    populateChildren(cv, e)
 
-   readFromConfig(cv["background"], e.background)
-   readFromConfig(cv["overlays"], e.overlays)
+   readInto(cv["background"], e.background)
+   readInto(cv["overlays"], e.overlays)
    if isDiv and (cv["background"].isEmpty or cv["background"]["draw"].isEmpty):
       e.background.draw = bindable(false)
    readFromConfig(cv["x"], e.position[0], e)
    readFromConfig(cv["y"], e.position[1], e)
    readFromConfig(cv["z"], e.position[2], e)
-   readFromConfig(cv["width"], e.dimensions[0])
-   readFromConfig(cv["height"], e.dimensions[1])
-   readFromConfig(cv["padding"], e.padding)
+   readInto(cv["width"], e.dimensions[0])
+   readInto(cv["height"], e.dimensions[1])
+   readInto(cv["padding"], e.padding)
+   readInto(cv["showing"], e.showing_f)
 
    for comp in e.windowingSystem.components:
       comp.readDataFromConfig(cv, e)

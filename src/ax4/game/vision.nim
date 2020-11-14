@@ -86,7 +86,7 @@ proc recomputeHexesInView(world: World, entity: Entity) =
                   let adj = roundedCube(adjV.x, adjV.y, adjV.z).asAxialVec
 
 
-                  info &"Hex {hex} examining {adj} to get to {entityPos}"
+                  fine &"Hex {hex} examining {adj} to get to {entityPos}"
                   stdout.flushFile
                   let adjVS = visionState[adj]
                   if adjVS.visionRemaining > adjacentVision and (elevation <= startingElevation or elevation >= adjVS.elevation):
@@ -111,9 +111,6 @@ method initialize*(g: VisionComponent, world: World) =
       for e in world.entitiesWithData(Vision):
          if e.hasData(Physical):
             recomputeHexesInView(world, e)
-
-method update*(g: VisionComponent, world: World) =
-   discard
 
 method onEvent*(g: VisionComponent, world: World, event: Event) =
    ifOfType(AxEvent, event):
@@ -140,3 +137,11 @@ proc isRevealed*(ctx: VisionContext, vec: AxialVec): bool =
       if vision.revealed.contains(vec):
          return true
 
+
+proc isVisibleTo*(view: WorldView, entity: Entity, hex: AxialVec): bool =
+   withView(view):
+      entity[Vision].hexesInView.contains(hex)
+
+proc isVisibleTo*(view: WorldView, entity: Entity, other: Entity): bool =
+   withView(view):
+      isVisibleTo(view, entity, other[Physical].position)

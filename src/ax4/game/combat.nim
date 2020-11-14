@@ -17,6 +17,7 @@ import items
 import sequtils
 import prelude
 import hex
+import ax4/game/derived_modifiers
 
 let defenseDelta = taxon("flags", "defense delta")
 let physicalDamage = taxon("damage types", "physical")
@@ -30,6 +31,27 @@ type
 
 method toString*(evt: BlockGainedEvent, view: WorldView): string =
    return &"BlockGained({$evt[]})"
+
+proc applyDerivedModifier*(view: WorldView, character: Entity, target: Option[Entity], modifier: DerivedModifier[AttackField], attack: var Attack) =
+   let delta = derivedModifierDelta(view, character, target, modifier)
+   case modifier.field:
+   of AttackField.Damage: attack.damage.fixed += delta
+   of AttackField.MinRange: attack.minRange = max(attack.minRange + delta, 0).int16
+   of AttackField.MaxRange: attack.maxRange = max(attack.maxRange + delta, 0).int16
+   of AttackField.Accuracy: attack.accuracy += delta.int16
+   of AttackField.StrikeCount: attack.strikeCount = max(attack.strikeCount + delta, 0).int16
+   of AttackField.ActionCost: attack.actionCost = max(attack.actionCost + delta, 0).int16
+   of AttackField.StaminaCost: attack.staminaCost = max(attack.staminaCost + delta, 0).int16
+
+proc applyUntargetedDerivedAttackModifiers*(view: WorldView, character: Entity, attack: var Attack) =
+   for derivedModifier in attack.derivedModifiers:
+      if derivedModifier.entity != DerivedModifierEntity.Target:
+         applyDerivedModifier(view, character, none(Entity), derivedModifier, attack)
+
+proc applyTargetedDerivedAttackModifiers*(view: WorldView, character: Entity, target: Entity, attack: var Attack) =
+   for derivedModifier in attack.derivedModifiers:
+      if derivedModifier.entity == DerivedModifierEntity.Target:
+         applyDerivedModifier(view, character, some(target), derivedModifier, attack)
 
 proc availableAttacks*(view: WorldView, character: Entity): seq[Attack] =
    withView(view):
@@ -57,12 +79,13 @@ proc resolveAttack*(view: WorldView, character: Entity, selector: AttackSelector
          _: @[selector]
 
       for attack in allAttacks:
-         if allSelectors.all(sel => sel.matches(view, attack)):
+         let attackCopy = attack
+         if allSelectors.all(sel => sel.matches(view, attackCopy)):
             return some(attack)
       none(Attack)
 
 proc attackModifierFromFlags*(view: WorldView, character: Entity): AttackModifier =
-   result.damage = add(flags.flagValue(view, character, taxon("flags", "damage bonus")))
+   result.damage = add(flags.flagValue(view, character, taxon("flags", "damage bonus")).int16)
    result.accuracy = add(flags.flagValue(view, character, taxon("flags", "accuracy delta")).int16)
 
 
@@ -132,15 +155,18 @@ proc performAttack*(world: World, character: Entity, attack: Attack, targets: se
 
       world.eventStmts(AttackEvent(entity: character, attack: attack, targets: targets)):
          for target in targets:
-            for strikeIndex in 0 ..< attack.strikeCount:
+            var targetedAttack = attack
+            applyTargetedDerivedAttackModifiers(world, character, target, targetedAttack)
+
+            for strikeIndex in 0 ..< targetedAttack.strikeCount:
                let defense = defenseFor(world, character)
 
                # echo &"Attack:\n{attack}\nDefense:\n{defense}"
 
-               let baseRoll = randomizer.stdRoll().total - 10
+               let baseRoll = randomizer.stdRoll().total - 9
 
-               if baseRoll + attack.accuracy - defense.defense > 0:
-                  var damage = attack.damage.roll(randomizer)
+               if baseRoll + targetedAttack.accuracy - defense.defense >= 0:
+                  var damage = targetedAttack.damage.roll(randomizer)
                   damage.fixed += flags.flagValue(world, character, taxon("flags", "ExtraDamageTaken"))
                   let blockReduction = computeBlockAmount(world, target, damage)
 
@@ -149,10 +175,10 @@ proc performAttack*(world: World, character: Entity, attack: Attack, targets: se
                   else:
                      Hit(damage.total)
 
-                  world.eventStmts(StrikeEvent(entity: character, target: target, attack: attack, result: strikeResult)):
+                  world.eventStmts(StrikeEvent(entity: character, target: target, attack: targetedAttack, result: strikeResult)):
                      dealDamage(world, target, damage)
                else:
-                  world.eventStmts(StrikeEvent(entity: character, target: target, attack: attack, result: Missed())):
+                  world.eventStmts(StrikeEvent(entity: character, target: target, attack: targetedAttack, result: Missed())):
                      discard
 
 proc gainBlock*(world: World, entity: Entity, amountGained: int) =

@@ -11,6 +11,7 @@ export windowing_system_core
 proc createWindowingSystem*(display: DisplayWorld): WindowingSystemRef =
    result = new WindowingSystem
    result.desktop = new Widget
+   result.desktop.showing = bindable(true)
    result.desktop.windowingSystem = result
    result.desktop.identifier = "Desktop"
    result.display = display

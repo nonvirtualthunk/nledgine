@@ -23,6 +23,7 @@ type
       targetBinding*: string
       listItemChildren*: seq[Widget]
       separatorChildren*: seq[Widget]
+      horizontal*: bool
 
    ListItemWidget* = object
       data*: BoundValue
@@ -40,36 +41,6 @@ type
 defineDisplayReflection(ListWidget)
 defineDisplayReflection(ListItemWidget)
 
-const bindingPattern = re"([a-zA-Z0-9.]+)\s->\s([a-zA-Z0-9.]+)"
-
-proc readFromConfig*(cv: ConfigValue, v: var ListWidget) =
-   readIntoOrElse(cv["gapSize"], v.gapSize, 2)
-   readIntoOrElse(cv["separatorArchetype"], v.separatorArchetype, none(WidgetArchetype))
-   readInto(cv["listItemArchetype"], v.listItemArchetype)
-   readIntoOrElse(cv["selectable"], v.selectable, true)
-   if cv.hasField("sourceBinding") and cv.hasField("targetBinding"):
-      readInto(cv["sourceBinding"], v.sourceBinding)
-      readInto(cv["targetBinding"], v.targetBinding)
-   elif cv.hasField("listItemBinding"):
-      matcher(cv["listItemBinding"].asStr):
-         extractMatches(bindingPattern, fromBinding, toBinding):
-            v.sourceBinding = fromBinding
-            v.targetBinding = toBinding
-         let cvstr = cv["listItemBinding"].asStr
-         warn &"Invalid listItemBinding str: {cvstr}"
-   else:
-      warn "List widget must have a sourceBinding and targetBinding, or a listItemBinding expression"
-
-
-method readDataFromConfig*(ws: ListWidgetComponent, cv: ConfigValue, widget: Widget) =
-   let lowerType = cv["type"].asStr("").toLowerAscii
-   if lowerType == "list" or lowerType == "listwidget":
-      if not widget.hasData(ListWidget):
-         var td: ListWidget
-         readFromConfig(cv, td)
-         widget.attachData(td)
-      else:
-         readFromConfig(cv, widget.data(ListWidget)[])
 
 method updateBindings*(ws: ListWidgetComponent, widget: Widget, resolver: var BoundValueResolver) =
    if widget.hasData(ListWidget):
@@ -133,3 +104,41 @@ method updateBindings*(ws: ListWidgetComponent, widget: Widget, resolver: var Bo
 
 method render*(ws: ListWidgetComponent, widget: Widget): seq[WQuad] =
    discard
+
+
+
+
+
+const bindingPattern = re"([a-zA-Z0-9.]+)\s->\s([a-zA-Z0-9.]+)"
+
+proc readFromConfig*(cv: ConfigValue, v: var ListWidget) =
+   readIntoOrElse(cv["gapSize"], v.gapSize, 2)
+   readIntoOrElse(cv["separatorArchetype"], v.separatorArchetype, none(WidgetArchetype))
+   readInto(cv["listItemArchetype"], v.listItemArchetype)
+   readIntoOrElse(cv["selectable"], v.selectable, true)
+   readInto(cv["horizontal"], v.horizontal)
+   if not cv["vertical"].asBool(true): v.horizontal = true
+
+   if cv.hasField("sourceBinding") and cv.hasField("targetBinding"):
+      readInto(cv["sourceBinding"], v.sourceBinding)
+      readInto(cv["targetBinding"], v.targetBinding)
+   elif cv.hasField("listItemBinding"):
+      matcher(cv["listItemBinding"].asStr):
+         extractMatches(bindingPattern, fromBinding, toBinding):
+            v.sourceBinding = fromBinding
+            v.targetBinding = toBinding
+         let cvstr = cv["listItemBinding"].asStr
+         warn &"Invalid listItemBinding str: {cvstr}"
+   else:
+      warn "List widget must have a sourceBinding and targetBinding, or a listItemBinding expression"
+
+
+method readDataFromConfig*(ws: ListWidgetComponent, cv: ConfigValue, widget: Widget) =
+   let lowerType = cv["type"].asStr("").toLowerAscii
+   if lowerType == "list" or lowerType == "listwidget":
+      if not widget.hasData(ListWidget):
+         var td: ListWidget
+         readFromConfig(cv, td)
+         widget.attachData(td)
+      else:
+         readFromConfig(cv, widget.data(ListWidget)[])

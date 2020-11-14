@@ -1,6 +1,12 @@
 MonsterClasses {
    
    slime {
+      health: 1d3+3
+      stamina: 3
+      sightRange: 5
+      xp: 5
+
+
       images : ["ax4/images/oryx/creatures_24x24/oryx_16bit_fantasy_creatures_218.png"]
       actions : {
          charge {
@@ -40,11 +46,6 @@ MonsterClasses {
             ]
          }
       }
-
-      sightRange: 5
-      health: 1d3+3
-      stamina: 3
-      
    }
 
 }

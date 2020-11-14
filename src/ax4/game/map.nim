@@ -4,7 +4,7 @@ import options
 import glm
 import game/library
 import resources
-import ax4/game/characters
+import ax4/game/character_types
 import prelude
 
 

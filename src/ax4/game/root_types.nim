@@ -1,6 +1,10 @@
 import patty
 import worlds
-import sequtils
+import randomness
+import config
+import arxregex
+import strutils
+import noto
 
 variantp SelectionResult:
    SelectedEntity(entities: seq[Entity])
@@ -28,6 +32,10 @@ type CardLocation* = enum
 type DeckKind* {.pure.} = enum
    Combat
 
+type DiceExpression* = object
+   dice*: DicePool
+   fixed*: int
+
 
 proc contains*(s: SelectionResult, e: Entity): bool =
    match s:
@@ -44,3 +52,23 @@ proc selectedTaxons*(s: SelectionResult): seq[Taxon] =
    match s:
       SelectedEntity(_): @[]
       SelectedTaxon(taxons): taxons
+
+proc roll*(d: DiceExpression, r: var Randomizer): int =
+   d.dice.roll(r).total + d.fixed
+
+const simpleDiceExprRegex = re"([0-9]+)d([0-9]+)\s?([+-][0-9]+)?"
+const simpleFixedDiceExprRegex = re"([+-]?[0-9]+)"
+
+proc readFromConfig*(cv: ConfigValue, d: var DiceExpression) =
+   if cv.isStr:
+      let str = cv.asStr
+      matcher(str):
+         extractMatches(simpleDiceExprRegex, dice, pips, bonusStr):
+            d.dice = dicePool(dice.parseInt, pips.parseInt)
+            if bonusStr != "":
+               d.fixed = bonusStr.parseInt
+         extractMatches(simpleFixedDiceExprRegex, bonusStr):
+            d.fixed = bonusStr.parseInt
+         warn &"Unexpected string format for dice expression: {str}"
+   else:
+      warn &"unexpected config for dice expression: {cv}"

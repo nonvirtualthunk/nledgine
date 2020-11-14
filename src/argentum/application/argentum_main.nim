@@ -10,16 +10,18 @@ import graphics/camera_component
 import resources
 import graphics/texture_block
 import graphics/images
-import ax4/game/map
-import hex
-import perlin
 import windowingsystem/windowingsystem_component
+import windowingsystem/windowing_system_core
 import game/library
 import core
-import game/library
 import worlds/gamedebug
 import strutils
 import graphics/cameras
+import graphics/image_extras
+import game/grids
+import graphics/canvas
+import argentum/game/physics_component
+import argentum/game/machine_component
 
 type
    PrintComponent = ref object of GameComponent
@@ -27,8 +29,14 @@ type
       lastPrint: UnitOfTime
       mostRecentEventStr: string
 
-   MapInitializationComponent = ref object of GameComponent
+   InitializationComponent = ref object of GameComponent
 
+
+
+
+
+method initialize(g: InitializationComponent, world: World) =
+   discard
 
 method initialize(g: PrintComponent, world: World) =
    echo "Initialized"
@@ -52,13 +60,15 @@ method onEvent(g: PrintComponent, world: World, event: Event) =
 main(GameSetup(
    windowSize: vec2i(1440, 900),
    resizeable: false,
-   windowTitle: "Ax4",
+   windowTitle: "Argentum",
    gameComponents: @[
       (GameComponent)(PrintComponent()),
    ],
    graphicsComponents: @[
       createCameraComponent(createPixelCamera(1)),
-      createWindowingSystemComponent()
+      createWindowingSystemComponent(),
+      PhysicsComponent(),
+      MachineComponent()
    ]
 ))
 

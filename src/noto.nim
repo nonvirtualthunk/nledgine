@@ -40,6 +40,7 @@ proc notoThreadFunc(b: bool) {.thread.} =
    while true:
       var msg = writeChannel.recv
       if msg.quit:
+         flushFile(stdout)
          break
 
       indentationByThread[msg.originThread] = indentationByThread.getOrDefault(msg.originThread) + msg.indentationChange

@@ -30,9 +30,6 @@ method initialize*(g: AIComponent, world: World) =
    g.name = "FlagComponent"
    discard
 
-method update*(g: AIComponent, world: World) =
-   discard
-
 proc think(world: World, actor: Entity) =
    withWorld(world):
       if actor.hasData(Monster):

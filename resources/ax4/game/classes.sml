@@ -1,4 +1,4 @@
-Classes {
+CharacterClasses {
 
    Fighter {
       
@@ -7,7 +7,7 @@ Classes {
 
    Barbarian {
       specializationOf: Fighter
-      cardRewards : [Vengeance, Tireless]
+      cardRewards : [Vengeance, TirelessFury]
    }
 
    Tactician {
@@ -16,5 +16,8 @@ Classes {
    }
 
 
+   Movement {
+      cardRewards: [FightAnotherDay]
+   }
 
 }

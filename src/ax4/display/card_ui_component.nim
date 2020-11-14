@@ -138,7 +138,7 @@ proc updateCardWidgetPositions(g: CardUIComponent, view: WorldView, display: Dis
 
       if mag2 > 0.001f:
          let mag = sqrt(mag2)
-         let v = if g.heldCard == some(card): 1000.0f else: max(mag/15.0f, 30.0f)
+         let v = if g.heldCard == some(card): 1000.0f else: max(mag/12.0f, 40.0f)
          if mag <= v:
             cw.currentPos.xy = desiredf.xy
          else:
@@ -178,17 +178,7 @@ method onEvent(g: CardUIComponent, world: World, curView: WorldView, display: Di
 
                   if valid:
                      let evt = ChooseActiveEffect(effectPlays: some(playGroup), onSelectionComplete: proc (effectPlays: EffectPlayGroup) =
-                        moveCard(world, selC, card, CardLocation.DiscardPile)
-
-                        for play in effectPlays.plays:
-                           if play.isCost:
-                              if not resolveEffect(world, selC, play):
-                                 warn &"effect play could not be properly resolved: {play}"
-
-                        for play in effectPlays.plays:
-                           if not play.isCost:
-                              if not resolveEffect(world, selC, play):
-                                 warn &"effect play could not be properly resolved: {play}"
+                        playCard(world, selC, card, effectPlays)
                      )
                      display.addEvent(evt)
                   else:
@@ -221,7 +211,10 @@ method update(g: CardUIComponent, world: World, curView: WorldView, display: Dis
                   g.cardWidgets.del(remCard)
 
 
-               for card in cards:
+               for cardIter in cards:
+                  let card = cardIter
+                  # the local + capture shouldn't be necessary, but nim 1.4 gets confused if you
+                  # try to take it directly from the iteration variable
                   capture(card):
                      let w = g.cardWidgets.getOrCreate(card):
                         let widget = ws.desktop.createChild("CardWidgets", "CardWidget")

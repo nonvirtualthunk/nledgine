@@ -21,6 +21,8 @@ type
       operation*: ModifierOperation
       value*: T
 
+proc isIdentity*[T](m: Modifier[T]): bool = m.operation == ModifierOperation.Identity
+proc notIdentity*[T](m: Modifier[T]): bool = not isIdentity(m)
 
 proc mergeAdd*[K, V](t1: var Table[K, V], t2: Table[K, V]) =
    for k, v in t2:

@@ -278,7 +278,7 @@ proc main*(setup: GameSetup) =
          sleep(100)
 
       if first:
-         info &"Time to first frame drawn: {(relTime() - windowInitTime).as(second)}"
+         info &"Time to first frame drawn: {(relTime() - windowInitTime).inSeconds}"
          first = false
 
    w.destroyWindow()

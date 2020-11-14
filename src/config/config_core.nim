@@ -92,7 +92,7 @@ proc asSeq*(v: ConfigValue): seq[ConfigValue] =
    of ConfigValueKind.Array:
       return v.values
    of ConfigValueKind.Object:
-      toSeq(v.fields.values)
+      return toSeq(v.fields.values)
    of ConfigValueKind.Empty:
       return @[]
    else:
@@ -133,7 +133,7 @@ proc asInt*(v: ConfigValue, orElse: int): int =
    of ConfigValueKind.Number:
       return int(v.num)
    else:
-      orElse
+      return orElse
 
 proc asBool*(v: ConfigValue): bool =
    case v.kind:

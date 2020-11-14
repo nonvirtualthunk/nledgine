@@ -312,14 +312,14 @@ method update(g: EffectSelectionComponent, world: World, curView: WorldView, dis
             display.addEvent(SelectionChanged())
          else:
             if g.activeEffectPlays.isSome:
-               echo "Active effeect plays, no pending selections, resolving"
+               fine "Active effect plays, no pending selections, resolving"
                # this is the point where we have all of our selections chosen, time to resolve
                let effectPlays = g.activeEffectPlays.get
                g.onSelectionComplete(effectPlays[])
                g.canvas.swap()
                g.setEffectPlays(world, display, none(EffectPlayGroup))
             else:
-               echo "next selection changed but no active effect plays (expected only once)"
+               fine "next selection changed but no active effect plays (expected only once)"
                discard
 
       if g.selectionContext.isSome and g.activeEffectPlays.isSome:

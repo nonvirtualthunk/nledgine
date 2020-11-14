@@ -13,7 +13,7 @@ var buttonStateMap: SharedTable[int, bool]
 init(buttonStateMap)
 
 
-for kc in KeyCode:
+for kc in 32 .. 348:
    keyStateMap[kc.int] = false
 
 for mb in MouseButton:

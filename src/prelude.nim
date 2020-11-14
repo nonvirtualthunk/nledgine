@@ -69,10 +69,10 @@ proc relTime*(): UnitOfTime =
    return inMicroseconds(dur).float.microseconds
 
 proc inSeconds*(u: UnitOfTime): float =
-   u.as(second)
+   u.as(metric.second)
 
 proc `$`*(t: UnitOfTime): string =
-   fmt"{t.as(second)}s"
+   fmt"{t.as(metric.second)}s"
 
 # proc vec3f*(v : Vec3i) : Vec3f =
 #    vec3f(v.x.float, v.y.float, v.z.float)
@@ -208,7 +208,7 @@ iterator items*[T](opt: Option[T]): T =
 
 const a: uint64 = 0xffffda61.uint64
 proc permute*(x: int): int =
-   ((a * (x.uint64.bitand(0xffffffff.uint64))) + (x shr 32).uint64).int.abs
+   (((a * (x.uint64.bitand(0xffffffff.uint64))) + (x shr 32).uint64) mod 2000000000).int.abs
 
 proc isEmpty*[T](s: seq[T]): bool = s.len == 0
 proc nonEmpty*[T](s: seq[T]): bool = s.len != 0
@@ -324,6 +324,13 @@ proc normalizeSafe*(v: Vec3f): Vec3f =
    else:
       v
 
+proc normalizeSafe*(v: Vec2f): Vec2f =
+   let l = v.length
+   if l > 0.0:
+      v / l
+   else:
+      v
+
 template ifPresent*[T](opt: Option[T], stmts: untyped) =
    if opt.isSome:
       let it {.inject.} = opt.get
@@ -346,3 +353,18 @@ proc isTrueFor*[T](comp: ComparisonKind, a: T, b: T): bool =
    of ComparisonKind.LessThanOrEqualTo: a <= b
    of ComparisonKind.EqualTo: a == b
    of ComparisonKind.NotEqualTo: a != b
+
+proc distance*[T](x1: T, y1: T, x2: T, y2: T): T =
+   let dx = x2-x1
+   let dy = y2-y1
+   let sq = dx*dx+dy*dy
+   if sq != 0:
+      sqrt(sq)
+   else:
+      0
+
+template findIt*[T](s: seq[T], pred: untyped): untyped =
+   var result: Option[T]
+   for it {.inject.} in items(s):
+      if pred: result = some(it)
+   result

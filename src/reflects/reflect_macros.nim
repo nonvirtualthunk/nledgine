@@ -188,6 +188,9 @@ template defineReflection*(t: typedesc) =
 template defineDisplayReflection*(t: typedesc) =
    defineReflectionBase(t, true, true)
 
+template defineRealtimeReflection*(t: typedesc) =
+   defineReflectionBase(t, true, true)
+
 template defineNestedReflection*(t: typedesc) =
    defineReflectionBase(t, false, false)
 

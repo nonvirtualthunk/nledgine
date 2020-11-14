@@ -131,6 +131,22 @@ Flags {
       }]
    }
 
+   Dodge {
+      description : "Dodge increases your defense by 1 per point this turn, reduced by 1 each time you are attacked"
+
+      resetAtStartOfTurn : true
+      tickDown: OnAttacked
+
+      countsAsOne : [DefenseDelta]
+   }
+
+   Unbalanced {
+      description : "Unbalanced reduces your defense by 1 per point this turn"
+
+      resetAtStartOfTurn : true
+      countsAsNegativeOne : [DefenseDelta]
+   }
+
 
    OnApproachAttack {
       description : "OnApproachAttack"

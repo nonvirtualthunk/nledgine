@@ -44,6 +44,11 @@ variantp StrikeResult:
    Dodged
    Deflected
 
+variantp DerivedModifierSource:
+   Flag(flag: Taxon)
+   CardPlays(cardType: Option[Taxon])
+   Fixed(amount: int)
+
 type
    #================================
    # Flag stuff
@@ -78,6 +83,27 @@ type
       target*: ConditionalAttackEffectTarget
       effect*: GameEffect
 
+   AttackField* {.pure.} = enum
+      Damage
+      MinRange
+      MaxRange
+      Accuracy
+      StrikeCount
+      ActionCost
+      StaminaCost
+
+   DerivedModifierEntity* {.pure.} = enum
+      Self
+      Target
+
+   # Intended for things like: +1 damage for every attack card played this turn
+   DerivedModifier*[T] = object
+      source*: DerivedModifierSource
+      entity*: DerivedModifierEntity
+      adder*: int
+      multiplier*: int
+      field*: T
+
    Attack* = object
       attackTypes*: seq[Taxon]
       damage*: DamageExpression
@@ -91,10 +117,13 @@ type
       target*: AttackTarget
       additionalCosts*: seq[GameEffect]
       conditionalEffects*: seq[ConditionalAttackEffect]
+      derivedModifiers*: seq[DerivedModifier[AttackField]]
+
+
 
    AttackModifier* = object
       attackTypes*: Modifier[seq[Taxon]]
-      damage*: Modifier[int]
+      damage*: Modifier[int16]
       bonusDamage*: Modifier[seq[DamageExpression]]
       minRange*: Modifier[int16]
       maxRange*: Modifier[int16]
@@ -105,6 +134,7 @@ type
       target*: Modifier[AttackTarget]
       additionalCosts*: Modifier[seq[GameEffect]]
       conditionalEffects*: Modifier[seq[ConditionalAttackEffect]]
+      derivedModifiers*: Modifier[seq[DerivedModifier[AttackField]]]
 
    Defense* = object
       defense*: int
@@ -119,6 +149,7 @@ type
       Move
       AddCard
       MoveCard
+      DrawCards
 
    GameEffect* = object
       case kind*: GameEffectKind:
@@ -143,6 +174,9 @@ type
       of GameEffectKind.MoveCard:
          moveToDeck*: Option[DeckKind]
          moveToLocation*: Option[CardLocation]
+      of GameEffectKind.DrawCards:
+         cardCount*: int
+
 
 
    # Game effect being triggered by a particular character
@@ -199,6 +233,8 @@ proc `==`*(a, b: GameEffect): bool =
       a.cardChoices == b.cardChoices and a.toDeck == b.toDeck and a.toLocation == b.toLocation
    of GameEffectKind.MoveCard:
       a.moveToDeck == b.moveToDeck and a.moveToLocation == b.moveToLocation
+   of GameEffectKind.DrawCards:
+      a.cardCount == b.cardCount
 
 proc `==`*(a, b: EffectPlayGroup): bool = a.plays == b.plays
 
@@ -290,6 +326,53 @@ proc readFromConfig*(cv: ConfigValue, s: var AttackSelector) =
    else:
       warn &"unsupported attack selector config: {cv}"
 
+proc readFromConfig*(cv: ConfigValue, dms: var DerivedModifierEntity) =
+   case cv.asStr.toLowerAscii:
+   of "self": dms = DerivedModifierEntity.Self
+   of "target": dms = DerivedModifierEntity.Target
+
+proc readFromConfig*(cv: ConfigValue, dms: var AttackField) =
+   case cv.asStr.toLowerAscii:
+   of "damage": dms = AttackField.Damage
+   of "minrange": dms = AttackField.MinRange
+   of "maxrange": dms = AttackField.MaxRange
+   of "accuracy": dms = AttackField.Accuracy
+   of "strikecount": dms = AttackField.StrikeCount
+   of "actioncost": dms = AttackField.ActionCost
+   of "staminacost": dms = AttackField.StaminaCost
+   else: warn &"Invalid attack field provided: {cv}"
+
+const dmFlagSourceExpr = re"(?i)flag\s?\((.+)\)"
+const dmUnfilteredCardPlaysSourceExpr = re"(?i)card\s?plays"
+const dmFilteredCardPlaysSourceExpr = re"(?i)card\s?plays\s?\((.+)\)"
+
+proc readFromConfig*(cv: ConfigValue, dms: var DerivedModifierSource) =
+   let str = cv.asStr
+   matcher(str):
+      extractMatches(dmFlagSourceExpr, flagStr): dms = Flag(taxon("flags", flagStr))
+      extractMatches(dmFilteredCardPlaysSourceExpr, cardType): dms = CardPlays(some(taxon("Card Types", cardType)))
+      extractMatches(dmUnfilteredCardPlaysSourceExpr): dms = CardPlays(none(Taxon))
+      warn &"Unknown derived modifier source provided: {str}"
+
+const adderEffectExpr = re"(?i)\+\s?([0-9]+)"
+const multEffectExpr = re"(?i)[*x]\s?([0-9]+)"
+
+proc readFromConfig*[T](cv: ConfigValue, dm: var DerivedModifier[T]) =
+   readInto(cv["source"], dm.source)
+   if cv.hasField("effect"):
+      let effectStr = cv["effect"].asStr
+      matcher(effectStr):
+         extractMatches(adderEffectExpr, adder): dm.adder = adder.parseInt
+         extractMatches(multEffectExpr, mult): dm.multiplier = mult.parseInt
+         warn &"unsupported effect str for DerivedModifier: {effectStr}"
+   else:
+      warn &"DerivedModifier must have an effect field to be useful"
+   readInto(cv["field"], dm.field)
+   readInto(cv["entity"], dm.entity)
+   if cv["self"].asBool(false):
+      dm.entity = DerivedModifierEntity.Self
+   elif cv["target"].asBool(false):
+      dm.entity = DerivedModifierEntity.Target
 
 proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.}
 
@@ -382,6 +465,7 @@ proc readFromConfig*(cv: ConfigValue, a: var AttackModifier) =
 
 
 const addCardRe = re"(?ix)addcard\((.+)\)"
+const drawCardsRe = re"(?ix)drawcards\((.+)\)"
 const expendRe = re"(?i)expend"
 const changeFlagRe = re"(?ix)changeflag\((.+),(.+)\)"
 const increaseFlagRe = re"(?ix)increaseflag\((.+),(.+)\)"
@@ -416,6 +500,8 @@ proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.} =
             ge = GameEffect(kind: GameEffectKind.AddCard, cardChoices: @[taxon("card types", cardName)])
          extractMatches(expendRe):
             ge = GameEffect(kind: GameEffectKind.MoveCard, moveToLocation: some(CardLocation.ExpendPile))
+         extractMatches(drawCardsRe, cardCount):
+            ge = GameEffect(kind: GameEffectKind.DrawCards, cardCount: cardCount.parseInt)
          extractMatches(changeFlagRe, flag, amount):
             ge = GameEffect(kind: GameEffectKind.ChangeFlag, flag: taxon("flags", flag), flagModifier: readInto(asConf(amount), Modifier[int]))
          extractMatches(increaseFlagRe, flag, amount):
@@ -451,7 +537,12 @@ proc readFromConfig*(cv: ConfigValue, e: var EffectGroup) =
       e.effects.add(costs)
 
 proc readFromConfig*(cv: ConfigValue, v: var AttackKey) =
-   v = parseEnum[AttackKey](cv.asStr)
+   case cv.asStr.toLowerAscii:
+   of "primary": v = AttackKey.Primary
+   of "secondary": v = AttackKey.Secondary
+   else:
+      warn &"unknown attack key: {cv}"
+
 
 proc matches*(sel: AttackSelector, view: WorldView, attack: Attack): bool =
    match sel:
@@ -483,3 +574,4 @@ proc applyModifiers*(attack: var Attack, modifier: AttackModifier) =
    modifier.target.apply(attack.target)
    modifier.additionalCosts.apply(attack.additionalCosts)
    modifier.conditionalEffects.apply(attack.conditionalEffects)
+   modifier.derivedModifiers.apply(attack.derivedModifiers)

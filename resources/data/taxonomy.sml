@@ -131,6 +131,8 @@ Taxonomy {
       Trapper : RogueSpecialization
       Ranger : RogueSpecialization
 
+
+      Movement : CharacterClass
    }
 
    Action : []
@@ -251,6 +253,8 @@ Taxonomy {
       DoubleStrike : [AttackCard, FighterCard]
       ChargingStrike : [AttackCard, FighterCard]
       FlashingPoints : [SkillCard, FighterCard]
+      PinpointStab : [AttackCard, FighterCard]
+      RecklessSmash : [AttackCard, FighterCard]
 
       Parry : DefenseCard
       Block : DefenseCard
@@ -269,6 +273,10 @@ Taxonomy {
       
       Move : MoveCard
       FightAnotherDay : MoveCard
+      DeepBreath : MoveCard
+      Sprint : MoveCard
+      DuckAndWeave : MoveCard
+      Dodge : MoveCard
 
       SlimeSmash : [MonsterCard, AttackCard]
 
@@ -324,6 +332,7 @@ Taxonomy {
       Block : PositiveFlag
       Parry : PositiveFlag
       Armor : PositiveFlag
+      Dodge : PositiveFlag
 
       Tiring : NegativeFlag
       Slow : NegativeFlag
@@ -342,7 +351,7 @@ Taxonomy {
 
       Rage : PositiveFlag
       Vengeance : PositiveFlag
-
+      Unbalanced : NegativeFlag
 
       ApCostDelta : InternalFlag
       ApGainDelta : InternalFlag

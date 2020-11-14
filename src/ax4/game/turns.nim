@@ -42,6 +42,7 @@ proc startCharacterTurn*(world: World, entity: Entity) =
          recoverResource(world, entity, rsrc, rpInfo.recoveryAmount)
 
       if entity.hasData(DeckOwner):
+         entity.modify(DeckOwner.cardsPlayedThisTurn := @[])
          cards.drawHand(world, entity, cards.activeDeckKind(world, entity))
 
 proc endFactionTurn(world: World, faction: Entity) =

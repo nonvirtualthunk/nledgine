@@ -1,10 +1,9 @@
 Cards {
+   // Movement cards
    Move {
       name : Move
       image : ax4/images/card_images/move.png
-      xp {
-         MoveSkill : 1
-      }
+      xp : Movement -> 1
 
       cardEffectGroups : [
          {
@@ -22,7 +21,7 @@ Cards {
    FightAnotherDay {
       name : "Fight Another Day"
       image  : ax4/images/card_images/move.png
-      xp : MoveSkill -> 1
+      xp : Movement -> 1
 
       effects: [Move(4)]
       costs: [ActionPoints(-1), StaminaPoints(-1)]
@@ -32,6 +31,43 @@ Cards {
       }
    }
 
+   Dodge {
+      name : "Dodge"
+      rarity : common
+      xp : Movement -> 1
+
+      effects : [Dodge(2)]
+      costs : [ActionPoints(-1), StaminaPoints(-1)]
+   }
+
+   DuckAndWeave {
+      name : "Duck and Weave"
+      rarity : common
+      xp : Movement -> 1
+
+      effects : []
+      costs : [ActionPoints(0), StaminaPoints(-1)]
+   }
+
+   DeepBreath {
+      name : "Deep Breath"
+      rarity : common
+      xp : Movement -> 1
+      
+      effects : [ActionPoints(-1), StaminaPoints(+3)]
+   }
+
+   Sprint {
+      name : "Sprint"
+      rarity : common
+      xp : Movement -> 1
+
+      effects : [Move(6)]
+      costs : [ActionPoints(-1), StaminaPoints(-2)]
+   }
+
+   
+   // Fighter cards
    PiercingStab {
       name : "Piercing Stab"
       image : ax4/images/card_images/piercingStab.png
@@ -53,6 +89,44 @@ Cards {
             maxRange : "setTo 1"
          }
       }]
+   }
+
+   PinpointStab {
+      name : "Pinpoint Stab"
+
+      rarity : common
+      xp : Fighter -> 2
+
+      effects : [{
+         kind : attack
+
+         attackSelector : [DamageType(Piercing)]
+         attackModifier : {
+            accuracy : +3
+         }
+         conditionalEffects : [{
+            kind: OnHit
+            target: target
+            effect: Dodge(-1)
+         }]
+      }]  
+   }
+
+   RecklessSmash {
+      name : "Reckless Smash"
+
+      rarity : common
+      xp : Fighter -> 2
+
+      effects : [{
+         kind : attack
+
+         attackSelector : [DamageType(Bludgeoning)]
+         attackModifier : {
+            accuracy : -1
+            damage : +5
+         }
+      },Unbalanced(-1)]
    }
 
    DoubleStrike {

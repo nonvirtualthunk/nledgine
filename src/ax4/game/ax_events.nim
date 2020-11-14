@@ -8,6 +8,7 @@ import options
 import config
 import strutils
 import noto
+import ax4/game/character_types
 
 # variantp AxEvent:
 #    EntityTurnStarted()
@@ -76,10 +77,34 @@ type
       damage*: DamageExpressionResult
    DiedEvent* = ref object of AxEvent
 
+   XpGainEvent* = ref object of AxEvent
+      amount*: int
+
+   XpDistributionChangeEvent* = ref object of AxEvent
+      class*: Taxon
+      amount*: int
+
+   ClassLevelUpEvent* = ref object of AxEvent
+      class*: Taxon
+      level*: int
+
+   RewardGainEvent* = ref object of AxEvent
+      choices*: CharacterRewardChoice
+
+   RewardChosenEvent* = ref object of AxEvent
+      choices*: CharacterRewardChoice
+      reward*: CharacterReward
+
+   RewardSkipEvent* = ref object of AxEvent
+      choices*: CharacterRewardChoice
+
    FlagChangedEvent* = ref object of AxEvent
       flag*: Taxon
       oldValue*: int
       newValue*: int
+
+   CardPlayEvent* = ref object of AxEvent
+      card*: Entity
 
    EntityEnteredWorldEvent* = ref object of AxEvent
 
@@ -135,7 +160,21 @@ method toString*(evt: FullTurnEndEvent, view: WorldView): string =
 method toString*(evt: EntityEnteredWorldEvent, view: WorldView): string =
    return &"EntityEnteredWorldEvent{$evt[]}"
 method toString*(evt: DiedEvent, view: WorldView): string =
-   return &"EntityDied{$evt[]}"
+   return &"Died{$evt[]}"
+method toString*(evt: ClassLevelUpEvent, view: WorldView): string =
+   return &"ClassLevelUp{$evt[]}"
+method toString*(evt: XpGainEvent, view: WorldView): string =
+   return &"XpGain{$evt[]}"
+method toString*(evt: CardPlayEvent, view: WorldView): string =
+   return &"CardPlay{$evt[]}"
+method toString*(evt: XpDistributionChangeEvent, view: WorldView): string =
+   return &"XpDistributionChange{$evt[]}"
+method toString*(evt: RewardGainEvent, view: WorldView): string =
+   return &"RewardGain{$evt[]}"
+method toString*(evt: RewardChosenEvent, view: WorldView): string =
+   return &"RewardChosen{$evt[]}"
+method toString*(evt: RewardSkipEvent, view: WorldView): string =
+   return &"RewardSkipped{$evt[]}"
 
 
 # proc matchesEventKind*(condition : EventCondition) : EventKind =

@@ -61,6 +61,7 @@ type
       Mul
       Div
       Append
+      PopFront
       Incl
       Remove
       # Put
@@ -79,6 +80,8 @@ type
          arg*: T
       of OperationKind.Append, OperationKind.Remove, OperationKind.Incl:
          seqArg*: T
+      of OperationKind.PopFront:
+         discard
 
    AbstractModification* = ref object of RootObj
 
@@ -125,6 +128,9 @@ proc removeFrom[T](v: var seq[T], o: seq[T]) =
       else:
          i.inc
 
+proc popFront[T](v: var seq[T]) =
+   v.delete(0, 0)
+
 proc apply*[T](operation: TaggedOperation[T], value: var T) =
    case operation.kind:
    of OperationKind.Add:
@@ -154,11 +160,16 @@ proc apply*[T](operation: TaggedOperation[T], value: var T) =
          value.add(operation.seqArg)
       else:
          warn &"append operation on type that does not support it {$T}, {value}"
+   of OperationKind.PopFront:
+      when compiles(value.popFront()):
+         value.popFront()
+      else:
+         warn &"popFront operation on type that does not support it {$T}, {value}"
    of OperationKind.Incl:
       when compiles(value.incl(operation.seqArg)):
          value.incl(operation.seqArg)
       else:
-         warn &"append operation on type that does not support it {$T}, {value}"
+         warn &"incl operation on type that does not support it {$T}, {value}"
    of OperationKind.Remove:
       when compiles(value.removeFrom(operation.seqArg)):
          # value = value.filterNot(x => x == operation.seqArg.contains(x))
@@ -266,6 +277,9 @@ proc `/=`*[C, T](field: Field[C, T], delta: T): FieldModification[C, T] =
 
 proc append*[C, T, U](field: Field[C, T], delta: U): FieldModification[C, T] =
    FieldModification[C, T](operation: TaggedOperation[T](kind: OperationKind.Append, seqArg: @[delta]), field: field)
+
+proc popFront*[C, T](field: Field[C, T]): FieldModification[C, T] =
+   FieldModification[C, T](operation: TaggedOperation[T](kind: OperationKind.PopFront), field: field)
 
 proc incl*[C, T](field: Field[C, T], delta: T): FieldModification[C, T] =
    FieldModification[C, T](operation: TaggedOperation[T](kind: OperationKind.Incl, seqArg: delta), field: field)

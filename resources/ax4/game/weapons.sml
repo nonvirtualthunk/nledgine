@@ -2,7 +2,7 @@ Items {
    Longspear : {
       durability : 25
 
-      weaponSkills : [spearSkill]
+      weaponSkills : [Fighter]
 
       usesBodyParts : {
          gripping : 2

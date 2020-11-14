@@ -26,6 +26,4 @@ method onEvent*(g: ConditionsComponent, world: World, event: Event) =
             matcher(event):
                extract(DamageEvent, entity):
                   if entity[Character].health.currentValue <= 0:
-                     world.eventStmts(DiedEvent(entity: entity)):
-                        entity.modify(Character.dead := true)
-                        entity.modify(Physical.position := axialVec(1000, 1000))
+                     killCharacter(world, entity)
