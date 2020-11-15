@@ -94,7 +94,8 @@ proc hash*(k: AxialVec): Hash =
    h = h !& k.r
    !$h
 
-proc `$`*(v: AxialVec): string = "AxialVec(" & $v.q & "," & $v.r & ")"
+proc `$`*(v: AxialVec): string = "AxialVec(" & $v.q & "," & $v.r & "," & $v.z & ")"
+proc `$`*(v: CartVec): string = "CartVec(" & $v.x & "," & $v.y & "," & $v.z & ")"
 
 proc asCubeVec*(v: AxialVec): CubeVec =
    cubeVec(v.q, -v.q - v.r, v.r)
@@ -156,6 +157,14 @@ proc toAxialVec*(v: Vec3f, hexSize: float): AxialVec =
    let q = (v.x * 1.33333333f) / hexSize
    let r = ((-v.x / 1.5f) + ((sqrt(3.0f)/1.5f) * v.y)) / hexSize
    roundedAxial(q, r)
+
+proc normalizeSafe*(v: CartVec): CartVec =
+   let mag2 = v.x*v.x+v.y*v.y+v.z*v.z
+   if mag2 > 0.0f:
+      let mag = sqrt(mag2)
+      cartVec(v.x/mag, v.y/mag, v.z/mag)
+   else:
+      cartVec(0.0f, 0.0f, 0.0f)
 
 iterator hexRing*(center: AxialVec, radius: int): AxialVec =
    let center = center.asCubeVec + CubeDeltas[4] * radius

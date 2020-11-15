@@ -54,6 +54,8 @@ proc notoThreadFunc(b: bool) {.thread.} =
       if effMessage.len > 0:
          if msg.level == 1:
             echo "\u001B[38;5;184m", effMessage
+         if msg.level == 1:
+            echo "\u001B[38;5;196m", effMessage
          else:
             if not colorsByThread.hasKey(msg.originThread):
                colorsByThread[msg.originThread] = threadColors[colorsByThread.len]
@@ -80,6 +82,9 @@ template info*(enabled: bool, msg: string) =
 
 template warn*(msg: string) =
    write(msg, 1)
+
+template err*(msg: string) =
+   write(msg, 0)
 
 proc indentLogs*(enabled: bool = true) =
    if enabled:

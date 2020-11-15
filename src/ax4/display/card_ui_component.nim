@@ -182,7 +182,7 @@ method onEvent(g: CardUIComponent, world: World, curView: WorldView, display: Di
                      )
                      display.addEvent(evt)
                   else:
-                     echo &"Not playing card, cannot pay cost"
+                     info &"Not playing card, cannot pay cost"
                updateCardWidgetDesiredPositions(g, curView, display, selC)
          ifOfType(SelectionChanged, event):
             g.selectionChanged = true

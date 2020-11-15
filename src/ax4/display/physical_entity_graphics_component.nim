@@ -50,7 +50,7 @@ method initialize(g: PhysicalEntityGraphicsComponent, world: World, curView: Wor
 
 
 proc entityBasePos(g: PhysicalEntityGraphicsComponent, physical: ref Physical): Vec3f =
-   let cart = physical.position.asCartVec * g.hexSize
+   let cart = (physical.position.asCartVec + physical.offset) * g.hexSize
    let hexHeight = g.hexSize.hexHeight
    cart.Vec3f - vec3f(0.0f, hexHeight * 0.5f, 0.0f)
 
@@ -309,7 +309,7 @@ proc updateFlagUI(g: PhysicalEntityGraphicsComponent, view: WorldView, display: 
 
 method update(g: PhysicalEntityGraphicsComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =
    var worldChanged = g.worldWatcher.hasChanged
-   if worldChanged:
+   if worldChanged or curView.hasActiveOverlay:
       g.render(curView, display)
 
    g.updateFlagUI(curView, display, worldChanged)

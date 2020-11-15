@@ -192,7 +192,7 @@ method initialize(g: MapInitializationComponent, world: World) =
 
 
 main(GameSetup(
-   windowSize: vec2i(1440, 900),
+   windowSize: vec2i(1440, 1024),
    resizeable: false,
    windowTitle: "Ax4",
    gameComponents: @[

@@ -146,8 +146,8 @@ macro defineReflectionBase*(t: typedesc, display: static[bool], register: static
       else:
          initProcStmts.add(
             quote do:
-            worldCallsForAllTypes.add(proc(world: World) =
-               setUpType[`typeName`](world, `fooType`)
+            worldCallsForAllTypes.add(proc(view: WorldView) =
+               setUpType[`typeName`](view, `fooType`)
             )
          )
 

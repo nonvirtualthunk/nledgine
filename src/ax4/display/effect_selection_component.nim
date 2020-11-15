@@ -183,7 +183,7 @@ proc tentativelySelectHex(g: EffectSelectionComponent, world: World, display: Di
                            entities.add(c.get)
                         hexes.addOpt(map.tileAt(v))
 
-                     echo &"Checking characters in shape: {hexes}, {entities}"
+                     info &"Checking characters in shape: {hexes}, {entities}"
                      newBaseSel = some(SelectedEntity(hexes))
 
                      if entities.nonEmpty:
@@ -216,7 +216,7 @@ method onEvent(g: EffectSelectionComponent, world: World, curView: WorldView, di
 
    matchType(event):
       extract(ChooseActiveEffect, effectPlays, onSelectionComplete):
-         echo &"Choosing active effect : {effectPlays}"
+         info &"Choosing active effect : {effectPlays}"
          g.onSelectionComplete = onSelectionComplete
          g.setEffectPlays(world, display, effectPlays)
       extract(HexMouseEnter, hex):

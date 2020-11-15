@@ -24,26 +24,26 @@ const margin = -400
 
 type
    MapCullingComponent* = ref object of GraphicsComponent
-      lastCameraPos : AxialVec
-      cameraPosWatcher : Watcher[AxialVec]
-      windowWatcher : Watcher[Vec2i]
-      hexSize : int
+      lastCameraPos: AxialVec
+      cameraPosWatcher: Watcher[AxialVec]
+      windowWatcher: Watcher[Vec2i]
+      hexSize: int
 
-method initialize(g : MapCullingComponent, world : World, curView : WorldView, display : DisplayWorld) =
+method initialize(g: MapCullingComponent, world: World, curView: WorldView, display: DisplayWorld) =
    display.attachData(CullingData())
    g.name = "MapCullingComponent"
    g.hexSize = mapGraphicsSettings().hexSize
    g.cameraPosWatcher = watcher(() => toAxialVec(display[CameraData].camera.eye, g.hexSize.float))
    g.windowWatcher = watcher(() => display[GraphicsContextData].framebufferSize)
 
-method update(g : MapCullingComponent, world : World, curView : WorldView, display : DisplayWorld, df : float) : seq[DrawCommand] =
+method update(g: MapCullingComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =
    let cam = display[CameraData].camera
    var CD = display[CullingData]
    let GCD = display[GraphicsContextData]
 
    if g.cameraPosWatcher.hasChanged or g.windowWatcher.hasChanged:
       let eye = g.cameraPosWatcher.currentValue()
-      # echo "Eye value: ", cam.eye
+      fine &"Eye value: {cam.eye}"
 
       CD.hexesInView.clear()
       CD.hexesByCartesianCoord.clear()
@@ -57,4 +57,4 @@ method update(g : MapCullingComponent, world : World, curView : WorldView, displ
 
       CD.hexesByCartesianCoord = CD.hexesByCartesianCoord.sortedByIt(-it.asCartesian.y)
       CD.revision.inc
-      # echo "updated culling data to revision ", CD.revision
+      fine &"updated culling data to revision {CD.revision}"

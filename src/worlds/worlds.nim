@@ -9,6 +9,7 @@ import hashes
 import ../engines/event_types
 import resources
 import noto
+import sets
 
 {.experimental.}
 
@@ -50,6 +51,7 @@ type
       lastAppliedEvent: WorldEventClock
       lastAppliedIndex: WorldModifierClock
       events*: seq[Event]
+      overlayActive*: bool
 
    World* = ref object
       view*: WorldView
@@ -68,7 +70,7 @@ type
 
 converter toView*(world: World): WorldView = world.view
 
-var worldCallsForAllTypes* {.threadvar.}: seq[proc(world: World) {.gcsafe.}]
+var worldCallsForAllTypes* {.threadvar.}: seq[proc(world: WorldView) {.gcsafe.}]
 var displayWorldCallsForAllTypes* {.threadvar.}: seq[proc(world: DisplayWorld) {.gcsafe.}]
 
 proc hash*(e: Entity): int = e.id.hash
@@ -94,9 +96,21 @@ proc isSentinel*(e: Entity): bool = e == SentinelEntity
 proc isSentinel*(e: DisplayEntity): bool = e == SentinelDisplayEntity
 
 proc currentTime*(view: WorldView): WorldEventClock =
-   (view.lastAppliedEvent.int+1).WorldEventClock
+   if view.baseView.isSome:
+      view.baseView.get.currentTime
+   else:
+      (view.lastAppliedEvent.int+1).WorldEventClock
+
+
+proc applyModificationToView(view: WorldView, modifier: EntityModification, modifierClock: WorldModifierClock)
 
 proc addModification*(world: World, modification: EntityModification) {.gcsafe.}
+proc addModification*(view: WorldView, modification: EntityModification) =
+   if view.baseView.isNone:
+      err &"Views cannot be modified directly unless they are layered on top of a base view"
+   else:
+      view.overlayActive = true
+      applyModificationToView(view, modification, 0.WorldModifierClock)
 
 proc createEntity*(world: World): Entity {.gcsafe.} =
    result = Entity(id: world.entityCounter)
@@ -123,7 +137,7 @@ proc createWorld*(): World {.gcsafe.} =
    ret.modificationContainer = ModificationContainer(modifications: @[])
 
    for setup in worldCallsForAllTypes:
-      setup(ret)
+      setup(ret.view)
 
    # create world entity, 0
    discard ret.createEntity()
@@ -183,14 +197,24 @@ proc addEvent*(world: DisplayWorld, evt: Event): WorldEventClock {.discardable.}
    world.eventClock.inc
 
 proc eventAtTime*(view: WorldView, time: WorldEventClock): Event =
-   view.events[time.int]
+   if view.baseView.isSome:
+      view.baseView.get.eventAtTime(time)
+   else:
+      view.events[time.int]
 
-proc mostRecentEvent*(view: WorldView): Event = view.events[view.events.len - 1]
+proc mostRecentEvent*(view: WorldView): Event =
+   if view.baseView.isSome:
+      if view.events.len > 0:
+         view.events[view.events.len - 1]
+      else:
+         view.baseView.get.mostRecentEvent
+   else:
+      view.events[view.events.len - 1]
 
-proc setUpType*[C](world: World, dataType: DataType[C]) =
-   if world.view.dataContainers.len <= dataType.index:
-      world.view.dataContainers.setLen(dataType.index + 1)
-   world.view.dataContainers[dataType.index] = DataContainer[C](dataStore: Table[int, ref C](), defaultValue: new C, dataTypeIndex: dataType.index)
+proc setUpType*[C](view: WorldView, dataType: DataType[C]) =
+   if view.dataContainers.len <= dataType.index:
+      view.dataContainers.setLen(dataType.index + 1)
+   view.dataContainers[dataType.index] = DataContainer[C](dataStore: Table[int, ref C](), defaultValue: new C, dataTypeIndex: dataType.index)
 
 proc setUpType*[C](world: DisplayWorld, dataType: DataType[C]) =
    if world.dataContainers.len <= dataType.index:
@@ -203,6 +227,10 @@ method applyModification(container: AbstractDataContainer, entMod: EntityModific
    discard
 
 method removeEntity(container: AbstractDataContainer, entity: int) {.base.} =
+   {.warning[LockLevel]: off.}
+   discard
+
+method clear(container: AbstractDataContainer) {.base.} =
    {.warning[LockLevel]: off.}
    discard
 
@@ -236,6 +264,10 @@ method getInitialCreationModificaton[T](container: DataContainer[T], entity: int
    else:
       some(EntityModification(entity: Entity(id: entity), dataTypeIndex: container.dataTypeIndex, modification: InitialAssignmentModification[T](value: data[])))
 
+method clear[T](container: DataContainer[T]) =
+   container.lastAppliedIndex = 0
+   container.dataStore.clear()
+
 proc destroyEntity*(world: DisplayWorld, entity: DisplayEntity) =
    for i in 0 ..< world.entities.len:
       if world.entities[i] == entity:
@@ -247,6 +279,11 @@ proc destroyEntity*(world: DisplayWorld, entity: DisplayEntity) =
 
 proc createView*(world: World): WorldView =
    deepCopy(world.view)
+
+proc createLayeredView*(view: WorldView): WorldView =
+   result = WorldView(baseView: some(view))
+   for setup in worldCallsForAllTypes:
+      setup(result)
 
 proc applyModificationToView(view: WorldView, modifier: EntityModification, modifierClock: WorldModifierClock) =
    if modifier.dataTypeIndex == -1:
@@ -262,8 +299,32 @@ proc applyModificationToView(view: WorldView, modifier: EntityModification, modi
 
    view.lastAppliedIndex = modifierClock
 
+proc clear*(view: WorldView) =
+   if view.baseView.isNone:
+      err &"Attempting to clear a world view that is not an overlay on another view does not make sense"
+   else:
+      view.entities.setLen(0)
+      for container in view.dataContainers:
+         if container != nil:
+            container.clear()
+      view.lastAppliedEvent = 0.WorldEventClock
+      view.lastAppliedIndex = 0.WorldModifierClock
+      view.events.setLen(0)
+      view.overlayActive = false
+
+proc hasActiveOverlay*(view: WorldView): bool =
+   if view.baseView.isNone:
+      warn &"Asking a non-layered view if it is an active overlay does not make sense"
+      false
+   else:
+      view.overlayActive
+
+
 
 proc advance*(view: WorldView, world: World, targetCurrentTime: WorldModifierClock) =
+   if view.baseView.isSome:
+      err &"Advancing a view that is layered on top of another view is not supported"
+
    # add events
    while true:
       let nextEventIndex = view.lastAppliedEvent.int+1
@@ -278,10 +339,26 @@ proc advance*(view: WorldView, world: World, targetCurrentTime: WorldModifierClo
       let modifier: EntityModification = world.modificationContainer.modifications[i]
       applyModificationToView(view, modifier, WorldModifierClock(i))
 
-proc advance*(view: WorldView, world: World, targetCurrentTime: WorldEventClock) =
-   if targetCurrentTime.int > view.currentTime.int:
-      advance(view, world, world.eventModificationTimes[targetCurrentTime.int - 1])
+proc advance*(view: WorldView, world: World, targetEventTime: WorldEventClock) =
+   while targetEventTime.int > view.lastAppliedEvent.int+1:
+      let nextEventIndex = view.lastAppliedEvent.int+1
+      addEventToView(view, world.view.events[nextEventIndex], nextEventIndex.WorldEventClock)
+      view.lastAppliedEvent = nextEventIndex.WorldEventClock
 
+      let targetModifierClock = world.eventModificationTimes[nextEventIndex]
+      for i in view.lastAppliedIndex.int+1 ..< targetModifierClock.int:
+         let modifier: EntityModification = world.modificationContainer.modifications[i]
+         applyModificationToView(view, modifier, WorldModifierClock(i))
+
+
+   # if targetCurrentTime.int > view.currentTime.int:
+   #    advance(view, world, world.eventModificationTimes[targetEventTime.int - 1])
+
+proc advanceBaseView*(view: WorldView, world: World, targetCurrentTime: WorldModifierClock) =
+   advance(view.baseView.get, world, targetCurrentTime)
+
+proc advanceBaseView*(view: WorldView, world: World, targetCurrentTime: WorldEventClock) =
+   advance(view.baseView.get, world, targetCurrentTime)
 # proc attachData*[C] (world : var World, entity : Entity, dataType : DataType[C]) =
 #    attachData(world, entity, dataType, C())
 
@@ -289,11 +366,16 @@ proc attachData*[C] (world: World, entity: Entity, dataValue: C = C()) =
    let entityMod = EntityModification(entity: entity, dataTypeIndex: C.getDataType().index, modification: InitialAssignmentModification[C](value: dataValue))
    world.addModification(entityMod)
 
+proc attachData*[C] (view: WorldView, entity: Entity, dataValue: C) =
+   let entityMod = EntityModification(entity: entity, dataTypeIndex: C.getDataType().index, modification: InitialAssignmentModification[C](value: dataValue))
+   view.addModification(entityMod)
+
 proc attachData*[C] (world: World, dataType: typedesc[C], dataValue: C = C()) =
    attachData[C](world, WorldEntity, dataType.getDataType(), dataValue)
 
 proc attachData*[C] (world: World, dataValue: C) =
    attachData[C](world, WorldEntity, dataValue)
+
 
 proc modify*[C, T] (world: World, entity: Entity, modification: FieldModification[C, T]) =
    world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
@@ -311,11 +393,41 @@ proc modify*[C, T, K, V] (world: World, entity: Entity, modification: NestedTabl
    world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
 
 
+
+proc modify*[C, T] (world: WorldView, entity: Entity, modification: FieldModification[C, T]) =
+   world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
+
+proc modify*[C, T, U] (world: WorldView, entity: Entity, modification: NestedFieldModification[C, T, U]) =
+   world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
+
+proc modify*[C, K, V] (world: WorldView, entity: Entity, modification: TableFieldModification[C, K, V]) =
+   world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
+
+proc modify*[C, K1, K2, V] (world: WorldView, entity: Entity, modification: TableFieldTableModification[C, K1, K2, V]) =
+   world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
+
+proc modify*[C, T, K, V] (world: WorldView, entity: Entity, modification: NestedTableFieldModification[C, T, K, V]) =
+   world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
+
+
+
+
+
 iterator entitiesWithData*[C](view: WorldView, t: typedesc[C]): Entity =
    let dataType = t.getDataType()
-   var dc = (DataContainer[C])view.dataContainers[dataType.index]
-   for ent in dc.dataStore.keys:
-      yield Entity(id: ent)
+   let dc = (DataContainer[C])view.dataContainers[dataType.index]
+   if view.baseView.isNone:
+      for ent in dc.dataStore.keys:
+         yield Entity(id: ent)
+   else:
+      var yielded: HashSet[int]
+      for ent in dc.dataStore.keys:
+         yielded.incl(ent)
+         yield Entity(id: ent)
+      let baseDC = (DataContainer[C])view.baseView.get.dataContainers[dataType.index]
+      for ent in baseDC.dataStore.keys:
+         if not yielded.contains(ent):
+            yield Entity(id: ent)
 
 proc addModification*(world: World, modification: EntityModification) =
    world.modificationContainer.modifications.add(modification)
@@ -407,9 +519,8 @@ macro modify*(world: World, expression: untyped) =
          if inf.left[0].kind == nnkDotExpr:
             let entityDef = inf.left[0][0]
             let typeDef = inf.left[0][1]
-            echo "Parsed: entity(" & entityDef.strVal & ") type(" & typeDef.strVal & ") field(" & fieldDef.strVal & ")"
+            # echo "Parsed: entity(" & entityDef.strVal & ") type(" & typeDef.strVal & ") field(" & fieldDef.strVal & ")"
             let fieldName = newDotExpr(newIdentNode(typeDef.strVal & "Type"), newIdentNode(fieldDef.strVal))
-            let typeDefIdent = newIdentNode(typeDef.strVal & "Type")
 
             result = quote do:
                world.modify(`entityDef`, `fieldName`, `assignmentDef`)

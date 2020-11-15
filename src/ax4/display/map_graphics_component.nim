@@ -75,6 +75,7 @@ proc render(g: MapGraphicsComponent, view: WorldView, display: DisplayWorld) =
 
       var vision = playerVisionContext(view)
 
+
       let map = view.data(Map)
       for hex in cullingData.hexesByCartesianCoord:
          if not vision.isRevealed(hex): continue

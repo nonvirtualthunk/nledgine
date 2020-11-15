@@ -60,7 +60,7 @@ proc render(g: TacticalUIComponent, view: WorldView, display: DisplayWorld) =
          qb.centered()
 
          let dy = cos(relTime().inSeconds * 2.0f) * 0.03f
-         let pos = selC[Physical].position.asCartVec.Vec3f * hexSize + vec3f(0.0f, hexHeight.float * (0.4 + dy), 0.0f)
+         let pos = (selC[Physical].position.asCartVec + selC[Physical].offset).Vec3f * hexSize + vec3f(0.0f, hexHeight.float * (0.4 + dy), 0.0f)
          let curAP = selC[ResourcePools].currentResourceValue(AP)
          let maxAP = selC[ResourcePools].maximumResourceValue(AP)
          let fractionalImage = if curAP == maxAP:

@@ -42,6 +42,9 @@ type
       gameEventBus: EventBus
       displayEventBus: EventBus
       world: World
+      # this is the simple view into `world` at a specific time
+      rawCurrentView: WorldView
+      # this is then a layered view on top of that that can be modified
       currentView: WorldView
       displayWorld*: DisplayWorld
 
@@ -60,7 +63,8 @@ proc newGraphicsEngine*(gameEngine: GameEngine): GraphicsEngine {.gcsafe.} =
    result = GraphicsEngine()
    result.components = @[]
    result.world = gameEngine.world
-   result.currentView = result.world.createView()
+   result.rawCurrentView = result.world.createView()
+   result.currentView = result.rawCurrentView.createLayeredView()
    result.displayWorld = createDisplayWorld()
    result.gameEventBus = createEventBus(result.world)
    result.displayEventBus = createEventBus(result.displayWorld.events)

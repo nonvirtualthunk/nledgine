@@ -7,6 +7,10 @@ import graphics/canvas
 import core
 import game/library
 import ax4/game/ax_events
+import noto
+import hex
+import ax4/game/character_types
+import worlds
 
 type
    AnimationComponent* = ref object of GraphicsComponent
@@ -32,16 +36,36 @@ method update(g: AnimationComponent, world: World, curView: WorldView, display: 
    # @[g.canvas.drawCommand(display)]
    if world.currentTime > curView.currentTime:
       while world.currentTime > curView.currentTime:
+         curView.clear()
          let nextEvent = world.eventAtTime(curView.currentTime)
          var delay = 0.0
-         if nextEvent of GameEvent and ((GameEvent)nextEvent).state == GameEventState.PostEvent:
+
+         if nextEvent of GameEvent and ((GameEvent)nextEvent).state == GameEventState.PreEvent:
+
             matchType(nextEvent):
-               extract(CharacterMoveEvent):
-                  delay = 0.25
+               extract(CharacterMoveEvent, entity, fromHex, toHex):
+                  delay = 0.5f
+                  let dt = (relTime() - g.lastAdvanced).inSeconds / delay
+                  let delta = toHex.asCartVec - fromHex.asCartVec
+                  let hopCount = 2.0f
+                  let hopHeight = 0.1f
+                  let hop = cartVec(0.0f, hopHeight, 0.0f) * abs(sin(dt * PI * hopCount))
+                  curView.modify(entity, PhysicalType.offset := (delta * dt + hop))
+               extract(AttackEvent, entity, attack, targets):
+                  if targets.len == 1:
+                     let target = targets[0]
+                     let delta = (curView.data(target, Physical).position.asCartVec - curView.data(entity, Physical).position.asCartVec).normalizeSafe
+                     delay = 0.35f
+                     let dt = (relTime() - g.lastAdvanced).inSeconds / delay
+                     let dv = sin(dt * PI) * 0.5f
+                     # fine &"dv {dv}, dt {dt}, delta {delta}, entity {entity}, target {target}"
+                     curView.modify(entity, PhysicalType.offset := (delta * dv))
+                  else:
+                     warn &"Animation for attacking multiple enemies not yet done"
 
 
          if relTime() > g.lastAdvanced + delay.seconds:
-            curView.advance(world, (curView.currentTime.int+1).WorldEventClock)
+            curView.advanceBaseView(world, (curView.currentTime.int+1).WorldEventClock)
             g.lastAdvanced = relTime()
          else:
             break
