@@ -156,7 +156,7 @@ proc findTaxon*(nameExpr: string): Taxon =
       taxon(sections[0], sections[1])
 
 proc isA*(t: Taxon, q: Taxon): bool =
-   t == q or t.parents.anyIt(it.isA(q))
+   t != nil and (t == q or t.parents.anyIt(it.isA(q)))
 
 proc addTaxon(t: ref Taxonomy, namespace: string, name: string, parents: seq[Taxon]): Taxon =
    let namespace = normalizeTaxonStr(namespace)
@@ -208,6 +208,19 @@ proc load(taxonomy: ref Taxonomy) {.gcsafe.} =
    for k, v in conf["Taxonomy"].fields:
       taxonomy.loadParents(v, RootNamespace, k)
 
+   for v in conf["TaxonomySources"].asArr:
+      let sourcePath = v.asStr
+      let sourceConf = resources.config(sourcePath)
+      for namespace, topLevelV in sourceConf.fields:
+         for k, v in topLevelV.fields:
+            let name = normalizeTaxonStr(k)
+            var parents: seq[Taxon]
+            for parentK in v["isA"].asArr:
+               parents.add(taxonomy.taxon(namespace, parentK.asStr))
+            discard taxonomy.addTaxon(namespace, name, parents)
+
+
+
 
 when isMainModule:
    import prelude
@@ -215,3 +228,7 @@ when isMainModule:
    echoAssert taxon("BodyParts", "Leg").name == "leg"
    echoAssert taxon("BodyParts", "Leg").namespace == "body parts"
    echoAssert taxon("BodyParts", "Leg").parents == @[taxon("BodyParts", "Appendage")]
+
+   echoAssert taxon("CardTypes", "FightAnotherDay").name == "fight another day"
+   echoAssert taxon("CardTypes", "FightAnotherDay").namespace == "card types"
+   echoAssert taxon("CardTypes", "FightAnotherDay").parents == @[taxon("CardTypes", "MoveCard")]

@@ -18,6 +18,7 @@ import core
 import config/config_helpers
 import arxregex
 import prelude
+import math
 
 type
    AttackKey* {.pure.} = enum
@@ -62,12 +63,15 @@ type
       dice*: DicePool
       fixed*: int
       damageType*: Taxon
+      # 1.0 indicating full damage, 0.5 indicating half damage, after all other effects are resolved
+      fraction*: float
 
    DamageExpressionResult* = object
       diceRoll*: DiceRoll
       fixed*: int
       damageType*: Taxon
       reducedBy*: int
+      fraction*: float
 
    ConditionalAttackEffectKind* = enum
       OnHit
@@ -123,8 +127,9 @@ type
 
    AttackModifier* = object
       attackTypes*: Modifier[seq[Taxon]]
-      damage*: Modifier[int16]
+      damageFraction*: Modifier[float]
       bonusDamage*: Modifier[seq[DamageExpression]]
+      damage*: Modifier[int16]
       minRange*: Modifier[int16]
       maxRange*: Modifier[int16]
       accuracy*: Modifier[int16]
@@ -255,21 +260,22 @@ proc roll*(s: DamageExpression, r: var Randomizer): DamageExpressionResult =
       diceRoll: s.dice.roll(r),
       fixed: s.fixed,
       damageType: s.damageType,
+      fraction: s.fraction,
    )
 
 proc total*(s: DamageExpressionResult): int =
-   s.diceRoll.total + s.fixed - s.reducedBy
+   ((s.diceRoll.total + s.fixed).float * s.fraction).floor.int - s.reducedBy
 
 proc minDamage*(d: DamageExpression): int =
-   d.dice.minRoll + d.fixed
+   ((d.dice.minRoll + d.fixed).float * d.fraction).int
 
 proc maxDamage*(d: DamageExpression): int =
-   d.dice.maxRoll + d.fixed
+   ((d.dice.maxRoll + d.fixed).float * d.fraction).int
 
 proc damageRange*(d: DamageExpression): (int, int) =
    (d.minDamage, d.maxDamage)
 
-const simpleDamageExprRegex = re"([0-9]+)d([0-9]+)\s?([+-][0-9]+)?\s?([a-zA-Z]+)"
+const simpleDamageExprRegex = re"([0-9]+)d([0-9]+)\s?([+-]\s?[0-9]+)?\s?([a-zA-Z]+)"
 const simpleFixedDamageExprRegex = re"([+-]?[0-9]+)\s?([a-zA-Z]+)"
 
 proc readFromConfig*(cv: ConfigValue, d: var DamageExpression) =
@@ -279,11 +285,13 @@ proc readFromConfig*(cv: ConfigValue, d: var DamageExpression) =
          extractMatches(simpleDamageExprRegex, dice, pips, bonusStr, damageType):
             d.dice = dicePool(dice.parseInt, pips.parseInt)
             if bonusStr != "":
-               d.fixed = bonusStr.parseInt
+               d.fixed = bonusStr.replace(" ", "").parseInt
             d.damageType = taxon("DamageTypes", damageType)
+            d.fraction = 1.0f
          extractMatches(simpleFixedDamageExprRegex, bonusStr, damageType):
             d.fixed = bonusStr.parseInt
             d.damageType = taxon("DamageTypes", damageType)
+            d.fraction = 1.0f
          warn &"Unexpected string format for damage expression: {str}"
    else:
       warn &"unexpected config for damage expression: {cv}"
@@ -346,33 +354,55 @@ const dmFlagSourceExpr = re"(?i)flag\s?\((.+)\)"
 const dmUnfilteredCardPlaysSourceExpr = re"(?i)card\s?plays"
 const dmFilteredCardPlaysSourceExpr = re"(?i)card\s?plays\s?\((.+)\)"
 
+
 proc readFromConfig*(cv: ConfigValue, dms: var DerivedModifierSource) =
    let str = cv.asStr
    matcher(str):
       extractMatches(dmFlagSourceExpr, flagStr): dms = Flag(taxon("flags", flagStr))
       extractMatches(dmFilteredCardPlaysSourceExpr, cardType): dms = CardPlays(some(taxon("Card Types", cardType)))
       extractMatches(dmUnfilteredCardPlaysSourceExpr): dms = CardPlays(none(Taxon))
-      warn &"Unknown derived modifier source provided: {str}"
+      let flagOpt = maybeTaxon("flags", str)
+      if flagOpt.isSome:
+         dms = Flag(flagOpt.get)
+      else:
+         warn &"Unknown derived modifier source provided: {str}"
 
-const adderEffectExpr = re"(?i)\+\s?([0-9]+)"
+const adderEffectExpr = re"(?i)\s?([+-][0-9]+)"
 const multEffectExpr = re"(?i)[*x]\s?([0-9]+)"
+const simpleDerivedModifierExpr = re"(?ix)([a-z]+)\s?([+\-*x]\d+)\s?per\s?([a-z]+)\s?on\s?(self)"
 
-proc readFromConfig*[T](cv: ConfigValue, dm: var DerivedModifier[T]) =
-   readInto(cv["source"], dm.source)
-   if cv.hasField("effect"):
-      let effectStr = cv["effect"].asStr
-      matcher(effectStr):
-         extractMatches(adderEffectExpr, adder): dm.adder = adder.parseInt
-         extractMatches(multEffectExpr, mult): dm.multiplier = mult.parseInt
-         warn &"unsupported effect str for DerivedModifier: {effectStr}"
+proc readDerivedModifierOperationStr[T](effectStr: string, dm: var DerivedModifier[T]) =
+   matcher(effectStr):
+      extractMatches(adderEffectExpr, adder): dm.adder = adder.parseInt
+      extractMatches(multEffectExpr, mult): dm.multiplier = mult.parseInt
+      warn &"unsupported effect str for DerivedModifier: {effectStr}"
+
+proc readFromConfigA*[T](cv: ConfigValue, dm: var DerivedModifier[T]) =
+   if cv.isStr:
+      matcher cv.asStr:
+         extractMatches(simpleDerivedModifierExpr, field, op, source, entity):
+            asConf(field).readInto(dm.field)
+            readDerivedModifierOperationStr(op, dm)
+            asConf(source).readInto(dm.source)
+            asConf(entity).readInto(dm.entity)
+         warn &"Unsupported simple derived modifier expr: {cv.asStr}"
    else:
-      warn &"DerivedModifier must have an effect field to be useful"
-   readInto(cv["field"], dm.field)
-   readInto(cv["entity"], dm.entity)
-   if cv["self"].asBool(false):
-      dm.entity = DerivedModifierEntity.Self
-   elif cv["target"].asBool(false):
-      dm.entity = DerivedModifierEntity.Target
+      readInto(cv["source"], dm.source)
+      if cv.hasField("effect"):
+         let effectStr = cv["effect"].asStr
+         readDerivedModifierOperationStr(effectStr, dm)
+      else:
+         warn &"DerivedModifier must have an effect field to be useful"
+      readInto(cv["field"], dm.field)
+      readInto(cv["entity"], dm.entity)
+      if cv["self"].asBool(false):
+         dm.entity = DerivedModifierEntity.Self
+      elif cv["target"].asBool(false):
+         dm.entity = DerivedModifierEntity.Target
+
+proc readFromConfig*(cv: ConfigValue, dm: var DerivedModifier[AttackField]) =
+   readFromConfigA(cv, dm)
+
 
 proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.}
 
@@ -469,6 +499,7 @@ const drawCardsRe = re"(?ix)drawcards\((.+)\)"
 const expendRe = re"(?i)expend"
 const changeFlagRe = re"(?ix)changeflag\((.+),(.+)\)"
 const increaseFlagRe = re"(?ix)increaseflag\((.+),(.+)\)"
+const exhaustSelfRe = re"(?i)exhaust"
 
 proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.} =
    if cv.isStr:
@@ -494,6 +525,8 @@ proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.} =
                         ge = GameEffect(kind: GameEffectKind.ChangeFlag, flag: flagOpt.get, flagModifier: modifiers.add(num))
                   else:
                      warn &"unknown word(number) pattern for game effect: {word}, {numberStr}"
+         extractMatches(exhaustSelfRe):
+            ge = GameEffect(kind: GameEffectKind.MoveCard, moveToLocation: some(CardLocation.ExhaustPile))
          extractMatches(simpleAttackPattern):
             ge = GameEffect(kind: GameEffectKind.SimpleAttack, attack: readInto(asConf(str), Attack))
          extractMatches(addCardRe, cardName):
@@ -564,6 +597,7 @@ proc matches*(sel: AttackSelector, view: WorldView, attack: Attack): bool =
 proc applyModifiers*(attack: var Attack, modifier: AttackModifier) =
    modifier.attackTypes.apply(attack.attackTypes)
    modifier.damage.apply(attack.damage.fixed)
+   modifier.damageFraction.apply(attack.damage.fraction)
    modifier.bonusDamage.apply(attack.bonusDamage)
    modifier.minRange.apply(attack.minRange)
    modifier.maxRange.apply(attack.maxRange)

@@ -28,7 +28,10 @@ proc loadImage*(path: string): Image =
    stbi.setFlipVerticallyOnLoad(true)
    var width, height, channels: int
    result = new Image
-   result.data = stbi.load(path, width, height, channels, stbi.Default)
+   try:
+      result.data = stbi.load(path, width, height, channels, stbi.Default)
+   except:
+      result.data = stbi.load("images/unknown.png", width, height, channels, stbi.Default)
 
    if channels != 4:
       raise newException(ValueError, "Only 4 channel images are currently supported [" & path & "]")

@@ -96,11 +96,15 @@ proc readFromConfig*[T](cv: ConfigValue, v: var Modifier[T]) =
    elif cv.isNumber:
       v.operation = ModifierOperation.Add
       readInto(cv, v.value)
+   elif cv.isArr:
+      v.operation = ModifierOperation.Add
+      readInto(cv, v.value)
    else:
       warn &"Invalid configuration for modifier: {cv}"
 
 
 proc add*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Add, value: arg)
+proc mul*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Mul, value: arg)
 proc sub*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Sub, value: arg)
 proc reduce*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Reduce, value: arg)
 proc recover*[T](arg: T): Modifier[T] = Modifier[T](operation: ModifierOperation.Recover, value: arg)

@@ -95,6 +95,10 @@ TaxonomyDisplay {
       icon: "ax4/images/icons/vengeance.png"
    }
 
+   Flags.Weak : {
+      icon: "ax4/images/icons/weak.png"
+   }
+
    Flags.Rage : {
       icon: "ax4/images/icons/rage.png"
    }

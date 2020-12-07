@@ -17,6 +17,8 @@ import patty
 import ax4/game/flags
 import prelude
 import core
+import sets
+import vision
 
 import prelude
 
@@ -36,6 +38,12 @@ proc matchesRestriction*(view: WorldView, character: Entity, effectSource: Entit
             else:
                -1
             dist >= minRange and dist <= maxRange
+         HexInRange(minHexRange, maxHexRange):
+            if ent.hasData(Tile) and character.hasData(Physical):
+               let dist = ent[Tile].position.distance(character[Physical].position)
+               dist.int >= minHexRange and dist.int <= maxHexRange
+            else:
+               false
          EntityChoices(entities): entities.contains(ent)
          TaxonChoices(_): false
          InCardLocation(targetLocation):
@@ -48,6 +56,28 @@ proc matchesRestriction*(view: WorldView, character: Entity, effectSource: Entit
          WithinMoveRange(movePoints):
             warn &"checking if something is within move range is pretty expensive, not yet implemented"
             true
+         HasFlag(flag, comparison, referenceValue):
+            if ent.hasData(Flags):
+               let flagValue = flags.flagValue(view, character, flag)
+               comparison.isTrueFor(flagValue, referenceValue)
+            else:
+               false
+         InView:
+            if character.hasData(Vision):
+               if ent.hasData(Physical):
+                  character[Vision].hexesInView.contains(ent[Physical].position)
+               else:
+                  false
+            else:
+               warn &"Restriction limits to entities in view, but the source entity does not ave vision"
+               false
+         IsDamaged(truth):
+            if ent.hasData(Character):
+               let damaged = ent[Character].health.currentValue < ent[Character].health.maxValue
+               damaged == truth
+            else:
+               warn &"Restriction limits to damaged entities, but target entity does not have health"
+               false
          AllRestrictions(restrictions):
             for subRes in restrictions:
                if not matchesRestriction(view, character, effectSource, ent, subRes):
@@ -76,6 +106,16 @@ proc possibleEntityMatchesFromRestriction*(view: WorldView, character: Entity, e
       match restrictions:
          Self: some(@[character])
          EffectSource: some(@[effectSource])
+         HexInRange(minHexRange, maxHexRange):
+            let map = view[Map]
+            var res: seq[Entity]
+            let pos = character[Physical].position
+            for r in minHexRange .. maxHexRange:
+               for hex in hexRing(pos, r):
+                  let tileOpt = map.tileAt(hex)
+                  if tileOpt.isSome:
+                     res.add(tileOpt.get)
+            some(res)
          InRange(minRange, maxRange):
             var res: seq[Entity]
             let map = view[Map]
@@ -91,22 +131,55 @@ proc possibleEntityMatchesFromRestriction*(view: WorldView, character: Entity, e
                if dist >= minRange and dist <= maxRange:
                   res.add(ent)
             some(res)
+         IsDamaged(truth):
+            var res: seq[Entity]
+            for ent in view.entitiesWithData(Character):
+               let damaged = ent[Character].health.currentValue < ent[Character].health.maxValue
+               if damaged == truth:
+                  res.add(ent)
+            some(res)
+         Enemy:
+            if character.hasData(Allegiance):
+               let charFaction = faction(view, character)
+               some(toSeq(entitiesNotInFaction(view, charFaction)))
+            else:
+               none(seq[Entity])
+         Friendly:
+            if character.hasData(Allegiance):
+               let charFaction = faction(view, character)
+               some(toSeq(entitiesInFaction(view, charFaction)))
+            else:
+               none(seq[Entity])
          EntityChoices(entities): some(entities)
          InCardLocation(targetLocation):
             some(cardsInLocation(view, character, targetLocation))
          WithinMoveRange(movePoints):
             warn &"we could implement a flood search for possible entities within move range, if desired"
             none(seq[Entity])
+         InView:
+            var res: seq[Entity]
+            if character.hasData(Vision):
+               let vision = character[Vision]
+               for ent in view.entitiesWithData(Physical):
+                  if vision.hexesInView.contains(ent[Physical].position):
+                     res.add(ent)
+               some(res)
+            else:
+               none(seq[Entity])
          AllRestrictions(restrictions):
-            var res: Option[seq[Entity]]
+            var res: Option[HashSet[Entity]]
             for subRestriction in restrictions:
                let subRes = possibleEntityMatchesFromRestriction(view, character, effectSource, subRestriction)
                if subRes.isSome:
+                  let subResSet = subRes.get.toHashSet
                   if res.isSome:
-                     res.get.add(subRes.get)
+                     res = some(res.get.intersection(subResSet))
                   else:
-                     res = subRes
-            res
+                     res = some(subResSet)
+            if res.isSome:
+               some(res.get.toSeq)
+            else:
+               none(seq[Entity])
          _: none(seq[Entity])
 
 proc possibleTaxonMatchesFromRestriction*(view: WorldView, character: Entity, effectSource: Entity, restrictions: SelectionRestriction): Option[seq[Taxon]] =
@@ -172,8 +245,14 @@ proc sortByPreference*(view: WorldView, character: Entity, entities: seq[Entity]
          let startPos = character[Physical].position
          let mult = if preference.kind == TargetPreferenceKind.Closest: 1.0 else: -1.0
          for ent in entities:
-            let dist = ent[Physical].position.distance(startPos).float
-            entitiesWithSortValue.add((ent, dist * mult))
+            if ent.hasData(Physical):
+               let dist = ent[Physical].position.distance(startPos).float
+               entitiesWithSortValue.add((ent, dist * mult))
+            elif ent.hasData(Tile):
+               let dist = ent[Tile].position.distance(startPos).float
+               entitiesWithSortValue.add((ent, dist * mult))
+            else:
+               warn &"Trying to sort entities by distance, but entity is neither Tile nor Physical {ent}"
       else:
          warn &"Unsupported target preference : {preference.kind}"
 
@@ -185,26 +264,10 @@ proc isConditionMet*(view: WorldView, character: Entity, cond: GameCondition): b
    withView(view):
       match cond:
          AlwaysTrue:
-            return true
-         HasFlag(flag, comparison, referenceValue):
-            let flagValue = flags.flagValue(view, character, flag)
-            return comparison.isTrueFor(flagValue, referenceValue)
-         IsDamaged(truth):
-            let damaged = character[Character].health.currentValue < character[Character].health.maxValue
-            return damaged == truth
-         CanSee(restriction):
-            let sightRange = character[Character].sightRange
-            let charPos = character[Physical].position
-            for ent in view.entitiesWithData(Character):
-               let dist = ent[Physical].position.distance(charPos)
-               if dist <= sightRange.float:
-                  if matchesRestriction(view, character, character, ent, restriction):
-                     return true
-         Near(restriction, targetDist):
-            let charPos = character[Physical].position
-            for ent in view.entitiesWithData(Character):
-               let dist = ent[Physical].position.distance(charPos).float
-               if dist <= targetDist.float:
-                  if matchesRestriction(view, character, character, ent, restriction):
-                     return true
-      false
+            true
+         EntityMatching(restriction):
+            let possibleMatches = possibleEntityMatchesFromRestriction(view, character, character, restriction)
+            if possibleMatches.isSome:
+               possibleMatches.get.nonEmpty
+            else:
+               false

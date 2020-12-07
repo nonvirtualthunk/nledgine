@@ -26,7 +26,7 @@ proc endCharacterTurn*(world: World, entity: Entity) =
       let blockGain = flagValue(flags, "EndOfTurnBlockGain")
       gainBlock(world, entity, blockGain)
       for k, v in keyedFlagValues(flags, "EndOfTurnDamage"):
-         dealDamage(world, entity, DamageExpressionResult(fixed: v, damageType: k))
+         dealDamage(world, entity, DamageExpressionResult(fixed: v, damageType: k, fraction: 1.0f))
 
       if entity.hasData(DeckOwner):
          cards.moveAllCardsBetweenLocations(world, entity, DeckKind.Combat, CardLocation.Hand, CardLocation.DiscardPile, shuffle = false)

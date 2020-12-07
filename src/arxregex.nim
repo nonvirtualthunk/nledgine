@@ -64,6 +64,12 @@ template extractMatches*(r: Regex, var1: untyped, var2: untyped, var3: untyped, 
       break
 
 when isMainModule:
+   const simpleDerivedModifierExpr = re"(?ix)([a-z]+)\s?([+\-*x]\d+)\s?per\s?([a-z]+)\s?on\s?(self)"
+   matcher("damage +1 per Unbalanced on self"):
+      extractMatches(simpleDerivedModifierExpr, field, op, source, entity):
+         echo "Success"
+      assert false
+
    const re1 = re"([0-9]+) from (.*)"
 
    matcher("10 from bottom right"):

@@ -1,7 +1,8 @@
-Cards {
+CardTypes {
    // Movement cards
    Move {
       name : Move
+      isA: MoveCard
       image : ax4/images/card_images/move.png
       xp : Movement -> 1
 
@@ -20,37 +21,51 @@ Cards {
 
    FightAnotherDay {
       name : "Fight Another Day"
+      isA: MoveCard
+      rarity: uncommon
       image  : ax4/images/card_images/move.png
       xp : Movement -> 1
 
       effects: [Move(4)]
       costs: [ActionPoints(-1), StaminaPoints(-1)]
       conditionalEffects: {
-         condition : damaged
+         condition : [Self, Damaged]
          effects : [StaminaPoints(+1)]
       }
    }
 
    Dodge {
       name : "Dodge"
+      isA: DefenseCard
       rarity : common
       xp : Movement -> 1
 
-      effects : [Dodge(2)]
+      effects : [Dodge(3)]
       costs : [ActionPoints(-1), StaminaPoints(-1)]
+   }
+
+   Sprint {
+      name : "Sprint"
+      isA: MoveCard
+      rarity : common
+
+      effects: [Move(6)]
+      costs: [ActionPoints(-1), StaminaPoints(-2)]
    }
 
    DuckAndWeave {
       name : "Duck and Weave"
+      isA: DefenseCard
       rarity : common
       xp : Movement -> 1
 
-      effects : []
-      costs : [ActionPoints(0), StaminaPoints(-1)]
+      effects : [Move(1), Dodge(2)]
+      costs : [ActionPoints(-1), StaminaPoints(-1)]
    }
 
    DeepBreath {
       name : "Deep Breath"
+      isA: SkillCard
       rarity : common
       xp : Movement -> 1
       
@@ -59,6 +74,7 @@ Cards {
 
    Sprint {
       name : "Sprint"
+      isA: MoveCard
       rarity : common
       xp : Movement -> 1
 
@@ -70,6 +86,7 @@ Cards {
    // Fighter cards
    PiercingStab {
       name : "Piercing Stab"
+      isA: [AttackCard, FighterCard]
       image : ax4/images/card_images/piercingStab.png
       
       rarity : common
@@ -93,6 +110,7 @@ Cards {
 
    PinpointStab {
       name : "Pinpoint Stab"
+      isA: [AttackCard, FighterCard]
 
       rarity : common
       xp : Fighter -> 2
@@ -114,6 +132,7 @@ Cards {
 
    RecklessSmash {
       name : "Reckless Smash"
+      isA: [AttackCard, FighterCard]
 
       rarity : common
       xp : Fighter -> 2
@@ -125,12 +144,14 @@ Cards {
          attackModifier : {
             accuracy : -1
             damage : +5
+            derivedModifiers : [damage +1 per Unbalanced on self, damage +1 per Rage on self]
          }
       },Unbalanced(-1)]
    }
 
    DoubleStrike {
       name : "Double Strike"
+      isA: [AttackCard, FighterCard]
 
       rarity : common
 
@@ -151,6 +172,7 @@ Cards {
 
    ChargingStrike {
       name : "Charging Strike"
+      isA: [AttackCard, FighterCard]
 
       rarity : common
 
@@ -172,6 +194,7 @@ Cards {
 
    SwiftStrike {
       name : "Swift Strike"
+      isA: [AttackCard, FighterCard]
       
       rarity : common
 
@@ -191,6 +214,7 @@ Cards {
 
    Vengeance {
       name : "Vengeance"
+      isA: [SkillCard, FighterCard]
 
       rarity : uncommon
 
@@ -204,6 +228,7 @@ Cards {
    
    TirelessFury {
       name : "Tireless Fury"
+      isA: [SkillCard, FighterCard]
 
       rarity : uncommon
 

@@ -2,7 +2,7 @@ CharacterClasses {
 
    Fighter {
       
-      cardRewards : [PiercingStab, DoubleStrike, SwiftStrike]
+      cardRewards : [PiercingStab, DoubleStrike, SwiftStrike, PinpointStab]
    }
 
    Barbarian {
@@ -17,7 +17,7 @@ CharacterClasses {
 
 
    Movement {
-      cardRewards: [FightAnotherDay]
+      cardRewards: [FightAnotherDay, DuckAndWeave, Dodge, Sprint]
    }
 
 }

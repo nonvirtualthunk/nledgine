@@ -6,12 +6,15 @@ import worlds
 import game/library
 import options
 import ax4/game/movement
+import sets
+import ax4/game/character_types
 
 
 type Pathfinder* = object
    view: WorldView
    map: ref Map
    entity: Entity
+   occupiedLocations: HashSet[AxialVec]
 
 type Path* = object
    hexes*: seq[AxialVec]
@@ -29,11 +32,15 @@ type PathRequest* = object
 
 
 proc createPathfinder*(view: WorldView, entity: Entity): Pathfinder =
-   Pathfinder(view: view, map: view.data(Map), entity: entity)
+   withView(view):
+      var occupiedLocations: HashSet[AxialVec]
+      for ent in view.entitiesWithData(Physical):
+         occupiedLocations.incl(ent[Physical].position)
+      Pathfinder(view: view, map: view.data(Map), entity: entity, occupiedLocations: occupiedLocations)
 
 iterator neighbors(pf: Pathfinder, node: AxialVec): AxialVec =
    for n in node.neighbors:
-      if pf.map.tileAt(n.q, n.r).isSome:
+      if pf.map.tileAt(n.q, n.r).isSome and not pf.occupiedLocations.contains(n):
          yield n
 
 proc cost(pf: Pathfinder, a, b: AxialVec): float =

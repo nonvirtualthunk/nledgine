@@ -32,6 +32,7 @@ type
    GraphicsComponent* = ref object of RootRef
       name*: string
       initializePriority*: int
+      updatePriority*: int
       eventPriority*: int
       displayEventCallbacks: seq[DisplayEventCallback]
       lastUpdated: UnitOfTime
@@ -161,6 +162,7 @@ proc update*(ge: GraphicsEngine, channel: var Channel[DrawCommand], df: float) {
                if not evt.isConsumed:
                   callback(ge.world, ge.displayWorld, evt)
 
+   ge.components = ge.components.sortedByIt(it.updatePriority * -1)
    for comp in ge.components:
       comp.timer.time:
          let commands = comp.update(ge.world, ge.currentView, ge.displayWorld, df)

@@ -20,7 +20,7 @@ Items {
             staminaCost : 2
             minRange : 2
             maxRange : 2
-            damage : 1d8 Piercing
+            damage : 1d3 + 4 Piercing
          }
 
          secondary : {
@@ -32,7 +32,7 @@ Items {
             strikeCount : 1
             minRange : 1
             maxRange : 1
-            damage : 1d4 Bludgeoning
+            damage : 1d2 + 1 Bludgeoning
          }
       }
    }

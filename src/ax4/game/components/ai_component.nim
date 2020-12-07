@@ -38,14 +38,14 @@ proc think(world: World, actor: Entity) =
          var validActions: Table[string, MonsterAction]
          var totalWeight = 0.0
          for key, action in monsterClassInfo.actions:
-            if action.conditions.all((cond) => isConditionMet(world, actor, cond)):
-               echo &"Action {key} is valid possibility"
+            if isConditionMet(world, actor, action.conditions):
+               fine &"Action {key} is valid possibility"
                validActions[key] = action
                totalWeight += action.weight
 
          var nextAction = none(string)
          var weight = r.nextFloat(totalWeight)
-         echo &"Total weight: {totalWeight}, weight: {weight}"
+         fine &"Total weight: {totalWeight}, weight: {weight}"
          for key, action in validActions:
             if weight <= action.weight:
                nextAction = some(key)
@@ -79,12 +79,17 @@ proc act(world: World, actor: Entity) =
 
          for monsterEffect in action.effects:
             let effect = monsterEffect.effect
+
+            let possibleTargetsOpt = possibleEntityMatchesFromRestriction(world, actor, actor, monsterEffect.target.filters)
+            var possibleTargets: seq[Entity]
+            if possibleTargetsOpt.isNone:
+               warn &"No possible targets for ai action"
+            else:
+               possibleTargets = possibleTargetsOpt.get
+
             case effect.kind:
             of GameEffectKind.Move:
-               var possibleMoveTargets: seq[Entity]
-               for ent in world.entitiesWithData(Character):
-                  if matchesRestriction(world, actor, actor, ent, monsterEffect.target.filters):
-                     possibleMoveTargets.add(ent)
+               let possibleMoveTargets = possibleTargets
 
                if possibleMoveTargets.len > 0:
                   let sortedMoveTargets = sortByPreference(world, actor, possibleMoveTargets, monsterEffect.target)
@@ -104,10 +109,9 @@ proc act(world: World, actor: Entity) =
                let attack = effect.attack
 
                var possibleAttackTargets: seq[Entity]
-               for ent in world.entitiesWithData(Character):
-                  if matchesRestriction(world, actor, actor, ent, monsterEffect.target.filters):
-                     if isAttackValid(world, actor, attack, @[ent]):
-                        possibleAttackTargets.add(ent)
+               for ent in possibleTargets:
+                  if isAttackValid(world, actor, attack, @[ent]):
+                     possibleAttackTargets.add(ent)
 
                if possibleAttackTargets.len > 0:
                   let sortedAttackTargets = sortByPreference(world, actor, possibleAttackTargets, monsterEffect.target)
@@ -126,8 +130,11 @@ proc act(world: World, actor: Entity) =
                   combat.performAttack(world, actor, attack, targets)
                else:
                   info &"No attack targets yet"
-
-
+            of GameEffectKind.ChangeFlag:
+               let sortedTargets = sortByPreference(world, actor, possibleTargets, monsterEffect.target)
+               if sortedTargets.len > 0:
+                  let target = sortedTargets[0]
+                  modifyFlag(world, target, effect.flag, effect.flagModifier)
             else:
                warn &"Unsupported monster effect"
 

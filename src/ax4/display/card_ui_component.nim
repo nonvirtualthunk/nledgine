@@ -109,13 +109,18 @@ proc updateCardWidgetDesiredPositions(g: CardUIComponent, view: WorldView, displ
             let indexPcnt = if hand.len > 1: index.float / (hand.len.float - 1.0f) else: 0.5
             let yOffset = sin(indexPcnt*3.14159) * (-170.0 * (hand.len.float/5.0))
             if g.mousedOverCard != some(card) or g.heldCard.isSome:
+               if g.mousedOverCard.isSome:
+                  if index < g.mostRecentMousedOverIndex:
+                     cardWidget.desiredPos.x -= 200
+                  elif index > g.mostRecentMousedOverIndex:
+                     cardWidget.desiredPos.x += 200
                cardWidget.desiredPos.y = w.resolvePosition(Axis.Y, fixedPos(-300, BottomLeft)) + yOffset.int
                cardWidget.desiredPos.z = w.resolvePosition(Axis.Z, fixedPos((100 - (index-g.mostRecentMousedOverIndex).abs * 10)))
             else:
                cardWidget.desiredPos.y = w.resolvePosition(Axis.Y, fixedPos(0, BottomLeft))
                cardWidget.desiredPos.z = w.resolvePosition(Axis.Z, fixedPos(200))
 
-proc updateCardWidgetPositions(g: CardUIComponent, view: WorldView, display: DisplayWorld, selC: Entity) =
+proc updateCardWidgetPositions(g: CardUIComponent, view: WorldView, display: DisplayWorld, selC: Entity, df: float) =
    let ws = display[WindowingSystem]
 
    if g.heldCard.isSome:
@@ -137,12 +142,27 @@ proc updateCardWidgetPositions(g: CardUIComponent, view: WorldView, display: Dis
       let mag2 = delta.length2
 
       if mag2 > 0.001f:
-         let mag = sqrt(mag2)
-         let v = if g.heldCard == some(card): 1000.0f else: max(mag/12.0f, 40.0f)
-         if mag <= v:
+         let yspeed = 50.0f
+         let xspeed = max(20.0f, delta.x/20.0f)
+         if g.heldCard == some(card):
             cw.currentPos.xy = desiredf.xy
          else:
-            cw.currentPos.xy += delta.normalize * v
+            if delta.x.abs < xspeed:
+               cw.currentPos.x = desiredf.x
+            else:
+               cw.currentPos.x += sgn(delta.x).float * xspeed * df
+
+            if delta.y.abs < yspeed:
+               cw.currentPos.y = desiredf.y
+            else:
+               cw.currentPos.y += sgn(delta.y).float * yspeed * df
+
+
+         # let v = if g.heldCard == some(card): 1000.0f else: max(mag/12.0f, 40.0f)
+         # if mag <= v:
+         #    cw.currentPos.xy = desiredf.xy
+         # else:
+         #    cw.currentPos.xy += delta.normalize * v
 
          cw.widget.x = absolutePos(cw.currentPos.x.round.int)
          cw.widget.y = absolutePos(cw.currentPos.y.round.int)
@@ -248,7 +268,7 @@ method update(g: CardUIComponent, world: World, curView: WorldView, display: Dis
 
    if selCopt.isSome:
       # g.updateCardWidgetDesiredPositions(curView, display, selCopt.get)
-      g.updateCardWidgetPositions(curView, display, selCopt.get)
+      g.updateCardWidgetPositions(curView, display, selCopt.get, df)
 
    @[]
 

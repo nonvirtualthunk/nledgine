@@ -130,7 +130,13 @@ proc richTextSpacing*(spacing: int): RichText =
 proc richTextVerticalBreak*(offset: int = 0): RichText =
    richText(RichTextSection(size: 1.0f, kind: SectionKind.VerticalBreak, verticalOffset: offset))
 
-
+proc join*(s: seq[RichText], separator: RichText): RichText =
+   var first = true
+   for elem in s:
+      if not first:
+         result.add(separator)
+      result.add(elem)
+      first = false
 
 proc readFromConfig*(v: ConfigValue, b: var RichText) =
    if v.isStr:

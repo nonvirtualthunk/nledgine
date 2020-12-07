@@ -24,6 +24,7 @@ import ax4/display/tactical_ui_component
 import graphics/taxonomy_display
 import ax4/game/vision
 import sets
+import ax4/game/targeting_types
 
 type
    PhysicalEntityGraphicsComponent* = ref object of GraphicsComponent
@@ -52,7 +53,7 @@ method initialize(g: PhysicalEntityGraphicsComponent, world: World, curView: Wor
 proc entityBasePos(g: PhysicalEntityGraphicsComponent, physical: ref Physical): Vec3f =
    let cart = (physical.position.asCartVec + physical.offset) * g.hexSize
    let hexHeight = g.hexSize.hexHeight
-   cart.Vec3f - vec3f(0.0f, hexHeight * 0.5f, 0.0f)
+   cart.Vec3f - vec3f(0.0f, hexHeight * 0.4f, 0.0f)
 
 
 
@@ -137,7 +138,7 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
             qb.color = rgba(1.0f, 1.0f, 1.0f, 1.0f)
             qb.drawTo(g.canvas)
 
-            let barScale = ((hexHeight * 0.7).int div vertFrame.dimensions.y)
+            let barScale = ((hexHeight * 0.5).int div vertFrame.dimensions.y)
             let barHeight = vertFrame.dimensions.y * barScale
 
             let cd = physEnt.data(Character)
@@ -159,22 +160,7 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
             uiqb.color = rgba(0.8f, 0.1f, 0.1f, 1.0f)
             uiqb.dimensions = vec2f(vertContent.dimensions.x.float * barScale.float, maxContentHeight.float * pcntHP)
             uiqb.drawTo(g.canvas)
-
-            let healthString = &"{curHP}/{maxHP}"
-            var healthTextPos = healthBarPos + vec3f(-12.0f, healthBarDim.y, 0.0f)
-            uiqb.color = rgba(0.8f, 0.1f, 0.1f, 1.0f)
-            for c in healthString:
-               let img = if c == '/':
-                     image(&"ax4/images/ui/numerals/slash_outlined.png")
-                  else:
-                     image(&"ax4/images/ui/numerals/{c}_outlined.png")
-               uiqb.position = healthTextPos
-               uiqb.texture = img
-               uiqb.dimensions = vec2f(img.dimensions)
-               healthTextPos.x += uiqb.dimensions.x
-               uiqb.drawTo(g.canvas)
-
-
+            var maxBarY = healthBarPos.y + healthBarDim.y
 
             if physEnt.hasData(ResourcePools):
                let rsrc = physEnt[ResourcePools]
@@ -193,6 +179,22 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
                      uiqb.texture = stamContent
                      uiqb.drawTo(g.canvas)
                   uiqb.position.y += uiqb.dimensions.y - barScale.float
+                  maxBarY = max(maxBarY, uiqb.position.y)
+
+
+            let healthString = &"{curHP}/{maxHP}"
+            var healthTextPos = vec3f(healthBarPos.x - 12.0f, maxBarY, 0.0f)
+            uiqb.color = rgba(0.8f, 0.1f, 0.1f, 1.0f)
+            for c in healthString:
+               let img = if c == '/':
+                     image(&"ax4/images/ui/numerals/slash_outlined.png")
+                  else:
+                     image(&"ax4/images/ui/numerals/{c}_outlined.png")
+               uiqb.position = healthTextPos
+               uiqb.texture = img
+               uiqb.dimensions = vec2f(img.dimensions)
+               healthTextPos.x += uiqb.dimensions.x
+               uiqb.drawTo(g.canvas)
 
             if physEnt.hasData(Monster):
                var mqb = QuadBuilder()
@@ -219,6 +221,18 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
                         previewElements.add(Spacing())
                         let (minDmg, maxDmg) = effect.attack.damage.damageRange
                         previewElements.add(Text(&"{minDmg}-{maxDmg}"))
+                     of GameEffectKind.ChangeFlag:
+                        let buffing = effect.flag.isA(taxon("flags", "positive flag"))
+                        if buffing:
+                           previewElements.add(Image("ax4/images/icons/buffing_16.png"))
+                        else:
+                           previewElements.add(Image("ax4/images/icons/debuffing_16.png"))
+                        for filter in monsterEffect.target.filters.expand:
+                           match filter:
+                              InRange(minRange, maxRange):
+                                 previewElements.add(Image("ax4/images/icons/range_16.png"))
+                                 previewElements.add(Text($maxRange))
+                              _: discard
                      else:
                         discard
                      first = false
@@ -245,7 +259,7 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
                   else:
                      totalWidth += img[0].dimensions.x * img[1]
 
-               mqb.position = entBasePos + vec3f(totalWidth.float * -0.5f, charImg.dimensions.y.float * scale + 16, 0.0f)
+               mqb.position = entBasePos + vec3f(totalWidth.float * -0.5f, charImg.dimensions.y.float * scale, 0.0f)
                mqb.color = White
 
                for img in images:
@@ -312,7 +326,7 @@ method update(g: PhysicalEntityGraphicsComponent, world: World, curView: WorldVi
    if worldChanged or curView.hasActiveOverlay:
       g.render(curView, display)
 
-   g.updateFlagUI(curView, display, worldChanged)
+   g.updateFlagUI(curView, display, worldChanged or curView.hasActiveOverlay)
 
    @[g.canvas.drawCommand(display), g.uiCanvas.drawCommand(display)]
 

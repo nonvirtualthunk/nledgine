@@ -27,7 +27,7 @@ Taxonomy {
 
    MonsterClass : []
    MonsterClasses {
-      Slime : MonsterClass
+      
    }
 
    Item : []
@@ -244,43 +244,6 @@ Taxonomy {
 
       MonsterCard : CardType
       StatusCard : CardType
-
-      SwiftStrike : [AttackCard, FighterCard]
-      PiercingStab : [AttackCard, FighterCard]
-      FlurryOfBlows : [AttackCard, FighterCard]
-      SweepingLegStrike : [AttackCard, FighterCard]
-      RingingBlow : [AttackCard, FighterCard]
-      DoubleStrike : [AttackCard, FighterCard]
-      ChargingStrike : [AttackCard, FighterCard]
-      FlashingPoints : [SkillCard, FighterCard]
-      PinpointStab : [AttackCard, FighterCard]
-      RecklessSmash : [AttackCard, FighterCard]
-
-      Parry : DefenseCard
-      Block : DefenseCard
-
-      TurtleStance : [StanceCard, FighterCard]
-      HedgehogStance : [StanceCard, FighterCard]
-
-
-      Vengeance : [SkillCard, FighterCard]
-      TirelessFury : [SkillCard, FighterCard]
-
-
-
-      Harvest : GatherCard
-      Gather : GatherCard
-      
-      Move : MoveCard
-      FightAnotherDay : MoveCard
-      DeepBreath : MoveCard
-      Sprint : MoveCard
-      DuckAndWeave : MoveCard
-      Dodge : MoveCard
-
-      SlimeSmash : [MonsterCard, AttackCard]
-
-      Slime : StatusCard
    }
 
    Skill : []
@@ -325,51 +288,6 @@ Taxonomy {
       NegativeFlag : Flag
 
       InternalFlag : Flag
-
-      Harvester : Flag
-      Miner : Flag
-
-      Block : PositiveFlag
-      Parry : PositiveFlag
-      Armor : PositiveFlag
-      Dodge : PositiveFlag
-
-      Tiring : NegativeFlag
-      Slow : NegativeFlag
-
-      Stunned : NegativeFlag
-      Dazzled : NegativeFlag
-
-      FlashingPoints : PositiveFlag
-
-      Stance : PositiveFlag
-
-      HedgehogStance : Stance
-      TurtleStance : Stance
-
-      Poison : NegativeFlag
-
-      Rage : PositiveFlag
-      Vengeance : PositiveFlag
-      Unbalanced : NegativeFlag
-
-      ApCostDelta : InternalFlag
-      ApGainDelta : InternalFlag
-      StaminaCostDelta : InternalFlag
-      DefenseDelta : InternalFlag
-      AccuracyDelta : InternalFlag
-      ArmorDelta : InternalFlag
-      MovementGainDelta : InternalFlag
-      EndOfTurnBlockGain : InternalFlag
-      OnApproachAttack : InternalFlag
-      ZoneOfControlRange : InternalFlag
-      EndOfTurnBlockGain : InternalFlag
-      EndOfTurnDamage : InternalFlag
-      DamageReduction : InternalFlag
-      DamageAbsorption : InternalFlag
-      ExtraDamageTaken : InternalFlag
-      DamageBonus : InternalFlag
-      SightRangeDelta : InternalFlag
    }
 
    Tag : []
@@ -390,3 +308,5 @@ Taxonomy {
       Epic : Rarity
    }
 }
+
+TaxonomySources : [ax4/game/base_cards.sml, ax4/game/status_cards.sml, ax4/game/flags.sml, ax4/game/monsters.sml]

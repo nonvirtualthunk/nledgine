@@ -67,6 +67,7 @@ proc readFromConfig*(c: ConfigValue, v: var FlagMetaInfo) =
 
 
 const flagEquivPattern = re"(?x)([a-zA-Z0-9]+)(?:\[(.+)\])?\(([0-9]+)\)"
+const countsAsNPattern = re"(?ix)counts\s?as(\d+)"
 
 defineLibrary[FlagMetaInfo]:
    var lib = new Library[FlagMetaInfo]
@@ -83,12 +84,17 @@ defineLibrary[FlagMetaInfo]:
 
    for k, c in confs["Flags"]:
       let key = taxon("Flags", k)
-      let equivalenceConfigs = @[
+      var equivalenceConfigs = @[
          (c["countsAsNegative"], (0, -1)),
          (c["countsAs"], (0, 1)),
          (c["countsAsOne"], (1, 0)),
          (c["countsAsNegativeOne"], (-1, 0))
       ]
+      # Allows for "countsAs25: DamageDealtReduction" or whatever arbitrary number, it's hacky, but :shrug:
+      for subK, subV in c.fields:
+         matcher(subK):
+            extractMatches(countsAsNPattern, n):
+               equivalenceConfigs.add((subV, (n.parseInt, 0)))
       for eqc in equivalenceConfigs:
          let (subConf, addMul) = eqc
          let (add, mul) = addMul

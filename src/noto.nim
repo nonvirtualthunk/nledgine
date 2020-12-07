@@ -54,7 +54,7 @@ proc notoThreadFunc(b: bool) {.thread.} =
       if effMessage.len > 0:
          if msg.level == 1:
             echo "\u001B[38;5;184m", effMessage
-         if msg.level == 1:
+         elif msg.level == 0:
             echo "\u001B[38;5;196m", effMessage
          else:
             if not colorsByThread.hasKey(msg.originThread):

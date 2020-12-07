@@ -12,13 +12,19 @@ import noto
 import randomness
 import patty
 import ax4/game/targeting_types
+import sequtils
 
-
+const PrintDamageExpressionsInDicePlusFixedStyle = false
 
 proc asRichText*(de: DamageExpression): RichText =
-   result = de.dice.asRichText
-   if de.fixed != 0:
-      result.add(richText(toSignedString(de.fixed)))
+   # This approach is the 1d8+4 style,
+   when PrintDamageExpressionsInDicePlusFixedStyle:
+      result = de.dice.asRichText
+      if de.fixed != 0:
+         result.add(richText(toSignedString(de.fixed)))
+   else:
+      result = richText(&"{de.minDamage}-{de.maxDamage}")
+
    result.add(richText(de.damageType))
 
 proc asRichText*(target: AttackTarget): RichText =
@@ -90,6 +96,28 @@ proc asRichText*(view: WorldView, attack: AttackModifier): RichText =
          result.add(attack.target.value.asRichText)
 
 
+proc asRichText*(sel: AttackSelector): RichText =
+   match sel:
+      AnyAttack:
+         discard
+      AttackType(isA):
+         result.add(richText("Is a "))
+         var first = true
+         for t in isA:
+            if not first:
+               result.add(richText(","))
+            result.add(richText(t))
+            first = false
+      DamageType(damageType):
+         result.add(richText("Does"))
+         result.add(richText(damageType))
+      FromWeapon(weapon, key):
+         result.add(richText("Weapon Keyed selector doesn't usually make sense to see in the abstract"))
+      FromWeaponType(weaponType):
+         result.add(richText("Weapon is a "))
+         result.add(weaponType.mapIt(richText(it)).join(richText(",")))
+      CompoundAttackSelector(selectors):
+         result = selectors.mapIt(it.asRichText).join(richTextVerticalBreak())
 
 
 
@@ -99,6 +127,8 @@ proc asRichText*(view: WorldView, character: Entity, effect: GameEffect, subject
    of GameEffectKind.Attack:
       if character.isSentinel:
          var res = richText(taxon("game concepts", "attack"))
+         res.add(richTextVerticalBreak())
+         res.add(effect.attackSelector.asRichText)
          res.add(richTextVerticalBreak())
          res.add(asRichText(view, effect.attackModifier))
          res

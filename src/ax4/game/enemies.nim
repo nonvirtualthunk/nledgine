@@ -26,7 +26,7 @@ type
 
    MonsterAction* = object
       effects*: seq[MonsterEffect]
-      conditions*: seq[GameCondition]
+      conditions*: GameCondition
       weight*: float
 
    Monster* = object

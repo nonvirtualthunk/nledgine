@@ -62,6 +62,8 @@ method update(g: AnimationComponent, world: World, curView: WorldView, display: 
                      curView.modify(entity, PhysicalType.offset := (delta * dv))
                   else:
                      warn &"Animation for attacking multiple enemies not yet done"
+               extract(FactionTurnEndEvent):
+                  delay = 0.1f
 
 
          if relTime() > g.lastAdvanced + delay.seconds:

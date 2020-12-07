@@ -331,7 +331,7 @@ defineLibrary[CardArchetype]:
    let confs = @["base_cards.sml"]
    for confPath in confs:
       let conf = resources.config("ax4/game/" & confPath)
-      for k, v in conf["Cards"]:
+      for k, v in conf["CardTypes"]:
          let cardTaxon = taxon("card types", k)
          var identity = readInto(v, Identity)
          identity.kind = cardTaxon
@@ -356,9 +356,13 @@ when isMainModule:
 
    let cardArch = lib[taxon("card types", "move")]
 
-   echo "Card arch: ", cardArch.cardData[]
+   info &"Card arch: {cardArch.cardData[]}"
+
+   let recklessSmash = lib[taxon("card types", "reckless smash")]
+   info &"Reckless smash: {recklessSmash.cardData[]}"
 
    let firstCost = cardArch.cardData.cardEffectGroups[0].costs[0]
    echoAssert firstCost.effects[0].kind == GameEffectKind.ChangeResource
    echoAssert firstCost.effects[0].resource == taxon("resource pools", "actionPoints")
-   echoAssert firstCost.effects[0].resourceModifier == modifiers.reduce(1)
+
+   noto.quit()

@@ -93,8 +93,12 @@ proc equipItem*(world: World, character: Entity, item: Entity) =
             character.modify(Inventory.equipped.append(item))
             item.modify(Item.equippedBy.setTo(some(character)))
 
-            for card in item[Item].equipCards:
-               addCard(world, character, card, DeckKind.Combat, CardLocation.Hand)
+            var i = 0
+            if item[Item].equipCards.len > 0:
+               for card in item[Item].equipCards:
+                  let pile = if i mod 2 == 0: CardLocation.DrawPile else: CardLocation.DiscardPile
+                  addCard(world, character, card, DeckKind.Combat, pile)
+               shuffle(world, character, DeckKind.Combat, CardLocation.DrawPile)
 
 
 

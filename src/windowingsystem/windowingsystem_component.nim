@@ -28,7 +28,8 @@ type
 proc createWindowingSystemComponent*(): WindowingSystemComponent =
    WindowingSystemComponent(
       initializePriority: 10,
-      eventPriority: 100
+      eventPriority: 100,
+      updatePriority: -100
    )
 
 proc render(g: WindowingSystemComponent, display: DisplayWorld) =

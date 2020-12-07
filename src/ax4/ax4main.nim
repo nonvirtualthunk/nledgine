@@ -162,16 +162,16 @@ method initialize(g: MapInitializationComponent, world: World) =
       tobold.attachData(deck)
       tobold.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(3), taxon("resource pools", "stamina points"): reduceable(7)}.toTable))
       tobold.attachData(Character(
-         health: reduceable(6),
-         pendingRewards: @[CharacterRewardChoice(options: @[
-            CardReward(taxon("card types", "piercing stab")),
-            CardReward(taxon("card types", "vengeance")),
-            CardReward(taxon("card types", "fight another day")),
-            CardReward(taxon("card types", "double strike"))
-         ])],
+         health: reduceable(24),
+         # pendingRewards: @[CharacterRewardChoice(options: @[
+         #    CardReward(taxon("card types", "piercing stab")),
+         #    CardReward(taxon("card types", "vengeance")),
+         #    CardReward(taxon("card types", "fight another day")),
+         #    CardReward(taxon("card types", "double strike"))
+         # ])],
       ))
       tobold.attachData(Inventory())
-      tobold.attachData(Flags())
+      tobold.attachData(Flags(flags: {taxon("flags", "Weak"): 1}.toTable))
       tobold.attachData(Vision())
       tobold.attachData(DebugData(name: "Tobold"))
 
@@ -181,9 +181,12 @@ method initialize(g: MapInitializationComponent, world: World) =
 
 
 
-      let slime = createMonster(world, enemyFaction, taxon("monster classes", "slime"))
+      let slime = createMonster(world, enemyFaction, taxon("monster classes", "green slime"))
       slime.modify(Monster.xp += 40)
       placeCharacterInWorld(world, slime, axialVec(1, 2, 0))
+
+      let purpleSlime = createMonster(world, enemyFaction, taxon("monster classes", "purple slime"))
+      placeCharacterInWorld(world, purpleSlime, axialVec(2, 1, 0))
 
       world.attachData(TurnData(activeFaction: playerFaction, turnNumber: 1))
 
@@ -212,9 +215,9 @@ main(GameSetup(
       CardUIComponent(),
       MapEventTransformer(),
       EffectSelectionComponent(),
-      createWindowingSystemComponent(),
       AnimationComponent(),
-      RewardUIComponent()
+      RewardUIComponent(),
+      createWindowingSystemComponent(),
    ]
 ))
 

@@ -86,6 +86,9 @@ proc resolveAttack*(view: WorldView, character: Entity, selector: AttackSelector
 
 proc attackModifierFromFlags*(view: WorldView, character: Entity): AttackModifier =
    result.damage = add(flags.flagValue(view, character, taxon("flags", "damage bonus")).int16)
+   let damageFractReductionFlag = flags.flagValue(view, character, taxon("flags", "damage dealt reduction percent"))
+   if damageFractReductionFlag != 0:
+      result.damageFraction = mul(1.0f - (damageFractReductionFlag.float / 100.0f))
    result.accuracy = add(flags.flagValue(view, character, taxon("flags", "accuracy delta")).int16)
 
 
