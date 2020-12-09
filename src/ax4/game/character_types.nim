@@ -30,6 +30,7 @@ type
    Physical* = object
       position*: AxialVec
       offset*: CartVec
+      map*: Entity
 
    Combat* = object
       blockAmount*: int

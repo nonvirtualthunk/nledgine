@@ -46,7 +46,7 @@ proc moveCharacter*(world: World, character: Entity, toHex: Entity): bool {.disc
 
 
 proc moveCharacter*(world: World, character: Entity, toHex: AxialVec): bool {.discardable.} =
-   let hexEnt = world[Map].tileAt(toHex)
+   let hexEnt = character.map(world).tileAt(toHex)
    if hexEnt.isSome:
       moveCharacter(world, character, hexEnt.get)
    else:

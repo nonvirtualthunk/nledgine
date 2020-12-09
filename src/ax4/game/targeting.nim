@@ -107,7 +107,7 @@ proc possibleEntityMatchesFromRestriction*(view: WorldView, character: Entity, e
          Self: some(@[character])
          EffectSource: some(@[effectSource])
          HexInRange(minHexRange, maxHexRange):
-            let map = view[Map]
+            let map = character.map(view)
             var res: seq[Entity]
             let pos = character[Physical].position
             for r in minHexRange .. maxHexRange:
@@ -118,7 +118,7 @@ proc possibleEntityMatchesFromRestriction*(view: WorldView, character: Entity, e
             some(res)
          InRange(minRange, maxRange):
             var res: seq[Entity]
-            let map = view[Map]
+            let map = character.map(view)
             let charPos = character[Physical].position
             for r in minRange .. maxRange:
                for pos in hexRing(charPos, r):

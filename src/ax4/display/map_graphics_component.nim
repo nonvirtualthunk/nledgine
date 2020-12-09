@@ -30,6 +30,7 @@ type
       needsVisionUpdate: bool
       lastProcessedEventTime: WorldEventClock
       hexSize: float
+      ignoreVision*: bool
 
       overlayVao: VAO[SimpleVertex, uint16]
 
@@ -76,11 +77,11 @@ proc render(g: MapGraphicsComponent, view: WorldView, display: DisplayWorld) =
       var vision = playerVisionContext(view)
 
 
-      let map = view.data(Map)
+      let map = view.activeMap
       for hex in cullingData.hexesByCartesianCoord:
-         if not vision.isRevealed(hex): continue
+         if not vision.isRevealed(hex) and not g.ignoreVision: continue
 
-         var fogOfWar = not vision.isVisible(hex)
+         var fogOfWar = not vision.isVisible(hex) and not g.ignoreVision
 
          let tileEntOpt = map.tileAt(hex)
          if tileEntOpt.isSome:
@@ -155,7 +156,7 @@ method update(g: MapGraphicsComponent, world: World, curView: WorldView, display
                         info "Marking for vision update"
          g.lastProcessedEventTime += 1
 
-   if curView.hasData(Map):
+   if curView.hasData(Maps):
       if g.needsUpdate:
          g.render(curView, display)
 

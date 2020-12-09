@@ -137,7 +137,7 @@ proc tentativelySelectHex(g: EffectSelectionComponent, world: World, display: Di
    display.withSelectedCharacter:
       if g.selectionContext.isSome and g.activeEffectPlays.isSome:
          withView(world):
-            let map = world[Map]
+            let map = world[Maps].activeMap[Map]
 
             let ctxt = g.selectionContext.get
             let play = g.activePlay()

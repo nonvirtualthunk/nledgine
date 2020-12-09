@@ -36,7 +36,7 @@ proc createPathfinder*(view: WorldView, entity: Entity): Pathfinder =
       var occupiedLocations: HashSet[AxialVec]
       for ent in view.entitiesWithData(Physical):
          occupiedLocations.incl(ent[Physical].position)
-      Pathfinder(view: view, map: view.data(Map), entity: entity, occupiedLocations: occupiedLocations)
+      Pathfinder(view: view, map: view[Maps].activeMap[Map], entity: entity, occupiedLocations: occupiedLocations)
 
 iterator neighbors(pf: Pathfinder, node: AxialVec): AxialVec =
    for n in node.neighbors:

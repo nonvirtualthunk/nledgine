@@ -19,6 +19,7 @@ import prelude
 import ax4/game/enemies
 import ax4/game/character_types
 export character_types
+import ax4/game/map
 
 
 proc faction*(view: WorldView, entity: Entity): Entity =
@@ -35,6 +36,10 @@ proc areEnemies*(view: WorldView, a, b: Entity): bool =
 
 proc areFriends*(view: WorldView, a, b: Entity): bool =
    not areEnemies(view, a, b)
+
+proc map*(entity: Entity, view: WorldView): ref Map =
+   withView(view):
+      entity[Physical].map[Map]
 
 iterator entitiesInFaction*(view: WorldView, faction: Entity): Entity =
    for ent in view.entitiesWithData(Allegiance):

@@ -14,9 +14,13 @@ type
       terrain*: Taxon
       vegetation*: seq[Taxon]
 
+   Maps* = object
+      activeMap*: Entity
+
    Map* = object
       tileEntities*: seq[Entity]
       dimensions*: Vec2i
+      radius*: int
       center: AxialVec
 
    TerrainInfo* = object
@@ -49,6 +53,9 @@ proc tileAt*(map: ref Map, q, r: int): Option[Entity] =
 proc tileAt*(map: ref Map, pos: AxialVec): Option[Entity] =
    map.tileAt(pos.q, pos.r)
 
+proc utileAt*(map: ref Map, pos: AxialVec): Entity = map.tileAt(pos.q, pos.r).get(SentinelEntity)
+proc utileAt*(map: ref Map, q, r: int): Entity = map.tileAt(q, r).get(SentinelEntity)
+
 iterator tiles*(map: ref Map): Entity =
    for t in map.tileEntities:
       if not t.isSentinel:
@@ -58,15 +65,17 @@ proc setTileAt*(map: var Map, pos: AxialVec, tileEntity: Entity) =
    let index = (pos.r + map.center.r) * map.dimensions.x + (pos.q + map.center.q)
    map.tileEntities[index] = tileEntity
 
-proc createMap*(dimensions: Vec2i): Map =
+proc createMap*(dimensions: Vec2i, radius: int): Map =
    Map(
       dimensions: dimensions,
+      radius: radius,
       center: axialVec(dimensions.x div 2, dimensions.y div 2),
       tileEntities: newSeq[Entity](dimensions.x * dimensions.y)
    )
 
 defineReflection(Tile)
 defineReflection(Map)
+defineReflection(Maps)
 
 type MapView* = object
    view: WorldView
@@ -74,13 +83,18 @@ type MapView* = object
    terrainInfo: Library[TerrainInfo]
    vegetationInfo: Library[VegetationInfo]
 
+proc activeMap*(view: WorldView): ref Map =
+   withView(view):
+      view[Maps].activeMap[Map]
+
 proc mapView*(view: WorldView): MapView =
-   MapView(
-      view: view,
-      map: view[Map],
-      terrainInfo: library(TerrainInfo),
-      vegetationInfo: library(VegetationInfo)
-   )
+   withView(view):
+      MapView(
+         view: view,
+         map: view.activeMap,
+         terrainInfo: library(TerrainInfo),
+         vegetationInfo: library(VegetationInfo)
+      )
 
 proc terrainInfoAt*(map: MapView, hex: AxialVec): Option[TerrainInfo] =
    withView(map.view):

@@ -88,11 +88,7 @@ Taxonomy {
 
    Terrain : []
    Terrains {
-      Flatland : Terrain
-      Hills : Terrain
-      Mountains : Terrain
-
-      Plateaus : Hills
+      
    }
 
    Vegetation : []
@@ -309,4 +305,4 @@ Taxonomy {
    }
 }
 
-TaxonomySources : [ax4/game/base_cards.sml, ax4/game/status_cards.sml, ax4/game/flags.sml, ax4/game/monsters.sml]
+TaxonomySources : [ax4/game/base_cards.sml, ax4/game/status_cards.sml, ax4/game/flags.sml, ax4/game/monsters.sml, ax4/game/terrains.sml]

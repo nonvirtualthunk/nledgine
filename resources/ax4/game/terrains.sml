@@ -1,5 +1,6 @@
 Terrains {
    Flatland: {
+      isA: Terrain
       fertility : 0
       cover : 0
       elevation : 0
@@ -21,6 +22,7 @@ Terrains {
    }
 
    Hills: {
+      isA: Terrain
       fertility : 0
       cover : 0
       elevation : 1
@@ -36,6 +38,7 @@ Terrains {
    }
 
    Mountains: {
+      isA: Terrain
       fertility : -1
       cover : 0
       elevation : 2
@@ -57,7 +60,22 @@ Terrains {
       }
    }
 
+   MistBarrier {
+      isA: Terrain
+      moveCost: 1000
+      cover: 1000
+      graphics {
+         default {
+            textures {
+               basePath: "ax4/images/zeshioModified/arx/"
+               primary: "mist.png"
+            }
+         }
+      }
+   }
+
    Plateaus : {
+      isA: Terrain
       fertility : 0
       cover : 0
       elevation : 1

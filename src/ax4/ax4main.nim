@@ -1,3 +1,5 @@
+import options
+
 import ../main
 import ../application
 import glm
@@ -45,6 +47,7 @@ import ax4/game/ax_events
 import strutils
 import ax4/game/game_logic
 import ax4/display/reward_ui_component
+import ax4/game/map_generation
 
 type
    PrintComponent = ref object of GameComponent
@@ -88,51 +91,53 @@ method onEvent(g: PrintComponent, world: World, event: Event) =
       g.mostRecentEventStr = eventStr
 
 method initialize(g: MapInitializationComponent, world: World) =
-   let grass = taxon("vegetations", "grass")
-   let forest = taxon("vegetations", "forest")
+   # let grass = taxon("vegetations", "grass")
+   # let forest = taxon("vegetations", "forest")
 
-   let hills = taxon("terrains", "hills")
-   let mountains = taxon("terrains", "mountains")
-   let flatland = taxon("terrains", "flatland")
+   # let hills = taxon("terrains", "hills")
+   # let mountains = taxon("terrains", "mountains")
+   # let flatland = taxon("terrains", "flatland")
 
-   let noise = newNoise()
+   # let noise = newNoise()
 
+   # let radius = 15
    world.attachData(RandomizationWorldData())
    withWorld(world):
-      var map = createMap(vec2i(50, 50))
-      for r in 0 ..< 15:
-         for hex in hexRing(axialVec(0, 0), r):
-            let tile = world.createEntity()
+   #    let mapEnt = createEmptyMap(world, radius, flatland)
+   #    var map = mapEnt[Map]
+   #    for r in 0 ..< radius:
+   #       for hex in hexRing(axialVec(0, 0), r):
+   #          let tile = map.tileAt(hex).get
 
-            let terrainKind =
-               if r <= 7: flatland
-               elif r <= 10: hills
-               else: mountains
+   #          let terrainKind =
+   #             if r <= 7: flatland
+   #             elif r <= 10: hills
+   #             else: mountains
 
-            var vegetation: seq[Taxon]
+   #          var vegetation: seq[Taxon]
 
-            let n = noise.pureSimplex(hex.asCartesian.x.float * 0.3, hex.asCartesian.y.float * 0.3)
-            var terrainForestThreshold =
-               if terrainKind == mountains: 0.7f
-               elif terrainKind == hills: 0.6f
-               else: 0.5f
+   #          let n = noise.pureSimplex(hex.asCartesian.x.float * 0.3, hex.asCartesian.y.float * 0.3)
+   #          var terrainForestThreshold =
+   #             if terrainKind == mountains: 0.7f
+   #             elif terrainKind == hills: 0.6f
+   #             else: 0.5f
 
-            let grassy = hex.q > hex.r and r > 1
-            if grassy:
-               vegetation.add(grass)
-            else:
-               terrainForestThreshold += 0.175
+   #          let grassy = hex.q > hex.r and r > 1
+   #          if grassy:
+   #             vegetation.add(grass)
+   #          else:
+   #             terrainForestThreshold += 0.175
 
-            if n > terrainForestThreshold:
-               vegetation.add(forest)
+   #          if n > terrainForestThreshold:
+   #             vegetation.add(forest)
 
-            tile.attachData(Tile(
-               position: hex,
-               terrain: terrainKind,
-               vegetation: vegetation
-            ))
-            map.setTileAt(hex, tile)
-      world.attachData(map)
+   #          tile.modify(Tile.terrain := terrainKind)
+   #          tile.modify(Tile.vegetation := vegetation)
+
+      let mapEnt = createForestRoom(world)
+      world.attachData(Maps(
+         activeMap: mapEnt
+      ))
 
 
       let playerFaction = world.createEntity()

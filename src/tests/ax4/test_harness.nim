@@ -83,7 +83,7 @@ proc createBasicMap*(world: World) =
       let grass = taxon("vegetations", "grass")
       let flatland = taxon("terrains", "flatland")
 
-      var map = createMap(vec2i(50, 50))
+      var map = createMap(vec2i(50, 50), 15)
       for r in 0 ..< 15:
          for hex in hexRing(axialVec(0, 0), r):
             let tile = world.createEntity()
