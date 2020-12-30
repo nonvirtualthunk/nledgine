@@ -63,12 +63,10 @@ Taxonomy {
 
       BattleAxe: [MeleeWeapon, Axe]
       Sword: MeleeWeapon
-      Longsword: Sword
-      Shortsword: Sword
 
       Spear : MeleeWeapon
-      Longspear : Spear
-      Shortspear : Spear
+
+      Shield : Item
 
       Scythe : [MeleeWeapon, Tool, SturdyCuttingTool]
    }
@@ -84,6 +82,8 @@ Taxonomy {
       ReachAttack : AttackType
 
       SimpleNaturalAttack : [MeleeAttack, NaturalAttack, PhysicalAttack]
+
+      ShieldBash : [PhysicalAttack, MeleeAttack]
    }
 
    Terrain : []
@@ -238,6 +238,8 @@ Taxonomy {
 
       NaturalAttackCard : AttackCard
 
+      BlockCard: SkillCard
+
       MonsterCard : CardType
       StatusCard : CardType
    }
@@ -298,6 +300,8 @@ Taxonomy {
 
    Rarity : []
    Rarities {
+      Starter : Rarity
+      Item : Rarity
       Common : Rarity
       Uncommon : Rarity
       Rare : Rarity
@@ -305,4 +309,12 @@ Taxonomy {
    }
 }
 
-TaxonomySources : [ax4/game/base_cards.sml, ax4/game/status_cards.sml, ax4/game/flags.sml, ax4/game/monsters.sml, ax4/game/terrains.sml]
+TaxonomySources : [
+   ax4/game/base_cards.sml, 
+   ax4/game/status_cards.sml, 
+   ax4/game/flags.sml, 
+   ax4/game/monsters.sml, 
+   ax4/game/terrains.sml,
+   ax4/game/weapons.sml,
+   ax4/game/armor.sml
+]

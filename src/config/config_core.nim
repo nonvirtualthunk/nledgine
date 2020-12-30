@@ -18,7 +18,7 @@ type
       Array
       Bool
 
-   ConfigValue* = object
+   ConfigValue* = ref object
       case kind*: ConfigValueKind
       of String: str*: string
       of Number: num*: float64
@@ -35,7 +35,7 @@ type
 
 template noAutoLoad* {.pragma.}
 
-let fieldStartCharacters = {':', '{'}
+let fieldStartCharacters = {':', '{', '['}
 let fieldValueEndCharactersInArr = {'\n', ',', ']'}
 let fieldValueEndCharactersInObj = {'\n'}
 
@@ -72,6 +72,8 @@ proc render(v: ConfigValue, indentation: int): string =
       s &= indent("}\n", indentation * 2)
       s
 
+proc `$`*(v: ConfigValue): string =
+   render(v, 0)
 
 proc `[]`*(v: ConfigValue, key: string): ConfigValue =
    case v.kind:
@@ -170,10 +172,11 @@ iterator pairs*(v: ConfigValue): tuple[a: string, b: ConfigValue] =
       for k, v in v.fields:
          yield (k, v)
    else:
-      echo "Invalid type of configvalue to be iterating over by k/v : ", $v
+      writeStackTrace()
+      warn &"Invalid type of configvalue to be iterating over by k/v : {v}"
 
 proc isEmpty*(v: ConfigValue): bool =
-   return v.kind == ConfigValueKind.Empty
+   return v == nil or v.kind == ConfigValueKind.Empty
 
 template nonEmpty*(v: ConfigValue): bool =
    not v.isEmpty
@@ -327,9 +330,6 @@ template readIntoOrElse*[T](cv: ConfigValue, x: var T, defaultV: typed) =
       x = defaultV
    else:
       readInto(cv, x)
-
-proc `$`*(v: ConfigValue): string =
-   render(v, 0)
 
 proc peek(ctx: ParseContext, ahead: int = 0): char =
    ctx.str[ctx.cursor + ahead]

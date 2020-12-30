@@ -1,7 +1,8 @@
 CharacterClasses {
 
    Fighter {
-      
+      startingCards : [PowerAttack]
+      startingEquipment: [LongSword, RoundShield]
       cardRewards : [PiercingStab, DoubleStrike, SwiftStrike, PinpointStab]
    }
 
@@ -17,7 +18,7 @@ CharacterClasses {
 
 
    Movement {
-      cardRewards: [FightAnotherDay, DuckAndWeave, Dodge, Sprint]
+      cardRewards: [FightAnotherDay, DuckAndWeave, Dodge, Sprint, DeepBreath]
    }
 
 }

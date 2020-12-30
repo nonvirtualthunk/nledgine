@@ -16,6 +16,8 @@ type
       specializationOf*: Option[Taxon]
       requirements*: seq[GameCondition]
       cardRewards*: seq[ClassCardReward]
+      startingCards*: seq[Taxon]
+      startingEquipment*: seq[Taxon]
 
 
 proc readFromConfig*(cv: ConfigValue, v: var CharacterClass) =
@@ -25,6 +27,8 @@ proc readFromConfig*(cv: ConfigValue, v: var CharacterClass) =
          v.cardRewards.add(ClassCardReward(card: taxon("CardTypes", rc.asStr)))
       else:
          warn &"Unknown config value for card reward: {rc}"
+   cv["startingCards"].readInto(v.startingCards)
+   cv["startingEquipment"].readInto(v.startingEquipment)
 
 defineSimpleLibrary[CharacterClass]("ax4/game/classes.sml", "CharacterClasses")
 

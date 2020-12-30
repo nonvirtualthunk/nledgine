@@ -153,7 +153,7 @@ method update(g: MapGraphicsComponent, world: World, curView: WorldView, display
                   extract(VisionChangedEvent, entity):
                      if entity.hasData(Faction) and entity[Faction].playerControlled:
                         g.needsVisionUpdate = true
-                        info "Marking for vision update"
+                        fine "Marking for vision update"
          g.lastProcessedEventTime += 1
 
    if curView.hasData(Maps):

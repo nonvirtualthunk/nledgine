@@ -108,6 +108,9 @@ type
 
    EntityEnteredWorldEvent* = ref object of AxEvent
 
+   RoomEnteredEvent* = ref object of AxEvent
+      room*: Entity
+
    WorldInitializedEvent* = ref object of AxEvent
 
 
@@ -175,6 +178,8 @@ method toString*(evt: RewardChosenEvent, view: WorldView): string =
    return &"RewardChosen{$evt[]}"
 method toString*(evt: RewardSkipEvent, view: WorldView): string =
    return &"RewardSkipped{$evt[]}"
+method toString*(evt: RoomEnteredEvent, view: WorldView): string =
+   return &"RoomEntered{$evt[]}"
 
 
 # proc matchesEventKind*(condition : EventCondition) : EventKind =

@@ -7,7 +7,7 @@ import prelude
 import graphics/cameras
 import ax4/display/data/mapGraphicsData
 import ax4/game/randomness
-import ax4/game/map_generation
+import ax4/game/rooms
 import ax4/game/map
 import ax4/game/ax_events
 import engines

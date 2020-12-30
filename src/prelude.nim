@@ -325,11 +325,18 @@ proc normalizeSafe*(v: Vec3f): Vec3f =
       v
 
 proc normalizeSafe*(v: Vec2f): Vec2f =
-   let l = v.length
-   if l > 0.0:
-      v / l
+   let l2 = v.length2
+   if l2 > 0.0:
+      v / sqrt(l2)
    else:
       v
+
+proc lengthSafe*(v: Vec2f): float =
+   let l2 = v.length2
+   if l2 > 0.0f:
+      sqrt(l2)
+   else:
+      0.0f
 
 template ifPresent*[T](opt: Option[T], stmts: untyped) =
    if opt.isSome:

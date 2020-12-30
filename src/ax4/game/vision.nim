@@ -56,7 +56,7 @@ type VisionState = object
 
 proc recomputeHexesInView(world: World, entity: Entity) =
    withWorld(world):
-      let visionRange = 5
+      let visionRange = entity[Character].sightRange
       let entityPos = entity[Physical].position
       let center = entityPos.asCartVec.Vec3f
 

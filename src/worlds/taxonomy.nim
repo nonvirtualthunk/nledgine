@@ -232,3 +232,5 @@ when isMainModule:
    echoAssert taxon("CardTypes", "FightAnotherDay").name == "fight another day"
    echoAssert taxon("CardTypes", "FightAnotherDay").namespace == "card types"
    echoAssert taxon("CardTypes", "FightAnotherDay").parents == @[taxon("CardTypes", "MoveCard")]
+
+   echoAssert taxon("CardTypes", "RecklessSmash").name == "reckless smash"

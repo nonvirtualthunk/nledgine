@@ -41,7 +41,7 @@ proc activeKeyModifiers*(): KeyModifiers =
    )
 
 variantp EventSource:
-   WorldSource(world: World)
+   WorldSource(world: WorldView)
    EventBufferSource(buffer: EventBuffer, index: int)
 
 type
@@ -54,22 +54,22 @@ proc createEventBus*(buffer: EventBuffer): EventBus =
    buffer.listenerCursors.add(0)
    return EventBus(cursor: 0, source: EventBufferSource(buffer, index))
 
-proc createEventBus*(world: World): EventBus =
+proc createEventBus*(world: WorldView): EventBus =
    return EventBus(cursor: 0, source: WorldSource(world))
 
 
-proc addEvent*(bus: var EventBus, evt: Event) =
-   match bus.source:
-      WorldSource(world):
-         world.addEvent(evt)
-      EventBufferSource(buffer, _):
-         buffer.addEvent(evt)
+# proc addEvent*(bus: var EventBus, evt: Event) =
+#    match bus.source:
+#       WorldSource(world):
+#          world.addEvent(evt)
+#       EventBufferSource(buffer, _):
+#          buffer.addEvent(evt)
 
 proc pollEvent*(bus: var EventBus): Option[Event] =
    match bus.source:
       WorldSource(world):
-         if world.view.events.len > bus.cursor:
-            result = some(world.view.events[bus.cursor])
+         if world.events.len > bus.cursor:
+            result = some(world.events[bus.cursor])
             bus.cursor.inc
          else:
             result = none(Event)

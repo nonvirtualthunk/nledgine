@@ -4,6 +4,8 @@ import hex
 import options
 import prelude
 import perlin
+import ax4/game/ax_events
+
 
 proc createEmptyMap*(world: World, radius: int, defaultTerrain: Taxon): Entity =
    withWorld(world):
@@ -17,6 +19,10 @@ proc createEmptyMap*(world: World, radius: int, defaultTerrain: Taxon): Entity =
                vegetation: @[]
             ))
             map.setTileAt(hex, tile)
+
+            if hex.asCartesian.y < map.entryPoint.asCartesian.y:
+               map.entryPoint = hex
+
       result = world.createEntity()
       result.attachData(map)
 
@@ -45,6 +51,7 @@ proc createForestRoom*(world: World): Entity =
             let intrusion = (noise.pureSimplex(hex.asCartesian.x.float * 0.3 + 221.4, hex.asCartesian.y.float * 0.3 - 333.03).abs * 2.0).int + 2
 
             if hex.asCartesian.x.abs <= 1 and hex.asCartesian.y.abs >= 3:
+               tile.modify(Tile.terrain := flatland)
                tile.modify(Tile.vegetation := @[grass])
             elif r >= map.radius-intrusion:
                tile.modify(Tile.terrain := mountains)
@@ -60,3 +67,37 @@ proc createForestRoom*(world: World): Entity =
                tile.modify(Tile.terrain := flatland)
                tile.modify(Tile.vegetation := @[grass, forest])
 
+
+
+
+#  Ax4 main generation code
+   #    let mapEnt = createEmptyMap(world, radius, flatland)
+      #    var map = mapEnt[Map]
+      #    for r in 0 ..< radius:
+      #       for hex in hexRing(axialVec(0, 0), r):
+      #          let tile = map.tileAt(hex).get
+
+      #          let terrainKind =
+      #             if r <= 7: flatland
+      #             elif r <= 10: hills
+      #             else: mountains
+
+      #          var vegetation: seq[Taxon]
+
+      #          let n = noise.pureSimplex(hex.asCartesian.x.float * 0.3, hex.asCartesian.y.float * 0.3)
+      #          var terrainForestThreshold =
+      #             if terrainKind == mountains: 0.7f
+      #             elif terrainKind == hills: 0.6f
+      #             else: 0.5f
+
+      #          let grassy = hex.q > hex.r and r > 1
+      #          if grassy:
+      #             vegetation.add(grass)
+      #          else:
+      #             terrainForestThreshold += 0.175
+
+      #          if n > terrainForestThreshold:
+      #             vegetation.add(forest)
+
+      #          tile.modify(Tile.terrain := terrainKind)
+      #          tile.modify(Tile.vegetation := vegetation)

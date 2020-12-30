@@ -328,7 +328,7 @@ defineLibrary[CardArchetype]:
    var lib = new Library[CardArchetype]
    lib.defaultNamespace = "card types"
 
-   let confs = @["base_cards.sml"]
+   let confs = @["base_cards.sml", "armor.sml"]
    for confPath in confs:
       let conf = resources.config("ax4/game/" & confPath)
       for k, v in conf["CardTypes"]:

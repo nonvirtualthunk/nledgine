@@ -31,7 +31,7 @@ template time*(t: var Timer, stmts: untyped): untyped =
    let endTime = glfwGetTime()
    t.recordTime(endTime - startTime)
 
-proc fmtTime(f: float): string =
+proc fmtTime*(f: float): string =
    if f < 0.1:
       let ms = f * 1000.0
       fmt"{ms:.4f}ms"

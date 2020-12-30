@@ -19,6 +19,7 @@ import ax4/display/effect_selection_component
 import ax4/game/effects
 import ax4/game/effect_types
 import ax4/game/card_display
+import core/metrics
 
 type
    CardUIComponent* = ref object of GraphicsComponent
@@ -93,17 +94,11 @@ proc updateCardWidgetDesiredPositions(g: CardUIComponent, view: WorldView, displ
          let index = hand.find(card)
          let w = cardWidget.widget
 
-         let totalHandWidth = (hand.len-1) * cardGap + w.effectiveDimensions.x
+         let totalHandWidth = (hand.len-1) * cardGap + w.resolveEffectiveDimension(Axis.X)
          let centeringOffset = (w.parent.get.effectiveClientDimensions.x - totalHandWidth).float * 0.5f
 
          w.identifier = "CardInHand[" & $index & "]"
          if g.heldCard != some(card):
-            if not cardWidget.initialized:
-               cardWidget.currentPos.x = w.resolvePosition(Axis.X, fixedPos(0)).float
-               cardWidget.currentPos.y = w.resolvePosition(Axis.Y, fixedPos(-500, BottomLeft)).float
-               cardWidget.initialized = true
-
-
             cardWidget.desiredPos.x = w.resolvePosition(Axis.X, fixedPos(index * cardGap + centeringOffset.int))
 
             let indexPcnt = if hand.len > 1: index.float / (hand.len.float - 1.0f) else: 0.5
@@ -119,6 +114,11 @@ proc updateCardWidgetDesiredPositions(g: CardUIComponent, view: WorldView, displ
             else:
                cardWidget.desiredPos.y = w.resolvePosition(Axis.Y, fixedPos(0, BottomLeft))
                cardWidget.desiredPos.z = w.resolvePosition(Axis.Z, fixedPos(200))
+
+            # if not cardWidget.initialized:
+            #    cardWidget.currentPos.x = w.resolvePosition(Axis.X, fixedPos(0)).float
+            #    cardWidget.currentPos.y = w.resolvePosition(Axis.Y, fixedPos(-500, BottomLeft)).float
+            #    cardWidget.initialized = true
 
 proc updateCardWidgetPositions(g: CardUIComponent, view: WorldView, display: DisplayWorld, selC: Entity, df: float) =
    let ws = display[WindowingSystem]
@@ -141,7 +141,13 @@ proc updateCardWidgetPositions(g: CardUIComponent, view: WorldView, display: Dis
       let delta = desiredf.xy - cw.currentPos.xy
       let mag2 = delta.length2
 
-      if mag2 > 0.001f:
+      if not cw.initialized:
+         cw.currentPos.x = desiredf.x
+         cw.currentPos.y = desiredf.y
+         cw.initialized = true
+         cw.widget.x = absolutePos(cw.currentPos.x.round.int)
+         cw.widget.y = absolutePos(cw.currentPos.y.round.int)
+      elif mag2 > 0.001f:
          let yspeed = 50.0f
          let xspeed = max(20.0f, delta.x/20.0f)
          if g.heldCard == some(card):
@@ -214,7 +220,13 @@ method onEvent(g: CardUIComponent, world: World, curView: WorldView, display: Di
 
 method update(g: CardUIComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =
    let selCopt = display[TacticalUIData].selectedCharacter
-   if g.worldWatcher.hasChanged or g.selectedWatcher.hasChanged or g.selectionChanged:
+   let selCChanged = g.selectedWatcher.hasChanged
+   if g.worldWatcher.hasChanged or selCChanged or g.selectionChanged:
+      if selCChanged:
+         g.mousedOverCard = none(Entity)
+         g.resolvingCard = none(Entity)
+         g.heldCard = none(Entity)
+         g.ignoreMouseOverCard = false
       g.selectionChanged = false
 
       matcher(selCopt):
@@ -232,6 +244,7 @@ method update(g: CardUIComponent, world: World, curView: WorldView, display: Dis
 
 
                for cardIter in cards:
+                  let startTime = relTime()
                   let card = cardIter
                   # the local + capture shouldn't be necessary, but nim 1.4 gets confused if you
                   # try to take it directly from the iteration variable
@@ -257,6 +270,7 @@ method update(g: CardUIComponent, world: World, curView: WorldView, display: Dis
 
                         CardWidget(widget: widget)
                      g.updateCardWidgetBindings(curView, display, card, w, selC)
+                     let endTime = relTime()
                g.updateCardWidgetDesiredPositions(curView, display, selC)
 
          caseNone:

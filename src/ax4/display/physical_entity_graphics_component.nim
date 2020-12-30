@@ -25,6 +25,8 @@ import graphics/taxonomy_display
 import ax4/game/vision
 import sets
 import ax4/game/targeting_types
+import algorithm
+import noto
 
 type
    PhysicalEntityGraphicsComponent* = ref object of GraphicsComponent
@@ -116,16 +118,25 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
       var uiqb = QuadBuilder()
       let monsterLib = library(MonsterClass)
 
+      var toDraw: seq[(AxialVec, Entity)]
       for physEnt in view.entitiesWithData(Physical):
          let physical = physEnt[Physical]
-         if not vision.isVisible(physical.position): continue
+         if vision.isVisible(physical.position):
+            toDraw.add((physical.position, physEnt))
 
+      let sortedEnts = toDraw.sortedByIt((it[0].asCartVec.y * 1000.0f) * -1)
+      for (pos, physEnt) in sortedEnts:
+         let physical = physEnt[Physical]
          let entBasePos = g.entityBasePos(physical)
 
          if physEnt.hasData(Character):
             if physEnt[Character].dead: continue
 
-            var charImg = image("ax4/images/oryx/creatures_24x24/oryx_16bit_fantasy_creatures_38.png")
+            var charImg = if physEnt.id mod 2 == 0:
+               image("ax4/images/oryx/creatures_24x24/oryx_16bit_fantasy_creatures_38.png")
+            else:
+               image("ax4/images/oryx/creatures_24x24/oryx_16bit_fantasy_creatures_39.png")
+
             if physEnt.hasData(Monster):
                let monster = physEnt[Monster]
                let mc = monsterLib[monster.monsterClass]
@@ -322,11 +333,12 @@ proc updateFlagUI(g: PhysicalEntityGraphicsComponent, view: WorldView, display: 
 
 
 method update(g: PhysicalEntityGraphicsComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =
-   var worldChanged = g.worldWatcher.hasChanged
-   if worldChanged or curView.hasActiveOverlay:
-      g.render(curView, display)
+   if world.hasData(Maps):
+      var worldChanged = g.worldWatcher.hasChanged
+      if worldChanged or curView.hasActiveOverlay:
+         g.render(curView, display)
 
-   g.updateFlagUI(curView, display, worldChanged or curView.hasActiveOverlay)
+      g.updateFlagUI(curView, display, worldChanged or curView.hasActiveOverlay)
 
    @[g.canvas.drawCommand(display), g.uiCanvas.drawCommand(display)]
 

@@ -95,14 +95,14 @@ proc act(world: World, actor: Entity) =
                   let sortedMoveTargets = sortByPreference(world, actor, possibleMoveTargets, monsterEffect.target)
 
                   let pf = createPathfinder(world, actor)
-                  for target in sortedMoveTargets:
-                     let targetPos = target[Physical].position
-                     let possiblePath = pf.findPath(PathRequest(fromHex: actor[Physical].position, targetHexes: toSeq(targetPos.neighbors), pathPriority: PathPriority.Shortest))
-                     if possiblePath.isSome:
-                        let truncPath = possiblePath.get.subPath(effect.moveRange)
-                        for hex in truncPath.hexes:
-                           if not moveCharacter(world, actor, hex):
-                              warn &"Could not move ai along expected path"
+                  let target = sortedMoveTargets[0]
+                  let targetPos = target[Physical].position
+                  let possiblePath = pf.findPath(PathRequest(fromHex: actor[Physical].position, targetHexes: toSeq(targetPos.neighbors), pathPriority: PathPriority.Shortest))
+                  if possiblePath.isSome:
+                     let truncPath = possiblePath.get.subPath(effect.moveRange)
+                     for hex in truncPath.hexes:
+                        if not moveCharacter(world, actor, hex):
+                           warn &"Could not move ai along expected path"
                else:
                   warn &"No move targets for ai"
             of GameEffectKind.SimpleAttack:
@@ -127,7 +127,7 @@ proc act(world: World, actor: Entity) =
                   for i in 0 ..< min(numToAttack, sortedAttackTargets.len):
                      targets.add(sortedAttackTargets[i])
 
-                  combat.performAttack(world, actor, attack, targets)
+                  performAttack(world, actor, attack, targets)
                else:
                   info &"No attack targets yet"
             of GameEffectKind.ChangeFlag:

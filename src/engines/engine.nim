@@ -67,7 +67,7 @@ proc newGraphicsEngine*(gameEngine: GameEngine): GraphicsEngine {.gcsafe.} =
    result.rawCurrentView = result.world.createView()
    result.currentView = result.rawCurrentView.createLayeredView()
    result.displayWorld = createDisplayWorld()
-   result.gameEventBus = createEventBus(result.world)
+   result.gameEventBus = createEventBus(result.rawCurrentView)
    result.displayEventBus = createEventBus(result.displayWorld.events)
 
 proc addComponent*(engine: GameEngine, comp: GameComponent) =

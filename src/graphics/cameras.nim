@@ -1,14 +1,22 @@
 import glm
-import ../engines/event
-import ../engines/event_types
-import ../engines/key_codes
-import ../reflect
-import ../prelude
+import engines/event
+import engines/event_types
+import engines/key_codes
+import reflect
+import prelude
+import noto
+import options
 
 type
    CameraKind* {.pure.} = enum
       PixelCamera
       WindowingCamera
+
+   CameraMovement* = object
+      targetLocation*: Vec2f
+      overrideManualInput*: bool
+      speedMultiplier*: float
+
 
    Camera* = object
       case kind: CameraKind
@@ -22,6 +30,11 @@ type
       initialized: bool
       moveSpeed: float # in pixels / second
       lastUpdated*: float
+      useWasd*: bool
+
+      # Camera movement
+      cameraMovement*: Option[CameraMovement]
+
 
 
 
@@ -31,9 +44,14 @@ proc createPixelCamera*(scale: int): Camera =
        translation: vec2f(0.0f, 0.0f),
        delta: vec2f(0.0f, 0.0f),
        scale: scale,
-       moveSpeed: 200.0f,
-       initialized: true
+       moveSpeed: 300.0f,
+       initialized: true,
+       useWasd: true
    )
+
+proc withMoveSpeed*(cam: Camera, moveSpeed: float): Camera =
+   result = cam
+   result.moveSpeed = moveSpeed
 
 proc createWindowingCamera*(scale: int): Camera =
    Camera(
@@ -51,6 +69,14 @@ proc handleEvent*(camera: var Camera, evt: Event) =
          of KeyCode.Down: camera.delta.y = 1.0f
          of KeyCode.Right: camera.delta.x = -1.0f
          of KeyCode.Left: camera.delta.x = 1.0f
+         of KeyCode.W:
+            if camera.useWasd: camera.delta.y = -1.0f
+         of KeyCode.S:
+            if camera.useWasd: camera.delta.y = 1.0f
+         of KeyCode.D:
+            if camera.useWasd: camera.delta.x = -1.0f
+         of KeyCode.A:
+            if camera.useWasd: camera.delta.x = 1.0f
          else: discard
    of WindowingCamera:
       discard
@@ -64,10 +90,29 @@ proc update*(camera: var Camera, df: float) =
          camera.moveSpeed = 100.0f
          camera.initialized = true
 
-      if not isKeyDown(KeyCode.Up) and not isKeyDown(KeyCode.Down):
+      if not isKeyDown(KeyCode.Up) and not isKeyDown(KeyCode.Down) and (not camera.useWasd or not isKeyDown(KeyCode.W)) and (not camera.useWasd or not isKeyDown(KeyCode.S)):
          camera.delta.y = 0.0f
-      if not isKeyDown(KeyCode.Left) and not isKeyDown(KeyCode.Right):
+      if not isKeyDown(KeyCode.Left) and not isKeyDown(KeyCode.Right) and (not camera.useWasd or not isKeyDown(KeyCode.A)) and (not camera.useWasd or not isKeyDown(KeyCode.D)):
          camera.delta.x = 0.0f
+
+      # if there is explicit movement from the user, ignore the camera animation unless it overrides that
+      if camera.delta.x != 0.0f or camera.delta.y != 0.0f:
+         if camera.cameraMovement.isSome and not camera.cameraMovement.get.overrideManualInput:
+            camera.cameraMovement = none(CameraMovement)
+
+      if camera.cameraMovement.isSome:
+         let movement = camera.cameraMovement.get
+         let delta = (movement.targetLocation * -1.0f) - camera.translation
+         var speed = 1.0f
+         if movement.speedMultiplier != 0.0f:
+            speed = movement.speedMultiplier
+
+         if delta.lengthSafe < camera.moveSpeed * 0.016666667f * df * speed:
+            camera.translation = movement.targetLocation * -1.0f
+            camera.delta = vec2f(0.0f, 0.0f)
+         else:
+            camera.delta = delta.normalizeSafe * speed
+
 
       camera.translation += camera.delta * (camera.moveSpeed * 0.016666667f * df)
    of WindowingCamera:
@@ -96,6 +141,13 @@ proc eye*(camera: Camera): Vec3f =
    of WindowingCamera:
       vec3f(0, 0, 0)
 
+proc moveTo*(camera: var Camera, to: Vec3f) =
+   case camera.kind:
+   of PixelCamera:
+      camera.translation.x = to.x * -1
+      camera.translation.y = to.y * -1
+   of WindowingCamera:
+      warn &"Moving a WindowingCamera is not currently supported"
 
 proc worldToScreenSpace*(camera: Camera, framebufferSize: Vec2i, worldv: Vec3f): Vec3f =
    # let projected = (vec4(worldV, 1.0f) * camera.modelviewMatrix() * camera.projectionMatrix(framebufferSize))

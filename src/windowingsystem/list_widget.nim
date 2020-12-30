@@ -16,8 +16,8 @@ type
    ListWidget* = object
       widget*: Widget
       gapSize*: int
-      separatorArchetype*: Option[WidgetArchetype]
-      listItemArchetype*: WidgetArchetype
+      separatorArchetype*: Option[WidgetArchetypeIdentifier]
+      listItemArchetype*: WidgetArchetypeIdentifier
       selectable*: bool
       sourceBinding*: string
       targetBinding*: string
@@ -74,10 +74,10 @@ method updateBindings*(ws: ListWidgetComponent, widget: Widget, resolver: var Bo
                      let separator = widget.createChild(lw.separatorArchetype.get)
                      separator.identifier = widget.identifier & ".separator[" & $(i-1) & "]"
                      lw.separatorChildren.add(separator)
-                     separator.position[Axis.Y.ord] = relativePos(lw.listItemChildren[i-1], lw.gapSize, WidgetOrientation.BottomLeft)
-                     newItem.position[Axis.Y.ord] = relativePos(separator, lw.gapSize, WidgetOrientation.BottomLeft)
+                     separator.position[Axis.Y.ord] = relativePos(lw.listItemChildren[i-1].identifier, lw.gapSize, WidgetOrientation.BottomLeft)
+                     newItem.position[Axis.Y.ord] = relativePos(separator.identifier, lw.gapSize, WidgetOrientation.BottomLeft)
                   else:
-                     newItem.position[Axis.Y.ord] = relativePos(lw.listItemChildren[i-1], lw.gapSize, WidgetOrientation.BottomLeft)
+                     newItem.position[Axis.Y.ord] = relativePos(lw.listItemChildren[i-1].identifier, lw.gapSize, WidgetOrientation.BottomLeft)
 
             lw.listItemChildren[i].bindValue(lw.targetBinding, value)
             if value.kind == BoundValueKind.Nested:
@@ -113,7 +113,7 @@ const bindingPattern = re"([a-zA-Z0-9.]+)\s->\s([a-zA-Z0-9.]+)"
 
 proc readFromConfig*(cv: ConfigValue, v: var ListWidget) =
    readIntoOrElse(cv["gapSize"], v.gapSize, 2)
-   readIntoOrElse(cv["separatorArchetype"], v.separatorArchetype, none(WidgetArchetype))
+   readIntoOrElse(cv["separatorArchetype"], v.separatorArchetype, none(WidgetArchetypeIdentifier))
    readInto(cv["listItemArchetype"], v.listItemArchetype)
    readIntoOrElse(cv["selectable"], v.selectable, true)
    readInto(cv["horizontal"], v.horizontal)

@@ -47,6 +47,13 @@ Flags {
       countsAs25: DamageDealtReductionPercent
    }
 
+   Vulnerable {
+      isA: NegativeFlag
+      description : "Vulnerable, increases damage taken by 50%, reduced by 1 each turn"
+      tickDown: OnEndOfTurn
+      countsAs50: DamageTakenIncreasePercent
+   }
+
    Stunned {
       isA: NegativeFlag
       mechanicalDescription: "reduces the number of action points each turn by one, reduces by one each turn"
@@ -260,6 +267,12 @@ Flags {
    }
 
    DamageDealtReductionPercent {
+      isA: InternalFlag
+      description: "Damage Dealt Reduction Percent"
+      hidden: true
+   }
+
+   DamageTakenIncreasePercent {
       isA: InternalFlag
       description: "Damage Dealt Reduction Percent"
       hidden: true

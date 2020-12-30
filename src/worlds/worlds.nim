@@ -23,7 +23,7 @@ type WorldModifierClock* = distinct int
 const SentinelEntity* = Entity(id: 0)
 const SentinelDisplayEntity* = DisplayEntity(id: 0)
 
-let WorldEntity = Entity(id: 1)
+let WorldEntity* = Entity(id: 1)
 let WorldDisplayEntity = DisplayEntity(id: 1)
 
 type
@@ -67,6 +67,7 @@ type
       events*: EventBuffer
       entityCounter: int
       eventClock: WorldEventClock
+      dataCopyFunctions*: seq[(DisplayWorld, DisplayEntity, DisplayEntity) -> void]
 
 converter toView*(world: World): WorldView = world.view
 
@@ -214,12 +215,18 @@ proc mostRecentEvent*(view: WorldView): Event =
 proc setUpType*[C](view: WorldView, dataType: DataType[C]) =
    if view.dataContainers.len <= dataType.index:
       view.dataContainers.setLen(dataType.index + 1)
-   view.dataContainers[dataType.index] = DataContainer[C](dataStore: Table[int, ref C](), defaultValue: new C, dataTypeIndex: dataType.index)
+   let dataContainer = DataContainer[C](dataStore: Table[int, ref C](), defaultValue: new C, dataTypeIndex: dataType.index)
+   view.dataContainers[dataType.index] = dataContainer
 
 proc setUpType*[C](world: DisplayWorld, dataType: DataType[C]) =
    if world.dataContainers.len <= dataType.index:
       world.dataContainers.setLen(dataType.index + 1)
-   world.dataContainers[dataType.index] = DataContainer[C](dataStore: Table[int, ref C](), defaultValue: new C, dataTypeIndex: dataType.index)
+   let dataContainer = DataContainer[C](dataStore: Table[int, ref C](), defaultValue: new C, dataTypeIndex: dataType.index)
+   world.dataContainers[dataType.index] = dataContainer
+   let copyFunc = proc (w: DisplayWorld, a: DisplayEntity, b: DisplayEntity) =
+      if w.hasData(a, dataType):
+         w.attachData(b, w.data(a, dataType)[])
+   world.dataCopyFunctions.add(copyFunc)
 
 method applyModification(container: AbstractDataContainer, entMod: EntityModification, createNew: bool): bool {.base.} =
    {.warning[LockLevel]: off.}
@@ -464,8 +471,7 @@ proc hasData*[C] (view: WorldView, dataType: DataType[C]): bool =
 proc hasData*[C] (view: WorldView, dataType: typedesc[C]): bool =
    hasData(view, WorldEntity, dataType.getDataType())
 
-proc data*[C] (world: DisplayWorld, entity: DisplayEntity, t: typedesc[C]): ref C =
-   let dataType = t.getDataType()
+proc data*[C] (world: DisplayWorld, entity: DisplayEntity, dataType: DataType[C]): ref C =
    var dc = (DataContainer[C])world.dataContainers[dataType.index]
    result = dc.dataStore.getOrDefault(entity.id, nil)
    # TODO: Consider auto-attaching data to display worlds
@@ -474,9 +480,15 @@ proc data*[C] (world: DisplayWorld, entity: DisplayEntity, t: typedesc[C]): ref 
       warn &"Warning: read display data[{$C}] for entity {entity.id} that did not have access to data of that type"
       result = dc.defaultValue
 
-proc hasData*[C] (world: DisplayWorld, entity: DisplayEntity, t: typedesc[C]): bool =
-   var dc = (DataContainer[C])world.dataContainers[t.getDataType().index]
+proc data*[C] (world: DisplayWorld, entity: DisplayEntity, t: typedesc[C]): ref C =
+   data(world, entity, t.getDataType)
+
+proc hasData*[C] (world: DisplayWorld, entity: DisplayEntity, t: DataType[C]): bool =
+   var dc = (DataContainer[C])world.dataContainers[t.index]
    result = dc.dataStore.hasKey(entity.id)
+
+proc hasData*[C] (world: DisplayWorld, entity: DisplayEntity, t: typedesc[C]): bool =
+   hasData(world, entity, t.getDataType())
 
 proc data*[C] (world: DisplayWorld, t: typedesc[C]): ref C =
    data[C](world, WorldDisplayEntity, t)
@@ -502,7 +514,7 @@ proc attachData*[C] (world: DisplayWorld, dataValue: C) =
    attachData(world, WorldDisplayEntity, dataValue)
 
 proc attachDataRef*[C] (world: DisplayWorld, entity: DisplayEntity, dataValue: ref C) =
-   echo C, ", dt: ", C.getDataType().index #, " size: ", world.dataContainers.len
+   # echo C, ", dt: ", C.getDataType().index #, " size: ", world.dataContainers.len
    var dc = (DataContainer[C])world.dataContainers[C.getDataType().index]
    dc.dataStore[entity.id] = dataValue
 
@@ -635,3 +647,8 @@ macro modifyWorld*(world: World, expression: untyped): untyped =
    discard appendToEarliestIdent(argument, "Type")
    result = quote do:
       `world`.modify(WorldEntity, `argument`)
+
+proc copyEntity*(display: DisplayWorld, original: DisplayEntity): DisplayEntity =
+   result = display.createEntity()
+   for copyFunc in display.dataCopyFunctions:
+      copyFunc(display, original, result)

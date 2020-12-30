@@ -18,8 +18,10 @@ import ax4/game/cards
 import game/library
 import ax4/game/characters
 import ax4/game/ax_events
+import ax4/game/randomness
 
 
+proc resolveEffect*(world: World, character: Entity, effectPlay: EffectPlay): bool
 
 # Resolves the effective attack for the given game effect, accounting for all modifiers
 # (derived or otherwise) that are not dependent on the target of the attack being known.
@@ -45,6 +47,48 @@ proc effectiveAttack*(view: WorldView, character: Entity, effect: GameEffect): O
    else:
       warn &"Attempted to resolve effectiveAttack from non-attack effect: {effect}"
       none(Attack)
+
+proc applyConditionalAttackEffects*(world: World, character: Entity, target: Entity, attack: Attack, condition: ConditionalAttackEffectKind)
+
+
+proc performAttack*(world: World, character: Entity, attack: Attack, targets: seq[Entity]) =
+   withWorld(world):
+      var randomizer = world.randomizer
+
+      world.eventStmts(AttackEvent(entity: character, attack: attack, targets: targets)):
+         for target in targets:
+            var targetedAttack = attack
+            applyTargetedDerivedAttackModifiers(world, character, target, targetedAttack)
+            targetedAttack.applyModifiers(attackModifierFromTargetedFlags(world, character, target))
+
+            for strikeIndex in 0 ..< targetedAttack.strikeCount:
+               let defense = defenseFor(world, character)
+
+               # echo &"Attack:\n{attack}\nDefense:\n{defense}"
+
+               let baseRoll = randomizer.stdRoll().total - 9
+
+               if baseRoll + targetedAttack.accuracy - defense.defense >= 0:
+                  var damage = targetedAttack.damage.roll(randomizer)
+                  damage.fixed += flags.flagValue(world, character, taxon("flags", "ExtraDamageTaken"))
+                  let blockReduction = computeBlockAmount(world, target, damage)
+
+                  let strikeResult = if blockReduction > 0:
+                     Blocked(blockReduction, damage.total - blockReduction)
+                  else:
+                     Hit(damage.total)
+
+                  world.eventStmts(StrikeEvent(entity: character, target: target, attack: targetedAttack, result: strikeResult)):
+                     dealDamage(world, target, damage)
+                     match strikeResult:
+                        Blocked(_, _): applyConditionalAttackEffects(world, character, target, targetedAttack, ConditionalAttackEffectKind.OnBlocked)
+                        Hit(_): applyConditionalAttackEffects(world, character, target, targetedAttack, ConditionalAttackEffectKind.OnHit)
+                        _: warn &"Only Blocked and Hit have implementations for conditional effects"
+               else:
+                  world.eventStmts(StrikeEvent(entity: character, target: target, attack: targetedAttack, result: Missed())):
+                     applyConditionalAttackEffects(world, character, target, targetedAttack, ConditionalAttackEffectKind.OnMiss)
+
+
 
 proc expandCosts*(view: WorldView, character: Entity, effect: GameEffect): seq[SelectableEffects] =
    case effect.kind:
@@ -111,7 +155,7 @@ proc resolveEffect*(world: World, character: Entity, effectPlay: EffectPlay): bo
                let attack = attack.get
 
                let targets = effectPlay.selected[Object()].selectedEntities
-               combat.performAttack(world, character, attack, targets)
+               performAttack(world, character, attack, targets)
          of GameEffectKind.SimpleAttack:
             warn "Simple attack not implemented"
             discard
@@ -290,3 +334,25 @@ proc playCard*(world: World, entity: Entity, card: Entity, effectGroupIndex: int
                let selection = selectResolver(key, selector)
                play.selected[key] = selection
       playCard(world, entity, card, playGroup)
+
+
+proc applyConditionalAttackEffects*(world: World, character: Entity, target: Entity, attack: Attack, condition: ConditionalAttackEffectKind) =
+   for condEffect in attack.conditionalEffects:
+      if condEffect.kind == condition:
+         let effectObj = case condEffect.target:
+         of ConditionalAttackEffectTarget.Target: target
+         of ConditionalAttackEffectTarget.Self: character
+         of ConditionalAttackEffectTarget.Card:
+            warn &"Targeting the card with a conditional attack effect is not yet supported, need to thread the card info through"
+            SentinelEntity
+
+
+         var play = EffectPlay(effects: SelectableEffects(effects: @[condEffect.effect]))
+         play.selectors = selectionsForEffect(world, character, play.effects)
+         for selKey, sel in play.selectors:
+            if sel.restrictions.containsSelfRestriction:
+               play.selected[selKey] = SelectedEntity(@[character])
+         if play.selectors.contains(Object()):
+            play.selected[Object()] = SelectedEntity(@[effectObj])
+         if not resolveEffect(world, character, play):
+            warn &"Failed to resolve conditional attack effect : {condEffect.effect}"

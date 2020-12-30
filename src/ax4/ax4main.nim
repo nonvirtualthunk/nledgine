@@ -47,7 +47,7 @@ import ax4/game/ax_events
 import strutils
 import ax4/game/game_logic
 import ax4/display/reward_ui_component
-import ax4/game/map_generation
+import ax4/game/rooms
 
 type
    PrintComponent = ref object of GameComponent
@@ -56,6 +56,9 @@ type
       mostRecentEventStr: string
 
    MapInitializationComponent = ref object of GameComponent
+
+   RoomTransitionGraphicsComponent = ref object of GraphicsComponent
+
 
 
 method initialize(g: PrintComponent, world: World) =
@@ -91,54 +94,10 @@ method onEvent(g: PrintComponent, world: World, event: Event) =
       g.mostRecentEventStr = eventStr
 
 method initialize(g: MapInitializationComponent, world: World) =
-   # let grass = taxon("vegetations", "grass")
-   # let forest = taxon("vegetations", "forest")
-
-   # let hills = taxon("terrains", "hills")
-   # let mountains = taxon("terrains", "mountains")
-   # let flatland = taxon("terrains", "flatland")
-
-   # let noise = newNoise()
-
-   # let radius = 15
    world.attachData(RandomizationWorldData())
    withWorld(world):
-   #    let mapEnt = createEmptyMap(world, radius, flatland)
-   #    var map = mapEnt[Map]
-   #    for r in 0 ..< radius:
-   #       for hex in hexRing(axialVec(0, 0), r):
-   #          let tile = map.tileAt(hex).get
 
-   #          let terrainKind =
-   #             if r <= 7: flatland
-   #             elif r <= 10: hills
-   #             else: mountains
-
-   #          var vegetation: seq[Taxon]
-
-   #          let n = noise.pureSimplex(hex.asCartesian.x.float * 0.3, hex.asCartesian.y.float * 0.3)
-   #          var terrainForestThreshold =
-   #             if terrainKind == mountains: 0.7f
-   #             elif terrainKind == hills: 0.6f
-   #             else: 0.5f
-
-   #          let grassy = hex.q > hex.r and r > 1
-   #          if grassy:
-   #             vegetation.add(grass)
-   #          else:
-   #             terrainForestThreshold += 0.175
-
-   #          if n > terrainForestThreshold:
-   #             vegetation.add(forest)
-
-   #          tile.modify(Tile.terrain := terrainKind)
-   #          tile.modify(Tile.vegetation := vegetation)
-
-      let mapEnt = createForestRoom(world)
-      world.attachData(Maps(
-         activeMap: mapEnt
-      ))
-
+      world.attachData(Maps())
 
       let playerFaction = world.createEntity()
       playerFaction.attachData(Faction(color: rgba(0.7f, 0.15f, 0.2f, 1.0f), playerControlled: true))
@@ -150,52 +109,32 @@ method initialize(g: MapInitializationComponent, world: World) =
       enemyFaction.attachData(Vision())
       enemyFaction.attachData(DebugData(name: "Enemy Faction"))
 
-      let tobold = world.createEntity()
-      tobold.attachData(Physical())
-      tobold.attachData(Allegiance(faction: playerFaction))
+      let tobold = createCharacter(world, taxon("character classes", "fighter"), playerFaction)
+      tobold.attachData(DebugData(name: "tobold"))
+      let beorn = createCharacter(world, taxon("character classes", "fighter"), playerFaction)
+      beorn.attachData(DebugData(name: "beorn"))
 
-      let arch = library(CardArchetype)[taxon("card types", "move")]
-      let card1 = arch.createCard(world)
-      let card2 = arch.createCard(world)
-      let piercingStab = library(CardArchetype)[taxon("card types", "piercing stab")].createCard(world)
-      let fightAnotherDay = library(CardArchetype)[taxon("card types", "fight another day")].createCard(world)
-      let vengeance = library(CardArchetype)[taxon("card types", "vengeance")].createCard(world)
-      let deck = DeckOwner(
-         combatDeck: Deck(cards: {CardLocation.Hand: @[card1, card2, piercingStab, fightAnotherDay, vengeance]}.toTable)
-      )
-
-      tobold.attachData(deck)
-      tobold.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(3), taxon("resource pools", "stamina points"): reduceable(7)}.toTable))
-      tobold.attachData(Character(
-         health: reduceable(24),
-         # pendingRewards: @[CharacterRewardChoice(options: @[
-         #    CardReward(taxon("card types", "piercing stab")),
-         #    CardReward(taxon("card types", "vengeance")),
-         #    CardReward(taxon("card types", "fight another day")),
-         #    CardReward(taxon("card types", "double strike"))
-         # ])],
-      ))
-      tobold.attachData(Inventory())
-      tobold.attachData(Flags(flags: {taxon("flags", "Weak"): 1}.toTable))
-      tobold.attachData(Vision())
-      tobold.attachData(DebugData(name: "Tobold"))
-
-      let spear = createItem(world, taxon("items", "longspear"))
-      equipItem(world, tobold, spear)
-      world.addFullEvent(EntityEnteredWorldEvent(entity: tobold))
-
-
-
-      let slime = createMonster(world, enemyFaction, taxon("monster classes", "green slime"))
-      slime.modify(Monster.xp += 40)
-      placeCharacterInWorld(world, slime, axialVec(1, 2, 0))
-
-      let purpleSlime = createMonster(world, enemyFaction, taxon("monster classes", "purple slime"))
-      placeCharacterInWorld(world, purpleSlime, axialVec(2, 1, 0))
+      enterNextRoom(world)
 
       world.attachData(TurnData(activeFaction: playerFaction, turnNumber: 1))
 
       world.addFullEvent(WorldInitializedEvent())
+
+
+
+
+method initialize(g: RoomTransitionGraphicsComponent, world: World, curView: WorldView, display: DisplayWorld) =
+   g.name = "RoomTransitionGraphicsComponent"
+
+method onEvent*(g: RoomTransitionGraphicsComponent, world: World, curView: WorldView, display: DisplayWorld, event: Event) =
+   withWorld(world):
+      matcher(event):
+         extract(RoomEnteredEvent):
+            for faction in playerFactions(world):
+               for entity in entitiesInFaction(world, faction):
+                  if entity.hasData(Physical):
+                     display[CameraData].camera.moveTo((entity[Physical].position.asCartVec * mapGraphicsSettings().hexSize.float).Vec3f)
+
 
 
 
@@ -212,7 +151,7 @@ main(GameSetup(
       ConditionsComponent(),
    ],
    graphicsComponents: @[
-      createCameraComponent(createPixelCamera(mapGraphicsSettings().baseScale)),
+      createCameraComponent(createPixelCamera(mapGraphicsSettings().baseScale).withMoveSpeed(300.0f)),
       MapGraphicsComponent(),
       MapCullingComponent(),
       PhysicalEntityGraphicsComponent(),
@@ -223,6 +162,7 @@ main(GameSetup(
       AnimationComponent(),
       RewardUIComponent(),
       createWindowingSystemComponent(),
+      RoomTransitionGraphicsComponent(),
    ]
 ))
 

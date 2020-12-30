@@ -82,6 +82,18 @@ proc render(g: TacticalUIComponent, view: WorldView, display: DisplayWorld) =
 
       g.canvas.swap()
 
+proc setSelectedCharacter(g: TacticalUIComponent, world: World, display: DisplayWorld, character: Entity) =
+   withView(world):
+      let tuid = display[TacticalUIData]
+      tuid.selectedCharacter = some(character)
+      display.addEvent(CharacterSelect(character: character))
+
+      display[CameraData].camera.cameraMovement = some(
+         CameraMovement(
+            targetLocation: character[Physical].position.asCartVec.Vec3f.xy * mapGraphicsSettings().hexSize.float,
+            speedMultiplier: 4.0f,
+         )
+      )
 
 method onEvent(g: TacticalUIComponent, world: World, curView: WorldView, display: DisplayWorld, event: Event) =
    let tuid = display[TacticalUIData]
@@ -89,7 +101,7 @@ method onEvent(g: TacticalUIComponent, world: World, curView: WorldView, display
 
    withWorld(world):
       matchType(event):
-         extract(HexMouseRelease, hex, button, position):
+         extract(HexMousePress, hex, button, position):
             # if tuid.selectedCharacter.isSome:
                # discard
             # else:
@@ -97,12 +109,23 @@ method onEvent(g: TacticalUIComponent, world: World, curView: WorldView, display
                   if entity[Physical].position == hex:
                      if tuid.selectedCharacter != some(entity):
                         if entity.hasData(Character) and faction(world, entity) == world[TurnData].activeFaction and not entity[Character].dead:
-                           tuid.selectedCharacter = some(entity)
-                           display.addEvent(CharacterSelect(character: entity))
+                           g.setSelectedCharacter(world, display, entity)
          extract(KeyRelease, key):
             case key:
             of KeyCode.Enter, KeyCode.KPEnter:
                endTurn(world)
+            of KeyCode.Tab:
+               var playerCharacters: seq[Entity]
+               for character in playerCharacters(world):
+                  if not character[Character].dead:
+                     playerCharacters.add(character)
+               var selectedIndex = -1
+               if selc.isSome:
+                  selectedIndex = playerCharacters.find(selc.get)
+               let newIndex = (selectedIndex+1) mod playerCharacters.len
+               if newIndex <= playerCharacters.len:
+                  g.setSelectedCharacter(world, display, playerCharacters[newIndex])
+
             else: discard
          extract(FactionTurnEndEvent, faction):
             if not faction[Faction].playerControlled:
@@ -111,8 +134,15 @@ method onEvent(g: TacticalUIComponent, world: World, curView: WorldView, display
             if faction[Faction].playerControlled:
                for ent in entitiesInFaction(world, faction):
                   if not ent[Character].dead:
-                     tuid.selectedCharacter = some(ent)
+                     g.setSelectedCharacter(world, display, ent)
                      break
+         extract(CharacterMoveEvent, toHex):
+            display[CameraData].camera.cameraMovement = some(
+               CameraMovement(
+                  targetLocation: toHex.asCartVec.Vec3f.xy * mapGraphicsSettings().hexSize.float,
+                  speedMultiplier: 4.0f,
+               )
+            )
 
 
 method update(g: TacticalUIComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =

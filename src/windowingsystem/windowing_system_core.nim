@@ -63,19 +63,20 @@ type
          proportionalAnchorTo: WidgetOrientation
       of Absolute:
          absoluteOffset: int
+         absoluteAnchorTo: WidgetOrientation
       of Centered:
          discard
       of Relative:
-         relativeToWidget: Widget
+         relativeToWidget: string
          relativeOffset: int32
          relativeToWidgetAnchorPoint: WidgetOrientation
 
    WidgetDimensionKind {.pure.} = enum
+      Intrinsic
       Fixed
       Relative
       Proportional
       ExpandToParent
-      Intrinsic
       WrapContent
       ExpandTo
 
@@ -136,6 +137,11 @@ type
       eventCallbacks: seq[(UIEvent, World, DisplayWorld) -> void]
       acceptsFocus*: bool
 
+   WidgetArchetype* = object
+      widgetData: Widget
+      children: Table[string, WidgetArchetype]
+
+
    DependencyKind = enum
       Position
       PartialPosition
@@ -179,12 +185,15 @@ type
       updatePositionCount: int
       renderContentsCount: int
 
+      # cached widget archetypes
+      widgetArchetypes: Table[string, WidgetArchetype]
+
 
    WindowingSystemRef* = ref WindowingSystem
 
    WindowingComponent* = ref object of RootRef
 
-   WidgetArchetype* = object
+   WidgetArchetypeIdentifier* = object
       location: string
       identifier: string
 
@@ -344,13 +353,14 @@ proc expandToParent*(gap: int = 0): WidgetDimension = WidgetDimension(kind: Widg
 proc intrinsic*(): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.Intrinsic)
 
 proc centered*(): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Centered)
-proc absolutePos*(pos: int): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Absolute, absoluteOffset: pos)
+proc absolutePos*(pos: int, absoluteAnchorTo: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Absolute, absoluteOffset: pos,
+      absoluteAnchorTo: absoluteAnchorTo)
 proc fixedPos*(pos: int, relativeTo: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Fixed, fixedOffset: pos, fixedRelativeTo: relativeTo)
 proc proportionalPos*(proportion: float, relativeTo: WidgetOrientation = WidgetOrientation.TopLeft, anchorTo: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
    WidgetPosition(kind: WidgetPositionKind.Proportional, proportion: proportion, proportionalRelativeTo: relativeTo, proportionalAnchorTo: anchorTo)
-proc relativePos*(relativeTo: Widget, offset: int32, anchorPoint: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
+proc relativePos*(relativeTo: string, offset: int32, anchorPoint: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
    WidgetPosition(kind: WidgetPositionKind.Relative, relativeToWidget: relativeTo, relativeOffset: offset, relativeToWidgetAnchorPoint: anchorPoint)
-proc relativePos*(relativeTo: Widget, offset: int, anchorPoint: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
+proc relativePos*(relativeTo: string, offset: int, anchorPoint: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
    WidgetPosition(kind: WidgetPositionKind.Relative, relativeToWidget: relativeTo, relativeOffset: offset.int32, relativeToWidgetAnchorPoint: anchorPoint)
 
 proc hash*(w: Widget): Hash = w.entity.hash
@@ -365,7 +375,7 @@ proc `==`*(a, b: WidgetPosition): bool =
    of WidgetPositionKind.Proportional:
       a.proportion == b.proportion and a.proportionalRelativeTo == b.proportionalRelativeTo and a.proportionalAnchorTo == b.proportionalAnchorTo
    of WidgetPositionKind.Absolute:
-      a.absoluteOffset == b.absoluteOffset
+      a.absoluteOffset == b.absoluteOffset and a.absoluteAnchorTo == b.absoluteAnchorTo
    of WidgetPositionKind.Centered:
       true
    of WidgetPositionKind.Relative:
@@ -420,12 +430,18 @@ iterator dependentOn(p: WidgetPosition, axis: Axis, widget: Widget, parent: Widg
       yield (widget: parent, kind: DependencyKind.Position, axis: axis)
       yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
    of WidgetPositionKind.Relative:
-      yield (widget: p.relativeToWidget, kind: DependencyKind.Position, axis: axis)
-      yield (widget: p.relativeToWidget, kind: DependencyKind.Dimensions, axis: axis)
+      let relativeWidget = parent.childByIdentifier(p.relativeToWidget)
+      if relativeWidget.isSome:
+         yield (widget: relativeWidget.get, kind: DependencyKind.Position, axis: axis)
+         yield (widget: relativeWidget.get, kind: DependencyKind.Dimensions, axis: axis)
+      else:
+         warn &"Relative positioning with target {p.relativeToWidget} on widget {widget.identifier}, but no matching relative widget found"
+
       if not isFarSide(axis, p.relativeToWidgetAnchorPoint):
          yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
-
    of WidgetPositionKind.Absolute:
+      if isFarSide(axis, p.absoluteAnchorTo) or p.absoluteAnchorTo == WidgetOrientation.Center:
+         yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
       discard
 
 iterator dependentOn(p: WidgetDimension, axis: Axis, widget: Widget, parent: Widget, children: seq[Widget]): Dependency =
@@ -474,13 +490,25 @@ proc `parent=`*(w: Widget, parent: Option[Widget]) =
 proc `parent=`*(w: Widget, parent: Widget) =
    w.parent = some(parent)
 
+proc createWidgetFromArchetype*(ws: WindowingSystemRef, archetype: WidgetArchetype, parent: Widget = nil): Widget =
+   result = new Widget
+   result[] = archetype.widgetData[]
+   result.windowingSystem = ws
+   result.entity = ws.display.copyEntity(archetype.widgetData.entity)
+   if parent.isNil:
+      result.parent = ws.desktop
+   else:
+      result.parent = parent
+
+   for childIdentifier, childArchetype in archetype.children:
+      let newChild = ws.createWidgetFromArchetype(childArchetype, result)
+      newChild.identifier = childIdentifier
+
 
 proc createWidget*(ws: WindowingSystemRef, parent: Widget = nil): Widget =
    result = new Widget
    result.windowingSystem = ws
    result.entity = ws.display.createEntity()
-   result.dimensions = [WidgetDimension(kind: WidgetDimensionKind.Intrinsic), WidgetDimension(kind: WidgetDimensionKind.Intrinsic)]
-   result.showing_f = bindable(true)
    if parent.isNil:
       result.parent = ws.desktop
    else:
@@ -591,13 +619,18 @@ proc recalculatePartialPosition(w: Widget, axis: Axis, dirtySet: HashSet[Depende
       of WidgetPositionKind.Centered:
          0
       of WidgetPositionKind.Relative:
-         ensureDependency((widget: pos.relativeToWidget, kind: DependencyKind.PartialPosition, axis: axis), dirtySet, completedSet)
-         if isFarSide(axis, pos.relativeToWidgetAnchorPoint):
-            ensureDependency((widget: pos.relativeToWidget, kind: DependencyKind.Dimensions, axis: axis), dirtySet, completedSet)
-            pos.relativeToWidget.resolvedPartialPosition[axis] + pos.relativeToWidget.resolvedDimensions[axis] + pos.relativeOffset * w.windowingSystem.pixelScale
+         let relativeToWidget = w.parent.get.childByIdentifier(pos.relativeToWidget)
+         if relativeToWidget.isSome:
+            ensureDependency((widget: relativeToWidget.get, kind: DependencyKind.PartialPosition, axis: axis), dirtySet, completedSet)
+            if isFarSide(axis, pos.relativeToWidgetAnchorPoint):
+               ensureDependency((widget: relativeToWidget.get, kind: DependencyKind.Dimensions, axis: axis), dirtySet, completedSet)
+               relativeToWidget.get.resolvedPartialPosition[axis] + relativeToWidget.get.resolvedDimensions[axis] + pos.relativeOffset * w.windowingSystem.pixelScale
+            else:
+               ensureDependency((widget: w, kind: DependencyKind.Dimensions, axis: axis), dirtySet, completedSet)
+               relativeToWidget.get.resolvedPartialPosition[axis] - pos.relativeOffset * w.windowingSystem.pixelScale - w.resolvedDimensions[axis]
          else:
-            ensureDependency((widget: w, kind: DependencyKind.Dimensions, axis: axis), dirtySet, completedSet)
-            pos.relativeToWidget.resolvedPartialPosition[axis] - pos.relativeOffset * w.windowingSystem.pixelScale - w.resolvedDimensions[axis]
+            warn &"Partial position resolution looked for relative widget {pos.relativeToWidget} on widget {w.identifier} but no relative widget found"
+            0
       of WidgetPositionKind.Absolute:
          pos.absoluteOffset
 
@@ -627,12 +660,22 @@ proc resolvePositionValue(w: Widget, axis: Axis, pos: WidgetPosition): int =
    of WidgetPositionKind.Centered:
       parentV + (parentD - w.resolvedDimensions[axis]) div 2
    of WidgetPositionKind.Relative:
-      if isFarSide(axis, pos.relativeToWidgetAnchorPoint):
-         pos.relativeToWidget.resolvedPosition[axis] + pos.relativeToWidget.resolvedDimensions[axis] + pos.relativeOffset * w.windowingSystem.pixelScale
+      let relativeToWidget = w.parent.get.childByIdentifier(pos.relativeToWidget)
+      if relativeToWidget.isSome:
+         if isFarSide(axis, pos.relativeToWidgetAnchorPoint):
+            relativeToWidget.get.resolvedPosition[axis] + relativeToWidget.get.resolvedDimensions[axis] + pos.relativeOffset * w.windowingSystem.pixelScale
+         else:
+            relativeToWidget.get.resolvedPosition[axis] - pos.relativeOffset * w.windowingSystem.pixelScale - w.resolvedDimensions[axis]
       else:
-         pos.relativeToWidget.resolvedPosition[axis] - pos.relativeOffset * w.windowingSystem.pixelScale - w.resolvedDimensions[axis]
+         warn &"resolvePositionValue(...) looking for relative widget {pos.relativeToWidget} on widget {w.identifier} but none found"
+         0
    of WidgetPositionKind.Absolute:
-      pos.absoluteOffset
+      if pos.absoluteAnchorTo == WidgetOrientation.Center:
+         pos.absoluteOffset - w.resolvedDimensions[axis] div 2
+      elif isFarSide(axis, pos.absoluteAnchorTo):
+         pos.absoluteOffset - w.resolvedDimensions[axis]
+      else:
+         pos.absoluteOffset
 
 
 proc updateGeometry(ws: WindowingSystemRef) {.gcsafe.}
@@ -645,6 +688,11 @@ proc resolvePosition*(w: Widget, axis: Axis, pos: WidgetPosition): int {.gcsafe.
    updateGeometry(w.windowingSystem)
 
    resolvePositionValue(w, axis, pos)
+
+proc resolveEffectiveDimension*(w: Widget, axis: Axis): int {.gcsafe.} =
+   updateGeometry(w.windowingSystem)
+
+   w.resolvedDimensions[axis] div w.windowingSystem.pixelScale
 
 proc recalculatePosition(w: Widget, axis: Axis, dirtySet: HashSet[Dependency], completedSet: var HashSet[Dependency]) =
    let completedKey = (widget: w, kind: DependencyKind.Position, axis: axis)
@@ -1031,13 +1079,13 @@ proc widgetAtPosition*(ws: WindowingSystemRef, position: Vec2f): Widget =
 # Deserialization and config
 
 
-proc readFromConfig*(cv: ConfigValue, e: var WidgetArchetype) =
+proc readFromConfig*(cv: ConfigValue, e: var WidgetArchetypeIdentifier) =
    if cv.isStr:
       let sections = cv.asStr.split('.', 1)
       if sections.len != 2:
          warn &"Widget archetypes should take the form location.identifier: {cv.asStr}"
       else:
-         e = WidgetArchetype(location: sections[0], identifier: sections[1])
+         e = WidgetArchetypeIdentifier(location: sections[0], identifier: sections[1])
    else: warn &"only strings may be used for widget archetypes: {cv}"
 
 proc readFromConfig*(cv: ConfigValue, e: var WidgetEdge) =
@@ -1111,18 +1159,15 @@ proc readFromConfig*(cv: ConfigValue, e: var WidgetPosition, widget: Widget) =
                warn &"failed to parse widget oriented proportional position : {propStr}, {relativeToStr}"
             extractMatches(rightLeftPattern, distStr, dirStr, targetStr):
                let dir = if dirStr.toLowerAscii == "right": WidgetOrientation.TopRight else: WidgetOrientation.TopLeft
-               let target = widget.parent.get.childByIdentifier(targetStr)
-               if target.isSome:
-                  e = relativePos(target.get, parseInt(distStr).int32, dir)
-               else:
-                  warn &"failed to parse widget right/left relative position : {distStr}, {dirStr}, {targetStr}"
+               e = relativePos(targetStr, parseInt(distStr).int32, dir)
             extractMatches(belowAbovePattern, distStr, dirStr, targetStr):
                let dir = if dirStr.toLowerAscii == "below": WidgetOrientation.BottomLeft else: WidgetOrientation.TopLeft
-               let target = widget.parent.get.childByIdentifier(targetStr)
-               if target.isSome:
-                  e = relativePos(target.get, parseInt(distStr).int32, dir)
-               else:
-                  warn &"failed to parse widget above/below relative position : {str}"
+               e = relativePos(targetStr, parseInt(distStr).int32, dir)
+               # let target = widget.parent.get.childByIdentifier(targetStr)
+               # if target.isSome:
+               #    e = relativePos(target.get, parseInt(distStr).int32, dir)
+               # else:
+               #    warn &"failed to parse widget above/below relative position : {str}"
             extractMatches(centeredPattern, distStr):
                e = centered()
             warn &"unsupported position expression: {str}"
@@ -1182,7 +1227,7 @@ proc readFromConfig*(cv: ConfigValue, e: var Widget) =
       e.dimensions[0] = wrapContent()
       e.dimensions[1] = wrapContent()
 
-   populateChildren(cv, e)
+   # populateChildren(cv, e) # no longer doing this, this is now done at archetype hydration time
 
    readInto(cv["background"], e.background)
    readInto(cv["overlays"], e.overlays)
@@ -1194,23 +1239,42 @@ proc readFromConfig*(cv: ConfigValue, e: var Widget) =
    readInto(cv["width"], e.dimensions[0])
    readInto(cv["height"], e.dimensions[1])
    readInto(cv["padding"], e.padding)
-   readInto(cv["showing"], e.showing_f)
+   readIntoOrElse(cv["showing"], e.showing_f, bindable(true))
 
    for comp in e.windowingSystem.components:
       comp.readDataFromConfig(cv, e)
 
+   # let childrenCV = cv["children"]
+   # if childrenCV.isObj:
+   #    for k, childCV in cv["children"].fields:
+   #       var child = e.childByIdentifier(k)
+   #       if child.isSome:
+   #          readFromConfig(childCV, child.get)
+   #       else:
+   #          warn "somehow child config did not match identifiers with existing child"
+
+proc readFromConfig*(cv: ConfigValue, e: var WidgetArchetype) =
+   cv.readInto(e.widgetData)
    let childrenCV = cv["children"]
-   if childrenCV.isObj:
+   if childrenCV.isEmpty:
+      discard
+   elif childrenCV.isObj:
       for k, childCV in cv["children"].fields:
-         var child = e.childByIdentifier(k)
-         if child.isSome:
-            readFromConfig(childCV, child.get)
-         else:
-            warn "somehow child config did not match identifiers with existing child"
+         var childArch = WidgetArchetype(widgetData: Widget(windowingSystem: e.widgetData.windowingSystem, entity: e.widgetData.windowingSystem.display.createEntity()))
+         childCV.readInto(childArch)
+         e.children[k] = childArch
+   else:
+      warn &"Children config for widget archetypes should be a map with names, was actually:\n{childrenCV}"
+
 
 proc createWidgetFromConfig*(ws: WindowingSystemRef, identifier: string, cv: ConfigValue, parent: Widget): Widget =
-   result = ws.createWidget(parent)
-   readInto(cv, result)
+   let t = relTime()
+   if not ws.widgetArchetypes.contains(identifier):
+      var arch = WidgetArchetype(widgetData: Widget(windowingSystem: ws, entity: ws.display.createEntity()))
+      readInto(cv, arch)
+      ws.widgetArchetypes[identifier] = arch
+
+   result = createWidgetFromArchetype(ws, ws.widgetArchetypes[identifier], parent)
    result.identifier = identifier
 
 
@@ -1225,7 +1289,7 @@ proc createWidget*(ws: WindowingSystemRef, confPath: string, identifier: string,
 proc createChild*(w: Widget, confPath: string, identifier: string): Widget =
    createWidget(w.windowingSystem, confPath, identifier, w)
 
-proc createChild*(w: Widget, arch: WidgetArchetype): Widget = createChild(w, arch.location, arch.identifier)
+proc createChild*(w: Widget, arch: WidgetArchetypeIdentifier): Widget = createChild(w, arch.location, arch.identifier)
 
 proc updateWidgetBindings(widget: Widget, resolver: var BoundValueResolver) =
    if not widget.bindings.isNil:

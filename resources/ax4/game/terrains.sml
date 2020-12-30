@@ -64,6 +64,7 @@ Terrains {
       isA: Terrain
       moveCost: 1000
       cover: 1000
+      elevation : 0
       graphics {
          default {
             textures {

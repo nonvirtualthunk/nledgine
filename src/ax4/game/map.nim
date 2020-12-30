@@ -6,6 +6,7 @@ import game/library
 import resources
 import ax4/game/character_types
 import prelude
+import noto
 
 
 type
@@ -22,6 +23,7 @@ type
       dimensions*: Vec2i
       radius*: int
       center: AxialVec
+      entryPoint*: AxialVec
 
    TerrainInfo* = object
       fertility*: int
@@ -79,7 +81,7 @@ defineReflection(Maps)
 
 type MapView* = object
    view: WorldView
-   map: ref Map
+   map*: ref Map
    terrainInfo: Library[TerrainInfo]
    vegetationInfo: Library[VegetationInfo]
 
@@ -130,13 +132,18 @@ proc totalCoverAt*(map: MapView, hex: AxialVec): int =
 
 proc entityAt*(view: WorldView, hex: AxialVec): Option[Entity] =
    withView(view):
+      let activeMap = view[Maps].activeMap
       for entity in view.entitiesWithData(Physical):
-         if entity[Physical].position == hex:
-            return some(entity)
+         let physical = entity[Physical]
+         if physical.position == hex:
+            if physical.map == activeMap:
+               return some(entity)
       none(Entity)
 
 iterator entitiesAt*(view: WorldView, hex: AxialVec): Entity =
    withView(view):
+      let activeMap = view[Maps].activeMap
       for entity in view.entitiesWithData(Physical):
-         if entity[Physical].position == hex:
+         let physical = entity[Physical]
+         if physical.position == hex and physical.map == activeMap:
             yield entity

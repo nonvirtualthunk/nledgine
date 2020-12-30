@@ -72,18 +72,32 @@ CardTypes {
       effects : [ActionPoints(-1), StaminaPoints(+3)]
    }
 
-   Sprint {
-      name : "Sprint"
-      isA: MoveCard
-      rarity : common
-      xp : Movement -> 1
-
-      effects : [Move(6)]
-      costs : [ActionPoints(-1), StaminaPoints(-2)]
-   }
-
    
    // Fighter cards
+   PowerAttack {
+      name: "Power Attack"
+      isA: [AttackCard, FighterCard]   
+      image : ax4/images/card_images/slash.png
+
+      rarity : starter
+
+      xp: Fighter -> 2
+
+      effects [{
+         kind: attack
+
+         attackModifier {
+            actionCost: +1
+            damage: +3
+            conditionalEffects : [{
+               kind: OnHit
+               target: target
+               effect: Vulnerable(+2)
+            }]
+         }
+      }]
+   }
+
    PiercingStab {
       name : "Piercing Stab"
       isA: [AttackCard, FighterCard]

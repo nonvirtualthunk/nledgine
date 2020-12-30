@@ -76,6 +76,7 @@ type
    ConditionalAttackEffectKind* = enum
       OnHit
       OnMiss
+      OnBlocked
 
    ConditionalAttackEffectTarget* {.pure.} = enum
       Target
@@ -408,6 +409,7 @@ proc readFromConfig*(cv: ConfigValue, ge: var GameEffect) {.gcsafe.}
 
 const onHitExpr = re"(?i)onHit\s?\((.+)\)"
 const onMissExpr = re"(?i)onMiss\s?\((.+)\)"
+const onBlockedExpr = re"(?i)onBlocked\s?\((.+)\)"
 
 const onHitKindExpr = re"(?ix)onHit"
 const onMissKindExpr = re"(?ix)onHit"
@@ -426,6 +428,9 @@ proc readFromConfig*(cv: ConfigValue, e: var ConditionalAttackEffect) =
          extractMatches(onMissExpr, onMiss):
             e.kind = OnMiss
             readInto(asConf(onMiss), e.effect)
+         extractMatches(onBlockedExpr, onBlocked):
+            e.kind = OnBlocked
+            readInto(asConf(onBlocked), e.effect)
          warn &"Unsupported conditional attack effect expression: {str}"
    elif cv.isObj:
       var target = ConditionalAttackEffectTarget.Target

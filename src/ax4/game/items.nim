@@ -124,7 +124,7 @@ defineLibrary[ItemArchetype]:
    var lib = new Library[ItemArchetype]
    lib.defaultNamespace = "items"
 
-   let confs = @["weapons.sml"]
+   let confs = @["weapons.sml", "armor.sml"]
    for confPath in confs:
       let conf = resources.config("ax4/game/" & confPath)
       for k, v in conf["Items"]:

@@ -57,6 +57,19 @@ iterator playerFactions*(view: WorldView): Entity =
          if ent[Faction].playerControlled:
             yield ent
 
+iterator enemyFactions*(view: WorldView): Entity =
+   withView(view):
+      for ent in view.entitiesWithData(Faction):
+         if not ent[Faction].playerControlled:
+            yield ent
+
+iterator playerCharacters*(view: WorldView): Entity =
+   withView(view):
+      for playerFaction in playerFactions(view):
+         for entity in entitiesInFaction(view, playerFaction):
+            if entity.hasData(Character):
+               yield entity
+
 proc levelForXp*(xp: int): int =
    xp div 20
 

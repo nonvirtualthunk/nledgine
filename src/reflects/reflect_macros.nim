@@ -135,6 +135,13 @@ macro defineReflectionBase*(t: typedesc, display: static[bool], register: static
    else:
       dataTypeIndexCounter.inc
 
+
+   result.add(
+       quote do:
+      proc getDataType*(t: typedesc[`t`]): DataType[`t`] {.inline.} =
+         return `fooType`
+   )
+
    if register:
       if display:
          initProcStmts.add(
@@ -158,12 +165,6 @@ macro defineReflectionBase*(t: typedesc, display: static[bool], register: static
       reflectInitializers[reflectInitializers.len-1]()
    )
 
-
-   result.add(
-       quote do:
-      proc getDataType*(t: typedesc[`t`]): DataType[`t`] {.inline.} =
-         return `fooType`
-   )
 
    # echo result.copy.repr
    result = result.copy

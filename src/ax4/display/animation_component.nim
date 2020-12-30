@@ -66,7 +66,7 @@ method update(g: AnimationComponent, world: World, curView: WorldView, display: 
                   delay = 0.1f
 
 
-         if relTime() > g.lastAdvanced + delay.seconds:
+         if delay <= 0.001f or relTime() > g.lastAdvanced + delay.seconds:
             curView.advanceBaseView(world, (curView.currentTime.int+1).WorldEventClock)
             g.lastAdvanced = relTime()
          else:

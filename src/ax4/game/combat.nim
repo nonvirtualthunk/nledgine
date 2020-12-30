@@ -91,6 +91,10 @@ proc attackModifierFromFlags*(view: WorldView, character: Entity): AttackModifie
       result.damageFraction = mul(1.0f - (damageFractReductionFlag.float / 100.0f))
    result.accuracy = add(flags.flagValue(view, character, taxon("flags", "accuracy delta")).int16)
 
+proc attackModifierFromTargetedFlags*(view: WorldView, character: Entity, target: Entity): AttackModifier =
+   let damageTakenIncreaseFlag = flags.flagValue(view, character, taxon("flags", "DamageTakenIncreasePercent"))
+   if damageTakenIncreaseFlag != 0:
+      result.damageFraction = mul(1.0f + (damageTakenIncreaseFlag.float / 100.0f))
 
 
 proc attackCosts*(attack: Attack): seq[GameEffect] =
@@ -120,7 +124,7 @@ proc blockFlagFor(damage: DamageExpressionResult): Option[Taxon] =
    else:
       none(Taxon)
 
-proc computeBlockAmount(view: WorldView, character: Entity, damage: DamageExpressionResult): int =
+proc computeBlockAmount*(view: WorldView, character: Entity, damage: DamageExpressionResult): int =
    withView(view):
       let flag = blockFlagFor(damage)
       if flag.isSome:
@@ -151,38 +155,6 @@ proc isAttackValid*(view: WorldView, character: Entity, attack: Attack, targets:
             return false
       true
 
-
-proc performAttack*(world: World, character: Entity, attack: Attack, targets: seq[Entity]) =
-   withWorld(world):
-      var randomizer = world.randomizer
-
-      world.eventStmts(AttackEvent(entity: character, attack: attack, targets: targets)):
-         for target in targets:
-            var targetedAttack = attack
-            applyTargetedDerivedAttackModifiers(world, character, target, targetedAttack)
-
-            for strikeIndex in 0 ..< targetedAttack.strikeCount:
-               let defense = defenseFor(world, character)
-
-               # echo &"Attack:\n{attack}\nDefense:\n{defense}"
-
-               let baseRoll = randomizer.stdRoll().total - 9
-
-               if baseRoll + targetedAttack.accuracy - defense.defense >= 0:
-                  var damage = targetedAttack.damage.roll(randomizer)
-                  damage.fixed += flags.flagValue(world, character, taxon("flags", "ExtraDamageTaken"))
-                  let blockReduction = computeBlockAmount(world, target, damage)
-
-                  let strikeResult = if blockReduction > 0:
-                     Blocked(blockReduction, damage.total - blockReduction)
-                  else:
-                     Hit(damage.total)
-
-                  world.eventStmts(StrikeEvent(entity: character, target: target, attack: targetedAttack, result: strikeResult)):
-                     dealDamage(world, target, damage)
-               else:
-                  world.eventStmts(StrikeEvent(entity: character, target: target, attack: targetedAttack, result: Missed())):
-                     discard
 
 proc gainBlock*(world: World, entity: Entity, amountGained: int) =
    if amountGained != 0:

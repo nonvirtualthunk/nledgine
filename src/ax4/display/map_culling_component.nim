@@ -20,7 +20,7 @@ import graphics/core
 import sets
 import algorithm
 
-const margin = -400
+const margin = -800
 
 type
    MapCullingComponent* = ref object of GraphicsComponent
