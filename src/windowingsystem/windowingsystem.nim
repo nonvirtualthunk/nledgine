@@ -5,10 +5,11 @@ import prelude
 import text_widget
 import image_widget
 import list_widget
+import nimclipboard/libclipboard
 
 export windowing_system_core
 
-proc createWindowingSystem*(display: DisplayWorld): WindowingSystemRef =
+proc createWindowingSystem*(display: DisplayWorld, rootConfigPath: string): WindowingSystemRef =
    result = new WindowingSystem
    result.desktop = new Widget
    result.desktop.showing = bindable(true)
@@ -18,6 +19,8 @@ proc createWindowingSystem*(display: DisplayWorld): WindowingSystemRef =
    result.dimensions = display[GraphicsContextData].framebufferSize
    result.pixelScale = 1
    result.lastWidgetUnderMouse = result.desktop
+   result.rootConfigPath = rootConfigPath
+   result.clipboard = clipboard_new(nil)
    for e in RecalculationFlag:
       result.desktop.markForUpdate(e)
    result.components.add(TextDisplayRenderer())
@@ -37,7 +40,7 @@ when isMainModule:
    let display = createDisplayWorld()
    display.attachData(GraphicsContextData)
    display[GraphicsContextData].framebufferSize = vec2i(800, 600)
-   let ws = createWindowingSystem(display)
+   let ws = createWindowingSystem(display, "ax4/widgets/")
 
    ws.update()
 

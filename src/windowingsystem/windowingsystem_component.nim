@@ -24,12 +24,14 @@ type
       shader: Shader
       camera: Camera
       initTime: UnitOfTime
+      rootConfigPath: string
 
-proc createWindowingSystemComponent*(): WindowingSystemComponent =
+proc createWindowingSystemComponent*(rootConfigPath: string): WindowingSystemComponent =
    WindowingSystemComponent(
       initializePriority: 10,
       eventPriority: 100,
-      updatePriority: -100
+      updatePriority: -100,
+      rootConfigPath: rootConfigPath
    )
 
 proc render(g: WindowingSystemComponent, display: DisplayWorld) =
@@ -40,9 +42,8 @@ method initialize(g: WindowingSystemComponent, world: World, curView: WorldView,
    g.initTime = relTime()
    g.vao = newVAO[WVertex, uint32]()
    g.shader = initShader("shaders/windowing")
-   g.texture = newTextureBlock(2048, 1, false)
-   let windowingSystem = createWindowingSystem(display)
-   windowingSystem.rootConfigPath = "ax4/widgets/"
+   g.texture = newTextureBlock(4096, 1, false)
+   let windowingSystem = createWindowingSystem(display, g.rootConfigPath)
    windowingSystem.pixelScale = 2
 
    display.attachDataRef(windowingSystem)
@@ -61,36 +62,37 @@ method onEvent(g: WindowingSystemComponent, world: World, curView: WorldView, di
             event.consume()
       var shouldConsume = false
       matchType(event):
-         extract(MouseMove, position):
+         extract(MouseMove, position, modifiers):
             let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
             ws.lastMousePosition = wsPos.xy
             var widget = ws.widgetAtPosition(wsPos.xy)
-            shouldConsume = ws.handleEvent(WidgetMouseMove(widget: widget, position: wsPos.xy), world, display)
-         extract(MouseDrag, position, button):
+            shouldConsume = ws.handleEvent(WidgetMouseMove(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
+         extract(MouseDrag, position, button, modifiers, origin):
             let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
+            let wsOrigin = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, origin)
             ws.lastMousePosition = wsPos.xy
             var widget = ws.widgetAtPosition(wsPos.xy)
-            shouldConsume = ws.handleEvent(WidgetMouseDrag(widget: widget, position: wsPos.xy, button: button), world, display)
-         extract(MousePress, position, button):
+            shouldConsume = ws.handleEvent(WidgetMouseDrag(widget: widget, position: wsPos.xy, origin: wsOrigin.xy, button: button, modifiers: modifiers), world, display)
+         extract(MousePress, position, button, modifiers):
             let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
             var widget = ws.widgetAtPosition(wsPos.xy)
-            shouldConsume = ws.handleEvent(WidgetMousePress(widget: widget, position: wsPos.xy), world, display)
-         extract(MouseRelease, position, button):
+            shouldConsume = ws.handleEvent(WidgetMousePress(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
+         extract(MouseRelease, position, button, modifiers):
             let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
             var widget = ws.widgetAtPosition(wsPos.xy)
-            shouldConsume = ws.handleEvent(WidgetMouseRelease(widget: widget, position: wsPos.xy), world, display)
-         extract(KeyPress, key):
+            shouldConsume = ws.handleEvent(WidgetMouseRelease(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
+         extract(KeyPress, key, repeat, modifiers):
             if ws.focusedWidget.isSome:
                let widget = ws.focusedWidget.get
-               shouldConsume = ws.handleEvent(WidgetKeyPress(widget: widget, key: key), world, display)
-         extract(KeyRelease, key):
+               shouldConsume = ws.handleEvent(WidgetKeyPress(widget: widget, key: key, repeat: repeat, modifiers: modifiers), world, display)
+         extract(KeyRelease, key, modifiers):
             if ws.focusedWidget.isSome:
                let widget = ws.focusedWidget.get
-               shouldConsume = ws.handleEvent(WidgetKeyRelease(widget: widget, key: key), world, display)
-         extract(RuneEnter, rune):
+               shouldConsume = ws.handleEvent(WidgetKeyRelease(widget: widget, key: key, modifiers: modifiers), world, display)
+         extract(RuneEnter, rune, modifiers):
             if ws.focusedWidget.isSome:
                let widget = ws.focusedWidget.get
-               shouldConsume = ws.handleEvent(WidgetRuneEnter(widget: widget, rune: rune), world, display)
+               shouldConsume = ws.handleEvent(WidgetRuneEnter(widget: widget, rune: rune, modifiers: modifiers), world, display)
       if shouldConsume:
          event.consume()
 

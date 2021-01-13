@@ -74,10 +74,17 @@ method updateBindings*(ws: ListWidgetComponent, widget: Widget, resolver: var Bo
                      let separator = widget.createChild(lw.separatorArchetype.get)
                      separator.identifier = widget.identifier & ".separator[" & $(i-1) & "]"
                      lw.separatorChildren.add(separator)
-                     separator.position[Axis.Y.ord] = relativePos(lw.listItemChildren[i-1].identifier, lw.gapSize, WidgetOrientation.BottomLeft)
-                     newItem.position[Axis.Y.ord] = relativePos(separator.identifier, lw.gapSize, WidgetOrientation.BottomLeft)
+                     if not lw.horizontal:
+                        separator.position[Axis.Y.ord] = relativePos(lw.listItemChildren[i-1].identifier, lw.gapSize, WidgetOrientation.BottomLeft)
+                        newItem.position[Axis.Y.ord] = relativePos(separator.identifier, lw.gapSize, WidgetOrientation.BottomLeft)
+                     else:
+                        separator.position[Axis.X.ord] = relativePos(lw.listItemChildren[i-1].identifier, lw.gapSize, WidgetOrientation.BottomRight)
+                        newItem.position[Axis.X.ord] = relativePos(separator.identifier, lw.gapSize, WidgetOrientation.BottomRight)
                   else:
-                     newItem.position[Axis.Y.ord] = relativePos(lw.listItemChildren[i-1].identifier, lw.gapSize, WidgetOrientation.BottomLeft)
+                     if not lw.horizontal:
+                        newItem.position[Axis.Y.ord] = relativePos(lw.listItemChildren[i-1].identifier, lw.gapSize, WidgetOrientation.BottomLeft)
+                     else:
+                        newItem.position[Axis.X.ord] = relativePos(lw.listItemChildren[i-1].identifier, lw.gapSize, WidgetOrientation.BottomRight)
 
             lw.listItemChildren[i].bindValue(lw.targetBinding, value)
             if value.kind == BoundValueKind.Nested:
@@ -86,7 +93,7 @@ method updateBindings*(ws: ListWidgetComponent, widget: Widget, resolver: var Bo
          # Clean up any children that are no longer needed
          let numValues = boundSrcValue.values.len
          if numValues < lw.listItemChildren.len:
-            for i in (lw.listItemChildren.len - 1) .. numValues:
+            for i in numValues .. (lw.listItemChildren.len - 1):
                contentsChanged = true
                lw.listItemChildren[i].destroyWidget()
                if lw.separatorArchetype.isSome:

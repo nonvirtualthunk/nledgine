@@ -10,6 +10,7 @@ import options
 import config_core
 import graphics/color
 import graphics/image_extras
+import macros
 
 type
 
@@ -21,6 +22,7 @@ type
       RichText
       Taxon
       Seq
+      Grid
       Bool
       Image
       Nested
@@ -34,6 +36,7 @@ type
       of BoundValueKind.RichText: richText: RichText
       of BoundValueKind.Taxon: taxon: Taxon
       of BoundValueKind.Seq: values*: seq[BoundValue]
+      of BoundValueKind.Grid: gridValues*: seq[seq[BoundValue]]
       of BoundValueKind.Bool: truth: bool
       of BoundValueKind.Image: image: ImageLike
       of BoundValueKind.Nested: nestedValues*: ref Table[string, BoundValue]
@@ -91,6 +94,7 @@ proc `==`*(a, b: BoundValue): bool =
       of BoundValueKind.RichText: a.richText == b.richText
       of BoundValueKind.Taxon: a.taxon == b.taxon
       of BoundValueKind.Seq: a.values == b.values
+      of BoundValueKind.Grid: a.gridValues == b.gridValues
       of BoundValueKind.Bool: a.truth == b.truth
       of BoundValueKind.Image: a.image == b.image
       of BoundValueKind.Nested: a.nestedValues[] == b.nestedValues[]
@@ -114,6 +118,32 @@ proc bindValue*[K, V](f: Table[K, V]): BoundValue =
    let nt = newTable[K, V]()
    nt[] = f
    BoundValue(kind: BoundValueKind.Nested, nestedValues: nt)
+
+proc bindNestedValue*[T](t: T): BoundValue
+
+macro bindNestedValueMacro[T](v: T, t: typedesc[T], bindings: ref Table[string, BoundValue]) =
+   let stmts = newStmtList()
+   if t.getType[1].getTypeImpl.len <= 2:
+      error("Invalid type to perform implicit nested bindNestedValueMacro: " & t.getType[1].repr, t)
+   for field in t.getType[1].getTypeImpl[2]:
+      # echo "\"", field[0].repr, "\""
+      let fieldName = newIdentNode($field[0].strVal)
+      let fieldStr = newLit(field[0].strVal)
+      # let fieldAppend = newLit("." & $field[0].strVal)
+      stmts.add(quote do:
+         when compiles(bindValue(`v`.`fieldName`)):
+            `bindings`[`fieldStr`] = bindValue(`v`.`fieldName`)
+         else:
+            `bindings`[`fieldStr`] = bindNestedValue(`v`.`fieldName`)
+      )
+   result = stmts
+
+proc bindNestedValue*[T](t: T): BoundValue =
+   var subBindings: ref Table[string, BoundValue] = newTable[string, BoundValue]()
+   bindNestedValueMacro(t, T, subBindings)
+   BoundValue(kind: BoundValueKind.Nested, nestedValues: subBindings)
+
+
 proc bindValue*[T](f: seq[T]): BoundValue =
    var subValues: seq[BoundValue]
    for v in f:
@@ -122,10 +152,22 @@ proc bindValue*[T](f: seq[T]): BoundValue =
       elif compiles(asRichText(v)):
          subValues.add(bindValue(asRichText(v)))
       else:
-         {.error: ("seq[" & $T & "] cannot bind nested value").}
+         subValues.add(bindNestedValue(v))
+         # {.error: ("seq[" & $T & "] cannot bind nested value").}
    BoundValue(kind: BoundValueKind.Seq, values: subValues)
-
-import macros
+proc bindValue*[T](f: seq[seq[T]]): BoundValue =
+   var subValues: seq[seq[BoundValue]]
+   for ss in f:
+      var row: seq[BoundValue]
+      for v in ss:
+         when compiles(bindValue(v)):
+            row.add(bindValue(v))
+         elif compiles(asRichText(v)):
+            row.add(bindValue(asRichText(v)))
+         else:
+            {.error: ("seq[" & $T & "] cannot bind nested value").}
+      subValues.add(row)
+   BoundValue(kind: BoundValueKind.Grid, values: subValues)
 
 macro bindValueIntoMacro[T](key: string, v: T, t: typedesc[T], bindings: ref Table[string, BoundValue]) =
    let stmts = newStmtList()
@@ -195,6 +237,7 @@ proc asString*(bv: BoundValue): string =
    of BoundValueKind.RichText: "[rich text not supported yet]"
    of BoundValueKind.Taxon: bv.taxon.name.capitalizeAscii
    of BoundValueKind.Seq: "[seqs not supported yet]"
+   of BoundValueKind.Grid: "[grids not supported yet]"
    of BoundValueKind.Bool: $bv.truth
    of BoundValueKind.Image: "[images not supported as strings]"
    of BoundValueKind.Nested: "[nested values not supported as strings yest]"

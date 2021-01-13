@@ -147,6 +147,7 @@ type
       of GraphicsContextCommandKind.CursorCommand:
          cursorEnabled*: bool
          cursorIcon*: Option[string]
+         standardCursor*: Option[int]
 
 var graphicsContextCommandChannel*: Channel[GraphicsContextCommand]
 graphicsContextCommandChannel.open()
@@ -633,6 +634,15 @@ proc enableCursor*() =
 
 proc disableCursor*() =
    discard graphicsContextCommandChannel.trySend(GraphicsContextCommand(kind: GraphicsContextCommandKind.CursorCommand, cursorEnabled: false))
+
+proc setCursorShape*(iconName: string) =
+   discard graphicsContextCommandChannel.trySend(GraphicsContextCommand(kind: GraphicsContextCommandKind.CursorCommand, cursorEnabled: true, cursorIcon : some(iconName)))
+
+proc setCursorShape*(standardCursor: int) =
+   discard graphicsContextCommandChannel.trySend(GraphicsContextCommand(kind: GraphicsContextCommandKind.CursorCommand, cursorEnabled: true, standardCursor : some(standardCursor)))
+
+proc resetCursorShape*() =
+   discard graphicsContextCommandChannel.trySend(GraphicsContextCommand(kind: GraphicsContextCommandKind.CursorCommand, cursorEnabled: true, standardCursor : some(0)))
 
 when isMainModule:
    import glm

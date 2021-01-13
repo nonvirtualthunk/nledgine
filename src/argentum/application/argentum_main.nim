@@ -66,7 +66,7 @@ main(GameSetup(
    ],
    graphicsComponents: @[
       createCameraComponent(createPixelCamera(1)),
-      createWindowingSystemComponent(),
+      createWindowingSystemComponent("ax4/widgets/"),
       PhysicsComponent(),
       MachineComponent()
    ]

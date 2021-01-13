@@ -22,12 +22,6 @@ type QuadGroup = object
    endIndex: int
    verticalAlignment: VerticalAlignment
 
-type LineInfo = object
-   startY: int
-   startIndex: int
-   endIndex: int
-   maximumHeight: int
-
 
 proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, renderSettings: RichTextRenderSettings): TextLayout =
    var res: TextLayout
@@ -45,13 +39,15 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
       else:
          resources.font(DefaultFontName)
 
-   var lineInfo: seq[LineInfo] = @[LineInfo(maximumHeight: 0, startIndex: 0, startY: 0)]
+   res.lineInfo = @[LineInfo(maximumHeight: 0, startIndex: 0, startY: 0)]
    var quadGroups: seq[QuadGroup] = @[]
+   var sectionIndex = 0
 
-   proc addQuad(quad: WQuad, solidQuad: bool) =
+   proc addQuad(quad: WQuad, solidQuad: bool, subIndex: int) =
       res.quads.add(quad)
+      res.quadOrigins.add(RichTextIndex(sectionIndex:sectionIndex, subIndex: subIndex))
       if solidQuad:
-         lineInfo[lineInfo.len-1].maximumHeight.maxWith((quad.position.y.int + quad.dimensions.y) - cursor.y)
+         res.lineInfo[res.lineInfo.len-1].maximumHeight.maxWith((quad.position.y.int + quad.dimensions.y) - cursor.y)
          minPos.minAll(vec2i(quad.position.x.int, quad.position.y.int))
          maxPos.maxAll(vec2i(quad.position.x.int + quad.dimensions.x.int, quad.position.y.int + quad.dimensions.y.int))
    proc splitQuadGroup() =
@@ -62,8 +58,8 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
       quadGroups[quadGroups.len-1].endIndex = res.quads.len
    proc endLine(startNew: bool) =
       if startNew: splitQuadGroup()
-      lineInfo[lineInfo.len-1].endIndex = quadGroups.len
-      if startNew: lineInfo.add(LineInfo(startIndex: quadGroups.len))
+      res.lineInfo[res.lineInfo.len-1].endIndex = res.quads.len
+      if startNew: res.lineInfo.add(LineInfo(startIndex: res.quads.len, startY: cursor.y))
 
    proc renderSection(section: RichTextSection) =
       quadGroups.add(QuadGroup(startIndex: res.quads.len, verticalAlignment: section.verticalAlignment))
@@ -95,6 +91,7 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
          let font = fontRoot.withPixelSize((effSize).round.int, pixelScale)
          let typographyFont = font.typographyFont()
          let typesetting = typeset(font, section.text, vec2i(0, 0), cursor, bounds.dimensions)
+         res.lineHeight = typographyFont.lineHeight.int
 
          for glyphPos in typesetting:
             let glyphInfo = font.glyph(glyphPos.character)
@@ -103,9 +100,15 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
             let w = rect.w.int
             let h = rect.h.int
 
-            lineInfo[lineInfo.len-1].maximumHeight.maxWith(typographyFont.lineHeight.int)
+            res.lineInfo[res.lineInfo.len-1].maximumHeight.maxWith(typographyFont.lineHeight.int)
             maxPos.y.maxWith(typographyFont.lineHeight.int32)
             let isWhitespace = glyphPos.character == " " or glyphPos.character == "\t" or glyphPos.character == "\n"
+
+            # TODO: this is a sort of hacky way of determining if we've jumped to a new line, probably needs work
+            if rect.y.int32 + rect.h.int32 >= cursor.y + (typographyFont.lineHeight*1.1).int32:
+               cursor.y += typographyFont.lineHeight.int32
+               endLine(true)
+
             addQuad(WQuad(
                position: vec3f(rect.x.int.float, rect.y.int.float, 0.0f),
                dimensions: vec2i(w, h),
@@ -113,11 +116,8 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
                texCoords: simpleTexCoords(),
                image: imageLike(glyphInfo.image),
                color: effColor,
-               beforeChildren: true), not isWhitespace)
+               beforeChildren: true), not isWhitespace, glyphPos.index)
             cursor.x = (rect.x + rect.w).int32 + 1
-            if rect.y.int32 + rect.h.int32 >= cursor.y + (typographyFont.lineHeight * 0.9).int32:
-               endLine(true)
-               cursor.y += typographyFont.lineHeight.int32
       of SectionKind.Taxon:
          let lib = library(TaxonomyDisplay)
          let tdisp = lib.get(section.taxon)
@@ -149,11 +149,11 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
             image: img,
             color: effColor,
             beforeChildren: true
-         ), true)
+         ), true, 0)
          cursor.x += (img.dimensions.x * pixelScale).int32
          if cursor.x >= bounds.x + bounds.width:
             cursor.x = 0
-            cursor.y += lineInfo[lineInfo.len-1].maximumHeight.int32
+            cursor.y += res.lineInfo[res.lineInfo.len-1].maximumHeight.int32
       of VerticalBreak:
          let font = overallFont.withPixelSize((effSize).round.int, pixelScale)
          let typographyFont = font.typographyFont()
@@ -165,29 +165,30 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
          cursor.x += section.spacing.int32
       endQuadGroup()
 
+
    for section in richText.sections:
       renderSection(section)
+      sectionIndex.inc
 
    res.bounds = rect(minPos, maxPos - minPos)
    endLine(false)
 
+
    let halign = renderSettings.horizontalAlignment.get(richText.horizontalAlignment)
    if halign != HorizontalAlignment.Left:
-      for line in lineInfo:
+      for line in res.lineInfo:
          if line.startIndex != line.endIndex:
             var maxX = 0
-            for qi in line.startIndex ..< line.endIndex:
-               for i in quadGroups[qi].startIndex ..< quadGroups[qi].endIndex:
-                  maxX.maxWith(res.quads[i].position.x.int + res.quads[i].dimensions.x.int)
+            for i in line.startIndex ..< line.endIndex:
+               maxX.maxWith(res.quads[i].position.x.int + res.quads[i].dimensions.x.int)
             let widthDelta = bounds.width - maxX
             let shift =
                if halign == HorizontalAlignment.Center:
                   widthDelta div 2
                else:
                   widthDelta
-            for qi in line.startIndex ..< line.endIndex:
-               for i in quadGroups[qi].startIndex ..< quadGroups[qi].endIndex:
-                  res.quads[i].position.x += shift.float32
+            for i in line.startIndex ..< line.endIndex:
+               res.quads[i].position.x += shift.float32
 
 
 

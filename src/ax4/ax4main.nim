@@ -161,7 +161,7 @@ main(GameSetup(
       EffectSelectionComponent(),
       AnimationComponent(),
       RewardUIComponent(),
-      createWindowingSystemComponent(),
+      createWindowingSystemComponent("ax4/widgets/"),
       RoomTransitionGraphicsComponent(),
    ]
 ))

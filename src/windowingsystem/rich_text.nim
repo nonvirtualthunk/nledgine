@@ -62,9 +62,22 @@ type
       horizontalAlignment*: Option[HorizontalAlignment]
       textPreference*: TextPreference
 
+   RichTextIndex* = object
+      sectionIndex*: int
+      subIndex*: int
+
+   LineInfo* = object
+      startY*: int
+      startIndex*: int
+      endIndex*: int
+      maximumHeight*: int
+
    TextLayout* = object
       quads*: seq[WQuad]
+      quadOrigins*: seq[RichTextIndex]
       bounds*: Recti
+      lineInfo*: seq[LineInfo]
+      lineHeight*: int
 
 proc `==`*(a, b: RichTextSection): bool =
    a.kind == b.kind and
@@ -115,7 +128,7 @@ proc add*(a: var RichText, b, c: RichText) =
    a.sections.add(b.sections)
    a.sections.add(c.sections)
 
-proc richText*(str: string, size: float = 1.0f, color: Option[color.RGBA] = some(rgba(0, 0, 0, 255))): RichText =
+proc richText*(str: string, size: float = 1.0f, color: Option[color.RGBA] = none(color.RGBA)): RichText =
    richText(RichTextSection(size: size, verticalAlignment: VerticalAlignment.Bottom, kind: SectionKind.Text, text: str, color: color))
 
 proc richText*(img: ImageLike, size: float = 1.0f): RichText =

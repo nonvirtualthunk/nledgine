@@ -476,6 +476,9 @@ proc parseConfig*(str: string): ConfigValue =
    ctx.skipWhitespace()
    parseObj(ctx, true)
 
+proc readConfigFromFile*(path: string): ConfigValue =
+   parseConfig(readFile(path))
+
 proc isObj*(cv: ConfigValue): bool =
    cv.kind == ConfigValueKind.Object
 

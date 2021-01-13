@@ -86,7 +86,7 @@ proc vec2f*(x: int, y: int): Vec2f =
 proc vec3f*(x: int, y: int, z: int): Vec3f =
    vec3f(x.float, y.float, z.float)
 
-proc Vec2f*(v: Vec2i): Vec2f = vec2f(v.x, v.y)
+proc vec2f*(v: Vec2i): Vec2f = vec2f(v.x, v.y)
 
 converter toVec2i*(v: Vec2[int]): Vec2i = vec2i(v.x.int32, v.y.int32)
 converter toVec2int*(v: Vec2i): Vec2[int] = vec2(v.x.int, v.y.int)

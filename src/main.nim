@@ -16,6 +16,7 @@ import times
 import noto
 import prelude
 import algorithm
+import options
 
 
 var eventChannel: Channel[Event]
@@ -36,6 +37,7 @@ type FullGameSetup = object
 var engineThread: Thread[FullGameSetup]
 
 var lastMousePosition: Vec2f
+var lastMousePressPosition: Vec2f
 var lastModifiers: KeyModifiers
 var hasFocus: bool
 var mouseButtonsDown: Table[MouseButton, bool]
@@ -106,9 +108,15 @@ proc keyDownProc(window: GLFWWindow, key: int32, scancode: int32, action: int32,
    if action == GLFWPress:
       if key != -1:
          let isFirstPress = not isKeyDown(key.KeyCode)
-         if isFirstPress:
-            setKeyDown(key.KeyCode, true)
-            eventChannel.send(KeyPress(key: key.KeyCode, modifiers: lastModifiers))
+
+         setKeyDown(key.KeyCode, true)
+         eventChannel.send(KeyPress(key: key.KeyCode, modifiers: lastModifiers, repeat: not isFirstPress))
+      else:
+         fine &"-1 key: {scancode}"
+   elif action == GLFWRepeat:
+      if key != -1:
+         setKeyDown(key.KeyCode, true)
+         eventChannel.send(KeyPress(key: key.KeyCode, modifiers: lastModifiers, repeat: true))
       else:
          fine &"-1 key: {scancode}"
    elif action == GLFWRelease:
@@ -124,6 +132,7 @@ proc mouseButtonProc(window: GLFWWindow, buttonRaw: int32, action: int32, mods: 
    if action == GLFWPress:
       mouseButtonsDown[button] = true
       setMouseButtonDown(button, true)
+      lastMousePressPosition = lastMousePosition
       eventChannel.send(MousePress(position: lastMousePosition, modifiers: lastModifiers, button: button))
    elif action == GLFWRelease:
       mouseButtonsDown[button] = false
@@ -137,7 +146,7 @@ proc mouseMoveProc(window: GLFWWindow, x: float, y: float): void {.cdecl.} =
 
       for button in MouseButton:
          if mouseButtonsDown.getOrDefault(button, false):
-            eventChannel.send(MouseDrag(position: lastMousePosition, modifiers: lastModifiers, delta: delta, button: button))
+            eventChannel.send(MouseDrag(position: lastMousePosition, modifiers: lastModifiers, delta: delta, origin: lastMousePressPosition, button: button))
             return
 
       eventChannel.send(MouseMove(position: lastMousePosition, modifiers: lastModifiers, delta: delta))
@@ -227,6 +236,11 @@ proc main*(setup: GameSetup) =
    let windowInitTime = relTime()
    var first = true
 
+   var cursorShowing = true
+   var cursorsByImage : Table[string, GLFWCursor]
+   var standardCursors : Table[int, GLFWCursor]
+   var activeStandardCursor = 0
+
    while not w.windowShouldClose:
       if lastViewport != framebufferSize:
          glViewport(0, 0, framebufferSize.x, framebufferSize.y)
@@ -244,9 +258,27 @@ proc main*(setup: GameSetup) =
                case ctxCommand.kind:
                of GraphicsContextCommandKind.CursorCommand:
                   if ctxCommand.cursorEnabled:
-                     setInputMode(w, GLFWCursorSpecial, GLFWCursorNormal)
+                     if not cursorShowing:
+                        cursorShowing = true
+                        setInputMode(w, GLFWCursorSpecial, GLFWCursorNormal)
                   else:
-                     setInputMode(w, GLFWCursorSpecial, GLFWCursorHidden)
+                     if cursorShowing:
+                        cursorShowing = false
+                        setInputMode(w, GLFWCursorSpecial, GLFWCursorHidden)
+
+                  if ctxCommand.cursorIcon.isSome:
+                     warn &"todo: support custom cursor icons"
+                  elif ctxCommand.standardCursor.isSome:
+                     let cursorType = ctxCommand.standardCursor.get
+                     if cursorType != activeStandardCursor:
+                        activeStandardCursor = cursorType
+                        if cursorType == 0:
+                           setCursor(w, nil)
+                        else:
+                           let cursor = standardCursors.getOrCreate(cursorType):
+                              glfwCreateStandardCursor(cursorType.int32)
+                           setCursor(w, cursor)
+
             else:
                break
 

@@ -11,6 +11,7 @@ import noto
 import glm
 import math
 import worlds
+import arxmath
 
 
 type
@@ -107,12 +108,14 @@ method render*(ws: ImageDisplayComponent, widget: Widget): seq[WQuad] =
    else:
       @[]
 
-method intrinsicSize*(ws: ImageDisplayComponent, widget: Widget, axis: Axis): Option[int] =
+method intrinsicSize*(ws: ImageDisplayComponent, widget: Widget, axis: Axis, minimums: Vec2i, maximums: Vec2i): Option[int] =
    if widget.hasData(ImageDisplay):
       let ID = widget.data(ImageDisplay)
       case ID.scale.kind:
       of Scale, ScaleToAxis:
-         some(calcSize(ID, widget, axis))
+         let rawSize = calcSize(ID, widget, axis)
+         # todo: this doesn't maintain the aspect ratio, it's not great
+         some(clamp(rawSize, minimums[axis], maximums[axis]))
       else:
          none(int)
    else:

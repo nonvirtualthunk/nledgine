@@ -48,9 +48,11 @@ type
       button*: MouseButton
       position*: Vec2f
       delta*: Vec2f
+      origin*: Vec2f
 
    KeyPress* = ref object of InputEvent
       key*: KeyCode
+      repeat*: bool
 
    KeyRelease* = ref object of InputEvent
       key*: KeyCode

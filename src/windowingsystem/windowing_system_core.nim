@@ -17,6 +17,7 @@ import sugar
 import engines/key_codes
 import unicode
 import algorithm
+import nimclipboard/libclipboard
 
 export windowing_rendering
 export config
@@ -91,7 +92,8 @@ type
       of WidgetDimensionKind.ExpandToParent:
          parentGap: int
       of WidgetDimensionKind.Intrinsic:
-         discard
+         intrinsicMax*: Option[int]
+         intrinsicMin*: Option[int]
       of WidgetDimensionKind.WrapContent:
          discard
       of WidgetDimensionKind.ExpandTo:
@@ -128,6 +130,7 @@ type
       dimensions: array[2, WidgetDimension]
       resolvedDimensions*: Vec2i
       showing_f: Bindable[bool]
+      cursor*: Option[int]
       # drawing caches
       preVertices: seq[WVertex]
       postVertices: seq[WVertex]
@@ -188,6 +191,9 @@ type
       # cached widget archetypes
       widgetArchetypes: Table[string, WidgetArchetype]
 
+      # os interaction
+      clipboard*: ptr clipboard_c
+
 
    WindowingSystemRef* = ref WindowingSystem
 
@@ -207,6 +213,7 @@ type
    WidgetMouseDrag* = ref object of WidgetEvent
       button*: MouseButton
       position*: Vec2f
+      origin*: Vec2f
    WidgetMouseEnter* = ref object of WidgetEvent
    WidgetMouseExit* = ref object of WidgetEvent
 
@@ -220,6 +227,7 @@ type
 
    WidgetKeyPress* = ref object of WidgetEvent
       key*: KeyCode
+      repeat*: bool
    WidgetKeyRelease* = ref object of WidgetEvent
       key*: KeyCode
    WidgetRuneEnter* = ref object of WidgetEvent
@@ -249,13 +257,33 @@ proc descendantByIdentifier*(e: Widget, identifier: string): Option[Widget] =
             return descMatch
       none(Widget)
 
+iterator descendantsMatching*(e: Widget, predicate : (Widget) -> bool): Widget =
+   var descendantStack = e.children
+   while descendantStack.nonEmpty:
+      let c = descendantStack.pop()
+      if predicate(c):
+         yield c
+      for subChild in c.children:
+         descendantStack.add(subChild)
+
+iterator descendantsWithData*[T](e: Widget, dataType : typedesc[T]): Widget =
+   for c in descendantsMatching(e, w => w.hasData(dataType)):
+      yield c
+
+
+
+
+proc giveWidgetFocus*(ws: WindowingSystemRef, world: World, widget: Widget)
+
+proc takeFocus*(w: Widget, world: World) =
+   w.windowingSystem.giveWidgetFocus(world, w)
 
 # =========================================================================================
 
 method render*(ws: WindowingComponent, widget: Widget): seq[WQuad] {.base.} =
    warn "WindowingComponent must implement render"
 
-method intrinsicSize*(ws: WindowingComponent, widget: Widget, axis: Axis): Option[int] {.base.} =
+method intrinsicSize*(ws: WindowingComponent, widget: Widget, axis: Axis, minimums: Vec2i, maximums: Vec2i): Option[int] {.base.} =
    none(int)
 
 method readDataFromConfig*(ws: WindowingComponent, cv: ConfigValue, widget: Widget) {.base.} =
@@ -394,7 +422,7 @@ proc `==`*(a, b: WidgetDimension): bool =
    of WidgetDimensionKind.ExpandToParent:
       a.parentGap == b.parentGap
    of WidgetDimensionKind.Intrinsic:
-      true
+      a.intrinsicMin == b.intrinsicMin and a.intrinsicMax == b.intrinsicMax
    of WidgetDimensionKind.WrapContent:
       true
    of WidgetDimensionKind.ExpandTo:
@@ -752,8 +780,19 @@ proc recalculateDimensions(w: Widget, axis: Axis, dirtySet: HashSet[Dependency],
          parentD - dim.parentGap * w.windowingSystem.pixelScale - relativePos
       of WidgetDimensionKind.Intrinsic:
          var intrinsicSize: Option[int] = none(int)
+         var minimums: Vec2i = vec2i(0, 0)
+         var maximums: Vec2i = vec2i(1000000, 10000000)
+         # Todo: this only accounts for intrinsic min/max's, might want to include fixed values too?
+         if w.dimensions[0].kind == WidgetDimensionKind.Intrinsic:
+            minimums.x = w.dimensions[0].intrinsicMin.get(0).int32
+            maximums.x = w.dimensions[0].intrinsicMax.get(1000000).int32
+         if w.dimensions[1].kind == WidgetDimensionKind.Intrinsic:
+            minimums.y = w.dimensions[1].intrinsicMin.get(0).int32
+            maximums.y = w.dimensions[1].intrinsicMax.get(1000000).int32
+
+
          for renderer in w.windowingSystem.components:
-            intrinsicSize = renderer.intrinsicSize(w, axis)
+            intrinsicSize = renderer.intrinsicSize(w, axis, minimums, maximums)
             if intrinsicSize.isSome: break
 
          if intrinsicSize.isSome:
@@ -1211,15 +1250,15 @@ proc readFromConfig*(cv: ConfigValue, e: var NineWayImage) =
    readIntoOrElse(cv["dimensionDelta"], e.dimensionDelta, vec2i(0, 0))
 
 
-proc populateChildren(cv: ConfigValue, e: var Widget) =
-   let childrenCV = cv["children"]
-   if childrenCV.isObj:
-      for k, childCV in cv["children"].fields:
-         let existing = e.childByIdentifier(k)
-         if not existing.isSome:
-            let newChild = e.windowingSystem.createWidget(e)
-            newChild.identifier = k
-            e.children.add(newChild)
+# proc populateChildren(cv: ConfigValue, e: var Widget) =
+#    let childrenCV = cv["children"]
+#    if childrenCV.isObj:
+#       for k, childCV in cv["children"].fields:
+#          let existing = e.childByIdentifier(k)
+#          if not existing.isSome:
+#             let newChild = e.windowingSystem.createWidget(e)
+#             newChild.identifier = k
+#             e.children.add(newChild)
 
 proc readFromConfig*(cv: ConfigValue, e: var Widget) =
    let isDiv = cv["type"].asStr("").toLowerAscii == "div"
@@ -1240,6 +1279,14 @@ proc readFromConfig*(cv: ConfigValue, e: var Widget) =
    readInto(cv["height"], e.dimensions[1])
    readInto(cv["padding"], e.padding)
    readIntoOrElse(cv["showing"], e.showing_f, bindable(true))
+
+   if e.dimensions[0].kind == WidgetDimensionKind.Intrinsic:
+      readInto(cv["minWidth"], e.dimensions[0].intrinsicMin)
+      readInto(cv["maxWidth"], e.dimensions[0].intrinsicMax)
+
+   if e.dimensions[1].kind == WidgetDimensionKind.Intrinsic:
+      readInto(cv["minHeight"], e.dimensions[1].intrinsicMin)
+      readInto(cv["maxHeight"], e.dimensions[1].intrinsicMax)
 
    for comp in e.windowingSystem.components:
       comp.readDataFromConfig(cv, e)
@@ -1349,6 +1396,20 @@ proc originatingWidget*(w: WidgetEvent): Widget =
 proc `originatingWidget=`*(w: WidgetEvent, widget: Widget) =
    w.i_originatingWidget = widget
 
+proc handleEvent*(ws: WindowingSystemRef, event: WidgetEvent, world: World, display: DisplayWorld): bool
+
+proc giveWidgetFocus*(ws: WindowingSystemRef, world: World, widget: Widget) =
+   if ws.focusedWidget != some(widget):
+      if ws.focusedWidget.isSome:
+         let w = ws.focusedWidget.get
+         discard ws.handleEvent(WidgetFocusLoss(widget: w), world, ws.display)
+      ws.focusedWidget = some(widget)
+      discard ws.handleEvent(WidgetFocusGain(widget: widget), world, ws.display)
+
+proc hasFocus*(w: Widget): bool =
+   w.windowingSystem.focusedWidget.isSome and w.windowingSystem.focusedWidget.get.containsWidget(w)
+
+
 proc handleEvent*(ws: WindowingSystemRef, event: WidgetEvent, world: World, display: DisplayWorld): bool =
    var propagateToParent = true
    matchType(event):
@@ -1359,11 +1420,7 @@ proc handleEvent*(ws: WindowingSystemRef, event: WidgetEvent, world: World, disp
       extract(WidgetMouseRelease, widget):
          if widget.acceptsFocus:
             if ws.focusedWidget != some(widget):
-               if ws.focusedWidget.isSome:
-                  let w = ws.focusedWidget.get
-                  discard ws.handleEvent(WidgetFocusLoss(widget: w), world, display)
-               ws.focusedWidget = some(widget)
-               discard ws.handleEvent(WidgetFocusGain(widget: widget), world, display)
+               ws.giveWidgetFocus(world, widget)
                propagateToParent = false
       extract(WidgetFocusGain):
          propagateToParent = false
@@ -1388,9 +1445,20 @@ proc handleEvent*(ws: WindowingSystemRef, event: WidgetEvent, world: World, disp
       false
 
 
+proc updateCursorBasedOnWidgetUnderMouse(ws: WindowingSystemRef, w: Widget) =
+   if w.cursor.isSome:
+      setCursorShape(w.cursor.get)
+   elif w.parent.isNone:
+      resetCursorShape()
+   else:
+      updateCursorBasedOnWidgetUnderMouse(ws, w.parent.get)
+
 proc updateLastWidgetUnderMouse(ws: WindowingSystemRef, widget: Widget, world: World, display: DisplayWorld) =
    let prev = ws.lastWidgetUnderMouse
    ws.lastWidgetUnderMouse = widget
+   updateCursorBasedOnWidgetUnderMouse(ws, widget)
+
+
 
    var pw = prev
    while not pw.isNil:
