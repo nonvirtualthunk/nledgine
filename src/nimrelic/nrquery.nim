@@ -11,16 +11,19 @@ import prelude
 import sets
 import strutils
 import noto
+import hashes
+import tables
+import algorithm
 
 let keys = readConfigFromFile(getHomeDir() & "/.nimrelic/keys")
 echo $keys
 
 variantp QValue:
-   Float(nValue: float)
-   Int(iValue: BiggestInt)
-   String(sValue: string)
-   Boolean(bValue: bool)
-   Nil
+   QFloat(nValue: float)
+   QInt(iValue: BiggestInt)
+   QString(sValue: string)
+   QBoolean(bValue: bool)
+   QNil
 
 type
    QResultType* = enum
@@ -33,18 +36,23 @@ type
       attributeName*: string
       values*: seq[QValue]
 
+   QBucket* = object
+      startTimeSeconds*: int
+      endTimeSeconds*: int
+      results*: seq[QResult]
+
    QResult* = object
       case kind*: QResultType
       of Aggregate:
          label*: string
          value*: QValue
       of Facet:
-         facet*: seq[string]
-         facetResults*: seq[QResult]
+         facetAttributes*: seq[string]
+         facetedResults*: Table[seq[QValue], seq[QResult]]
       of Events:
          columns*: seq[QEventColumn]
       of Timeseries:
-         discard
+         buckets*: seq[QBucket]
 
    QResponse* = object
       results*: seq[QResult]
@@ -53,35 +61,82 @@ type
 
 proc `$`*(v: QValue): string =
    match v:
-      Float(f): $f
-      Int(i): $i
-      String(s): $s
-      Boolean(b): $b
-      Nil: "nil"
+      QFloat(f): $f
+      QInt(i): $i
+      QString(s): $s
+      QBoolean(b): $b
+      QNil: "nil"
 
+proc `hash`*(v: QValue): int =
+   match v:
+      QFloat(f): hash(f)
+      QInt(i): hash(i)
+      QString(s): hash(s)
+      QBoolean(b): hash(b)
+      QNil: hash(nil)
+
+proc asFloat*(v: QValue): float =
+   match v:
+      QFloat(f): f
+      QInt(i): i.float
+      QString(s):
+         warn &"Trying to interpret string as float: {s}"
+         0.0f
+      QBoolean(b): 0.0f
+      QNil:
+         warn &"Trying to interpret nil as float"
+         0.0f
+
+proc asArr(jsonNode: JsonNode): seq[JsonNode] =
+   if jsonNode == nil:
+      @[]
+   elif jsonNode.kind == JArray:
+      jsonNode.getElems()
+   else:
+      @[jsonNode]
 
 proc parseValue(json: JsonNode): QValue =
    if json == nil:
-      Nil()
+      QNil()
    elif json.kind == JsonNodeKind.JString:
-      String(json.getStr)
+      QString(json.getStr)
    elif json.kind == JsonNodeKind.JInt:
-      Int(json.getInt)
+      QInt(json.getInt)
    elif json.kind == JsonNodeKind.JFloat:
-      Float(json.getFloat)
+      QFloat(json.getFloat)
    elif json.kind == JsonNodeKind.JBool:
-      Boolean(json.getBool)
+      QBoolean(json.getBool)
    else:
-      Nil()
+      QNil()
 
-proc parseAggregate(json: JsonNode, funcName: string): QResult =
+proc parseAggregates(json: JsonNode, contents: JsonNode): seq[QResult] =
+   let funcName = contents{"function"}.getStr()
+   let attr = contents{"attribute"}
+
    for jkey in json.keys():
-      if $jkey.toLowerAscii == $funcName.toLowerAscii:
-         result = QResult(
+      if $jkey.toLowerAscii == "percentiles" and $funcName.toLowerAscii == "percentile":
+         let thresholdResultsJson = json{jkey}
+         for threshold in contents{"thresholds"}.asArr:
+            let v = thresholdResultsJson{$threshold.getInt()}.getFloat
+            result.add(QResult(
+               kind: QResultType.Aggregate,
+               label: &"{funcName}({attr.getStr()}, {threshold.getInt()})",
+               value: QFloat(v)
+            ))
+
+      elif $jkey.toLowerAscii == $funcName.toLowerAscii:
+         let label = if attr != nil:
+            &"{funcName}({attr.getStr()})"
+         else:
+            &"{funcName}"
+         result.add(QResult(
             kind: QResultType.Aggregate,
-            label: funcName,
+            label: label,
             value: parseValue(json{jkey})
-         )
+         ))
+
+   if result.isEmpty:
+      info &"Did not find valid aggregate, funcName: {funcName}"
 
 proc parseEvents(json: JsonNode, rawColumnNames: seq[string]): QResult =
    var columnNames: seq[string] = rawColumnNames
@@ -103,23 +158,53 @@ proc parseEvents(json: JsonNode, rawColumnNames: seq[string]): QResult =
       columns: columns
    )
 
+
+proc parseResults(resultsJson: JsonNode, contentsE : seq[JsonNode]) : seq[QResult] =
+   let resultsE = resultsJson.getElems()
+   for i in 0 ..< contentsE.len:
+      let contents = contentsE[i]
+      let results = resultsE[i]
+      if contents{"function"} != nil:
+         if contents{"function"}.getStr != "events":
+            result.add(parseAggregates(results, contents))
+         else:
+            let columns = contents{"columns"}.getElems().mapIt(it.getStr)
+            result.add(parseEvents(results, columns))
+
+
+proc parseTimeseries(timeseriesJson: JsonNode, contentsE: seq[JsonNode]): QResult =
+   var buckets : seq[QBucket]
+   for bucketJson in timeseriesJson.getElems():
+      var bucket : QBucket
+      bucket.startTimeSeconds = bucketJson{"beginTimeSeconds"}.getInt()
+      bucket.endTimeSeconds = bucketJson{"endTimeSeconds"}.getInt()
+      bucket.results = parseResults(bucketJson{"results"}, contentsE)
+      buckets.add(bucket)
+   buckets = buckets.sortedByIt(it.startTimeSeconds)
+   QResult(kind: QResultType.Timeseries, buckets: buckets)
+
 proc parse(json: JsonNode, response: var QResponse) =
    let metadata = json{"metadata"}
    let contentsNode = metadata{"contents"}
    if contentsNode != nil:
-      let contentsE = contentsNode.getElems()
+      var contentsE = contentsNode.getElems()
 
-
-      let resultsE = json{"results"}.getElems()
-      for i in 0 ..< contentsE.len:
-         let contents = contentsE[i]
-         let results = resultsE[i]
-         if contents{"function"} != nil:
-            if contents{"function"}.getStr != "events":
-               response.results.add(parseAggregate(results, contents{"function"}.getStr()))
-            else:
-               let columns = contents{"columns"}.getElems().mapIt(it.getStr)
-               response.results.add(parseEvents(results, columns))
+      if metadata{"facet"} != nil:
+         contentsE = contentsNode{"contents"}.getElems() # why did they nest contents under contents?
+         let facetAttributes = metadata{"facet"}.asArr().mapIt(it.getStr)
+         let facetedResultsE = json{"facets"}.getElems()
+         var facetedResults : Table[seq[QValue], seq[QResult]]
+         for i in 0 ..< facetedResultsE.len:
+            let facetedResultJson = facetedResultsE[i]
+            let facetValues = facetedResultJson{"name"}.asArr().mapIt(parseValue(it))
+            let subFacetResults = parseResults(facetedResultJson{"results"}, contentsE)
+            let resultsJson = facetedResultJson{"results"}
+            facetedResults[facetValues] = subFacetResults
+         response.results.add(QResult(kind: QResultType.Facet, facetAttributes: facetAttributes, facetedResults: facetedResults))
+      else:
+         response.results = parseResults(json{"results"}, contentsE)
+   elif metadata{"timeSeries"} != nil:
+      response.results = @[parseTimeseries(json{"timeSeries"}, metadata{"timeSeries"}{"contents"}.getElems())]
    elif json{"error"} != nil:
       response.error = some(json{"error"}.getStr)
 
@@ -140,9 +225,9 @@ proc query*(account: int, queryStr: string): QResponse =
    let json = parseJson(response.body)
 
    # let json = parseJson(cannedResponse)
-   echo "Raw response\n", json.pretty()
+   info &"Raw response\n{json.pretty()}"
    parse(json, result)
-   echo "Parsed response\n", $result
+   info &"Parsed response\n{$result}"
 
 proc queryAsync*(account: int, queryStr: string): Future[QResponse] {.async.} =
    var client = newAsyncHttpClient()
@@ -156,11 +241,13 @@ proc queryAsync*(account: int, queryStr: string): Future[QResponse] {.async.} =
    let json = parseJson(await response.body)
 
    # let json = parseJson(cannedResponse)
-   echo "Raw response\n", json.pretty()
+   info &"Raw response\n{json.pretty()}"
    parse(json, result)
-   echo "Parsed response\n", $result
+   info &"Parsed response\n{$result}"
 
 
 when isMainModule:
 
-   echo repr query(313870, "SELECT hostname FROM NrqlParser SINCE 1 minute ago")
+   #echo repr query(313870, "SELECT hostname FROM NrqlParser SINCE 1 minute ago")
+   discard query(313870, "SELECT count(*), percentile(index, 50) FROM NrqlParser SINCE 5 minute ago TIMESERIES 1 minute")
+

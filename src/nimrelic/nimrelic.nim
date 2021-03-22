@@ -22,6 +22,7 @@ import game/grids
 import graphics/canvas
 import nimrelic/query_workbook
 import nimrelic/async_component
+import nimrelic/chart_widget
 
 
 main(GameSetup(
@@ -31,7 +32,7 @@ main(GameSetup(
    gameComponents: @[],
    graphicsComponents: @[
       createCameraComponent(createPixelCamera(1)),
-      createWindowingSystemComponent("nimrelic/widgets/"),
+      createWindowingSystemComponent("nimrelic/widgets/", @[(WindowingComponent) ChartDisplayRenderer()]),
       QueryWorkbookComponent(),
       AsyncComponent()
    ]

@@ -35,6 +35,7 @@ type
    MousePress* = ref object of InputEvent
       button*: MouseButton
       position*: Vec2f
+      doublePress*: bool
 
    MouseRelease* = ref object of InputEvent
       button*: MouseButton

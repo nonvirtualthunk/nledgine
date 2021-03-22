@@ -2,6 +2,7 @@ import glm
 import arxmath
 import graphics/color
 import graphics/image_extras
+import noto
 
 type
    Bounds* = object
@@ -39,10 +40,21 @@ type
          subRect* : Rectf
          flipSubRect* : Vec2b
 
+   WShapeKind* {.pure.} = enum
+      Rect
+      Polygon
+
+   WShape* = object
+      case kind*: WShapeKind
+      of WShapeKind.Rect:
+         position*: Vec3f
+         dimensions*: Vec2i
+         forward* : Vec2f
+      of WShapeKind.Polygon:
+         points*: array[4, Vec3f]
+
    WQuad* = object
-      position* : Vec3f
-      dimensions* : Vec2i
-      forward* : Vec2f
+      shape*: WShape
       image* : ImageLike
       texCoords* : WTexCoords
       color* : RGBA
@@ -52,6 +64,37 @@ type
       borderWidth* : int
       centerColor* : RGBA
       outerOffset* : int
+
+
+proc rectShape*(position: Vec3f, dimensions: Vec2i, forward: Vec2f = vec2f(1.0f,0.0f)): WShape = WShape(kind: WShapeKind.Rect, position: position, dimensions: dimensions, forward: forward)
+proc polyShape*(points: array[4, Vec3f]) : WShape = WShape(kind: WShapeKind.Polygon, points : points)
+
+proc move*(w: var WQuad, x : float, y : float, z : float) =
+   case w.shape.kind:
+      of WShapeKind.Rect:
+         w.shape.position.x += x
+         w.shape.position.y += y
+         w.shape.position.z += z
+      of WShapeKind.Polygon:
+         for i in 0 ..< 4:
+            w.shape.points[i].x += x
+            w.shape.points[i].y += y
+            w.shape.points[i].z += z
+
+proc position*(w : WQuad): Vec3f =
+   case w.shape.kind:
+      of WShapeKind.Rect:
+         w.shape.position
+      of WShapeKind.Polygon:
+         w.shape.points[0]
+
+proc dimensions*(w: WQuad): Vec2i =
+   case w.shape.kind:
+      of WShapeKind.Rect:
+         w.shape.dimensions
+      of WShapeKind.Polygon:
+         warn &"Doesn't really make sense to ask for the dimensions of a WQuad that's a poly"
+         vec2i(0,0)
 
 proc simpleTexCoords*(flipX : bool = false, flipY : bool = false) : WTexCoords =
    WTexCoords(kind : Simple, flip : vec2(flipX, flipY))

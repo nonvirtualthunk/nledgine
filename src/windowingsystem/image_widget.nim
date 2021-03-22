@@ -103,7 +103,7 @@ method render*(ws: ImageDisplayComponent, widget: Widget): seq[WQuad] =
       let x = calcPos(ID, widget, Axis.X, width)
       let y = calcPos(ID, widget, Axis.Y, height)
 
-      @[WQuad(position: vec3f(x.float, y.float, 0.0f), dimensions: vec2i(width, height), forward: vec2f(1.0f, 0.0f), texCoords: simpleTexCoords(), color: ID.color, beforeChildren: true,
+      @[WQuad(shape: rectShape(position = vec3f(x.float, y.float, 0.0f), dimensions = vec2i(width, height), forward = vec2f(1.0f, 0.0f)), texCoords: simpleTexCoords(), color: ID.color, beforeChildren: true,
             image: ID.image)]
    else:
       @[]

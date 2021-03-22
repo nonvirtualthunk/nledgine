@@ -17,6 +17,7 @@ import noto
 import prelude
 import algorithm
 import options
+import times
 
 
 var eventChannel: Channel[Event]
@@ -38,6 +39,7 @@ var engineThread: Thread[FullGameSetup]
 
 var lastMousePosition: Vec2f
 var lastMousePressPosition: Vec2f
+var lastMousePressTime: float
 var lastModifiers: KeyModifiers
 var hasFocus: bool
 var mouseButtonsDown: Table[MouseButton, bool]
@@ -133,7 +135,10 @@ proc mouseButtonProc(window: GLFWWindow, buttonRaw: int32, action: int32, mods: 
       mouseButtonsDown[button] = true
       setMouseButtonDown(button, true)
       lastMousePressPosition = lastMousePosition
-      eventChannel.send(MousePress(position: lastMousePosition, modifiers: lastModifiers, button: button))
+      let t = inMilliseconds(now() - programStartTime).float / 1000.0
+      let doublePress = (t - lastMousePressTime) < 0.25
+      lastMousePressTime = t
+      eventChannel.send(MousePress(position: lastMousePosition, modifiers: lastModifiers, button: button, doublePress: doublePress))
    elif action == GLFWRelease:
       mouseButtonsDown[button] = false
       setMouseButtonDown(button, false)

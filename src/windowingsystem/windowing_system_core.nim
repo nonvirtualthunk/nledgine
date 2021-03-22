@@ -220,6 +220,7 @@ type
    WidgetMousePress* = ref object of WidgetEvent
       button*: MouseButton
       position*: Vec2f
+      doublePress*: bool
 
    WidgetMouseRelease* = ref object of WidgetEvent
       button*: MouseButton
@@ -362,16 +363,21 @@ iterator quadToVertices(quad: WQuad, tb: TextureBlock, bounds: Bounds): WVertex 
          swap(tc[1], tc[2])
 
 
-   let pos = vec3f(quad.position)
-   let dim = vec2f(quad.dimensions)
-   let fwd = vec3f(quad.forward.x, quad.forward.y, 0.0f)
-   let oto = vec3f(-fwd.y, fwd.x, 0.0f)
+   case quad.shape.kind:
+      of WShapeKind.Rect:
+         let pos = vec3f(quad.shape.position)
+         let dim = vec2f(quad.shape.dimensions)
+         let fwd = vec3f(quad.shape.forward.x, quad.shape.forward.y, 0.0f)
+         let oto = vec3f(-fwd.y, fwd.x, 0.0f)
 
 
-   yield WVertex(vertex: pos, color: quad.color, texCoords: tc[3], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
-   yield WVertex(vertex: pos + fwd * dim.x, color: quad.color, texCoords: tc[2], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
-   yield WVertex(vertex: pos + fwd * dim.x + oto * dim.y, color: quad.color, texCoords: tc[1], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
-   yield WVertex(vertex: pos + oto * dim.y, color: quad.color, texCoords: tc[0], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
+         yield WVertex(vertex: pos, color: quad.color, texCoords: tc[3], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
+         yield WVertex(vertex: pos + fwd * dim.x, color: quad.color, texCoords: tc[2], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
+         yield WVertex(vertex: pos + fwd * dim.x + oto * dim.y, color: quad.color, texCoords: tc[1], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
+         yield WVertex(vertex: pos + oto * dim.y, color: quad.color, texCoords: tc[0], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
+      of WShapeKind.Polygon:
+         for i in 0 ..< 4:
+            yield WVertex(vertex: quad.shape.points[i], color: quad.color, texCoords: tc[3-i], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
 
 proc fixedSize*(size: int): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.Fixed, fixedSize: size)
 proc relativeSize*(sizeDelta: int): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.Relative, sizeDelta: sizeDelta)
@@ -961,14 +967,14 @@ iterator nineWayImageQuads(nwi: NineWayImage, inDim: Vec2i, pixelScale: int): WQ
       let endX = if nwi.drawEdges.contains(WidgetEdge.Right): dim.x - centerOffset else: 0
       let endY = if nwi.drawEdges.contains(WidgetEdge.Bottom): dim.y - centerOffset else: 0
       let pos = fwd * startX.float32 + oto * startY.float32
-      yield WQuad(position: pos + offset, dimensions: vec2i(endX-startX+1, endY-startY+1), forward: fwd.xy, texCoords: noImageTexCoords(), color: nwi.color * imgMetrics.centerColor,
+      yield WQuad(shape: rectShape(position = pos + offset, dimensions = vec2i(endX-startX+1, endY-startY+1), forward = fwd.xy), texCoords: noImageTexCoords(), color: nwi.color * imgMetrics.centerColor,
             beforeChildren: true)
 
    for q in 0 ..< 4:
       if corners[q].enabled:
          let pos = fwd * farDims.x.float32 * UnitSquareVertices[q].x + oto * farDims.y.float32 * UnitSquareVertices[q].y
          let tc = subRectTexCoords(cornerSubRect, q mod 3 != 0, q >= 2)
-         yield WQuad(position: pos + offset, dimensions: cornerDim, forward: fwd.xy, image: imgLike, color: nwi.edgeColor, texCoords: tc, beforeChildren: false)
+         yield WQuad(shape: rectShape(position = pos + offset, dimensions = cornerDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: tc, beforeChildren: false)
 
       if nwi.drawEdges.contains(q.WidgetEdge):
          let primaryAxis = edgeAxes[q].ord
@@ -985,7 +991,7 @@ iterator nineWayImageQuads(nwi: NineWayImage, inDim: Vec2i, pixelScale: int): WQ
             imgSubRect.position[secondaryAxis] = ctcPos[secondaryAxis]
             imgSubRect.dimensions[secondaryAxis] = ctcDim[secondaryAxis]
 
-            yield WQuad(position: pos + offset, dimensions: edgeDim, forward: fwd.xy, image: imgLike, color: nwi.edgeColor, texCoords: subRectTexCoords(imgSubRect, q >= 2, q >= 2),
+            yield WQuad(shape: rectShape(position = pos + offset, dimensions = edgeDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: subRectTexCoords(imgSubRect, q >= 2, q >= 2),
                   beforeChildren: false)
 
 

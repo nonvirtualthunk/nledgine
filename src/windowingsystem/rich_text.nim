@@ -29,6 +29,12 @@ type
       Prefer
       Force
 
+   RichTextFormatRange* = object
+      color*: Option[color.RGBA]
+      underline*: Option[color.RGBA]
+      background*: Option[color.RGBA]
+      startIndex*: int
+      endIndex*: int
 
    RichTextSection* = object
       color*: Option[color.RGBA]
@@ -39,6 +45,7 @@ type
       of SectionKind.Text:
          text*: string
          font*: ArxFontRoot
+         formatRanges*: seq[RichTextFormatRange]
       of SectionKind.Taxon:
          taxon*: Taxon
       of SectionKind.Image:

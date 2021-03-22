@@ -10,13 +10,13 @@ WorkbookWidget {
          width: 100%
          height: 150
 
-         textData : "SELECT * FROM NrqlParser SINCE 1 minute ago LIMIT 1"
+         #textData : "SELECT count(*) FROM NrqlParser SINCE 10 minute ago TIMESERIES 1 minute"
          fontSize : 20
 
          background.image: "ui/singlePixelBorderDark.png"
          background.color: [255,255,255,255]
          color : [200,200,200,255]
-         font : "monaco.ttf"
+         font : "Consolas.ttf"
 
          padding : [5,5]
       }
@@ -55,11 +55,22 @@ WorkbookWidget {
                height: 100%
                
                text : "Error: %(error.message)"
-               font : "monaco.ttf"
+               font : "Consolas.ttf"
                color : [250,200,200,255]
                fontSize: 18
                padding: [5,5]
                showing : %(active.error)
+            }
+
+            chartResult: {
+               type: ChartDisplay
+
+               width: 100%
+               height: 100%
+
+               chartBackgroundColor: [35,35,35,255]
+
+               showing: %(active.chart)
             }
          }
       }
@@ -82,7 +93,7 @@ ListResultColumn {
          text: "%(column.heading)"
 
          fontSize : 20
-         font : "monaco.ttf"
+         font : "Consolas.ttf"
          color : [210,210,210,255]
 
          padding : [2,2]
@@ -117,7 +128,7 @@ ResultCell {
    text : %(value)
 
    fontSize : 14
-   font : "monaco.ttf"
+   font : "Consolas.ttf"
    color : [210,210,210,255]
 
    padding : [5,0]

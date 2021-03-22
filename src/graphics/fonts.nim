@@ -54,7 +54,8 @@ proc withPointSize*(root : ArxFontRoot, pointSize : int, pixelScale : int) : Arx
             # root.baseLineHeight div pixelScale
             root.baseLineHeight
       else : 
-         0
+         root.font.lineHeight.int
+
    if root.fonts.contains(effPointSize):
       result = root.fonts[effPointSize]
    else:
@@ -93,7 +94,9 @@ proc setFontSize(arxFont : ArxFont, font : Font, pointSize : int) =
       font.size = pointSize.float
    else:
       font.sizePt = pointSize.float
-   font.lineHeight = if arxFont.lineHeight != 0: arxFont.lineHeight.float else : (font.ascent - font.descent) * font.scale
+   font.lineHeight = if arxFont.lineHeight != 0: arxFont.lineHeight.float
+                     else :
+                        (font.typeface.ascent - font.typeface.descent) * font.scale
 
 proc typographyFont*(font : ArxFont) : Font =
    result = font.fontRoot.font
@@ -129,7 +132,7 @@ proc glyph*(font : ArxFont, character : string) : GlyphInfo =
                #    font.fontRoot.withPointSize(font.fontRoot.basePointSize*2, 1).glyph(character).image
                # else:
                let baseImg = getGlyphImage(f, character, offsets)
-               let img = createImage(baseImg.data,glm.vec2i(baseImg.width.int32, baseImg.height.int32), true)
+               let img = createImage(cast[ptr uint8](baseImg.data[0].unsafeAddr),glm.vec2i(baseImg.width.int32, baseImg.height.int32), true)
 
                for x in 0 ..< img.width:
                   for y in 0 ..< img.height:
@@ -150,8 +153,16 @@ proc glyph*(font : ArxFont, character : string) : GlyphInfo =
 
 proc typeset*(font : ArxFont, text : string, position : Vec2i, offset : Vec2i, size : Vec2i) : seq[GlyphPosition] =
    let rawFont = font.typographyFont()
-   
-   result = layout_fork.typeset(rawFont, toRunes(text), vmath.vec2(position.x.float, position.y.float), vmath.vec2(offset.x.float, offset.y.float), vmath.vec2(size.x.float, size.y.float))
+
+   var boundsMin, boundsMax : vmath.Vec2
+   result = layout_fork.typeset(
+         rawFont,
+         toRunes(text),
+         vmath.vec2(position.x.float, position.y.float),
+         vmath.vec2(offset.x.float, offset.y.float),
+         vmath.vec2(size.x.float, size.y.float),
+         boundsMin = boundsMin,
+         boundsMax = boundsMax)
    for gp in result.mitems:
       let ginfo = font.glyph(gp.character)
       gp.rect.y += ginfo.offset.y

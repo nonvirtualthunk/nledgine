@@ -2,6 +2,7 @@ import strutils
 import tables
 import strformat
 export strformat
+import std/exitprocs
 
 
 const fineEnabled = false
@@ -64,7 +65,11 @@ proc notoThreadFunc(b: bool) {.thread.} =
 createThread(notoThread, notoThreadFunc, true)
 
 proc quit*() =
-   writeChannel.send(NotoMessage(quit: true))
+   if notoThread.running:
+      writeChannel.send(NotoMessage(quit: true))
+      notoThread.joinThread()
+
+addExitProc(quit)
 
 proc write(v: string, level: int) =
    discard writeChannel.trySend(NotoMessage(message: v, originThread: getThreadId(), level: level.int8))

@@ -25,13 +25,15 @@ type
       camera: Camera
       initTime: UnitOfTime
       rootConfigPath: string
+      extraComponents: seq[WindowingComponent]
 
-proc createWindowingSystemComponent*(rootConfigPath: string): WindowingSystemComponent =
+proc createWindowingSystemComponent*(rootConfigPath: string, extraComponents: seq[WindowingComponent] = @[]): WindowingSystemComponent =
    WindowingSystemComponent(
       initializePriority: 10,
       eventPriority: 100,
       updatePriority: -100,
-      rootConfigPath: rootConfigPath
+      rootConfigPath: rootConfigPath,
+      extraComponents: extraComponents
    )
 
 proc render(g: WindowingSystemComponent, display: DisplayWorld) =
@@ -45,6 +47,7 @@ method initialize(g: WindowingSystemComponent, world: World, curView: WorldView,
    g.texture = newTextureBlock(4096, 1, false)
    let windowingSystem = createWindowingSystem(display, g.rootConfigPath)
    windowingSystem.pixelScale = 2
+   windowingSystem.components.add(g.extraComponents)
 
    display.attachDataRef(windowingSystem)
    g.camera = createWindowingCamera(1)
@@ -73,10 +76,10 @@ method onEvent(g: WindowingSystemComponent, world: World, curView: WorldView, di
             ws.lastMousePosition = wsPos.xy
             var widget = ws.widgetAtPosition(wsPos.xy)
             shouldConsume = ws.handleEvent(WidgetMouseDrag(widget: widget, position: wsPos.xy, origin: wsOrigin.xy, button: button, modifiers: modifiers), world, display)
-         extract(MousePress, position, button, modifiers):
+         extract(MousePress, position, button, modifiers, doublePress):
             let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
             var widget = ws.widgetAtPosition(wsPos.xy)
-            shouldConsume = ws.handleEvent(WidgetMousePress(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
+            shouldConsume = ws.handleEvent(WidgetMousePress(widget: widget, position: wsPos.xy, modifiers: modifiers, doublePress: doublePress), world, display)
          extract(MouseRelease, position, button, modifiers):
             let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
             var widget = ws.widgetAtPosition(wsPos.xy)

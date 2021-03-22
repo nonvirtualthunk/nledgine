@@ -47,9 +47,13 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
       res.quads.add(quad)
       res.quadOrigins.add(RichTextIndex(sectionIndex:sectionIndex, subIndex: subIndex))
       if solidQuad:
-         res.lineInfo[res.lineInfo.len-1].maximumHeight.maxWith((quad.position.y.int + quad.dimensions.y) - cursor.y)
-         minPos.minAll(vec2i(quad.position.x.int, quad.position.y.int))
-         maxPos.maxAll(vec2i(quad.position.x.int + quad.dimensions.x.int, quad.position.y.int + quad.dimensions.y.int))
+         case quad.shape.kind:
+            of WShapeKind.Rect:
+               res.lineInfo[res.lineInfo.len-1].maximumHeight.maxWith((quad.shape.position.y.int + quad.shape.dimensions.y) - cursor.y)
+               minPos.minAll(vec2i(quad.shape.position.x.int, quad.shape.position.y.int))
+               maxPos.maxAll(vec2i(quad.shape.position.x.int + quad.shape.dimensions.x.int, quad.shape.position.y.int + quad.shape.dimensions.y.int))
+            else:
+               warn &"Non-rect wquad in text layout"
    proc splitQuadGroup() =
       let alignment = quadGroups[quadGroups.len-1].verticalAlignment
       quadGroups[quadGroups.len-1].endIndex = res.quads.len
@@ -93,6 +97,9 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
          let typesetting = typeset(font, section.text, vec2i(0, 0), cursor, bounds.dimensions)
          res.lineHeight = typographyFont.lineHeight.int
 
+         # index into the seq of format ranges, which must be sorted if present
+         var formatRangeIndex = 0
+
          for glyphPos in typesetting:
             let glyphInfo = font.glyph(glyphPos.character)
             var rect = glyphPos.rect
@@ -109,13 +116,24 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
                cursor.y += typographyFont.lineHeight.int32
                endLine(true)
 
+            while formatRangeIndex < section.formatRanges.len and glyphPos.index >= section.formatRanges[formatRangeIndex].endIndex:
+               formatRangeIndex.inc
+
+
+            let subColor = if formatRangeIndex < section.formatRanges.len and glyphPos.index >= section.formatRanges[formatRangeIndex].startIndex:
+               section.formatRanges[formatRangeIndex].color.get(effColor)
+            else:
+               effColor
+
             addQuad(WQuad(
-               position: vec3f(rect.x.int.float, rect.y.int.float, 0.0f),
-               dimensions: vec2i(w, h),
-               forward: vec2f(1.0f, 0.0f),
+               shape: rectShape(
+                  position = vec3f(rect.x.int.float, rect.y.int.float, 0.0f),
+                  dimensions = vec2i(w, h),
+                  forward = vec2f(1.0f, 0.0f)
+               ),
                texCoords: simpleTexCoords(),
                image: imageLike(glyphInfo.image),
-               color: effColor,
+               color: subColor,
                beforeChildren: true), not isWhitespace, glyphPos.index)
             cursor.x = (rect.x + rect.w).int32 + 1
       of SectionKind.Taxon:
@@ -138,13 +156,16 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
          let img = section.image.asImage
 
          let effDim = vec2i(img.dimensions.x * pixelScale, img.dimensions.y * pixelScale)
-         let offset = typographyFont.ascent * (typographyFont.size / typographyFont.unitsPerEm) - effDim.y.float
+         # let offset = typographyFont.ascent * (typographyFont.size / typographyFont.unitsPerEm) - effDim.y.float
+         let offset = -effDim.y.float
          # Note: The offset * 0.5f is probably wrong, we may not be properly accounting for pixelScale at some
          # level
          addQuad(WQuad(
-            position: vec3f(cursor.x.float, cursor.y.float + offset * 0.5f, 0.0f),
-            dimensions: effDim,
-            forward: vec2f(1.0f, 0.0f),
+            shape: rectShape(
+               position = vec3f(cursor.x.float, cursor.y.float + offset * 0.5f, 0.0f),
+               dimensions = effDim,
+               forward = vec2f(1.0f, 0.0f),
+            ),
             texCoords: simpleTexCoords(),
             image: img,
             color: effColor,
@@ -188,7 +209,7 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
                else:
                   widthDelta
             for i in line.startIndex ..< line.endIndex:
-               res.quads[i].position.x += shift.float32
+               res.quads[i].move(shift.float32, 0.0f, 0.0f)
 
 
 

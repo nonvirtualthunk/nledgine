@@ -46,11 +46,14 @@ type
 
       textLayout*: TextLayout
 
+   RichTextTansformer = (string) -> RichText
+
    TextInput* = object
       textData_i: string
       cursorPosition*: int
       undoStack*: seq[EditorOperation]
       undoMarkers*: seq[int]
+      textDataToRichTextTransformer*: RichTextTansformer
 
    TextDataChange* = ref object of WidgetEvent
       operation*: EditorOperation
@@ -140,9 +143,9 @@ method render*(ws: TextDisplayRenderer, widget: Widget): seq[WQuad] =
 
             if minX.isSome and maxX.isSome:
                result.add(WQuad(
-                                 position: vec3f(minX.get.float32,line.startY.float32 - line.maximumHeight.float32 * 0.1,0.0f),
-                                 dimensions: vec2i(maxX.get - minX.get, (line.maximumHeight.float32 * 1.1).int),
-                                 forward: vec2f(1.0f, 0.0f),
+                                 shape: rectShape(position = vec3f(minX.get.float32,line.startY.float32 - line.maximumHeight.float32 * 0.1,0.0f),
+                                                   dimensions = vec2i(maxX.get - minX.get, (line.maximumHeight.float32 * 1.1).int),
+                                                   forward = vec2f(1.0f, 0.0f)),
                                  texCoords: noImageTexCoords(),
                                  color: rgba(0.3,0.4,0.8,1.0),
                                  beforeChildren: true))
@@ -152,7 +155,7 @@ method render*(ws: TextDisplayRenderer, widget: Widget): seq[WQuad] =
       if widget.hasData(TextInput) and widget.hasFocus:
          let ti = widget.data(TextInput)
          var cursorCoord : Vec2f
-         var cursorHeight : int = layoutRes.lineHeight
+         var cursorHeight : int = layoutRes.lineHeight + 4
          var cursorIndex = layoutRes.quadOrigins.len
          for i in countdown(layoutRes.quadOrigins.len-1,0):
             if layoutRes.quadOrigins[i].subIndex >= ti.cursorPosition:
@@ -172,14 +175,16 @@ method render*(ws: TextDisplayRenderer, widget: Widget): seq[WQuad] =
          for line in layoutRes.lineInfo:
             if line.startIndex <= cursorIndex and line.endIndex > cursorIndex:
                cursorCoord.y = line.startY.float
-               cursorHeight = line.maximumHeight
+               cursorHeight = line.maximumHeight + 4
                break
 
 
          result.add(WQuad(
-            position: vec3f(cursorCoord.x, cursorCoord.y, 0.0f),
-            dimensions: vec2i(5, cursorHeight),
-            forward: vec2f(1.0f, 0.0f),
+            shape: rectShape(
+               position = vec3f(cursorCoord.x, cursorCoord.y - 4, 0.0f),
+               dimensions = vec2i(5, cursorHeight),
+               forward = vec2f(1.0f, 0.0f)
+            ),
             texCoords: noImageTexCoords(),
             color: rgba(0.5,0.5,0.5,1.0),
             beforeChildren: true))
@@ -196,7 +201,11 @@ method intrinsicSize*(ws: TextDisplayRenderer, widget: Widget, axis: Axis, minim
       none(int)
 
 proc syncDisplayToData*(widget : Widget) =
-   widget.data(TextDisplay).text = bindable(richText(widget.data(TextInput).textData))
+   var transformer = widget.data(TextInput).textDataToRichTextTransformer
+   if transformer == nil:
+      transformer = proc (s: string): RichText =
+         richText(s)
+   widget.data(TextDisplay).text = bindable(transformer(widget.data(TextInput).textData))
 
 proc textDataChanged*(operation: EditorOperation, display: DisplayWorld, widget: Widget) =
    let ti = widget.data(TextInput)
@@ -246,7 +255,10 @@ proc undo(w: Widget) =
    markForUpdateOnChange(w)
 
 
-proc positionToDataIndex(widget: Widget, position : Vec2i) : Option[int] =
+proc positionToDataIndex(widget: Widget, rawPosition : Vec2i) : Option[int] =
+   let offset = widget.resolvedPosition.xy + widget.clientOffset.xy
+   let position = rawPosition - offset
+
    let td = widget.data(TextDisplay)
    for li in 0 ..< td.textLayout.lineInfo.len:
       let line = td.textLayout.lineInfo[li]
@@ -321,8 +333,7 @@ method handleEvent*(ws: TextDisplayRenderer, widget: Widget, event: UIEvent, wor
          ti.cursorPosition.inc str.len
 
    proc moveCursorToWindowPosition(widget: Widget, td: ref TextDisplay, ti: ref TextInput, position : Vec2f, select : bool) =
-      let offset = widget.resolvedPosition.xy + widget.clientOffset.xy
-      let rawDataIndex = positionToDataIndex(widget, vec2i(position.xy) - offset)
+      let rawDataIndex = positionToDataIndex(widget, vec2i(position.xy))
       let dataIndex = rawDataIndex.get(ti.textData_i.len)
       let originalCursor = ti.cursorPosition
 
@@ -392,9 +403,22 @@ method handleEvent*(ws: TextDisplayRenderer, widget: Widget, event: UIEvent, wor
                ti.cursorPosition.dec
 
       matcher(event):
-         extract(WidgetMousePress, position, button, modifiers):
+         extract(WidgetMousePress, position, button, modifiers, doublePress):
             if button == MouseButton.Left:
-               if modifiers.shift:
+               if doublePress:
+                  let idxOpt = positionToDataIndex(widget, vec2i(position.xy))
+                  if idxOpt.isSome:
+                     var open = idxOpt.get
+                     var close = idxOpt.get
+                     while open > 0 and not AltStopChars.contains(ti.textData[open-1]):
+                        open.dec
+
+                     while close < ti.textData.len-1 and not AltStopChars.contains(ti.textData[close+1]):
+                        close.inc
+
+                     td.selectedRange = some((open, close))
+                     widget.markForUpdate(RecalculationFlag.Contents)
+               elif modifiers.shift:
                   moveCursorToWindowPosition(widget, td, ti, position, true)
                else:
                   moveCursorToWindowPosition(widget, td, ti, position, false)
@@ -410,6 +434,10 @@ method handleEvent*(ws: TextDisplayRenderer, widget: Widget, event: UIEvent, wor
             of KeyCode.Z:
                if modifiers.ctrl:
                   widget.undo()
+            of KeyCode.A:
+               if modifiers.ctrl:
+                  td.selectedRange = some((0, ti.textData.len-1))
+                  widget.markForUpdate(RecalculationFlag.Contents)
             of KeyCode.Left:
                if modifiers.alt:
                   ti.cursorPosition = clamp(ti.cursorPosition - 1, 0, ti.textData.len)

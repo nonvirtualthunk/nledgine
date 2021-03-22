@@ -50,7 +50,8 @@ macro hoconAssert(ctx: ParseContext, b: typed) =
 proc render(v: ConfigValue, indentation: int): string =
    result = case v.kind:
    of ConfigValueKind.String:
-      v.str
+      let escaped = v.str.replace("\"","\\\"")
+      &"\"{escaped}\""
    of ConfigValueKind.Number:
       $v.num
    of ConfigValueKind.Empty:
@@ -262,6 +263,66 @@ proc readFromConfig*[T](v: ConfigValue, x: var set[T]) =
          var tmp: T
          s.readInto(tmp)
          x.incl(tmp)
+         
+         
+         
+proc writeToConfig*(x: int) : ConfigValue =
+   ConfigValue(kind: ConfigValueKind.Number, num : x.float64)
+
+proc writeToConfig*(x: int16) : ConfigValue  =
+   ConfigValue(kind: ConfigValueKind.Number, num : x.float64)
+
+proc writeToConfig*(x: uint8) : ConfigValue  =
+   ConfigValue(kind: ConfigValueKind.Number, num : x.float64)
+
+proc writeToConfig*(x: int32) : ConfigValue =
+   ConfigValue(kind: ConfigValueKind.Number, num : x.float64)
+
+proc writeToConfig*(x: int64) : ConfigValue =
+   ConfigValue(kind: ConfigValueKind.Number, num : x.float64)
+
+proc writeToConfig*(x: float) : ConfigValue =
+   ConfigValue(kind: ConfigValueKind.Number, num : x.float64)
+
+proc writeToConfig*(x: float32) : ConfigValue =
+   ConfigValue(kind: ConfigValueKind.Number, num : x.float64)
+
+proc writeToConfig*(x: string) : ConfigValue =
+   ConfigValue(kind: ConfigValueKind.String, str : x)
+
+proc writeToConfig*(x: bool) : ConfigValue =
+   ConfigValue(kind: ConfigValueKind.Bool, truth : x)
+
+proc writeToConfig*[T](s: seq[T]) : ConfigValue =
+   ConfigValue(kind: ConfigValueKind.Array, values: s.mapIt(writeToConfig(it)))
+
+proc writeToConfig*[K,V](s: Table[K,V]): ConfigValue =
+   result = ConfigValue(kind: ConfigValueKind.Object)
+   for k,v in s:
+      result.fields[$k] = writeToConfig(v)
+
+
+macro writeToConfigByField*[T](v: var ConfigValue, t: typedesc[T], x: T) =
+   result = newStmtList()
+   #   echo getTypeInst(t)[1].repr
+   let tDesc = getType(getType(t)[1])
+
+   if tDesc.len <= 2:
+      error("Attempted to generate writeToConfig for unsupported type " & $tdesc.repr, tdesc)
+   for field in t.getType[1].getTypeImpl[2]:
+      let fieldName = newIdentNode($field[0].strVal)
+      let fieldType = field[1]
+      let fieldNameLit = newLit($field[0].strVal)
+      result.add(quote do:
+         when not hasCustomPragma(`x`.`fieldName`, noAutoLoad):
+            `v`.fields[`fieldNameLit`] = writeToConfig(`x`.`fieldName`)
+      )
+
+proc writeToConfig*[T](obj: T): ConfigValue =
+   result = ConfigValue(kind: ConfigValueKind.Object)
+   writeToConfigByField(result, T, obj)
+         
+         
 
 proc asConf*(str: string): ConfigValue
 
@@ -474,7 +535,7 @@ proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
 proc parseConfig*(str: string): ConfigValue =
    var ctx = ParseContext(str: str, cursor: 0)
    ctx.skipWhitespace()
-   parseObj(ctx, true)
+   parseObj(ctx, ctx.peek() != '{')
 
 proc readConfigFromFile*(path: string): ConfigValue =
    parseConfig(readFile(path))
@@ -634,3 +695,5 @@ when isMainModule:
 
    let defaultCV = ConfigValue()
    assert defaultCV.kind == ConfigValueKind.Empty
+
+   echo $writeToConfig(tl)

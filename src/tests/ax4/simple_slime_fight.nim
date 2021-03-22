@@ -74,4 +74,4 @@ simpleSlimeFight()
 
 
 
-noto.quit()
+

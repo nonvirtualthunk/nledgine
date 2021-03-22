@@ -365,4 +365,4 @@ when isMainModule:
    echoAssert firstCost.effects[0].kind == GameEffectKind.ChangeResource
    echoAssert firstCost.effects[0].resource == taxon("resource pools", "actionPoints")
 
-   noto.quit()
+
