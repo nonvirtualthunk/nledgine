@@ -145,7 +145,7 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
 
             qb.texture = charImg
             qb.position = entBasePos
-            qb.dimensions = charImg.dimensions.Vec2f * scale
+            qb.dimensions = vec2f(charImg.dimensions) * scale
             qb.color = rgba(1.0f, 1.0f, 1.0f, 1.0f)
             qb.drawTo(g.canvas)
 
@@ -158,7 +158,7 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
             let pcntHP = curHP.float / maxHP.max(1).float
 
             let healthBarPos = entBasePos + vec3f(((charImg.dimensions.x div 2).float * scale + 0.0f), 0.0f, 0.0f)
-            let healthBarDim = vertFrame.dimensions.Vec2f * barScale.float
+            let healthBarDim = vec2f(vertFrame.dimensions) * barScale.float
             uiqb.texture = vertFrame
             uiqb.position = healthBarPos
             uiqb.dimensions = healthBarDim
@@ -180,7 +180,7 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
 
                let staminaBarPos = healthBarPos + vec3f(healthBarDim.x - barScale.float, 0.0f, 0.0f)
                uiqb.position = staminaBarPos
-               uiqb.dimensions = stamFrame.dimensions.Vec2f * barScale.float
+               uiqb.dimensions = vec2f(stamFrame.dimensions) * barScale.float
                for i in 0 ..< maxStamina:
                   uiqb.color = rgba(1.0f, 1.0f, 1.0f, 1.0f)
                   uiqb.texture = stamFrame

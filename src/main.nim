@@ -4,6 +4,7 @@ import engines
 import reflect
 import tables
 import graphics/core
+import graphics/color
 import glm
 import application
 import worlds
@@ -252,7 +253,7 @@ proc main*(setup: GameSetup) =
          lastViewport = framebufferSize
 
       glfwPollEvents()
-      glClearColor(0.35f, 0.176f, 0.11, 1.0f)
+      glClearColor(setup.clearColor.r, setup.clearColor.g, setup.clearColor.b, setup.clearColor.a)
       glClear(GL_COLOR_BUFFER_BIT)
 
       if hasFocus:

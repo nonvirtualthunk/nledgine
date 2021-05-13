@@ -11,7 +11,7 @@ import ax4/game/rooms
 import ax4/game/map
 import ax4/game/ax_events
 import engines
-import ax4/dev/up_to_date_animation_component
+import graphics/up_to_date_animation_component
 
 type MapInitializationComponent = ref object of GameComponent
 

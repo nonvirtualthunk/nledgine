@@ -157,12 +157,17 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
 
          let effDim = vec2i(img.dimensions.x * pixelScale, img.dimensions.y * pixelScale)
          # let offset = typographyFont.ascent * (typographyFont.size / typographyFont.unitsPerEm) - effDim.y.float
-         let offset = -effDim.y.float
+         # let offset = -effDim.y.float
+         # let offset =  typographyFont.typeface.ascent * typographyFont.scale - effDim.y.float
+
+         # Center the image within the line. So far that seems like the best average point
+         let offset = (typographyFont.lineHeight - effDim.y.float) * 0.5f
+         echo "effDim: ", effDim.y.float, " line height: ", typographyFont.lineHeight, " scaled lh: ", typographyFont.lineHeight * typographyFont.scale
          # Note: The offset * 0.5f is probably wrong, we may not be properly accounting for pixelScale at some
          # level
          addQuad(WQuad(
             shape: rectShape(
-               position = vec3f(cursor.x.float, cursor.y.float + offset * 0.5f, 0.0f),
+               position = vec3f(cursor.x.float, cursor.y.float + offset, 0.0f),
                dimensions = effDim,
                forward = vec2f(1.0f, 0.0f),
             ),

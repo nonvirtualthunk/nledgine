@@ -30,8 +30,11 @@ proc loadImage*(path: string): Image =
    result = new Image
    try:
       result.data = stbi.load(path, width, height, channels, stbi.Default)
+      result.sentinel = false
+      result.lastModified = getLastModificationTime(path)
    except:
-      result.data = stbi.load("images/unknown.png", width, height, channels, stbi.Default)
+      result.data = stbi.load("resources/images/unknown.png", width, height, channels, stbi.Default)
+      result.sentinel = true
 
    if channels != 4:
       raise newException(ValueError, "Only 4 channel images are currently supported [" & path & "]")
@@ -40,8 +43,7 @@ proc loadImage*(path: string): Image =
    result.dimensions = vec2i(width.int32, height.int32)
    result.resourcePath = some(path)
    result.resourcePathHash = path.hash
-   result.lastModified = getLastModificationTime(path)
-   result.sentinel = false
+
    result.revision = 1
 
 proc createImage*(dimensions: Vec2i): Image =

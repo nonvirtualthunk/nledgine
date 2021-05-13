@@ -135,7 +135,7 @@ type
          discard
 
 
-method toString*(evt: AxEvent, view: WorldView): string {.base.} =
+method toString*(evt: GameEvent, view: WorldView): string {.base.} =
    return repr(evt)
 
 method toString*(evt: AttackEvent, view: WorldView): string =

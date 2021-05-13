@@ -10,7 +10,11 @@ in vec4 colorV;
 out vec4 o_FragColor;
 
 void main (){
-    o_FragColor = mix(texture(tex0,texCoordV) * colorV, colorV, 0.0);
+    vec4 effColor = texture(tex0,texCoordV) * colorV;
+//    if (effColor.a <= 0.01) {
+//       discard;
+//    }
+    o_FragColor = effColor;
     // o_FragColor = texture(tex0,texCoordV);
     // o_FragColor = colorV;
     // o_FragColor = colorV;

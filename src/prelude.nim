@@ -220,7 +220,7 @@ proc permute*(x: int): int =
 proc isEmpty*[T](s: seq[T]): bool = s.len == 0
 proc nonEmpty*[T](s: seq[T]): bool = s.len != 0
 
-proc nonEmpty*[K, V](t: Table[K, V]): bool = s.len != 0
+proc nonEmpty*[K, V](t: Table[K, V]): bool = t.len != 0
 proc nonEmpty*[K](t: HashSet[K]): bool = t.len != 0
 proc isEmpty*[K](t: HashSet[K]): bool = t.len == 0
 
@@ -376,6 +376,8 @@ proc distance*[T](x1: T, y1: T, x2: T, y2: T): T =
       sqrt(sq)
    else:
       0
+
+proc distance*(a, b: Vec2i) : float = distance(a.x.float, a.y.float, b.x.float, b.y.float)
 
 template findIt*[T](s: seq[T], pred: untyped): untyped =
    var result: Option[T]

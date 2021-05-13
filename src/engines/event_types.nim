@@ -84,6 +84,9 @@ proc addEvent*(buffer: EventBuffer, evt: Event) =
 method toString*(evt: Event): string {.base.} =
    return repr(evt)
 
+method toString*(evt: GameEvent): string =
+  return repr(evt)
+
 method toString*(evt: KeyPress): string =
    return $evt[]
 

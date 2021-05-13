@@ -139,7 +139,7 @@ method onEvent*(g: RoomTransitionGraphicsComponent, world: World, curView: World
 
 
 main(GameSetup(
-   windowSize: vec2i(1440, 1024),
+   windowSize: vec2i(1680, 1200),
    resizeable: false,
    windowTitle: "Ax4",
    gameComponents: @[

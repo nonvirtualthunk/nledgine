@@ -625,8 +625,6 @@ proc render*(command: var DrawCommand; framebufferSize: Vec2i) =
    drawElements(GL_TRIANGLES, command.indexCount, command.indexBufferType, 0)
    checkGLError()
 
-   checkGLError()
-
 
 
 proc enableCursor*() =

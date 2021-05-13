@@ -38,10 +38,10 @@ type
 
 
 
-proc createPixelCamera*(scale: int): Camera =
+proc createPixelCamera*(scale: int, translation : Vec2f = vec2f(0.0f,0.0f)): Camera =
    Camera(
        kind: PixelCamera,
-       translation: vec2f(0.0f, 0.0f),
+       translation: translation,
        delta: vec2f(0.0f, 0.0f),
        scale: scale,
        moveSpeed: 300.0f,

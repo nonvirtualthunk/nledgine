@@ -1,6 +1,7 @@
 import glm
 
 import engines/engine
+import graphics/color
 
 type GameSetup* = object
     windowSize* : Vec2i
@@ -9,3 +10,4 @@ type GameSetup* = object
     windowTitle* : string
     gameComponents* : seq[GameComponent]
     graphicsComponents*: seq[GraphicsComponent]
+    clearColor*: RGBA
