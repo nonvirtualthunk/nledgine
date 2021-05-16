@@ -78,6 +78,9 @@ proc lineHeight*(f: ArxFont): int =
   else:
     f.font.defaultLineHeight.int
 
+proc ascent*(f: ArxFont): int =
+  (f.arxTypeface.typeface.ascent * f.font.scale).int
+
 
 when isMainModule:
 
