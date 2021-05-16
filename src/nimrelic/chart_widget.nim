@@ -50,7 +50,7 @@ type
 
    ChartDisplay* = object
       fontSize*: int
-      font*: Option[ArxFontRoot]
+      font*: Option[ArxTypeface]
       chart : Chart
       chartBackgroundColor*: Option[RGBA]
 
@@ -68,7 +68,7 @@ proc setChartData*(w : Widget, chart : Chart) =
 
 proc readFromConfig*(cv: ConfigValue, td: var ChartDisplay) =
    readIntoOrElse(cv["fontSize"], td.fontSize, 12)
-   readIntoOrElse(cv["font"], td.font, none(ArxFontRoot))
+   readIntoOrElse(cv["font"], td.font, none(ArxTypeface))
    readInto(cv["chartBackgroundColor"], td.chartBackgroundColor)
 
 proc scaled*(axis: ChartAxis, value: float) : float =

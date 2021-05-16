@@ -36,7 +36,7 @@ type
       widget*: Widget
       text*: Bindable[RichText]
       fontSize*: int
-      font*: Option[ArxFontRoot]
+      font*: Option[ArxTypeface]
       color*: Option[Bindable[RGBA]]
       tintColor*: Option[Bindable[RGBA]]
       horizontalAlignment*: Option[HorizontalAlignment]
@@ -72,7 +72,7 @@ proc readFromConfig*(cv: ConfigValue, ti: var TextInput) =
 proc readFromConfig*(cv: ConfigValue, td: var TextDisplay) =
    readInto(cv["text"], td.text)
    readIntoOrElse(cv["fontSize"], td.fontSize, 12)
-   readIntoOrElse(cv["font"], td.font, none(ArxFontRoot))
+   readIntoOrElse(cv["font"], td.font, none(ArxTypeface))
    readIntoOrElse(cv["color"], td.color, none(Bindable[RGBA]))
    readInto(cv["tintColor"], td.tintColor)
    readInto(cv["horizontalAlignment"], td.horizontalAlignment)

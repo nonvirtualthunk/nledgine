@@ -1,5 +1,5 @@
-import typography
-import bumpy, pixie, typography/font, typography/rasterizer, tables, unicode, vmath
+import pixie/fonts
+import bumpy, pixie, tables, unicode, vmath
 
 
 
@@ -15,8 +15,8 @@ proc typeset*(
     pos: Vec2 = vec2(0, 0),
     offset: Vec2 = vec2(0, 0),
     size: Vec2 = vec2(0, 0),
-    hAlign: HAlignMode = Left,
-    vAlign: VAlignMode = Top,
+    hAlign: HAlignMode = haLeft,
+    vAlign: VAlignMode = vaTop,
     clip: bool = true,
     wrap: bool = true,
     kern: bool = true,
