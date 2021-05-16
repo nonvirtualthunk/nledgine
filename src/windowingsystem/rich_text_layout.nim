@@ -95,7 +95,6 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
       else:
         overallFont
 
-      echo "Cursor: ", cursor
       let font = fontRoot.font((effSize).round.int)
       let span = newSpan(section.text, font)
       let arrangement = typeset(@[span], vmath.vec2(bounds.dimensions.x.float, bounds.dimensions.y.float), haLeft, vaTop, true, vmath.vec2(cursor.x.float, cursor.y.float))
@@ -110,7 +109,7 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
         let arFont = arrangement.fonts[spanIndex]
         for runeIndex in start .. stop:
           var pos = arrangement.positions[runeIndex]
-          pos.y -= font.lineHeight.float
+          pos.y -= font.ascent.float
           let rune = arrangement.runes[runeIndex]
 
           res.lineInfo[res.lineInfo.len-1].maximumHeight.maxWith(font.lineHeight.int)
@@ -132,8 +131,6 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
             section.formatRanges[formatRangeIndex].color.get(effColor)
           else:
             effColor
-
-          echo "pos: ", pos
 
           let img = font.glyphImage(rune)
           addQuad(WQuad(
@@ -171,8 +168,12 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
       # let offset =  typographyFont.typeface.ascent * typographyFont.scale - effDim.y.float
 
       # Center the image within the line. So far that seems like the best average point
-      let offset = (font.lineHeight - effDim.y).float * 0.5f
-      echo "effDim: ", effDim.y.float, " line height: ", font.lineHeight
+      let ascent = font.ascent
+      let offset = if effDim.y < ascent:
+        (ascent - effDim.y).float + 1.0f
+      else:
+        (font.lineHeight - effDim.y).float * 0.5f
+      # echo "effDim: ", effDim.y.float, " line height: ", font.lineHeight, " ascent: ", font.ascent
 
       # Note: The offset * 0.5f is probably wrong, we may not be properly accounting for pixelScale at some
       # level
