@@ -1,6 +1,7 @@
 import glm
 import options
 import ../stb_image/read as stbi
+import ../stb_image/write as stbw
 import os
 import times
 import color
@@ -116,3 +117,13 @@ proc copyFrom*(target: Image, src: Image, position: Vec2i) =
          let srcPointer = src[0, y]
          let targetPointer = target[position.x, position.y + y]
          copyMem(targetPointer, srcPointer, src.dimensions.x * 4)
+
+
+proc writeToFile*(img: Image, path: string) =
+  stbw.writePNG(
+     path,
+     img.width,
+     img.height,
+     img.channels,
+     img.data
+  )

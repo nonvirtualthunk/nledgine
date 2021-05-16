@@ -44,7 +44,7 @@ type
       case kind*: SectionKind
       of SectionKind.Text:
          text*: string
-         font*: ArxFontRoot
+         font*: ArxTypeface
          formatRanges*: seq[RichTextFormatRange]
       of SectionKind.Taxon:
          taxon*: Taxon
@@ -59,13 +59,13 @@ type
       sections*: seq[RichTextSection]
       tint*: Option[color.RGBA]
       size*: float
-      font*: ArxFontRoot
+      font*: ArxTypeface
       horizontalAlignment*: HorizontalAlignment
 
    RichTextRenderSettings* = object
       baseColor*: Option[color.RGBA]
       tint*: Option[color.RGBA]
-      defaultFont*: Option[ArxFontRoot]
+      defaultFont*: Option[ArxTypeface]
       horizontalAlignment*: Option[HorizontalAlignment]
       textPreference*: TextPreference
 

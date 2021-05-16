@@ -1,7 +1,6 @@
 import tables
 import graphics/images
 import config/config_core
-import typography
 import graphics/fonts
 import noto
 
@@ -14,11 +13,11 @@ type
    Resources = ref object
       images: Table[string, Image]
       config: Table[string, ConfigValue]
-      fonts: Table[string, ArxFontRoot]
+      fonts: Table[string, ArxTypeface]
 
       imageChannel: ptr Channel[Image]
       configChannel: ptr Channel[ConfigValue]
-      fontChannel: ptr Channel[ArxFontRoot]
+      fontChannel: ptr Channel[ArxTypeface]
 
    ResourceRequestKind = enum
       ImageRequest
@@ -34,7 +33,7 @@ type
       of ConfigRequest:
          configChannel: ptr Channel[ConfigValue]
       of FontRequest:
-         fontChannel: ptr Channel[ArxFontRoot]
+         fontChannel: ptr Channel[ArxTypeface]
       of ExitRequest:
          discard
 
@@ -69,7 +68,7 @@ proc loadResources() {.thread.} =
       of FontRequest:
          var cur = r.fonts.getOrDefault(request.path)
          if cur == nil:
-            cur = loadArxFont("resources/fonts/" & request.path)
+            cur = loadArxTypeface("resources/fonts/" & request.path)
             r.fonts[request.path] = cur
          if request.fontChannel != nil:
             discard request.fontChannel.trySend(cur)
@@ -84,7 +83,7 @@ proc getGlobalResources(): Resources =
       globalResources.imageChannel.open()
       globalResources.configChannel = createShared(Channel[ConfigValue])
       globalResources.configChannel.open()
-      globalResources.fontChannel = createShared(Channel[ArxFontRoot])
+      globalResources.fontChannel = createShared(Channel[ArxTypeface])
       globalResources.fontChannel.open()
    globalResources
 
@@ -98,7 +97,7 @@ proc image*(path: string): Image =
    cur
 
 
-proc font*(path: string): ArxFontRoot =
+proc font*(path: string): ArxTypeface =
    let r = getGlobalResources()
    var cur = r.fonts.getOrDefault(path)
    if cur == nil:
@@ -107,6 +106,9 @@ proc font*(path: string): ArxFontRoot =
       r.fonts[path] = cur
    cur
 
+
+proc typeface*(path: string): ArxTypeface =
+  font(path)
 
 proc config*(path: string): ConfigValue =
    let r = getGlobalResources()
@@ -130,7 +132,7 @@ proc preloadFont*(path: string) =
 
 
 
-proc readFromConfig*(cv: ConfigValue, v: var ArxFontRoot) =
+proc readFromConfig*(cv: ConfigValue, v: var ArxTypeface) =
    if cv.isStr:
       v = font(cv.str)
    else:
