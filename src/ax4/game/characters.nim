@@ -13,7 +13,7 @@ import algorithm
 import noto
 import math
 import patty
-import ax4/game/randomness
+import game/randomness
 import ax4/game/classes
 import prelude
 import ax4/game/enemies

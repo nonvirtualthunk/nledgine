@@ -6,7 +6,7 @@ import ax4/display/map_culling_component
 import prelude
 import graphics/cameras
 import ax4/display/data/mapGraphicsData
-import ax4/game/randomness
+import game/randomness
 import ax4/game/rooms
 import ax4/game/map
 import ax4/game/ax_events

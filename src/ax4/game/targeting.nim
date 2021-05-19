@@ -12,7 +12,7 @@ import options
 import noto
 import sequtils
 import algorithm
-import ax4/game/randomness
+import game/randomness
 import patty
 import ax4/game/flags
 import prelude

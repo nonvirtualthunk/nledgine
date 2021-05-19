@@ -393,6 +393,9 @@ proc modify*[C, T, U] (world: World, entity: Entity, modification: NestedFieldMo
 proc modify*[C, K, V] (world: World, entity: Entity, modification: TableFieldModification[C, K, V]) =
    world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
 
+proc modify*[W : static[int], H : static[int], D : static[int], C, T] (world: World, entity: Entity, modification: GridFieldModification[W, H, D, C, T]) =
+   world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
+
 proc modify*[C, K1, K2, V] (world: World, entity: Entity, modification: TableFieldTableModification[C, K1, K2, V]) =
    world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
 
@@ -408,6 +411,9 @@ proc modify*[C, T, U] (world: WorldView, entity: Entity, modification: NestedFie
    world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
 
 proc modify*[C, K, V] (world: WorldView, entity: Entity, modification: TableFieldModification[C, K, V]) =
+   world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
+
+proc modify*[W : static[int], H : static[int], D : static[int], C, T] (world: WorldView, entity: Entity, modification: GridFieldModification[W, H, D, C, T]) =
    world.addModification(EntityModification(entity: entity, dataTypeIndex: modification.field.dataType.index, modification: modification))
 
 proc modify*[C, K1, K2, V] (world: WorldView, entity: Entity, modification: TableFieldTableModification[C, K1, K2, V]) =

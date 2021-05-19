@@ -7,6 +7,8 @@ import noto
 export config_core
 export images
 
+const ProjectName* {.strdefine.} : string = "project"
+
 {.experimental.}
 
 type
