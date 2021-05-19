@@ -6,6 +6,7 @@ import hashes
 import reflect
 import resources
 import strutils
+import strformat
 import options
 
 type
@@ -202,7 +203,10 @@ proc loadParents(taxonomy: ref Taxonomy, cv: ConfigValue, namespace: string, nam
          taxon.parents.add(parent)
 
 proc load(taxonomy: ref Taxonomy) {.gcsafe.} =
-   let conf = resources.config("data/taxonomy.sml")
+   when defined(ProjectName):
+      let conf = resources.config(&"{ProjectName}/taxonomy.sml")
+   else:
+      let conf = resources.config("data/taxonomy.sml")
    for k, v in conf["Taxonomy"].fields:
       taxonomy.load(v, RootNamespace, k)
    for k, v in conf["Taxonomy"].fields:

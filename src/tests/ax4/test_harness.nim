@@ -3,7 +3,7 @@ import ax4/game/components/flag_component
 import ax4/game/components/ai_component
 import ax4/game/vision
 import ax4/game/components/conditions_component
-import ax4/game/randomness
+import game/randomness
 import ax4/game/character_types
 import ax4/game/ax_events
 import graphics/color

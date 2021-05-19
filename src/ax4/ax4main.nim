@@ -34,7 +34,7 @@ import core
 import game/library
 import ax4/game/enemies
 import ax4/game/items
-import ax4/game/randomness
+import game/randomness
 import ax4/game/flags
 import ax4/game/turns
 import ax4/game/components/flag_component

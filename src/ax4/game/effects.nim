@@ -18,7 +18,7 @@ import ax4/game/cards
 import game/library
 import ax4/game/characters
 import ax4/game/ax_events
-import ax4/game/randomness
+import game/randomness
 
 
 proc resolveEffect*(world: World, character: Entity, effectPlay: EffectPlay): bool

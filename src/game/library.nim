@@ -59,6 +59,8 @@ template defineSimpleLibrary*[T](confPath: string, namespace: string) =
          let key = taxon(namespace, k)
          var ri: T
          readInto(v, ri)
+         when compiles(ri.taxon):
+           ri.taxon = key
          lib[key] = ri
 
       lib

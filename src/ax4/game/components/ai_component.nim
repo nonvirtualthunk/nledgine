@@ -18,7 +18,7 @@ import hex
 import ax4/game/targeting
 import options
 import ax4/game/combat
-import ax4/game/randomness
+import game/randomness
 import patty
 import sugar
 

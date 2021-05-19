@@ -20,7 +20,7 @@ import graphics/image_extras
 import worlds/taxonomy
 import options
 import ax4/game/ax_events
-import ax4/game/randomness
+import game/randomness
 
 export root_types
 

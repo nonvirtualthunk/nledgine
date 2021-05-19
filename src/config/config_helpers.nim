@@ -54,4 +54,8 @@ proc readFromConfig*(cv: ConfigValue, v: var ComparisonKind) =
    else:
       warn &"Invalid config value for comparison kind: {cv}"
 
+proc writeToConfig*(t: Taxon) : ConfigValue =
+  asConf(&"{t.namespace}.{t.name}")
+
+
 defineSimpleReadFromConfig(Identity)
