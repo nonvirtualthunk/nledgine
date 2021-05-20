@@ -137,7 +137,7 @@ proc maxRoll*(d: DicePool): int = d.dice * d.pips
 
 
 
-const diceExpressionRegex = "([0-9]+d[0-9]+)?\\s*(x[0-9]+)?\\s*(\\[+-][0-9]+)?".re
+const diceExpressionRegex = "([0-9]+d[0-9]+)?\\s?(x[0-9]+)?\\s?(\\[+-]?[0-9]+)?".re
 const rangeDiceExpressionRegex = "([0-9]+)\\s*\\-\\s*([0-9]+)".re
 
 proc multiplier*(d : DiceExpression): float = d.multiplier_rel_1 + 1.0f
@@ -164,6 +164,8 @@ proc readFromConfig*(cv: ConfigValue, dp: var DiceExpression) =
 
         dp = DiceExpression(dicePools: @[DicePool(dice: 1, pips: maxV - minV + 1)], bonus: minV - 1)
       warn &"unexpected string value for dice expression: {str}"
+  elif cv.isNumber:
+    dp = DiceExpression(bonus: cv.asFloat.int)
   else:
     warn &"unexpected config value for dice expression: {cv}"
 

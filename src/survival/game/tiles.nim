@@ -10,10 +10,10 @@ import config/config_helpers
 import resources
 import sets
 
-const RegionSize = 256
-const RegionHalfSize = 256 div 2
-const RegionLayers = 3
-const MainLayer = 1
+const RegionSize* = 256
+const RegionHalfSize* = 40 div 2
+const RegionLayers* = 3
+const MainLayer* = 1
 
 type
   ResourceGatherMethod* = object
@@ -72,7 +72,7 @@ type
     # all tiles in the region
     tiles: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, Entity]
     # flags for tiles (occupied, opaque, fluid impermeable, etc)
-    tileFlags: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, int8]
+#    tileFlags: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, int8]
 
   RegionLayerView* = object
     region*: ref Region
@@ -162,7 +162,6 @@ when isMainModule:
     var qb = QuadBuilder()
     
     let lib = library(TileKind)
-
 
     let rlayer = layer(g.regionEnt, world.view, MainLayer)
     for x in -20 .. 20:

@@ -5,6 +5,7 @@ import images
 import image_extras
 import config
 import resources
+import strformat
 
 export library
 
@@ -18,7 +19,10 @@ defineSimpleReadFromConfig(TaxonomyDisplay)
 
 defineLibrary[TaxonomyDisplay]:
    var lib = new Library[TaxonomyDisplay]
-   let conf = resources.config("display/taxonomy_display.sml")
+   when defined(ProjectName):
+     let conf = resources.config(&"{ProjectName}/taxonomy_display.sml")
+   else:
+     let conf = resources.config("display/taxonomy_display.sml")
 
    proc process(keyAccum: string, cv: ConfigValue) =
       if cv.isObj:
