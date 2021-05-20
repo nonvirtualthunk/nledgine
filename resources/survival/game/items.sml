@@ -14,4 +14,19 @@ Items {
   Sand {
 
   }
+  Twigs {
+
+  }
+  Bark {
+
+  }
+  Branch {
+
+  }
+  Log {
+
+  }
+  SaltWater {
+
+  }
 }

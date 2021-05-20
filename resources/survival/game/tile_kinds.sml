@@ -101,4 +101,22 @@ TileKinds {
 
     images: ["survival/graphics/tiles/sand.png"]
   }
+
+  Seawater {
+    moveCost: 10
+    resources: [
+      {
+        resource: Items.SaltWater
+        amountRange: 10000
+        gatherMethods: [
+          {
+            action: Scoop
+            difficulty: 0
+          }
+        ]
+      }
+    ]
+
+    images: ["survival/graphics/tiles/water.png"]
+  }
 }

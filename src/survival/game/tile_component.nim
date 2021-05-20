@@ -9,13 +9,14 @@ type
 
 
 proc computeTileFlags(tile: ref Tile, tileLib: Library[TileKind]) : int8 =
-
+  0
 
 proc initializeFlags(world: World) =
   eventStmts(TileFlagsUpdatedEvent()):
     for x in -RegionHalfSize ..< RegionHalfSize:
       for y in -RegionHalfSize ..< RegionHalfSize:
         for z in 0 ..< RegionLayers:
+          discard
 
 
 

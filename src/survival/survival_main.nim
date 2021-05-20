@@ -20,30 +20,52 @@ import graphics/cameras
 import graphics/image_extras
 import game/grids
 import graphics/canvas
-import argentum/game/physics_component
-import argentum/game/machine_component
+import engines/debug_components
+import survival/game/regions
+import graphics/up_to_date_animation_component
+import survival/game/entities
+import survival/game/events
+import survival/game/tiles
+import reflect
+import sets
+import survival/display/world_graphics
 
 type
-   InitializationComponent = ref object of GameComponent
+  InitializationComponent = ref object of GameComponent
 
 
 
 
 
 method initialize(g: InitializationComponent, world: World) =
-   discard
+  world.eventStmts(WorldInitializedEvent()):
+    let regionEnt = world.createEntity()
+    let player = world.createEntity()
+    player.attachData(Player())
+    player.attachData(Creature())
+    player.attachData(Physical(position : vec3i(0,0,0), images: @[imageLike("survival/graphics/creatures/player.png")]))
+
+    regionEnt.attachData(generateRegion(world))
+
+    regionEnt.modify(Region.entities.incl(toHashSet([player])))
+
+
 
 main(GameSetup(
-   windowSize: vec2i(1440, 900),
-   resizeable: false,
-   windowTitle: "Survival",
-   gameComponents: @[
-      BasicDebugComponent(),
-      InitializationComponent()
-   ],
-   graphicsComponents: @[
-      createCameraComponent(createPixelCamera(1)),
-      createWindowingSystemComponent("survival/widgets/"),
-   ]
+  windowSize: vec2i(1440, 900),
+  resizeable: false,
+  windowTitle: "Survival",
+  gameComponents: @[
+    BasicDebugComponent(),
+    InitializationComponent()
+  ],
+  graphicsComponents: @[
+    createCameraComponent(createPixelCamera(2).withMoveSpeed(0.0f)),
+    createWindowingSystemComponent("survival/widgets/"),
+    WorldGraphicsComponent(),
+    DynamicEntityGraphicsComponent(),
+    UpToDateAnimationComponent(),
+    PlayerCameraComponent(),
+  ]
 ))
 

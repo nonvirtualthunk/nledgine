@@ -1,7 +1,12 @@
 import engines
+import prelude
+import noto
+import reflect
+import engines/event_types
+import strutils
 
 type
-   BasicDebugComponent = ref object of GameComponent
+   BasicDebugComponent* = ref object of GameComponent
       updateCount: int
       lastPrint: UnitOfTime
       mostRecentEventStr: string
