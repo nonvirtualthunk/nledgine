@@ -312,7 +312,7 @@ proc selectText(widget: Widget, selectionRect: Recti, forwardSelection: bool) =
 
 
 
-method handleEvent*(ws: TextDisplayRenderer, widget: Widget, event: UIEvent, world: World, display: DisplayWorld) =
+method handleEvent*(ws: TextDisplayRenderer, widget: Widget, event: UIEvent, display: DisplayWorld) =
    proc insertText(widget : Widget, td : ref TextDisplay, ti: ref TextInput, str : string, rune : Option[Rune]) =
       if td.selectedRange.isSome:
          let (minSel, maxSel) = td.selectedRange.get

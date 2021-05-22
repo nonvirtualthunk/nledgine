@@ -21,220 +21,223 @@ import nimclipboard/libclipboard
 
 export windowing_rendering
 export config
+export sets
 
 type
-   WidgetEdge* = enum
-      Left
-      Top
-      Right
-      Bottom
+  WidgetEdge* = enum
+    Left
+    Top
+    Right
+    Bottom
 
-   NineWayImage* = object
-      image*: Bindable[ImageLike]
-      pixelScale*: int32
-      drawCenter*: bool
-      dimensionDelta*: Vec2i
-      color*: Bindable[RGBA]
-      edgeColor*: Bindable[RGBA]
-      draw*: Bindable[bool]
-      drawEdges*: set[WidgetEdge]
+  NineWayImage* = object
+    image*: Bindable[ImageLike]
+    pixelScale*: int32
+    drawCenter*: bool
+    dimensionDelta*: Vec2i
+    color*: Bindable[RGBA]
+    edgeColor*: Bindable[RGBA]
+    draw*: Bindable[bool]
+    drawEdges*: set[WidgetEdge]
 
-   WidgetOrientation* = enum
-      TopLeft
-      BottomRight
-      TopRight
-      BottomLeft
-      Center
+  WidgetOrientation* = enum
+    TopLeft
+    BottomRight
+    TopRight
+    BottomLeft
+    Center
 
-   WidgetPositionKind {.pure.} = enum
-      Fixed
-      Absolute
-      Proportional
-      Centered
-      Relative
+  WidgetPositionKind {.pure.} = enum
+    Fixed
+    Absolute
+    Proportional
+    Centered
+    Relative
 
-   WidgetPosition* = object
-      case kind: WidgetPositionKind
-      of Fixed:
-         fixedOffset: int
-         fixedRelativeTo: WidgetOrientation
-      of Proportional:
-         proportion: float
-         proportionalRelativeTo: WidgetOrientation
-         proportionalAnchorTo: WidgetOrientation
-      of Absolute:
-         absoluteOffset: int
-         absoluteAnchorTo: WidgetOrientation
-      of Centered:
-         discard
-      of Relative:
-         relativeToWidget: string
-         relativeOffset: int32
-         relativeToWidgetAnchorPoint: WidgetOrientation
+  WidgetPosition* = object
+    case kind: WidgetPositionKind
+    of Fixed:
+      fixedOffset: int
+      fixedRelativeTo: WidgetOrientation
+    of Proportional:
+      proportion: float
+      proportionalRelativeTo: WidgetOrientation
+      proportionalAnchorTo: WidgetOrientation
+    of Absolute:
+      absoluteOffset: int
+      absoluteAnchorTo: WidgetOrientation
+    of Centered:
+      discard
+    of Relative:
+      relativeToWidget: string
+      relativeOffset: int32
+      relativeToWidgetAnchorPoint: WidgetOrientation
 
-   WidgetDimensionKind {.pure.} = enum
-      Intrinsic
-      Fixed
-      Relative
-      Proportional
-      ExpandToParent
-      WrapContent
-      ExpandTo
+  WidgetDimensionKind {.pure.} = enum
+    Intrinsic
+    Fixed
+    Relative
+    Proportional
+    ExpandToParent
+    WrapContent
+    ExpandTo
 
-   WidgetDimension* = object
-      case kind: WidgetDimensionKind
-      of WidgetDimensionKind.Fixed:
-         fixedSize: int
-      of WidgetDimensionKind.Relative:
-         sizeDelta: int
-      of WidgetDimensionKind.Proportional:
-         sizeProportion: float
-      of WidgetDimensionKind.ExpandToParent:
-         parentGap: int
-      of WidgetDimensionKind.Intrinsic:
-         intrinsicMax*: Option[int]
-         intrinsicMin*: Option[int]
-      of WidgetDimensionKind.WrapContent:
-         discard
-      of WidgetDimensionKind.ExpandTo:
-         expandToWidget: Widget
-         expandToGap: int
+  WidgetDimension* = object
+    case kind: WidgetDimensionKind
+    of WidgetDimensionKind.Fixed:
+      fixedSize: int
+    of WidgetDimensionKind.Relative:
+      sizeDelta: int
+    of WidgetDimensionKind.Proportional:
+      sizeProportion: float
+    of WidgetDimensionKind.ExpandToParent:
+      parentGap: int
+    of WidgetDimensionKind.Intrinsic:
+      intrinsicMax*: Option[int]
+      intrinsicMin*: Option[int]
+    of WidgetDimensionKind.WrapContent:
+      discard
+    of WidgetDimensionKind.ExpandTo:
+      expandToWidget: Widget
+      expandToGap: int
 
-   RecalculationFlag* = enum
-      DependentX
-      DependentY
-      DependentZ
-      PositionX
-      PositionY
-      PositionZ
-      DimensionsX
-      DimensionsY
-      Contents
+  RecalculationFlag* = enum
+    DependentX
+    DependentY
+    DependentZ
+    PositionX
+    PositionY
+    PositionZ
+    DimensionsX
+    DimensionsY
+    Contents
 
-   Widget* = ref object
-      # links and references
-      windowingSystem*: WindowingSystemRef
-      entity: DisplayEntity
-      children: seq[Widget]
-      dependents: HashSet[Dependent]
-      parent_f: Option[Widget]
-      identifier*: string
-      # core attributes
-      background*: NineWayImage
-      overlays*: seq[NineWayImage]
-      position*: array[3, WidgetPosition]
-      resolvedPosition*: Vec3i
-      resolvedPartialPosition: Vec3i
-      clientOffset*: Vec3i
-      padding*: Vec3i # padding contributes to the client offset
-      dimensions: array[2, WidgetDimension]
-      resolvedDimensions*: Vec2i
-      showing_f: Bindable[bool]
-      cursor*: Option[int]
-      # drawing caches
-      preVertices: seq[WVertex]
-      postVertices: seq[WVertex]
-      # binding
-      bindings: ref Table[string, BoundValue]
-      # events
-      eventCallbacks: seq[(UIEvent, World, DisplayWorld) -> void]
-      acceptsFocus*: bool
+  Widget* = ref object
+    # links and references
+    windowingSystem*: WindowingSystemRef
+    entity: DisplayEntity
+    children: seq[Widget]
+    dependents: HashSet[Dependent]
+    parent_f: Option[Widget]
+    identifier*: string
+    # core attributes
+    background*: NineWayImage
+    overlays*: seq[NineWayImage]
+    position*: array[3, WidgetPosition]
+    resolvedPosition*: Vec3i
+    resolvedPartialPosition: Vec3i
+    clientOffset*: Vec3i
+    padding*: Vec3i # padding contributes to the client offset
+    dimensions: array[2, WidgetDimension]
+    resolvedDimensions*: Vec2i
+    showing_f: Bindable[bool]
+    cursor*: Option[int]
+    # drawing caches
+    preVertices: seq[WVertex]
+    postVertices: seq[WVertex]
+    # binding
+    bindings: ref Table[string, BoundValue]
+    # events
+    eventCallbacks: seq[(UIEvent, World, DisplayWorld) -> void]
+    liveWorldEventCallbacks: seq[(UIEvent, LiveWorld, DisplayWorld) -> void]
+    acceptsFocus*: bool
 
-   WidgetArchetype* = object
-      widgetData: Widget
-      children: Table[string, WidgetArchetype]
-
-
-   DependencyKind = enum
-      Position
-      PartialPosition
-      Dimensions
-
-   Dependency = tuple
-      widget: Widget
-      kind: DependencyKind
-      axis: Axis
-
-   Dependent = tuple
-      dependentWidget: Widget
-      dependsOnKind: DependencyKind
-      sourceKind: DependencyKind
-      dependsOnAxis: Axis
-      sourceAxis: Axis
+  WidgetArchetype* = object
+    widgetData: Widget
+    children: Table[string, WidgetArchetype]
 
 
+  DependencyKind = enum
+    Position
+    PartialPosition
+    Dimensions
 
-   WindowingSystem* = object
-      display*: DisplayWorld
-      desktop*: Widget
-      pixelScale*: int
-      dimensions*: Vec2i
-      components*: seq[WindowingComponent]
-      rootConfigPath*: string
+  Dependency = tuple
+    widget: Widget
+    kind: DependencyKind
+    axis: Axis
 
-      # recomputaton
-      renderRevision: int
-      pendingUpdates: Table[Widget, set[RecalculationFlag]]
-      rerenderSet: HashSet[Widget]
+  Dependent = tuple
+    dependentWidget: Widget
+    dependsOnKind: DependencyKind
+    sourceKind: DependencyKind
+    dependsOnAxis: Axis
+    sourceAxis: Axis
 
-      # event handling
-      focusedWidget*: Option[Widget]
-      lastWidgetUnderMouse*: Widget
-      lastMousePosition*: Vec2f
-
-      # optimization metrics tracking
-      updateDependentsCount: int
-      updateDimensionsCount: int
-      updatePositionCount: int
-      renderContentsCount: int
-
-      # cached widget archetypes
-      widgetArchetypes: Table[string, WidgetArchetype]
-
-      # os interaction
-      clipboard*: ptr clipboard_c
+  RecalculationFlatSet = set[RecalculationFlag]
 
 
-   WindowingSystemRef* = ref WindowingSystem
+  WindowingSystem* = object
+    display*: DisplayWorld
+    desktop*: Widget
+    pixelScale*: int
+    dimensions*: Vec2i
+    components*: seq[WindowingComponent]
+    rootConfigPath*: string
 
-   WindowingComponent* = ref object of RootRef
+    # recomputaton
+    renderRevision: int
+    pendingUpdates: Table[Widget, RecalculationFlatSet]
+    rerenderSet: HashSet[Widget]
 
-   WidgetArchetypeIdentifier* = object
-      location: string
-      identifier: string
+    # event handling
+    focusedWidget*: Option[Widget]
+    lastWidgetUnderMouse*: Widget
+    lastMousePosition*: Vec2f
 
-   WidgetEvent* = ref object of InputEvent
-      i_originatingWidget: Widget
-      widget*: Widget
-      nonPropagating*: bool
+    # optimization metrics tracking
+    updateDependentsCount: int
+    updateDimensionsCount: int
+    updatePositionCount: int
+    renderContentsCount: int
 
-   WidgetMouseMove* = ref object of WidgetEvent
-      position*: Vec2f
-   WidgetMouseDrag* = ref object of WidgetEvent
-      button*: MouseButton
-      position*: Vec2f
-      origin*: Vec2f
-   WidgetMouseEnter* = ref object of WidgetEvent
-   WidgetMouseExit* = ref object of WidgetEvent
+    # cached widget archetypes
+    widgetArchetypes: Table[string, WidgetArchetype]
 
-   WidgetMousePress* = ref object of WidgetEvent
-      button*: MouseButton
-      position*: Vec2f
-      doublePress*: bool
+    # os interaction
+    clipboard*: ptr clipboard_c
 
-   WidgetMouseRelease* = ref object of WidgetEvent
-      button*: MouseButton
-      position*: Vec2f
 
-   WidgetKeyPress* = ref object of WidgetEvent
-      key*: KeyCode
-      repeat*: bool
-   WidgetKeyRelease* = ref object of WidgetEvent
-      key*: KeyCode
-   WidgetRuneEnter* = ref object of WidgetEvent
-      rune*: Rune
-   WidgetFocusGain* = ref object of WidgetEvent
-   WidgetFocusLoss* = ref object of WidgetEvent
+  WindowingSystemRef* = ref WindowingSystem
+
+  WindowingComponent* = ref object of RootRef
+
+  WidgetArchetypeIdentifier* = object
+    location: string
+    identifier: string
+
+  WidgetEvent* = ref object of InputEvent
+    i_originatingWidget: Widget
+    widget*: Widget
+    nonPropagating*: bool
+
+  WidgetMouseMove* = ref object of WidgetEvent
+    position*: Vec2f
+  WidgetMouseDrag* = ref object of WidgetEvent
+    button*: MouseButton
+    position*: Vec2f
+    origin*: Vec2f
+  WidgetMouseEnter* = ref object of WidgetEvent
+  WidgetMouseExit* = ref object of WidgetEvent
+
+  WidgetMousePress* = ref object of WidgetEvent
+    button*: MouseButton
+    position*: Vec2f
+    doublePress*: bool
+
+  WidgetMouseRelease* = ref object of WidgetEvent
+    button*: MouseButton
+    position*: Vec2f
+
+  WidgetKeyPress* = ref object of WidgetEvent
+    key*: KeyCode
+    repeat*: bool
+  WidgetKeyRelease* = ref object of WidgetEvent
+    key*: KeyCode
+  WidgetRuneEnter* = ref object of WidgetEvent
+    rune*: Rune
+  WidgetFocusGain* = ref object of WidgetEvent
+  WidgetFocusLoss* = ref object of WidgetEvent
 
 
 defineDisplayReflection(WindowingSystem)
@@ -242,142 +245,142 @@ defineDisplayReflection(WindowingSystem)
 const AllEdges = {WidgetEdge.Left, WidgetEdge.Top, WidgetEdge.Right, WidgetEdge.Bottom}
 
 proc childByIdentifier*(e: Widget, identifier: string): Option[Widget] =
-   for c in e.children:
-      if c.identifier == identifier:
-         return some(c)
-   none(Widget)
+  for c in e.children:
+    if c.identifier == identifier:
+      return some(c)
+  none(Widget)
 
 proc descendantByIdentifier*(e: Widget, identifier: string): Option[Widget] =
-   let childMatch = e.childByIdentifier(identifier)
-   if childMatch.isSome:
-      childMatch
-   else:
-      for c in e.children:
-         let descMatch = c.descendantByIdentifier(identifier)
-         if descMatch.isSome:
-            return descMatch
-      none(Widget)
+  let childMatch = e.childByIdentifier(identifier)
+  if childMatch.isSome:
+    childMatch
+  else:
+    for c in e.children:
+      let descMatch = c.descendantByIdentifier(identifier)
+      if descMatch.isSome:
+        return descMatch
+    none(Widget)
 
 iterator descendantsMatching*(e: Widget, predicate : (Widget) -> bool): Widget =
-   var descendantStack = e.children
-   while descendantStack.nonEmpty:
-      let c = descendantStack.pop()
-      if predicate(c):
-         yield c
-      for subChild in c.children:
-         descendantStack.add(subChild)
+  var descendantStack = e.children
+  while descendantStack.nonEmpty:
+    let c = descendantStack.pop()
+    if predicate(c):
+      yield c
+    for subChild in c.children:
+      descendantStack.add(subChild)
 
 iterator descendantsWithData*[T](e: Widget, dataType : typedesc[T]): Widget =
-   for c in descendantsMatching(e, w => w.hasData(dataType)):
-      yield c
+  for c in descendantsMatching(e, w => w.hasData(dataType)):
+    yield c
 
 
 
 
-proc giveWidgetFocus*(ws: WindowingSystemRef, world: World, widget: Widget)
+proc giveWidgetFocus*[WorldType](ws: WindowingSystemRef, world: WorldType, widget: Widget)
 
-proc takeFocus*(w: Widget, world: World) =
-   w.windowingSystem.giveWidgetFocus(world, w)
+proc takeFocus*[WorldType](w: Widget, world: WorldType) =
+  w.windowingSystem.giveWidgetFocus(world, w)
 
 # =========================================================================================
 
 method render*(ws: WindowingComponent, widget: Widget): seq[WQuad] {.base.} =
-   warn "WindowingComponent must implement render"
+  warn "WindowingComponent must implement render"
 
 method intrinsicSize*(ws: WindowingComponent, widget: Widget, axis: Axis, minimums: Vec2i, maximums: Vec2i): Option[int] {.base.} =
-   none(int)
+  none(int)
 
 method readDataFromConfig*(ws: WindowingComponent, cv: ConfigValue, widget: Widget) {.base.} =
-   discard
+  discard
 
 method updateBindings*(ws: WindowingComponent, widget: Widget, resolver: var BoundValueResolver) {.base.} =
-   discard
+  discard
 
-method handleEvent*(ws: WindowingComponent, widget: Widget, event: UIEvent, world: World, display: DisplayWorld) {.base.} =
-   discard
+method handleEvent*(ws: WindowingComponent, widget: Widget, event: UIEvent, display: DisplayWorld) {.base.} =
+  discard
 
 
 proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock)
 
 var imageMetrics {.threadvar.}: Table[Image, ImageMetrics]
 proc imageMetricsFor(img: Image): ImageMetrics =
-   if not imageMetrics.contains(img):
-      var metrics = ImageMetrics()
+  if not imageMetrics.contains(img):
+    var metrics = ImageMetrics()
 
-      while metrics.outerOffset < img.width and img[metrics.outerOffset, img.height div 2, 3] == 0:
-         metrics.outerOffset += 1
-      metrics.borderWidth = metrics.outerOffset
-      while metrics.borderWidth < img.width and img[metrics.borderWidth, img.height div 2, 3] > 0:
-         metrics.borderWidth += 1
-      metrics.centerColor = img[img.width - 1, 0][]
-      imageMetrics[img] = metrics
-   imageMetrics[img]
+    while metrics.outerOffset < img.width and img[metrics.outerOffset, img.height div 2, 3] == 0:
+      metrics.outerOffset += 1
+    metrics.borderWidth = metrics.outerOffset
+    while metrics.borderWidth < img.width and img[metrics.borderWidth, img.height div 2, 3] > 0:
+      metrics.borderWidth += 1
+    metrics.centerColor = img[img.width - 1, 0][]
+    imageMetrics[img] = metrics
+  imageMetrics[img]
 
 
 proc isIntrinsic*(dim: WidgetDimension): bool = dim.kind == WidgetDimensionKind.Intrinsic
 
 proc nineWayImage*(img: ImageLike, pixelScale: int = 1, color: RGBA = rgba(1.0f, 1.0f, 1.0f, 1.0f), edges: set[WidgetEdge] = AllEdges): NineWayImage =
-   NineWayImage(
-      image: bindable(img),
-      pixelScale: pixelScale.int32,
-      color: bindable(color),
-      edgeColor: bindable(color),
-      draw: bindable(true),
-      drawCenter: true,
-      drawEdges: edges
-   )
+  NineWayImage(
+    image: bindable(img),
+    pixelScale: pixelScale.int32,
+    color: bindable(color),
+    edgeColor: bindable(color),
+    draw: bindable(true),
+    drawCenter: true,
+    drawEdges: edges
+  )
 
 iterator quadToVertices(quad: WQuad, tb: TextureBlock, bounds: Bounds): WVertex =
-   var tc: array[4, Vec2f]
-   case quad.texCoords.kind:
-   of WTexCoordKind.NoImage:
-      tc = tb.blankTexCoords()[]
-   of WTexCoordKind.SubRect:
-      let subRect = quad.texCoords.subRect
-      let imgData = tb.imageData(quad.image)
-      # let min = imgData.texPosition + imgData.texDimensions * subRect.position
-      # let max = imgData.texPosition + imgData.texDimensions * (subRect.position + subRect.dimensions)
-      # [min, vec2f(max.x, min.y), max, vec2f(min.x, max.y)]
-      for q in 0 ..< 4:
-         tc[q] = imgData.texPosition + (subRect.position + subRect.dimensions * UnitSquareVertices2d[q]) * imgData.texDimensions
-      if quad.texCoords.flipSubRect.x:
-         swap(tc[0], tc[1])
-         swap(tc[2], tc[3])
-      if quad.texCoords.flipSubRect.y:
-         swap(tc[0], tc[3])
-         swap(tc[1], tc[2])
-   of WTexCoordKind.RawTexCoords:
-      tc = quad.texCoords.rawTexCoords
-   of WTexCoordKind.NormalizedTexCoords:
-      let imgData = tb.imageData(quad.image)
-      let base = quad.texCoords.texCoords
-      for q in 0 ..< 4:
-         tc[q] = imgData.texPosition + imgData.texDimensions * base[q]
-   of WTexCoordKind.Simple:
-      tc = tb[quad.image][]
-      if quad.texCoords.flip.x:
-         swap(tc[0], tc[1])
-         swap(tc[2], tc[3])
-      if quad.texCoords.flip.y:
-         swap(tc[0], tc[3])
-         swap(tc[1], tc[2])
+  var tc: array[4, Vec2f]
+  case quad.texCoords.kind:
+  of WTexCoordKind.NoImage:
+    tc = tb.blankTexCoords()[]
+  of WTexCoordKind.SubRect:
+    let subRect = quad.texCoords.subRect
+    let imgData = tb.imageData(quad.image)
+    # let min = imgData.texPosition + imgData.texDimensions * subRect.position
+    # let max = imgData.texPosition + imgData.texDimensions * (subRect.position + subRect.dimensions)
+    # [min, vec2f(max.x, min.y), max, vec2f(min.x, max.y)]
+    for q in 0 ..< 4:
+      tc[q] = imgData.texPosition + (subRect.position + subRect.dimensions * UnitSquareVertices2d[q]) * imgData.texDimensions
+    if quad.texCoords.flipSubRect.x:
+      swap(tc[0], tc[1])
+      swap(tc[2], tc[3])
+    if quad.texCoords.flipSubRect.y:
+      swap(tc[0], tc[3])
+      swap(tc[1], tc[2])
+  of WTexCoordKind.RawTexCoords:
+    tc = quad.texCoords.rawTexCoords
+  of WTexCoordKind.NormalizedTexCoords:
+    let imgData = tb.imageData(quad.image)
+    let base = quad.texCoords.texCoords
+    for q in 0 ..< 4:
+      tc[q] = imgData.texPosition + imgData.texDimensions * base[q]
+  of WTexCoordKind.Simple:
+    tc = tb[quad.image][]
+    if quad.texCoords.flip.x:
+      swap(tc[0], tc[1])
+      swap(tc[2], tc[3])
+    if quad.texCoords.flip.y:
+      swap(tc[0], tc[3])
+      swap(tc[1], tc[2])
 
 
-   case quad.shape.kind:
-      of WShapeKind.Rect:
-         let pos = vec3f(quad.shape.position)
-         let dim = vec2f(quad.shape.dimensions)
-         let fwd = vec3f(quad.shape.forward.x, quad.shape.forward.y, 0.0f)
-         let oto = vec3f(-fwd.y, fwd.x, 0.0f)
+  case quad.shape.kind:
+    of WShapeKind.Rect:
+      let pos = vec3f(quad.shape.position)
+      let dim = vec2f(quad.shape.dimensions)
+      let fwd = vec3f(quad.shape.forward.x, quad.shape.forward.y, 0.0f)
+      let oto = vec3f(-fwd.y, fwd.x, 0.0f)
 
 
-         yield WVertex(vertex: pos, color: quad.color, texCoords: tc[3], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
-         yield WVertex(vertex: pos + fwd * dim.x, color: quad.color, texCoords: tc[2], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
-         yield WVertex(vertex: pos + fwd * dim.x + oto * dim.y, color: quad.color, texCoords: tc[1], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
-         yield WVertex(vertex: pos + oto * dim.y, color: quad.color, texCoords: tc[0], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
-      of WShapeKind.Polygon:
-         for i in 0 ..< 4:
-            yield WVertex(vertex: quad.shape.points[i], color: quad.color, texCoords: tc[3-i], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
+      yield WVertex(vertex: pos, color: quad.color, texCoords: tc[3], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
+      yield WVertex(vertex: pos + fwd * dim.x, color: quad.color, texCoords: tc[2], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
+      yield WVertex(vertex: pos + fwd * dim.x + oto * dim.y, color: quad.color, texCoords: tc[1], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
+      yield WVertex(vertex: pos + oto * dim.y, color: quad.color, texCoords: tc[0], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
+    of WShapeKind.Polygon:
+      for i in 0 ..< 4:
+        yield WVertex(vertex: quad.shape.points[i], color: quad.color, texCoords: tc[3-i], boundsOrigin: bounds.origin, boundsDirection: bounds.direction, boundsDimensions: bounds.dimensions)
 
 proc fixedSize*(size: int): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.Fixed, fixedSize: size)
 proc relativeSize*(sizeDelta: int): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.Relative, sizeDelta: sizeDelta)
@@ -388,206 +391,206 @@ proc intrinsic*(): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.I
 
 proc centered*(): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Centered)
 proc absolutePos*(pos: int, absoluteAnchorTo: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Absolute, absoluteOffset: pos,
-      absoluteAnchorTo: absoluteAnchorTo)
+    absoluteAnchorTo: absoluteAnchorTo)
 proc fixedPos*(pos: int, relativeTo: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Fixed, fixedOffset: pos, fixedRelativeTo: relativeTo)
 proc proportionalPos*(proportion: float, relativeTo: WidgetOrientation = WidgetOrientation.TopLeft, anchorTo: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
-   WidgetPosition(kind: WidgetPositionKind.Proportional, proportion: proportion, proportionalRelativeTo: relativeTo, proportionalAnchorTo: anchorTo)
+  WidgetPosition(kind: WidgetPositionKind.Proportional, proportion: proportion, proportionalRelativeTo: relativeTo, proportionalAnchorTo: anchorTo)
 proc relativePos*(relativeTo: string, offset: int32, anchorPoint: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
-   WidgetPosition(kind: WidgetPositionKind.Relative, relativeToWidget: relativeTo, relativeOffset: offset, relativeToWidgetAnchorPoint: anchorPoint)
+  WidgetPosition(kind: WidgetPositionKind.Relative, relativeToWidget: relativeTo, relativeOffset: offset, relativeToWidgetAnchorPoint: anchorPoint)
 proc relativePos*(relativeTo: string, offset: int, anchorPoint: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
-   WidgetPosition(kind: WidgetPositionKind.Relative, relativeToWidget: relativeTo, relativeOffset: offset.int32, relativeToWidgetAnchorPoint: anchorPoint)
+  WidgetPosition(kind: WidgetPositionKind.Relative, relativeToWidget: relativeTo, relativeOffset: offset.int32, relativeToWidgetAnchorPoint: anchorPoint)
 
 proc hash*(w: Widget): Hash = w.entity.hash
 proc `==`*(a, b: Widget): bool = a.entity == b.entity
 
 proc `==`*(a, b: WidgetPosition): bool =
-   if a.kind != b.kind: return false
+  if a.kind != b.kind: return false
 
-   case a.kind:
-   of WidgetPositionKind.Fixed:
-      a.fixedOffset == b.fixedOffset and a.fixedRelativeTo == b.fixedRelativeTo
-   of WidgetPositionKind.Proportional:
-      a.proportion == b.proportion and a.proportionalRelativeTo == b.proportionalRelativeTo and a.proportionalAnchorTo == b.proportionalAnchorTo
-   of WidgetPositionKind.Absolute:
-      a.absoluteOffset == b.absoluteOffset and a.absoluteAnchorTo == b.absoluteAnchorTo
-   of WidgetPositionKind.Centered:
-      true
-   of WidgetPositionKind.Relative:
-      a.relativeToWidget == b.relativeToWidget and a.relativeOffset == b.relativeOffset and a.relativeToWidgetAnchorPoint == b.relativeToWidgetAnchorPoint
+  case a.kind:
+  of WidgetPositionKind.Fixed:
+    a.fixedOffset == b.fixedOffset and a.fixedRelativeTo == b.fixedRelativeTo
+  of WidgetPositionKind.Proportional:
+    a.proportion == b.proportion and a.proportionalRelativeTo == b.proportionalRelativeTo and a.proportionalAnchorTo == b.proportionalAnchorTo
+  of WidgetPositionKind.Absolute:
+    a.absoluteOffset == b.absoluteOffset and a.absoluteAnchorTo == b.absoluteAnchorTo
+  of WidgetPositionKind.Centered:
+    true
+  of WidgetPositionKind.Relative:
+    a.relativeToWidget == b.relativeToWidget and a.relativeOffset == b.relativeOffset and a.relativeToWidgetAnchorPoint == b.relativeToWidgetAnchorPoint
 
 proc `==`*(a, b: WidgetDimension): bool =
-   if a.kind != b.kind: return false
+  if a.kind != b.kind: return false
 
-   case a.kind:
-   of WidgetDimensionKind.Fixed:
-      a.fixedSize == b.fixedSize
-   of WidgetDimensionKind.Relative:
-      a.sizeDelta == b.sizeDelta
-   of WidgetDimensionKind.Proportional:
-      a.sizeProportion == b.sizeProportion
-   of WidgetDimensionKind.ExpandToParent:
-      a.parentGap == b.parentGap
-   of WidgetDimensionKind.Intrinsic:
-      a.intrinsicMin == b.intrinsicMin and a.intrinsicMax == b.intrinsicMax
-   of WidgetDimensionKind.WrapContent:
-      true
-   of WidgetDimensionKind.ExpandTo:
-      a.expandToWidget == b.expandToWidget and a.expandToGap == b.expandToGap
+  case a.kind:
+  of WidgetDimensionKind.Fixed:
+    a.fixedSize == b.fixedSize
+  of WidgetDimensionKind.Relative:
+    a.sizeDelta == b.sizeDelta
+  of WidgetDimensionKind.Proportional:
+    a.sizeProportion == b.sizeProportion
+  of WidgetDimensionKind.ExpandToParent:
+    a.parentGap == b.parentGap
+  of WidgetDimensionKind.Intrinsic:
+    a.intrinsicMin == b.intrinsicMin and a.intrinsicMax == b.intrinsicMax
+  of WidgetDimensionKind.WrapContent:
+    true
+  of WidgetDimensionKind.ExpandTo:
+    a.expandToWidget == b.expandToWidget and a.expandToGap == b.expandToGap
 
 proc markForUpdate*(ws: WindowingSystemRef, w: Widget, r: RecalculationFlag) =
-   fine &"marking for update : {w.entity} {r}"
-   ws.pendingUpdates.mgetOrPut(w, {}).incl(r)
+  fine &"marking for update : {w.entity} {r}"
+  ws.pendingUpdates.mgetOrPut(w, {}).incl(r)
 
 proc markForUpdate*(w: Widget, r: RecalculationFlag) =
-   if w.windowingSystem != nil:
-      w.windowingSystem.markForUpdate(w, r)
+  if w.windowingSystem != nil:
+    w.windowingSystem.markForUpdate(w, r)
 
 proc isFarSide(axis: Axis, relativeTo: WidgetOrientation): bool =
-   (axis == Axis.X and (relativeTo == TopRight or relativeTo == BottomRight)) or
-   (axis == Axis.Y and (relativeTo == BottomRight or relativeTo == BottomLeft))
+  (axis == Axis.X and (relativeTo == TopRight or relativeTo == BottomRight)) or
+  (axis == Axis.Y and (relativeTo == BottomRight or relativeTo == BottomLeft))
 
 
 iterator dependentOn(p: WidgetPosition, axis: Axis, widget: Widget, parent: Widget): Dependency =
-   case p.kind:
-   of WidgetPositionKind.Fixed:
-      yield (widget: parent, kind: DependencyKind.Position, axis: axis)
-      if isFarSide(axis, p.fixedRelativeTo):
-         yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
-         yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
-   of WidgetPositionKind.Proportional:
+  case p.kind:
+  of WidgetPositionKind.Fixed:
+    yield (widget: parent, kind: DependencyKind.Position, axis: axis)
+    if isFarSide(axis, p.fixedRelativeTo):
       yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
-      yield (widget: parent, kind: DependencyKind.Position, axis: axis)
-      if isFarSide(axis, p.proportionalRelativeTo) or p.proportionalAnchorTo == WidgetOrientation.Center:
-         yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
-   of WidgetPositionKind.Centered:
-      yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
-      yield (widget: parent, kind: DependencyKind.Position, axis: axis)
       yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
-   of WidgetPositionKind.Relative:
-      let relativeWidget = parent.childByIdentifier(p.relativeToWidget)
-      if relativeWidget.isSome:
-         yield (widget: relativeWidget.get, kind: DependencyKind.Position, axis: axis)
-         yield (widget: relativeWidget.get, kind: DependencyKind.Dimensions, axis: axis)
-      else:
-         warn &"Relative positioning with target {p.relativeToWidget} on widget {widget.identifier}, but no matching relative widget found"
+  of WidgetPositionKind.Proportional:
+    yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
+    yield (widget: parent, kind: DependencyKind.Position, axis: axis)
+    if isFarSide(axis, p.proportionalRelativeTo) or p.proportionalAnchorTo == WidgetOrientation.Center:
+      yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
+  of WidgetPositionKind.Centered:
+    yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
+    yield (widget: parent, kind: DependencyKind.Position, axis: axis)
+    yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
+  of WidgetPositionKind.Relative:
+    let relativeWidget = parent.childByIdentifier(p.relativeToWidget)
+    if relativeWidget.isSome:
+      yield (widget: relativeWidget.get, kind: DependencyKind.Position, axis: axis)
+      yield (widget: relativeWidget.get, kind: DependencyKind.Dimensions, axis: axis)
+    else:
+      warn &"Relative positioning with target {p.relativeToWidget} on widget {widget.identifier}, but no matching relative widget found"
 
-      if not isFarSide(axis, p.relativeToWidgetAnchorPoint):
-         yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
-   of WidgetPositionKind.Absolute:
-      if isFarSide(axis, p.absoluteAnchorTo) or p.absoluteAnchorTo == WidgetOrientation.Center:
-         yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
-      discard
+    if not isFarSide(axis, p.relativeToWidgetAnchorPoint):
+      yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
+  of WidgetPositionKind.Absolute:
+    if isFarSide(axis, p.absoluteAnchorTo) or p.absoluteAnchorTo == WidgetOrientation.Center:
+      yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
+    discard
 
 iterator dependentOn(p: WidgetDimension, axis: Axis, widget: Widget, parent: Widget, children: seq[Widget]): Dependency =
-   case p.kind:
-      of WidgetDimensionKind.Fixed:
-         discard
-      of WidgetDimensionKind.Proportional, WidgetDimensionKind.Relative:
-         yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
-      of WidgetDimensionKind.ExpandToParent:
-         yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
-         yield (widget: widget, kind: DependencyKind.Position, axis: axis)
-      of WidgetDimensionKind.Intrinsic:
-         if not widget.dimensions[axis.oppositeAxis2d().ord].isIntrinsic:
-            yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis.oppositeAxis2d())
-      of WidgetDimensionKind.WrapContent:
-         for c in children:
-            yield (widget: c, kind: DependencyKind.PartialPosition, axis: axis)
-            yield (widget: c, kind: DependencyKind.Dimensions, axis: axis)
-      of WidgetDimensionKind.ExpandTo:
-         yield (widget: p.expandtoWidget, kind: DependencyKind.Position, axis: axis)
-         yield (widget: p.expandtoWidget, kind: DependencyKind.Dimensions, axis: axis) # todo: this could probably be tightened up a little bit
+  case p.kind:
+    of WidgetDimensionKind.Fixed:
+      discard
+    of WidgetDimensionKind.Proportional, WidgetDimensionKind.Relative:
+      yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
+    of WidgetDimensionKind.ExpandToParent:
+      yield (widget: parent, kind: DependencyKind.Dimensions, axis: axis)
+      yield (widget: widget, kind: DependencyKind.Position, axis: axis)
+    of WidgetDimensionKind.Intrinsic:
+      if not widget.dimensions[axis.oppositeAxis2d().ord].isIntrinsic:
+        yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis.oppositeAxis2d())
+    of WidgetDimensionKind.WrapContent:
+      for c in children:
+        yield (widget: c, kind: DependencyKind.PartialPosition, axis: axis)
+        yield (widget: c, kind: DependencyKind.Dimensions, axis: axis)
+    of WidgetDimensionKind.ExpandTo:
+      yield (widget: p.expandtoWidget, kind: DependencyKind.Position, axis: axis)
+      yield (widget: p.expandtoWidget, kind: DependencyKind.Dimensions, axis: axis) # todo: this could probably be tightened up a little bit
 
 proc toDependent(w: Widget, srcAxis: Axis, srcKind: DependencyKind, dep: Dependency): Dependent =
-   (dependentWidget: w, dependsOnKind: dep.kind, sourceKind: srcKind, dependsOnAxis: dep.axis, sourceAxis: srcAxis)
+  (dependentWidget: w, dependsOnKind: dep.kind, sourceKind: srcKind, dependsOnAxis: dep.axis, sourceAxis: srcAxis)
 
 
 proc parent*(w: Widget): Option[Widget] = w.parent_f
 
 proc `parent=`*(w: Widget, parent: Option[Widget]) =
-   if parent != w.parent_f:
-      if w.parent_f.isSome:
-         let oldP = w.parent_f.get
-         for i in 0 ..< oldP.children.len:
-            if oldP.children[i] == w:
-               oldP.children.del(i)
-               break
-         for e in enumValues(RecalculationFlag): oldP.markForUpdate(e)
+  if parent != w.parent_f:
+    if w.parent_f.isSome:
+      let oldP = w.parent_f.get
+      for i in 0 ..< oldP.children.len:
+        if oldP.children[i] == w:
+          oldP.children.del(i)
+          break
+      for e in enumValues(RecalculationFlag): oldP.markForUpdate(e)
 
-      w.parent_f = parent
-      if parent.isSome:
-         parent.get.children.add(w)
-         for e in enumValues(RecalculationFlag): parent.get.markForUpdate(e)
-      for e in enumValues(RecalculationFlag): w.markForUpdate(e)
+    w.parent_f = parent
+    if parent.isSome:
+      parent.get.children.add(w)
+      for e in enumValues(RecalculationFlag): parent.get.markForUpdate(e)
+    for e in enumValues(RecalculationFlag): w.markForUpdate(e)
 
 
 proc `parent=`*(w: Widget, parent: Widget) =
-   w.parent = some(parent)
+  w.parent = some(parent)
 
 proc createWidgetFromArchetype*(ws: WindowingSystemRef, archetype: WidgetArchetype, parent: Widget = nil): Widget =
-   result = new Widget
-   result[] = archetype.widgetData[]
-   result.windowingSystem = ws
-   result.entity = ws.display.copyEntity(archetype.widgetData.entity)
-   if parent.isNil:
-      result.parent = ws.desktop
-   else:
-      result.parent = parent
+  result = new Widget
+  result[] = archetype.widgetData[]
+  result.windowingSystem = ws
+  result.entity = ws.display.copyEntity(archetype.widgetData.entity)
+  if parent.isNil:
+    result.parent = ws.desktop
+  else:
+    result.parent = parent
 
-   for childIdentifier, childArchetype in archetype.children:
-      let newChild = ws.createWidgetFromArchetype(childArchetype, result)
-      newChild.identifier = childIdentifier
+  for childIdentifier, childArchetype in archetype.children:
+    let newChild = ws.createWidgetFromArchetype(childArchetype, result)
+    newChild.identifier = childIdentifier
 
 
 proc createWidget*(ws: WindowingSystemRef, parent: Widget = nil): Widget =
-   result = new Widget
-   result.windowingSystem = ws
-   result.entity = ws.display.createEntity()
-   if parent.isNil:
-      result.parent = ws.desktop
-   else:
-      result.parent = parent
+  result = new Widget
+  result.windowingSystem = ws
+  result.entity = ws.display.createEntity()
+  if parent.isNil:
+    result.parent = ws.desktop
+  else:
+    result.parent = parent
 
 
 proc `x=`*(w: Widget, p: WidgetPosition) =
-   if w.position[0] != p:
-      w.position[0] = p
-      w.markForUpdate(RecalculationFlag.PositionX)
-      w.markForUpdate(RecalculationFlag.DependentX)
-   # w.markForUpdate(Axis.X)
+  if w.position[0] != p:
+    w.position[0] = p
+    w.markForUpdate(RecalculationFlag.PositionX)
+    w.markForUpdate(RecalculationFlag.DependentX)
+  # w.markForUpdate(Axis.X)
 
 proc `y=`*(w: Widget, p: WidgetPosition) =
-   if w.position[1] != p:
-      w.position[1] = p
-      w.markForUpdate(RecalculationFlag.PositionY)
-      w.markForUpdate(RecalculationFlag.DependentY)
-   # w.markForUpdate(Axis.Y)
+  if w.position[1] != p:
+    w.position[1] = p
+    w.markForUpdate(RecalculationFlag.PositionY)
+    w.markForUpdate(RecalculationFlag.DependentY)
+  # w.markForUpdate(Axis.Y)
 
 proc `z=`*(w: Widget, p: WidgetPosition) =
-   if w.position[2] != p:
-      w.position[2] = p
-      w.markForUpdate(RecalculationFlag.PositionZ)
-      w.markForUpdate(RecalculationFlag.DependentZ)
-   # w.markForUpdate(Axis.Z)
+  if w.position[2] != p:
+    w.position[2] = p
+    w.markForUpdate(RecalculationFlag.PositionZ)
+    w.markForUpdate(RecalculationFlag.DependentZ)
+  # w.markForUpdate(Axis.Z)
 
 proc `width=`*(w: Widget, p: WidgetDimension) =
-   if w.dimensions[0] != p:
-      w.dimensions[0] = p
-      w.markForUpdate(RecalculationFlag.DimensionsX)
-      w.markForUpdate(RecalculationFlag.DependentX)
-   # w.markForUpdate(Axis.X)
+  if w.dimensions[0] != p:
+    w.dimensions[0] = p
+    w.markForUpdate(RecalculationFlag.DimensionsX)
+    w.markForUpdate(RecalculationFlag.DependentX)
+  # w.markForUpdate(Axis.X)
 
 proc `height=`*(w: Widget, p: WidgetDimension) =
-   if w.dimensions[1] != p:
-      w.dimensions[1] = p
-      w.markForUpdate(RecalculationFlag.DimensionsY)
-      w.markForUpdate(RecalculationFlag.DependentY)
-   # w.markForUpdate(Axis.Y)
+  if w.dimensions[1] != p:
+    w.dimensions[1] = p
+    w.markForUpdate(RecalculationFlag.DimensionsY)
+    w.markForUpdate(RecalculationFlag.DependentY)
+  # w.markForUpdate(Axis.Y)
 
 proc `showing=`*(w: Widget, b: Bindable[bool]) =
-   if w.showing_f != b:
-      w.showing_f = b
-      for e in enumValues(RecalculationFlag): w.markForUpdate(e)
+  if w.showing_f != b:
+    w.showing_f = b
+    for e in enumValues(RecalculationFlag): w.markForUpdate(e)
 
 proc showing*(w: Widget): Bindable[bool] = w.showing_f
 
@@ -598,524 +601,524 @@ proc height*(w: Widget): WidgetDimension = w.dimensions[1]
 proc `$`*(w: Widget): string = "Widget(" & $w.entity.id & ")"
 
 proc recalculateDependents(w: Widget, axis: Axis) =
-   if w.parent.isSome:
-      fine &"recalculating dependents for widget {w.entity} {axis}"
+  if w.parent.isSome:
+    fine &"recalculating dependents for widget {w.entity} {axis}"
 
-      for dep in dependentOn(w.position[axis.ord], axis, w, w.parent.get):
-         dep.widget.dependents.incl(toDependent(w, axis, DependencyKind.Position, dep))
-      if axis == Axis.X or axis == Axis.Y:
-         for dep in dependentOn(w.dimensions[axis.ord], axis, w, w.parent.get, w.children):
-            dep.widget.dependents.incl(toDependent(w, axis, DependencyKind.Dimensions, dep))
+    for dep in dependentOn(w.position[axis.ord], axis, w, w.parent.get):
+      dep.widget.dependents.incl(toDependent(w, axis, DependencyKind.Position, dep))
+    if axis == Axis.X or axis == Axis.Y:
+      for dep in dependentOn(w.dimensions[axis.ord], axis, w, w.parent.get, w.children):
+        dep.widget.dependents.incl(toDependent(w, axis, DependencyKind.Dimensions, dep))
 
 
 
 
 
 proc posFlag(axis: Axis): RecalculationFlag =
-   case axis:
-   of Axis.X: RecalculationFlag.PositionX
-   of Axis.Y: RecalculationFlag.PositionY
-   of Axis.Z: RecalculationFlag.PositionZ
+  case axis:
+  of Axis.X: RecalculationFlag.PositionX
+  of Axis.Y: RecalculationFlag.PositionY
+  of Axis.Z: RecalculationFlag.PositionZ
 
 proc dimFlag(axis: Axis): RecalculationFlag =
-   case axis:
-   of Axis.X: RecalculationFlag.DimensionsX
-   of Axis.Y: RecalculationFlag.DimensionsY
-   of Axis.Z:
-      warn "no z dimension flag"
-      RecalculationFlag.DimensionsY
+  case axis:
+  of Axis.X: RecalculationFlag.DimensionsX
+  of Axis.Y: RecalculationFlag.DimensionsY
+  of Axis.Z:
+    warn "no z dimension flag"
+    RecalculationFlag.DimensionsY
 
 proc depFlag(axis: Axis): RecalculationFlag =
-   case axis:
-   of Axis.X: RecalculationFlag.DependentX
-   of Axis.Y: RecalculationFlag.DependentY
-   of Axis.Z: RecalculationFlag.DependentZ
+  case axis:
+  of Axis.X: RecalculationFlag.DependentX
+  of Axis.Y: RecalculationFlag.DependentY
+  of Axis.Z: RecalculationFlag.DependentZ
 
 proc ensureDependency(dep: Dependency, dirtySet: HashSet[Dependency], completedSet: var HashSet[Dependency]) {.gcsafe.}
 # proc updateDependent(dep : Dependent, dirtySet : HashSet[Dependency], completedSet : var HashSet[Dependency])
 
 proc recalculatePartialPosition(w: Widget, axis: Axis, dirtySet: HashSet[Dependency], completedSet: var HashSet[Dependency]) =
-   let completedKey = (widget: w, kind: DependencyKind.PartialPosition, axis: axis)
-   if completedSet.containsOrIncl(completedKey):
-      return
-   fine &"recalculating partial position for widget {w.entity} {axis}"
+  let completedKey = (widget: w, kind: DependencyKind.PartialPosition, axis: axis)
+  if completedSet.containsOrIncl(completedKey):
+    return
+  fine &"recalculating partial position for widget {w.entity} {axis}"
 
-   let pos = w.position[axis.ord]
-   if w.parent.isSome:
-      w.resolvedPartialPosition[axis] = case pos.kind:
-      of WidgetPositionKind.Fixed:
-         if isFarSide(axis, pos.fixedRelativeTo):
-            0
-         else:
-            pos.fixedOffset * w.windowingSystem.pixelScale
-      of WidgetPositionKind.Proportional:
-         0
-      of WidgetPositionKind.Centered:
-         0
-      of WidgetPositionKind.Relative:
-         let relativeToWidget = w.parent.get.childByIdentifier(pos.relativeToWidget)
-         if relativeToWidget.isSome:
-            ensureDependency((widget: relativeToWidget.get, kind: DependencyKind.PartialPosition, axis: axis), dirtySet, completedSet)
-            if isFarSide(axis, pos.relativeToWidgetAnchorPoint):
-               ensureDependency((widget: relativeToWidget.get, kind: DependencyKind.Dimensions, axis: axis), dirtySet, completedSet)
-               relativeToWidget.get.resolvedPartialPosition[axis] + relativeToWidget.get.resolvedDimensions[axis] + pos.relativeOffset * w.windowingSystem.pixelScale
-            else:
-               ensureDependency((widget: w, kind: DependencyKind.Dimensions, axis: axis), dirtySet, completedSet)
-               relativeToWidget.get.resolvedPartialPosition[axis] - pos.relativeOffset * w.windowingSystem.pixelScale - w.resolvedDimensions[axis]
-         else:
-            warn &"Partial position resolution looked for relative widget {pos.relativeToWidget} on widget {w.identifier} but no relative widget found"
-            0
-      of WidgetPositionKind.Absolute:
-         pos.absoluteOffset
+  let pos = w.position[axis.ord]
+  if w.parent.isSome:
+    w.resolvedPartialPosition[axis] = case pos.kind:
+    of WidgetPositionKind.Fixed:
+      if isFarSide(axis, pos.fixedRelativeTo):
+        0
+      else:
+        pos.fixedOffset * w.windowingSystem.pixelScale
+    of WidgetPositionKind.Proportional:
+      0
+    of WidgetPositionKind.Centered:
+      0
+    of WidgetPositionKind.Relative:
+      let relativeToWidget = w.parent.get.childByIdentifier(pos.relativeToWidget)
+      if relativeToWidget.isSome:
+        ensureDependency((widget: relativeToWidget.get, kind: DependencyKind.PartialPosition, axis: axis), dirtySet, completedSet)
+        if isFarSide(axis, pos.relativeToWidgetAnchorPoint):
+          ensureDependency((widget: relativeToWidget.get, kind: DependencyKind.Dimensions, axis: axis), dirtySet, completedSet)
+          relativeToWidget.get.resolvedPartialPosition[axis] + relativeToWidget.get.resolvedDimensions[axis] + pos.relativeOffset * w.windowingSystem.pixelScale
+        else:
+          ensureDependency((widget: w, kind: DependencyKind.Dimensions, axis: axis), dirtySet, completedSet)
+          relativeToWidget.get.resolvedPartialPosition[axis] - pos.relativeOffset * w.windowingSystem.pixelScale - w.resolvedDimensions[axis]
+      else:
+        warn &"Partial position resolution looked for relative widget {pos.relativeToWidget} on widget {w.identifier} but no relative widget found"
+        0
+    of WidgetPositionKind.Absolute:
+      pos.absoluteOffset
 
 
 
 proc resolvePositionValue(w: Widget, axis: Axis, pos: WidgetPosition): int =
-   let parentV = w.parent.get.resolvedPosition[axis] + w.parent.get.clientOffset[axis]
-   let parentD = if axis.is2D(): w.parent.get.resolvedDimensions[axis] - w.parent.get.clientOffset[axis] * 2 else: 10
-   case pos.kind:
-   of WidgetPositionKind.Fixed:
-      if isFarSide(axis, pos.fixedRelativeTo):
-         parentV + parentD - (pos.fixedOffset * w.windowingSystem.pixelScale) - w.resolvedDimensions[axis]
-      else:
-         parentV + pos.fixedOffset * w.windowingSystem.pixelScale
-   of WidgetPositionKind.Proportional:
-      var primaryPoint = if isFarSide(axis, pos.proportionalRelativeTo):
-         parentV + parentD - (parentD.float * pos.proportion).int - w.resolvedDimensions[axis]
-      else:
-         if axis == Axis.Y: echo fmt"parentD: {parentD}, proportion: {pos.proportion}"
-         parentV + (parentD.float * pos.proportion).int
+  let parentV = w.parent.get.resolvedPosition[axis] + w.parent.get.clientOffset[axis]
+  let parentD = if axis.is2D(): w.parent.get.resolvedDimensions[axis] - w.parent.get.clientOffset[axis] * 2 else: 10
+  case pos.kind:
+  of WidgetPositionKind.Fixed:
+    if isFarSide(axis, pos.fixedRelativeTo):
+      parentV + parentD - (pos.fixedOffset * w.windowingSystem.pixelScale) - w.resolvedDimensions[axis]
+    else:
+      parentV + pos.fixedOffset * w.windowingSystem.pixelScale
+  of WidgetPositionKind.Proportional:
+    var primaryPoint = if isFarSide(axis, pos.proportionalRelativeTo):
+      parentV + parentD - (parentD.float * pos.proportion).int - w.resolvedDimensions[axis]
+    else:
+      if axis == Axis.Y: echo fmt"parentD: {parentD}, proportion: {pos.proportion}"
+      parentV + (parentD.float * pos.proportion).int
 
-      # if the widget is anchored at the center, shift so the primary point is at the center
-      if pos.proportionalAnchorTo == WidgetOrientation.Center:
-         primaryPoint - w.resolvedDimensions[axis] div 2
+    # if the widget is anchored at the center, shift so the primary point is at the center
+    if pos.proportionalAnchorTo == WidgetOrientation.Center:
+      primaryPoint - w.resolvedDimensions[axis] div 2
+    else:
+      primaryPoint
+  of WidgetPositionKind.Centered:
+    parentV + (parentD - w.resolvedDimensions[axis]) div 2
+  of WidgetPositionKind.Relative:
+    let relativeToWidget = w.parent.get.childByIdentifier(pos.relativeToWidget)
+    if relativeToWidget.isSome:
+      if isFarSide(axis, pos.relativeToWidgetAnchorPoint):
+        relativeToWidget.get.resolvedPosition[axis] + relativeToWidget.get.resolvedDimensions[axis] + pos.relativeOffset * w.windowingSystem.pixelScale
       else:
-         primaryPoint
-   of WidgetPositionKind.Centered:
-      parentV + (parentD - w.resolvedDimensions[axis]) div 2
-   of WidgetPositionKind.Relative:
-      let relativeToWidget = w.parent.get.childByIdentifier(pos.relativeToWidget)
-      if relativeToWidget.isSome:
-         if isFarSide(axis, pos.relativeToWidgetAnchorPoint):
-            relativeToWidget.get.resolvedPosition[axis] + relativeToWidget.get.resolvedDimensions[axis] + pos.relativeOffset * w.windowingSystem.pixelScale
-         else:
-            relativeToWidget.get.resolvedPosition[axis] - pos.relativeOffset * w.windowingSystem.pixelScale - w.resolvedDimensions[axis]
-      else:
-         warn &"resolvePositionValue(...) looking for relative widget {pos.relativeToWidget} on widget {w.identifier} but none found"
-         0
-   of WidgetPositionKind.Absolute:
-      if pos.absoluteAnchorTo == WidgetOrientation.Center:
-         pos.absoluteOffset - w.resolvedDimensions[axis] div 2
-      elif isFarSide(axis, pos.absoluteAnchorTo):
-         pos.absoluteOffset - w.resolvedDimensions[axis]
-      else:
-         pos.absoluteOffset
+        relativeToWidget.get.resolvedPosition[axis] - pos.relativeOffset * w.windowingSystem.pixelScale - w.resolvedDimensions[axis]
+    else:
+      warn &"resolvePositionValue(...) looking for relative widget {pos.relativeToWidget} on widget {w.identifier} but none found"
+      0
+  of WidgetPositionKind.Absolute:
+    if pos.absoluteAnchorTo == WidgetOrientation.Center:
+      pos.absoluteOffset - w.resolvedDimensions[axis] div 2
+    elif isFarSide(axis, pos.absoluteAnchorTo):
+      pos.absoluteOffset - w.resolvedDimensions[axis]
+    else:
+      pos.absoluteOffset
 
 
 proc updateGeometry(ws: WindowingSystemRef) {.gcsafe.}
 
 proc resolvePosition*(w: Widget, axis: Axis, pos: WidgetPosition): int {.gcsafe.} =
-   if w.parent.isNone:
-      warn &"Cannot resolve position of widget with no parent: {w.identifier}"
-      return 0
+  if w.parent.isNone:
+    warn &"Cannot resolve position of widget with no parent: {w.identifier}"
+    return 0
 
-   updateGeometry(w.windowingSystem)
+  updateGeometry(w.windowingSystem)
 
-   resolvePositionValue(w, axis, pos)
+  resolvePositionValue(w, axis, pos)
 
 proc resolveEffectiveDimension*(w: Widget, axis: Axis): int {.gcsafe.} =
-   updateGeometry(w.windowingSystem)
+  updateGeometry(w.windowingSystem)
 
-   w.resolvedDimensions[axis] div w.windowingSystem.pixelScale
+  w.resolvedDimensions[axis] div w.windowingSystem.pixelScale
 
 proc recalculatePosition(w: Widget, axis: Axis, dirtySet: HashSet[Dependency], completedSet: var HashSet[Dependency]) =
-   let completedKey = (widget: w, kind: DependencyKind.Position, axis: axis)
-   if completedSet.containsOrIncl(completedKey):
-      return
-   fine &"recalculating position for widget {w.entity} {axis}"
-   w.resolvedPosition[axis.ord] = 0
+  let completedKey = (widget: w, kind: DependencyKind.Position, axis: axis)
+  if completedSet.containsOrIncl(completedKey):
+    return
+  fine &"recalculating position for widget {w.entity} {axis}"
+  w.resolvedPosition[axis.ord] = 0
 
-   let pos = w.position[axis.ord]
+  let pos = w.position[axis.ord]
 
-   if w.background.draw:
-      w.clientOffset[axis] = (imageMetricsFor(w.background.image.value).borderWidth * w.background.pixelScale + w.padding[axis] * 2) * w.windowingSystem.pixelScale
-   else:
-      w.clientOffset[axis] = w.padding[axis] * 2 * w.windowingSystem.pixelScale
+  if w.background.draw:
+    w.clientOffset[axis] = (imageMetricsFor(w.background.image.value).borderWidth * w.background.pixelScale + w.padding[axis] * 2) * w.windowingSystem.pixelScale
+  else:
+    w.clientOffset[axis] = w.padding[axis] * 2 * w.windowingSystem.pixelScale
 
-   if w.parent.isSome:
-      for dep in dependentOn(pos, axis, w, w.parent.get):
-         if dirtySet.contains(dep):
-            ensureDependency(dep, dirtySet, completedSet)
+  if w.parent.isSome:
+    for dep in dependentOn(pos, axis, w, w.parent.get):
+      if dirtySet.contains(dep):
+        ensureDependency(dep, dirtySet, completedSet)
 
-      w.resolvedPosition[axis] = resolvePositionValue(w, axis, pos)
+    w.resolvedPosition[axis] = resolvePositionValue(w, axis, pos)
 
 
 
 proc recalculateDimensions(w: Widget, axis: Axis, dirtySet: HashSet[Dependency], completedSet: var HashSet[Dependency]) =
-   # let pixelScale = w.windowingSystem.pixelScale
+  # let pixelScale = w.windowingSystem.pixelScale
 
-   let completedKey = (widget: w, kind: DependencyKind.Dimensions, axis: axis)
-   if completedSet.containsOrIncl(completedKey):
-      return
-   fine &"recalculating dimensions for widget {w.entity} {axis}"
-   w.resolvedDimensions[axis.ord] = 0
+  let completedKey = (widget: w, kind: DependencyKind.Dimensions, axis: axis)
+  if completedSet.containsOrIncl(completedKey):
+    return
+  fine &"recalculating dimensions for widget {w.entity} {axis}"
+  w.resolvedDimensions[axis.ord] = 0
 
-   let dim = w.dimensions[axis.ord]
+  let dim = w.dimensions[axis.ord]
 
-   if w.background.draw:
-      w.clientOffset[axis] = (imageMetricsFor(w.background.image.value).borderWidth * w.background.pixelScale + w.padding[axis] * 2) * w.windowingSystem.pixelScale
-   else:
-      w.clientOffset[axis] = w.padding[axis] * 2 * w.windowingSystem.pixelScale
+  if w.background.draw:
+    w.clientOffset[axis] = (imageMetricsFor(w.background.image.value).borderWidth * w.background.pixelScale + w.padding[axis] * 2) * w.windowingSystem.pixelScale
+  else:
+    w.clientOffset[axis] = w.padding[axis] * 2 * w.windowingSystem.pixelScale
 
-   if w.parent.isSome:
-      for dep in dependentOn(dim, axis, w, w.parent.get, w.children):
-         if dirtySet.contains(dep):
-            ensureDependency(dep, dirtySet, completedSet)
+  if w.parent.isSome:
+    for dep in dependentOn(dim, axis, w, w.parent.get, w.children):
+      if dirtySet.contains(dep):
+        ensureDependency(dep, dirtySet, completedSet)
 
-      let parentV = w.parent.get.resolvedPosition[axis] + w.parent.get.clientOffset[axis]
-      let parentD = w.parent.get.resolvedDimensions[axis] - w.parent.get.clientOffset[axis] * 2
-      w.resolvedDimensions[axis] = case dim.kind:
-      of WidgetDimensionKind.Fixed:
-         dim.fixedSize * w.windowingSystem.pixelScale
-      of WidgetDimensionKind.Relative:
-         parentD + dim.sizeDelta * w.windowingSystem.pixelScale
-      of WidgetDimensionKind.Proportional:
-         (parentD.float * dim.sizeProportion).int
-      of WidgetDimensionKind.ExpandToParent:
-         let relativePos = w.resolvedPosition[axis] - parentV
-         parentD - dim.parentGap * w.windowingSystem.pixelScale - relativePos
-      of WidgetDimensionKind.Intrinsic:
-         var intrinsicSize: Option[int] = none(int)
-         var minimums: Vec2i = vec2i(0, 0)
-         var maximums: Vec2i = vec2i(1000000, 10000000)
-         # Todo: this only accounts for intrinsic min/max's, might want to include fixed values too?
-         if w.dimensions[0].kind == WidgetDimensionKind.Intrinsic:
-            minimums.x = w.dimensions[0].intrinsicMin.get(0).int32
-            maximums.x = w.dimensions[0].intrinsicMax.get(1000000).int32
-         if w.dimensions[1].kind == WidgetDimensionKind.Intrinsic:
-            minimums.y = w.dimensions[1].intrinsicMin.get(0).int32
-            maximums.y = w.dimensions[1].intrinsicMax.get(1000000).int32
+    let parentV = w.parent.get.resolvedPosition[axis] + w.parent.get.clientOffset[axis]
+    let parentD = w.parent.get.resolvedDimensions[axis] - w.parent.get.clientOffset[axis] * 2
+    w.resolvedDimensions[axis] = case dim.kind:
+    of WidgetDimensionKind.Fixed:
+      dim.fixedSize * w.windowingSystem.pixelScale
+    of WidgetDimensionKind.Relative:
+      parentD + dim.sizeDelta * w.windowingSystem.pixelScale
+    of WidgetDimensionKind.Proportional:
+      (parentD.float * dim.sizeProportion).int
+    of WidgetDimensionKind.ExpandToParent:
+      let relativePos = w.resolvedPosition[axis] - parentV
+      parentD - dim.parentGap * w.windowingSystem.pixelScale - relativePos
+    of WidgetDimensionKind.Intrinsic:
+      var intrinsicSize: Option[int] = none(int)
+      var minimums: Vec2i = vec2i(0, 0)
+      var maximums: Vec2i = vec2i(1000000, 10000000)
+      # Todo: this only accounts for intrinsic min/max's, might want to include fixed values too?
+      if w.dimensions[0].kind == WidgetDimensionKind.Intrinsic:
+        minimums.x = w.dimensions[0].intrinsicMin.get(0).int32
+        maximums.x = w.dimensions[0].intrinsicMax.get(1000000).int32
+      if w.dimensions[1].kind == WidgetDimensionKind.Intrinsic:
+        minimums.y = w.dimensions[1].intrinsicMin.get(0).int32
+        maximums.y = w.dimensions[1].intrinsicMax.get(1000000).int32
 
 
-         for renderer in w.windowingSystem.components:
-            intrinsicSize = renderer.intrinsicSize(w, axis, minimums, maximums)
-            if intrinsicSize.isSome: break
+      for renderer in w.windowingSystem.components:
+        intrinsicSize = renderer.intrinsicSize(w, axis, minimums, maximums)
+        if intrinsicSize.isSome: break
 
-         if intrinsicSize.isSome:
-            intrinsicSize.get + w.clientOffset[axis] * 2
-         else:
-            warn &"intrinsic sized widget with no intrinsic qualities {w.identifier}"
-            10
-      of WidgetDimensionKind.WrapContent:
-         var min: int = 0
-         var max: int = 0
-         for c in w.children:
-            min = min.min(c.resolvedPartialPosition[axis])
-            max = max.max(c.resolvedPartialPosition[axis] + c.resolvedDimensions[axis])
-         if max > min:
-            max - min + w.clientOffset[axis] * 2
-         else:
-            0
-      of WidgetDimensionKind.ExpandTo:
-         dim.expandToWidget.resolvedPosition[axis] - dim.expandToGap * w.windowingSystem.pixelScale - w.resolvedPosition[axis]
-   else:
-      w.resolvedDimensions[axis] = w.windowingSystem.dimensions[axis]
+      if intrinsicSize.isSome:
+        intrinsicSize.get + w.clientOffset[axis] * 2
+      else:
+        warn &"intrinsic sized widget with no intrinsic qualities {w.identifier}"
+        10
+    of WidgetDimensionKind.WrapContent:
+      var min: int = 0
+      var max: int = 0
+      for c in w.children:
+        min = min.min(c.resolvedPartialPosition[axis])
+        max = max.max(c.resolvedPartialPosition[axis] + c.resolvedDimensions[axis])
+      if max > min:
+        max - min + w.clientOffset[axis] * 2
+      else:
+        0
+    of WidgetDimensionKind.ExpandTo:
+      dim.expandToWidget.resolvedPosition[axis] - dim.expandToGap * w.windowingSystem.pixelScale - w.resolvedPosition[axis]
+  else:
+    w.resolvedDimensions[axis] = w.windowingSystem.dimensions[axis]
 
 proc ensureDependency(dep: Dependency, dirtySet: HashSet[Dependency], completedSet: var HashSet[Dependency]) {.gcsafe.} =
-   if not completedSet.contains(dep):
-      case dep.kind:
-      of DependencyKind.Position:
-         dep.widget.windowingSystem.updatePositionCount.inc
-         dep.widget.recalculatePosition(dep.axis, dirtySet, completedSet)
-      of DependencyKind.Dimensions:
-         fine &"Updating dimensions({dep.axis}) for widget {dep.widget.identifier}"
-         dep.widget.windowingSystem.updateDimensionsCount.inc
-         dep.widget.recalculateDimensions(dep.axis, dirtySet, completedSet)
-      of DependencyKind.PartialPosition:
-         dep.widget.recalculatePartialPosition(dep.axis, dirtySet, completedSet)
-      completedSet.incl(dep)
+  if not completedSet.contains(dep):
+    case dep.kind:
+    of DependencyKind.Position:
+      dep.widget.windowingSystem.updatePositionCount.inc
+      dep.widget.recalculatePosition(dep.axis, dirtySet, completedSet)
+    of DependencyKind.Dimensions:
+      fine &"Updating dimensions({dep.axis}) for widget {dep.widget.identifier}"
+      dep.widget.windowingSystem.updateDimensionsCount.inc
+      dep.widget.recalculateDimensions(dep.axis, dirtySet, completedSet)
+    of DependencyKind.PartialPosition:
+      dep.widget.recalculatePartialPosition(dep.axis, dirtySet, completedSet)
+    completedSet.incl(dep)
 
 # proc updateDependent(dep : Dependent, dirtySet : HashSet[Dependency], completedSet : var HashSet[Dependency]) =
-#    case dep.sourceKind:
-#    of DependencyKind.Position: dep.dependentWidget.recalculatePosition(dep.sourceAxis, dirtySet, completedSet)
-#    of DependencyKind.Dimensions: dep.dependentWidget.recalculateDimensions(dep.sourceAxis, dirtySet, completedSet)
+#   case dep.sourceKind:
+#   of DependencyKind.Position: dep.dependentWidget.recalculatePosition(dep.sourceAxis, dirtySet, completedSet)
+#   of DependencyKind.Dimensions: dep.dependentWidget.recalculateDimensions(dep.sourceAxis, dirtySet, completedSet)
 
 proc collectDirty(dep: Dependency, dirty: var HashSet[Dependency]) =
-   for dependent in dep.widget.dependents:
-      if dependent.dependsOnAxis == dep.axis and dependent.dependsOnKind == dep.kind:
-         let newDep = (widget: dependent.dependentWidget, kind: dependent.sourceKind, axis: dependent.sourceAxis)
-         if not dirty.containsOrIncl(newDep):
-            collectDirty(newDep, dirty)
+  for dependent in dep.widget.dependents:
+    if dependent.dependsOnAxis == dep.axis and dependent.dependsOnKind == dep.kind:
+      let newDep = (widget: dependent.dependentWidget, kind: dependent.sourceKind, axis: dependent.sourceAxis)
+      if not dirty.containsOrIncl(newDep):
+        collectDirty(newDep, dirty)
 
 
 # proc recursivelyCollectDependents(w : )
 
-proc updateLastWidgetUnderMouse(ws: WindowingSystemRef, widget: Widget, world: World, display: DisplayWorld)
+proc updateLastWidgetUnderMouse[WorldType](ws: WindowingSystemRef, widget: Widget, world: WorldType, display: DisplayWorld)
 
 proc updateGeometry(ws: WindowingSystemRef) {.gcsafe.} =
-   fine &"Pending updates: {ws.pendingUpdates}"
-   for w, v in ws.pendingUpdates:
-      for axis in axes():
-         if v.contains(depFlag(axis)):
-            ws.updateDependentsCount.inc
-            w.recalculateDependents(axis)
+  fine &"Pending updates: {ws.pendingUpdates}"
+  for w, v in ws.pendingUpdates:
+    for axis in axes():
+      if v.contains(depFlag(axis)):
+        ws.updateDependentsCount.inc
+        w.recalculateDependents(axis)
 
-   var dirtySet: HashSet[Dependency]
-   var completedSet: HashSet[Dependency]
-   for w, v in ws.pendingUpdates:
-      if v.contains(RecalculationFlag.Contents):
-         ws.rerenderSet.incl(w)
-      for axis in axes2d():
-         if v.contains(dimFlag(axis)) or v.contains(depFlag(axis)):
-            # w.recalculateDimensions(axis, completedSet)
-            dirtySet.incl((widget: w, kind: DependencyKind.Dimensions, axis: axis))
-            collectDirty((widget: w, kind: DependencyKind.Dimensions, axis: axis), dirtySet)
-      for axis in axes3d():
-         if v.contains(posFlag(axis)) or v.contains(depFlag(axis)):
-            # w.recalculatePosition(axis, completedSet)
-            dirtySet.incl((widget: w, kind: DependencyKind.Position, axis: axis))
-            dirtySet.incl((widget: w, kind: DependencyKind.PartialPosition, axis: axis))
-            collectDirty((widget: w, kind: DependencyKind.Position, axis: axis), dirtySet)
+  var dirtySet: HashSet[Dependency]
+  var completedSet: HashSet[Dependency]
+  for w, v in ws.pendingUpdates:
+    if v.contains(RecalculationFlag.Contents):
+      ws.rerenderSet.incl(w)
+    for axis in axes2d():
+      if v.contains(dimFlag(axis)) or v.contains(depFlag(axis)):
+        # w.recalculateDimensions(axis, completedSet)
+        dirtySet.incl((widget: w, kind: DependencyKind.Dimensions, axis: axis))
+        collectDirty((widget: w, kind: DependencyKind.Dimensions, axis: axis), dirtySet)
+    for axis in axes3d():
+      if v.contains(posFlag(axis)) or v.contains(depFlag(axis)):
+        # w.recalculatePosition(axis, completedSet)
+        dirtySet.incl((widget: w, kind: DependencyKind.Position, axis: axis))
+        dirtySet.incl((widget: w, kind: DependencyKind.PartialPosition, axis: axis))
+        collectDirty((widget: w, kind: DependencyKind.Position, axis: axis), dirtySet)
 
-   for dsDep in dirtySet:
-      ensureDependency(dsDep, dirtySet, completedSet)
+  for dsDep in dirtySet:
+    ensureDependency(dsDep, dirtySet, completedSet)
 
-   for completed in completedSet:
-      ws.rerenderSet.incl(completed.widget)
+  for completed in completedSet:
+    ws.rerenderSet.incl(completed.widget)
 
-   ws.pendingUpdates.clear()
+  ws.pendingUpdates.clear()
 
-   if ws.renderContentsCount + ws.updateDependentsCount + ws.updateDimensionsCount + ws.updatePositionCount > 0:
-      fine &"contents renders: {ws.renderContentsCount}"
-      fine &"dependents recalc: {ws.updateDependentsCount}"
-      fine &"dimensions recalc: {ws.updateDimensionsCount}"
-      fine &"position recalc: {ws.updatePositionCount}"
+  if ws.renderContentsCount + ws.updateDependentsCount + ws.updateDimensionsCount + ws.updatePositionCount > 0:
+    fine &"contents renders: {ws.renderContentsCount}"
+    fine &"dependents recalc: {ws.updateDependentsCount}"
+    fine &"dimensions recalc: {ws.updateDimensionsCount}"
+    fine &"position recalc: {ws.updatePositionCount}"
 
 
 proc widgetAtPosition*(ws: WindowingSystemRef, position: Vec2f): Widget
 
-proc update*(ws: WindowingSystemRef, tb: TextureBlock, world: World, display: DisplayWorld) =
-   ws.updateDependentsCount = 0
-   ws.updateDimensionsCount = 0
-   ws.updatePositionCount = 0
-   ws.renderContentsCount = 0
+proc update*[WorldType](ws: WindowingSystemRef, tb: TextureBlock, world: WorldType, display: DisplayWorld) =
+  ws.updateDependentsCount = 0
+  ws.updateDimensionsCount = 0
+  ws.updatePositionCount = 0
+  ws.renderContentsCount = 0
 
-   let expectedDimensions = ws.display[GraphicsContextData].framebufferSize + 1
-   if ws.dimensions != expectedDimensions:
-      ws.dimensions = expectedDimensions
-      ws.desktop.markForUpdate(RecalculationFlag.DimensionsX)
-      ws.desktop.markForUpdate(RecalculationFlag.DimensionsY)
+  let expectedDimensions = ws.display[GraphicsContextData].framebufferSize + 1
+  if ws.dimensions != expectedDimensions:
+    ws.dimensions = expectedDimensions
+    ws.desktop.markForUpdate(RecalculationFlag.DimensionsX)
+    ws.desktop.markForUpdate(RecalculationFlag.DimensionsY)
 
-   updateGeometry(ws)
+  updateGeometry(ws)
 
-   let widgetUnderMouse = ws.widgetAtPosition(ws.lastMousePosition)
-   if widgetUnderMouse != ws.lastWidgetUnderMouse:
-      ws.updateLastWidgetUnderMouse(widgetUnderMouse, world, display)
+  let widgetUnderMouse = ws.widgetAtPosition(ws.lastMousePosition)
+  if widgetUnderMouse != ws.lastWidgetUnderMouse:
+    ws.updateLastWidgetUnderMouse(widgetUnderMouse, world, display)
 
-   if ws.rerenderSet.len != 0:
-      for widget in ws.rerenderSet:
-         ws.renderContentsCount.inc
-         renderContents(ws, widget, tb)
-      ws.renderRevision.inc
-      fine "Re-rendered"
-      ws.rerenderSet.clear()
+  if ws.rerenderSet.len != 0:
+    for widget in ws.rerenderSet:
+      ws.renderContentsCount.inc
+      renderContents(ws, widget, tb)
+    ws.renderRevision.inc
+    fine "Re-rendered"
+    ws.rerenderSet.clear()
 
 
 type Corner = object
-   enabled: bool
-   dimensions: Vec2i
+  enabled: bool
+  dimensions: Vec2i
 
 
 const edgeAxes: array[4, Axis] = [Axis.Y, Axis.X, Axis.Y, Axis.X]
 # const cornerRects : array[4,Rectf] = [
-#    rect(vec2f(0.0f,0.0f), rectf)
+#   rect(vec2f(0.0f,0.0f), rectf)
 # ]
 
 iterator nineWayImageQuads(nwi: NineWayImage, inDim: Vec2i, pixelScale: int): WQuad =
-   let offset = vec3f(nwi.dimensionDelta.x * nwi.pixelScale * pixelScale * -1, nwi.dimensionDelta.y * nwi.pixelScale * pixelScale * -1, 0)
-   let dim = inDim + nwi.dimensionDelta * nwi.pixelScale * pixelScale * 2
-   let img = nwi.image.asImage
-   let imgLike = imageLike(img)
-   let imgMetrics = imageMetricsFor(img)
+  let offset = vec3f(nwi.dimensionDelta.x * nwi.pixelScale * pixelScale * -1, nwi.dimensionDelta.y * nwi.pixelScale * pixelScale * -1, 0)
+  let dim = inDim + nwi.dimensionDelta * nwi.pixelScale * pixelScale * 2
+  let img = nwi.image.asImage
+  let imgLike = imageLike(img)
+  let imgMetrics = imageMetricsFor(img)
 
-   let fwd = vec3f(1, 0, 0)
-   let oto = vec3f(0, 1, 0)
-   let basis = [fwd, oto]
+  let fwd = vec3f(1, 0, 0)
+  let oto = vec3f(0, 1, 0)
+  let basis = [fwd, oto]
 
-   var cornerDim: Vec2i = (img.dimensions div 2) * nwi.pixelScale * pixelScale
-   var cornerPercents: Vec2f = vec2f(1.0, 1.0)
-   for axis in axes2d():
-      if cornerDim[axis] > dim[axis] div 2:
-         cornerPercents[axis] = (dim[axis] / 2) / cornerDim[axis].float
-         cornerDim[axis] = (dim[axis] div 2) + 1
+  var cornerDim: Vec2i = (img.dimensions div 2) * nwi.pixelScale * pixelScale
+  var cornerPercents: Vec2f = vec2f(1.0, 1.0)
+  for axis in axes2d():
+    if cornerDim[axis] > dim[axis] div 2:
+      cornerPercents[axis] = (dim[axis] / 2) / cornerDim[axis].float
+      cornerDim[axis] = (dim[axis] div 2) + 1
 
-   let farDims = dim - cornerDim
-   let ctcPos = vec2f(0.0f, 1.0f - 0.5f * cornerPercents.y)
-   let ctcDim = cornerPercents * 0.5f
-   let cornerSubRect = rect(ctcPos, ctcDim)
+  let farDims = dim - cornerDim
+  let ctcPos = vec2f(0.0f, 1.0f - 0.5f * cornerPercents.y)
+  let ctcDim = cornerPercents * 0.5f
+  let cornerSubRect = rect(ctcPos, ctcDim)
 
-   var corners: array[4, Corner]
-   for q in 0 ..< 4:
-      corners[q].enabled = nwi.drawEdges.contains(q.WidgetEdge) and nwi.drawEdges.contains(((q+1) mod 4).WidgetEdge)
-      if corners[q].enabled:
-         corners[q].dimensions = cornerDim
+  var corners: array[4, Corner]
+  for q in 0 ..< 4:
+    corners[q].enabled = nwi.drawEdges.contains(q.WidgetEdge) and nwi.drawEdges.contains(((q+1) mod 4).WidgetEdge)
+    if corners[q].enabled:
+      corners[q].dimensions = cornerDim
 
-   if nwi.drawCenter:
-      let centerOffset = imgMetrics.borderWidth * nwi.pixelScale * pixelScale - 1
-      let startX = if nwi.drawEdges.contains(WidgetEdge.Left): centerOffset else: 0
-      let startY = if nwi.drawEdges.contains(WidgetEdge.Top): centerOffset else: 0
-      let endX = if nwi.drawEdges.contains(WidgetEdge.Right): dim.x - centerOffset else: 0
-      let endY = if nwi.drawEdges.contains(WidgetEdge.Bottom): dim.y - centerOffset else: 0
-      let pos = fwd * startX.float32 + oto * startY.float32
-      yield WQuad(shape: rectShape(position = pos + offset, dimensions = vec2i(endX-startX+1, endY-startY+1), forward = fwd.xy), texCoords: noImageTexCoords(), color: nwi.color * imgMetrics.centerColor,
-            beforeChildren: true)
+  if nwi.drawCenter:
+    let centerOffset = imgMetrics.borderWidth * nwi.pixelScale * pixelScale - 1
+    let startX = if nwi.drawEdges.contains(WidgetEdge.Left): centerOffset else: 0
+    let startY = if nwi.drawEdges.contains(WidgetEdge.Top): centerOffset else: 0
+    let endX = if nwi.drawEdges.contains(WidgetEdge.Right): dim.x - centerOffset else: 0
+    let endY = if nwi.drawEdges.contains(WidgetEdge.Bottom): dim.y - centerOffset else: 0
+    let pos = fwd * startX.float32 + oto * startY.float32
+    yield WQuad(shape: rectShape(position = pos + offset, dimensions = vec2i(endX-startX+1, endY-startY+1), forward = fwd.xy), texCoords: noImageTexCoords(), color: nwi.color * imgMetrics.centerColor,
+        beforeChildren: true)
 
-   for q in 0 ..< 4:
-      if corners[q].enabled:
-         let pos = fwd * farDims.x.float32 * UnitSquareVertices[q].x + oto * farDims.y.float32 * UnitSquareVertices[q].y
-         let tc = subRectTexCoords(cornerSubRect, q mod 3 != 0, q >= 2)
-         yield WQuad(shape: rectShape(position = pos + offset, dimensions = cornerDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: tc, beforeChildren: false)
+  for q in 0 ..< 4:
+    if corners[q].enabled:
+      let pos = fwd * farDims.x.float32 * UnitSquareVertices[q].x + oto * farDims.y.float32 * UnitSquareVertices[q].y
+      let tc = subRectTexCoords(cornerSubRect, q mod 3 != 0, q >= 2)
+      yield WQuad(shape: rectShape(position = pos + offset, dimensions = cornerDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: tc, beforeChildren: false)
 
-      if nwi.drawEdges.contains(q.WidgetEdge):
-         let primaryAxis = edgeAxes[q].ord
-         let secondaryAxis = 1 - primaryAxis
-         if dim[primaryAxis] > cornerDim[primaryAxis] * 2:
-            var pos = basis[primaryAxis] * cornerDim[primaryAxis].float +
-                     basis[secondaryAxis] * farDims[secondaryAxis].float * UnitSquareVertices2d[q][secondaryAxis]
-            var edgeDim: Vec2i
-            edgeDim[primaryAxis] = dim[primaryAxis] - corners[(q+3) mod 4].dimensions[primaryAxis] - corners[q].dimensions[primaryAxis]
-            edgeDim[secondaryAxis] = cornerDim[secondaryAxis]
+    if nwi.drawEdges.contains(q.WidgetEdge):
+      let primaryAxis = edgeAxes[q].ord
+      let secondaryAxis = 1 - primaryAxis
+      if dim[primaryAxis] > cornerDim[primaryAxis] * 2:
+        var pos = basis[primaryAxis] * cornerDim[primaryAxis].float +
+              basis[secondaryAxis] * farDims[secondaryAxis].float * UnitSquareVertices2d[q][secondaryAxis]
+        var edgeDim: Vec2i
+        edgeDim[primaryAxis] = dim[primaryAxis] - corners[(q+3) mod 4].dimensions[primaryAxis] - corners[q].dimensions[primaryAxis]
+        edgeDim[secondaryAxis] = cornerDim[secondaryAxis]
 
-            var imgSubRect: Rectf
-            imgSubRect.position[primaryAxis] = 0.5f - ctcPos[primaryAxis]
-            imgSubRect.position[secondaryAxis] = ctcPos[secondaryAxis]
-            imgSubRect.dimensions[secondaryAxis] = ctcDim[secondaryAxis]
+        var imgSubRect: Rectf
+        imgSubRect.position[primaryAxis] = 0.5f - ctcPos[primaryAxis]
+        imgSubRect.position[secondaryAxis] = ctcPos[secondaryAxis]
+        imgSubRect.dimensions[secondaryAxis] = ctcDim[secondaryAxis]
 
-            yield WQuad(shape: rectShape(position = pos + offset, dimensions = edgeDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: subRectTexCoords(imgSubRect, q >= 2, q >= 2),
-                  beforeChildren: false)
+        yield WQuad(shape: rectShape(position = pos + offset, dimensions = edgeDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: subRectTexCoords(imgSubRect, q >= 2, q >= 2),
+            beforeChildren: false)
 
 
 
 
 proc addQuadToWidget(w: Widget, tb: TextureBlock, quad: WQuad, offset: Vec2i, forceBeforeChildren: bool = false, forceAfterChildren: bool = false) =
-   for vertex in quadToVertices(quad, tb, Bounds()):
-      if (quad.beforeChildren or forceBeforeChildren) and not forceAfterChildren:
-         w.preVertices.add(vertex)
-         w.preVertices[w.preVertices.len-1].vertex.x += offset.x.float
-         w.preVertices[w.preVertices.len-1].vertex.y += offset.y.float
-      else:
-         w.postVertices.add(vertex)
-         w.postVertices[w.postVertices.len-1].vertex.x += offset.x.float
-         w.postVertices[w.postVertices.len-1].vertex.y += offset.y.float
+  for vertex in quadToVertices(quad, tb, Bounds()):
+    if (quad.beforeChildren or forceBeforeChildren) and not forceAfterChildren:
+      w.preVertices.add(vertex)
+      w.preVertices[w.preVertices.len-1].vertex.x += offset.x.float
+      w.preVertices[w.preVertices.len-1].vertex.y += offset.y.float
+    else:
+      w.postVertices.add(vertex)
+      w.postVertices[w.postVertices.len-1].vertex.x += offset.x.float
+      w.postVertices[w.postVertices.len-1].vertex.y += offset.y.float
 
 proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock) =
-   fine &"Rendering widget {w}"
-   w.preVertices.setLen(0)
-   w.postVertices.setLen(0)
+  fine &"Rendering widget {w}"
+  w.preVertices.setLen(0)
+  w.postVertices.setLen(0)
 
-   if w.background.draw:
-      for quad in w.background.nineWayImageQuads(w.resolvedDimensions, ws.pixelScale):
-         addQuadToWidget(w, tb, quad, w.resolvedPosition.xy)
-   for overlay in w.overlays:
-      if overlay.draw:
-         for quad in overlay.nineWayImageQuads(w.resolvedDimensions, ws.pixelScale):
-            addQuadToWidget(w, tb, quad, w.resolvedPosition.xy, forceAfterChildren = true)
+  if w.background.draw:
+    for quad in w.background.nineWayImageQuads(w.resolvedDimensions, ws.pixelScale):
+      addQuadToWidget(w, tb, quad, w.resolvedPosition.xy)
+  for overlay in w.overlays:
+    if overlay.draw:
+      for quad in overlay.nineWayImageQuads(w.resolvedDimensions, ws.pixelScale):
+        addQuadToWidget(w, tb, quad, w.resolvedPosition.xy, forceAfterChildren = true)
 
-   for renderer in ws.components:
-      let quads = renderer.render(w)
-      for quad in quads:
-         addQuadToWidget(w, tb, quad, w.resolvedPosition.xy + w.clientOffset.xy)
+  for renderer in ws.components:
+    let quads = renderer.render(w)
+    for quad in quads:
+      addQuadToWidget(w, tb, quad, w.resolvedPosition.xy + w.clientOffset.xy)
 
 proc render(ws: WindowingSystemRef, w: Widget, vao: VAO[WVertex, uint32], tb: TextureBlock, vi, ii: var int) =
-   if w.showing:
-      fine &"Rendering widget {w}"
-      for i in 0 ..< (w.preVertices.len div 4):
-         for q in 0 ..< 4:
-            vao[vi+q][] = w.preVertices[i*4+q]
-         vao.addIQuad(ii, vi)
+  if w.showing:
+    fine &"Rendering widget {w}"
+    for i in 0 ..< (w.preVertices.len div 4):
+      for q in 0 ..< 4:
+        vao[vi+q][] = w.preVertices[i*4+q]
+      vao.addIQuad(ii, vi)
 
-      sort(w.children) do (a, b: Widget) -> int: cmp(a.resolvedPosition.z, b.resolvedPosition.z)
+    sort(w.children) do (a, b: Widget) -> int: cmp(a.resolvedPosition.z, b.resolvedPosition.z)
 
-      for child in w.children:
-         render(ws, child, vao, tb, vi, ii)
+    for child in w.children:
+      render(ws, child, vao, tb, vi, ii)
 
-      for i in 0 ..< (w.postVertices.len div 4):
-         for q in 0 ..< 4:
-            vao[vi+q][] = w.postVertices[i*4+q]
-         vao.addIQuad(ii, vi)
-   else:
-      fine &"Not rendering widget {w}, not showing"
+    for i in 0 ..< (w.postVertices.len div 4):
+      for q in 0 ..< 4:
+        vao[vi+q][] = w.postVertices[i*4+q]
+      vao.addIQuad(ii, vi)
+  else:
+    fine &"Not rendering widget {w}, not showing"
 
 proc render*(ws: WindowingSystemRef, vao: VAO[WVertex, uint32], textureBlock: TextureBlock) =
-   if vao.revision < ws.renderRevision:
-      var vi, ii: int = 0
+  if vao.revision < ws.renderRevision:
+    var vi, ii: int = 0
 
-      ws.render(ws.desktop, vao, textureBlock, vi, ii)
+    ws.render(ws.desktop, vao, textureBlock, vi, ii)
 
-      fine "Swapping ui vao"
-      vao.swap()
-      vao.revision = ws.renderRevision
+    fine "Swapping ui vao"
+    vao.swap()
+    vao.revision = ws.renderRevision
 
 proc data*[T](widget: Widget, t: typedesc[T]): ref T =
-   widget.windowingSystem.display.data(widget.entity, t)
+  widget.windowingSystem.display.data(widget.entity, t)
 
 proc hasData*[T](widget: Widget, t: typedesc[T]): bool =
-   widget.windowingSystem.display.hasData(widget.entity, t)
+  widget.windowingSystem.display.hasData(widget.entity, t)
 
 proc attachData*[T](widget: Widget, valueIn: T) =
-   var value = valueIn
-   when compiles(value.widget):
-      value.widget = widget
-   # else:
-      # echo "could not attach data"
-   widget.windowingSystem.display.attachData(widget.entity, value)
+  var value = valueIn
+  when compiles(value.widget):
+    value.widget = widget
+  # else:
+    # echo "could not attach data"
+  widget.windowingSystem.display.attachData(widget.entity, value)
 
 
 proc widgetContainsPosition*(w: Widget, position: Vec2f): bool =
-   let px = position.x.int
-   let py = position.y.int
-   let rp = w.resolvedPosition
-   let rd = w.resolvedDimensions
+  let px = position.x.int
+  let py = position.y.int
+  let rp = w.resolvedPosition
+  let rd = w.resolvedDimensions
 
-   rp.x <= px and rp.y <= py and rp.x + rd.x >= px and rp.y + rd.y >= py
+  rp.x <= px and rp.y <= py and rp.x + rd.x >= px and rp.y + rd.y >= py
 
 proc widgetContainsPositionInClientArea*(w: Widget, position: Vec2f): bool =
-   let px = position.x.int
-   let py = position.y.int
-   let rp = w.resolvedPosition + w.clientOffset
-   let rd = w.resolvedDimensions - w.clientOffset.xy * 2
+  let px = position.x.int
+  let py = position.y.int
+  let rp = w.resolvedPosition + w.clientOffset
+  let rd = w.resolvedDimensions - w.clientOffset.xy * 2
 
-   rp.x <= px and rp.y <= py and rp.x + rd.x >= px and rp.y + rd.y >= py
+  rp.x <= px and rp.y <= py and rp.x + rd.x >= px and rp.y + rd.y >= py
 
 proc effectiveDimensions*(w: Widget): Vec2i =
-   vec2i(w.resolvedDimensions.x div w.windowingSystem.pixelScale, w.resolvedDimensions.y div w.windowingSystem.pixelScale)
+  vec2i(w.resolvedDimensions.x div w.windowingSystem.pixelScale, w.resolvedDimensions.y div w.windowingSystem.pixelScale)
 
 proc effectiveClientDimensions*(w: Widget): Vec2i =
-   vec2i((w.resolvedDimensions.x - w.clientOffset.x*2) div w.windowingSystem.pixelScale,
-   (w.resolvedDimensions.y - w.clientOffset.y * 2) div w.windowingSystem.pixelScale)
+  vec2i((w.resolvedDimensions.x - w.clientOffset.x*2) div w.windowingSystem.pixelScale,
+  (w.resolvedDimensions.y - w.clientOffset.y * 2) div w.windowingSystem.pixelScale)
 
 proc widgetAtPosition*(ws: WindowingSystemRef, w: Widget, position: Vec2f): Widget =
-   # Default the result to the widget itself, we've guaranteed at the call of this function that
-   # the provided widget does match, this will dive deeper into children, if warranted
-   result = w
-   var highestZ = -100000
+  # Default the result to the widget itself, we've guaranteed at the call of this function that
+  # the provided widget does match, this will dive deeper into children, if warranted
+  result = w
+  var highestZ = -100000
 
-   if widgetContainsPositionInClientArea(w, position):
-      # iterate over the children, finding the child that contains the position with the highest Z
-      for i in countdown(w.children.len-1, 0):
-         let c = w.children[i]
-         if c.showing and widgetContainsPosition(c, position):
-            if c.resolvedPosition.z > highestZ:
-               highestZ = c.resolvedPosition.z
-               result = c
-   # if we found a child (and therefore updated result) we want to then dive into it to find its
-   # highest matching child, but if we didn't find anything we're already done
-   if result != w:
-      result = widgetAtPosition(ws, result, position)
+  if widgetContainsPositionInClientArea(w, position):
+    # iterate over the children, finding the child that contains the position with the highest Z
+    for i in countdown(w.children.len-1, 0):
+      let c = w.children[i]
+      if c.showing and widgetContainsPosition(c, position):
+        if c.resolvedPosition.z > highestZ:
+          highestZ = c.resolvedPosition.z
+          result = c
+  # if we found a child (and therefore updated result) we want to then dive into it to find its
+  # highest matching child, but if we didn't find anything we're already done
+  if result != w:
+    result = widgetAtPosition(ws, result, position)
 
 
 proc widgetAtPosition*(ws: WindowingSystemRef, position: Vec2f): Widget =
-   widgetAtPosition(ws, ws.desktop, position)
+  widgetAtPosition(ws, ws.desktop, position)
 
 
 
@@ -1125,51 +1128,51 @@ proc widgetAtPosition*(ws: WindowingSystemRef, position: Vec2f): Widget =
 
 
 proc readFromConfig*(cv: ConfigValue, e: var WidgetArchetypeIdentifier) =
-   if cv.isStr:
-      let sections = cv.asStr.split('.', 1)
-      if sections.len != 2:
-         warn &"Widget archetypes should take the form location.identifier: {cv.asStr}"
-      else:
-         e = WidgetArchetypeIdentifier(location: sections[0], identifier: sections[1])
-   else: warn &"only strings may be used for widget archetypes: {cv}"
+  if cv.isStr:
+    let sections = cv.asStr.split('.', 1)
+    if sections.len != 2:
+      warn &"Widget archetypes should take the form location.identifier: {cv.asStr}"
+    else:
+      e = WidgetArchetypeIdentifier(location: sections[0], identifier: sections[1])
+  else: warn &"only strings may be used for widget archetypes: {cv}"
 
 proc readFromConfig*(cv: ConfigValue, e: var WidgetEdge) =
-   if cv.nonEmpty:
-      if cv.isStr:
-         case cv.asStr.toLowerAscii:
-         of "left": e = WidgetEdge.Left
-         of "right": e = WidgetEdge.Right
-         of "top": e = WidgetEdge.Top
-         of "bottom": e = WidgetEdge.Bottom
-         else:
-            warn &"Invalid widget edge: {cv.asStr}"
+  if cv.nonEmpty:
+    if cv.isStr:
+      case cv.asStr.toLowerAscii:
+      of "left": e = WidgetEdge.Left
+      of "right": e = WidgetEdge.Right
+      of "top": e = WidgetEdge.Top
+      of "bottom": e = WidgetEdge.Bottom
       else:
-         warn &"Invalid widget edge config: {cv}"
+        warn &"Invalid widget edge: {cv.asStr}"
+    else:
+      warn &"Invalid widget edge config: {cv}"
 
 proc parseStr(str: string, t: typedesc[WidgetOrientation]): Option[WidgetOrientation] =
-   case str.toLowerAscii.replace(" ", ""):
-      of "topleft": some(WidgetOrientation.TopLeft)
-      of "left": some(WidgetOrientation.TopLeft)
-      of "topright": some(WidgetOrientation.TopRight)
-      of "right": some(WidgetOrientation.TopRight)
-      of "bottomleft": some(WidgetOrientation.BottomLeft)
-      of "bottom": some(WidgetOrientation.BottomLeft)
-      of "bottomright": some(WidgetOrientation.BottomRight)
-      of "top": some(WidgetOrientation.TopLeft)
-      of "center": some(WidgetOrientation.Center)
-      else: none(WidgetOrientation)
+  case str.toLowerAscii.replace(" ", ""):
+    of "topleft": some(WidgetOrientation.TopLeft)
+    of "left": some(WidgetOrientation.TopLeft)
+    of "topright": some(WidgetOrientation.TopRight)
+    of "right": some(WidgetOrientation.TopRight)
+    of "bottomleft": some(WidgetOrientation.BottomLeft)
+    of "bottom": some(WidgetOrientation.BottomLeft)
+    of "bottomright": some(WidgetOrientation.BottomRight)
+    of "top": some(WidgetOrientation.TopLeft)
+    of "center": some(WidgetOrientation.Center)
+    else: none(WidgetOrientation)
 
 
 proc readFromConfig*(cv: ConfigValue, e: var WidgetOrientation) =
-   if cv.nonEmpty:
-      if cv.isStr:
-         let wopt = parseStr(cv.asStr, WidgetOrientation)
-         if wopt.isSome:
-            e = wopt.get
-         else:
-            warn &"Invalid widget orientation: {cv.asStr}"
+  if cv.nonEmpty:
+    if cv.isStr:
+      let wopt = parseStr(cv.asStr, WidgetOrientation)
+      if wopt.isSome:
+        e = wopt.get
       else:
-         warn &"Invalid widget orientation config: {cv}"
+        warn &"Invalid widget orientation: {cv.asStr}"
+    else:
+      warn &"Invalid widget orientation config: {cv}"
 
 const orientedConstantPattern = re"(?i)([0-9]+) from (.*)"
 const orientedProportionPattern = re"(?i)([0-9.]+) from (.*)"
@@ -1181,312 +1184,334 @@ const centeredPattern = re"(?i)center(ed)?"
 const wrapContentPattern = re"(?i)wrap\s?content"
 
 proc readFromConfig*(cv: ConfigValue, e: var WidgetPosition, widget: Widget) =
-   if cv.nonEmpty:
-      if cv.isNumber:
-         let num = cv.asFloat
-         if num >= 1.0 or num <= 0.0:
-            e = fixedPos(num.int)
-         else:
-            e = proportionalPos(num)
-      elif cv.isStr:
-         let str = cv.asStr
-         matcher(str):
-            extractMatches(orientedConstantPattern, distStr, relativeToStr):
-               let relativeTo = parseStr(relativeToStr, WidgetOrientation)
-               if relativeTo.isSome:
-                  e = fixedPos(parseInt(distStr), relativeTo.get)
-               else: warn &"failed to parse widget oriented constant position : {distStr}, {relativeToStr}"
-            extractMatches(orientedProportionPattern, propStr, relativeToStr):
-               let prop = parseFloatOpt(propStr)
-               let relativeTo = parseStr(relativeToStr, WidgetOrientation)
-               if prop.isSome and relativeTo.isSome:
-                  e = proportionalPos(prop.get, relativeTo.get)
-               warn &"failed to parse widget oriented proportional position : {propStr}, {relativeToStr}"
-            extractMatches(rightLeftPattern, distStr, dirStr, targetStr):
-               let dir = if dirStr.toLowerAscii == "right": WidgetOrientation.TopRight else: WidgetOrientation.TopLeft
-               e = relativePos(targetStr, parseInt(distStr).int32, dir)
-            extractMatches(belowAbovePattern, distStr, dirStr, targetStr):
-               let dir = if dirStr.toLowerAscii == "below": WidgetOrientation.BottomLeft else: WidgetOrientation.TopLeft
-               e = relativePos(targetStr, parseInt(distStr).int32, dir)
-               # let target = widget.parent.get.childByIdentifier(targetStr)
-               # if target.isSome:
-               #    e = relativePos(target.get, parseInt(distStr).int32, dir)
-               # else:
-               #    warn &"failed to parse widget above/below relative position : {str}"
-            extractMatches(centeredPattern, distStr):
-               e = centered()
-            warn &"unsupported position expression: {str}"
+  if cv.nonEmpty:
+    if cv.isNumber:
+      let num = cv.asFloat
+      if num >= 1.0 or num <= 0.0:
+        e = fixedPos(num.int)
       else:
-         warn &"Invalid config for widget dimension : {cv}"
+        e = proportionalPos(num)
+    elif cv.isStr:
+      let str = cv.asStr
+      matcher(str):
+        extractMatches(orientedConstantPattern, distStr, relativeToStr):
+          let relativeTo = parseStr(relativeToStr, WidgetOrientation)
+          if relativeTo.isSome:
+            e = fixedPos(parseInt(distStr), relativeTo.get)
+          else: warn &"failed to parse widget oriented constant position : {distStr}, {relativeToStr}"
+        extractMatches(orientedProportionPattern, propStr, relativeToStr):
+          let prop = parseFloatOpt(propStr)
+          let relativeTo = parseStr(relativeToStr, WidgetOrientation)
+          if prop.isSome and relativeTo.isSome:
+            e = proportionalPos(prop.get, relativeTo.get)
+          warn &"failed to parse widget oriented proportional position : {propStr}, {relativeToStr}"
+        extractMatches(rightLeftPattern, distStr, dirStr, targetStr):
+          let dir = if dirStr.toLowerAscii == "right": WidgetOrientation.TopRight else: WidgetOrientation.TopLeft
+          e = relativePos(targetStr, parseInt(distStr).int32, dir)
+        extractMatches(belowAbovePattern, distStr, dirStr, targetStr):
+          let dir = if dirStr.toLowerAscii == "below": WidgetOrientation.BottomLeft else: WidgetOrientation.TopLeft
+          e = relativePos(targetStr, parseInt(distStr).int32, dir)
+          # let target = widget.parent.get.childByIdentifier(targetStr)
+          # if target.isSome:
+          #   e = relativePos(target.get, parseInt(distStr).int32, dir)
+          # else:
+          #   warn &"failed to parse widget above/below relative position : {str}"
+        extractMatches(centeredPattern, distStr):
+          e = centered()
+        warn &"unsupported position expression: {str}"
+    else:
+      warn &"Invalid config for widget dimension : {cv}"
 
 proc readFromConfig*(cv: ConfigValue, e: var WidgetDimension) =
-   if cv.nonEmpty:
-      if cv.isNumber:
-         let num = cv.asFloat
-         if num > 1.0:
-            e = fixedSize(num.int)
-         elif num < 0.0:
-            e = relativeSize(num.int)
-         else:
-            e = proportionalSize(num)
-      elif cv.isStr:
-         matcher(cv.asStr):
-            extractMatches(expandToParentPattern, gapStr):
-               if gapStr != "":
-                  e = expandToParent(parseInt(gapStr))
-               else:
-                  e = expandToParent(0)
-            extractMatches(percentagePattern, percentStr):
-               e = proportionalSize(parseInt(percentStr).float / 100.0)
-            extractMatches(wrapContentPattern):
-               e = wrapContent()
-
-            warn &"unsupported dimension expression: {cv.asStr}"
+  if cv.nonEmpty:
+    if cv.isNumber:
+      let num = cv.asFloat
+      if num > 1.0:
+        e = fixedSize(num.int)
+      elif num < 0.0:
+        e = relativeSize(num.int)
       else:
-         warn &"Invalid config for widget position : {cv}"
+        e = proportionalSize(num)
+    elif cv.isStr:
+      matcher(cv.asStr):
+        extractMatches(expandToParentPattern, gapStr):
+          if gapStr != "":
+            e = expandToParent(parseInt(gapStr))
+          else:
+            e = expandToParent(0)
+        extractMatches(percentagePattern, percentStr):
+          e = proportionalSize(parseInt(percentStr).float / 100.0)
+        extractMatches(wrapContentPattern):
+          e = wrapContent()
+
+        warn &"unsupported dimension expression: {cv.asStr}"
+    else:
+      warn &"Invalid config for widget position : {cv}"
 
 proc readFromConfig*(cv: ConfigValue, e: var NineWayImage) =
-   readIntoOrElse(cv["image"], e.image, bindable(imageLike("ui/minimalistBorder.png")))
-   readIntoOrElse(cv["pixelScale"], e.pixelScale, 1.int32)
-   readIntoOrElse(cv["color"], e.color, bindable(rgba(255, 255, 255, 255)))
-   readIntoOrElse(cv["edgeColor"], e.edgeColor, bindable(rgba(255, 255, 255, 255)))
-   readIntoOrElse(cv["draw"], e.draw, bindable(true))
-   readIntoOrElse(cv["drawCenter"], e.drawCenter, true)
-   readIntoOrElse(cv["drawEdges"], e.drawEdges, AllEdges)
-   readIntoOrElse(cv["dimensionDelta"], e.dimensionDelta, vec2i(0, 0))
+  readIntoOrElse(cv["image"], e.image, bindable(imageLike("ui/minimalistBorder.png")))
+  readIntoOrElse(cv["pixelScale"], e.pixelScale, 1.int32)
+  readIntoOrElse(cv["color"], e.color, bindable(rgba(255, 255, 255, 255)))
+  readIntoOrElse(cv["edgeColor"], e.edgeColor, bindable(rgba(255, 255, 255, 255)))
+  readIntoOrElse(cv["draw"], e.draw, bindable(true))
+  readIntoOrElse(cv["drawCenter"], e.drawCenter, true)
+  readIntoOrElse(cv["drawEdges"], e.drawEdges, AllEdges)
+  readIntoOrElse(cv["dimensionDelta"], e.dimensionDelta, vec2i(0, 0))
 
 
 # proc populateChildren(cv: ConfigValue, e: var Widget) =
-#    let childrenCV = cv["children"]
-#    if childrenCV.isObj:
-#       for k, childCV in cv["children"].fields:
-#          let existing = e.childByIdentifier(k)
-#          if not existing.isSome:
-#             let newChild = e.windowingSystem.createWidget(e)
-#             newChild.identifier = k
-#             e.children.add(newChild)
+#   let childrenCV = cv["children"]
+#   if childrenCV.isObj:
+#     for k, childCV in cv["children"].fields:
+#       let existing = e.childByIdentifier(k)
+#       if not existing.isSome:
+#         let newChild = e.windowingSystem.createWidget(e)
+#         newChild.identifier = k
+#         e.children.add(newChild)
 
 proc readFromConfig*(cv: ConfigValue, e: var Widget) =
-   let isDiv = cv["type"].asStr("").toLowerAscii == "div"
-   if isDiv:
-      e.dimensions[0] = wrapContent()
-      e.dimensions[1] = wrapContent()
+  let isDiv = cv["type"].asStr("").toLowerAscii == "div"
+  if isDiv:
+    e.dimensions[0] = wrapContent()
+    e.dimensions[1] = wrapContent()
 
-   # populateChildren(cv, e) # no longer doing this, this is now done at archetype hydration time
+  # populateChildren(cv, e) # no longer doing this, this is now done at archetype hydration time
 
-   readInto(cv["background"], e.background)
-   readInto(cv["overlays"], e.overlays)
-   if isDiv and (cv["background"].isEmpty or cv["background"]["draw"].isEmpty):
-      e.background.draw = bindable(false)
-   readFromConfig(cv["x"], e.position[0], e)
-   readFromConfig(cv["y"], e.position[1], e)
-   readFromConfig(cv["z"], e.position[2], e)
-   readInto(cv["width"], e.dimensions[0])
-   readInto(cv["height"], e.dimensions[1])
-   readInto(cv["padding"], e.padding)
-   readIntoOrElse(cv["showing"], e.showing_f, bindable(true))
+  readInto(cv["background"], e.background)
+  readInto(cv["overlays"], e.overlays)
+  if isDiv and (cv["background"].isEmpty or cv["background"]["draw"].isEmpty):
+    e.background.draw = bindable(false)
+  readFromConfig(cv["x"], e.position[0], e)
+  readFromConfig(cv["y"], e.position[1], e)
+  readFromConfig(cv["z"], e.position[2], e)
+  readInto(cv["width"], e.dimensions[0])
+  readInto(cv["height"], e.dimensions[1])
+  readInto(cv["padding"], e.padding)
+  readIntoOrElse(cv["showing"], e.showing_f, bindable(true))
 
-   if e.dimensions[0].kind == WidgetDimensionKind.Intrinsic:
-      readInto(cv["minWidth"], e.dimensions[0].intrinsicMin)
-      readInto(cv["maxWidth"], e.dimensions[0].intrinsicMax)
+  if e.dimensions[0].kind == WidgetDimensionKind.Intrinsic:
+    readInto(cv["minWidth"], e.dimensions[0].intrinsicMin)
+    readInto(cv["maxWidth"], e.dimensions[0].intrinsicMax)
 
-   if e.dimensions[1].kind == WidgetDimensionKind.Intrinsic:
-      readInto(cv["minHeight"], e.dimensions[1].intrinsicMin)
-      readInto(cv["maxHeight"], e.dimensions[1].intrinsicMax)
+  if e.dimensions[1].kind == WidgetDimensionKind.Intrinsic:
+    readInto(cv["minHeight"], e.dimensions[1].intrinsicMin)
+    readInto(cv["maxHeight"], e.dimensions[1].intrinsicMax)
 
-   for comp in e.windowingSystem.components:
-      comp.readDataFromConfig(cv, e)
+  for comp in e.windowingSystem.components:
+    comp.readDataFromConfig(cv, e)
 
-   # let childrenCV = cv["children"]
-   # if childrenCV.isObj:
-   #    for k, childCV in cv["children"].fields:
-   #       var child = e.childByIdentifier(k)
-   #       if child.isSome:
-   #          readFromConfig(childCV, child.get)
-   #       else:
-   #          warn "somehow child config did not match identifiers with existing child"
+  # let childrenCV = cv["children"]
+  # if childrenCV.isObj:
+  #   for k, childCV in cv["children"].fields:
+  #     var child = e.childByIdentifier(k)
+  #     if child.isSome:
+  #       readFromConfig(childCV, child.get)
+  #     else:
+  #       warn "somehow child config did not match identifiers with existing child"
 
 proc readFromConfig*(cv: ConfigValue, e: var WidgetArchetype) =
-   cv.readInto(e.widgetData)
-   let childrenCV = cv["children"]
-   if childrenCV.isEmpty:
-      discard
-   elif childrenCV.isObj:
-      for k, childCV in cv["children"].fields:
-         var childArch = WidgetArchetype(widgetData: Widget(windowingSystem: e.widgetData.windowingSystem, entity: e.widgetData.windowingSystem.display.createEntity()))
-         childCV.readInto(childArch)
-         e.children[k] = childArch
-   else:
-      warn &"Children config for widget archetypes should be a map with names, was actually:\n{childrenCV}"
+  cv.readInto(e.widgetData)
+  let childrenCV = cv["children"]
+  if childrenCV.isEmpty:
+    discard
+  elif childrenCV.isObj:
+    for k, childCV in cv["children"].fields:
+      var childArch = WidgetArchetype(widgetData: Widget(windowingSystem: e.widgetData.windowingSystem, entity: e.widgetData.windowingSystem.display.createEntity()))
+      childCV.readInto(childArch)
+      e.children[k] = childArch
+  else:
+    warn &"Children config for widget archetypes should be a map with names, was actually:\n{childrenCV}"
 
 
 proc createWidgetFromConfig*(ws: WindowingSystemRef, identifier: string, cv: ConfigValue, parent: Widget): Widget =
-   let t = relTime()
-   if not ws.widgetArchetypes.contains(identifier):
-      var arch = WidgetArchetype(widgetData: Widget(windowingSystem: ws, entity: ws.display.createEntity()))
-      readInto(cv, arch)
-      ws.widgetArchetypes[identifier] = arch
+  let t = relTime()
+  if not ws.widgetArchetypes.contains(identifier):
+    var arch = WidgetArchetype(widgetData: Widget(windowingSystem: ws, entity: ws.display.createEntity()))
+    readInto(cv, arch)
+    ws.widgetArchetypes[identifier] = arch
 
-   result = createWidgetFromArchetype(ws, ws.widgetArchetypes[identifier], parent)
-   result.identifier = identifier
+  result = createWidgetFromArchetype(ws, ws.widgetArchetypes[identifier], parent)
+  result.identifier = identifier
 
 
 proc createWidget*(ws: WindowingSystemRef, confPath: string, identifier: string, parent: Widget = nil): Widget =
-   let effConfPath =
-      if confPath.endsWith(".sml"):
-         confPath
-      else:
-         confPath & ".sml"
-   createWidgetFromConfig(ws, identifier, resources.config(ws.rootConfigPath & effConfPath)[identifier], parent)
+  let effConfPath =
+    if confPath.endsWith(".sml"):
+      confPath
+    else:
+      confPath & ".sml"
+  createWidgetFromConfig(ws, identifier, resources.config(ws.rootConfigPath & effConfPath)[identifier], parent)
 
-proc createChild*(w: Widget, confPath: string, identifier: string): Widget =
-   createWidget(w.windowingSystem, confPath, identifier, w)
+proc createChild*(w: Widget, confPath: string, identifier: string): Widget {.discardable.} =
+  createWidget(w.windowingSystem, confPath, identifier, w)
 
-proc createChild*(w: Widget, arch: WidgetArchetypeIdentifier): Widget = createChild(w, arch.location, arch.identifier)
+proc createChild*(w: Widget, arch: WidgetArchetypeIdentifier): Widget {.discardable.} = createChild(w, arch.location, arch.identifier)
 
 proc updateWidgetBindings(widget: Widget, resolver: var BoundValueResolver) =
-   if not widget.bindings.isNil:
-      resolver.boundValues.add(widget.bindings)
-   if updateBindings(widget[], resolver):
+  if not widget.bindings.isNil:
+    resolver.boundValues.add(widget.bindings)
+  if updateBindings(widget[], resolver):
+    widget.markForUpdate(RecalculationFlag.Contents)
+  for i in 0 ..< widget.overlays.len:
+    if updateBindings(widget.overlays[i], resolver):
       widget.markForUpdate(RecalculationFlag.Contents)
-   for i in 0 ..< widget.overlays.len:
-      if updateBindings(widget.overlays[i], resolver):
-         widget.markForUpdate(RecalculationFlag.Contents)
-   for comp in widget.windowingSystem.components:
-      comp.updateBindings(widget, resolver)
+  for comp in widget.windowingSystem.components:
+    comp.updateBindings(widget, resolver)
 
-   for c in widget.children:
-      updateWidgetBindings(c, resolver)
+  for c in widget.children:
+    updateWidgetBindings(c, resolver)
 
-   if not widget.bindings.isNil:
-      resolver.boundValues.del(resolver.boundValues.len-1)
+  if not widget.bindings.isNil:
+    resolver.boundValues.del(resolver.boundValues.len-1)
 
 proc bindValue*[T](widget: Widget, key: string, value: T) =
-   if widget.bindings.isNil:
-      widget.bindings = newTable[string, BoundValue]()
-   # only run through the binding update process if there are actually any new values being bound
-   if bindValueInto(key, value, widget.bindings):
-      var resolver = BoundValueResolver()
-      updateWidgetBindings(widget, resolver)
+  if widget.bindings.isNil:
+    widget.bindings = newTable[string, BoundValue]()
+  # only run through the binding update process if there are actually any new values being bound
+  if bindValueInto(key, value, widget.bindings):
+    var resolver = BoundValueResolver()
+    updateWidgetBindings(widget, resolver)
 
 proc pixelScale*(widget: Widget): int = widget.windowingSystem.pixelScale
 
 proc destroyWidget*(w: Widget) =
-   let ws = w.windowingSystem
-   w.parent = none(Widget)
-   ws.display.destroyEntity(w.entity)
-   if ws.focusedWidget == some(w):
-      ws.focusedWidget = none(Widget)
-   if ws.lastWidgetUnderMouse == w:
-      ws.lastWidgetUnderMouse = ws.desktop
-   ws.pendingUpdates.del(w)
+  let ws = w.windowingSystem
+  w.parent = none(Widget)
+  ws.display.destroyEntity(w.entity)
+  if ws.focusedWidget == some(w):
+    ws.focusedWidget = none(Widget)
+  if ws.lastWidgetUnderMouse == w:
+    ws.lastWidgetUnderMouse = ws.desktop
+  ws.pendingUpdates.del(w)
 
 proc containsWidget*(w: Widget, other: Widget): bool =
-   if w == other:
-      true
-   else:
-      for c in w.children:
-         if containsWidget(c, other):
-            return true
-      false
+  if w == other:
+    true
+  else:
+    for c in w.children:
+      if containsWidget(c, other):
+        return true
+    false
 
 proc relativePosition*(w: WidgetMouseMove | WidgetMousePress | WidgetMouseRelease): Vec2i =
-   vec2i(w.position.x.int - w.widget.resolvedPosition.x, w.position.y.int - w.widget.resolvedPosition.y)
+  vec2i(w.position.x.int - w.widget.resolvedPosition.x, w.position.y.int - w.widget.resolvedPosition.y)
 
 proc originatingWidget*(w: WidgetEvent): Widget =
-   if not w.i_originatingWidget.isNil:
-      w.i_originatingWidget
-   else:
-      w.widget
+  if not w.i_originatingWidget.isNil:
+    w.i_originatingWidget
+  else:
+    w.widget
 
 proc `originatingWidget=`*(w: WidgetEvent, widget: Widget) =
-   w.i_originatingWidget = widget
+  w.i_originatingWidget = widget
 
-proc handleEvent*(ws: WindowingSystemRef, event: WidgetEvent, world: World, display: DisplayWorld): bool
+proc handleEvent*[WorldType](ws: WindowingSystemRef, event: WidgetEvent, world: WorldType, display: DisplayWorld): bool
 
-proc giveWidgetFocus*(ws: WindowingSystemRef, world: World, widget: Widget) =
-   if ws.focusedWidget != some(widget):
-      if ws.focusedWidget.isSome:
-         let w = ws.focusedWidget.get
-         discard ws.handleEvent(WidgetFocusLoss(widget: w), world, ws.display)
-      ws.focusedWidget = some(widget)
-      discard ws.handleEvent(WidgetFocusGain(widget: widget), world, ws.display)
+proc giveWidgetFocus*[WorldType](ws: WindowingSystemRef, world: WorldType, widget: Widget) =
+  if ws.focusedWidget != some(widget):
+    if ws.focusedWidget.isSome:
+      let w = ws.focusedWidget.get
+      discard ws.handleEvent(WidgetFocusLoss(widget: w), world, ws.display)
+    ws.focusedWidget = some(widget)
+    discard ws.handleEvent(WidgetFocusGain(widget: widget), world, ws.display)
 
 proc hasFocus*(w: Widget): bool =
-   w.windowingSystem.focusedWidget.isSome and w.windowingSystem.focusedWidget.get.containsWidget(w)
+  w.windowingSystem.focusedWidget.isSome and w.windowingSystem.focusedWidget.get.containsWidget(w)
 
 
-proc handleEvent*(ws: WindowingSystemRef, event: WidgetEvent, world: World, display: DisplayWorld): bool =
-   var propagateToParent = true
-   matchType(event):
-      extract(WidgetMouseMove, widget, originatingWidget, position):
-         if widget == originatingWidget and ws.lastWidgetUnderMouse != widget:
-            ws.updateLastWidgetUnderMouse(widget, world, display)
+proc handleEvent*[WorldType](ws: WindowingSystemRef, event: WidgetEvent, world: WorldType, display: DisplayWorld): bool =
+  var propagateToParent = true
+  matchType(event):
+    if event of WidgetMouseMove:
+      let widget = event.WidgetMouseMove.widget
+      let originatingWidget = event.WidgetMouseMove.originatingWidget
+      let position = event.WidgetMouseMove.position
 
-      extract(WidgetMouseRelease, widget):
-         if widget.acceptsFocus:
-            if ws.focusedWidget != some(widget):
-               ws.giveWidgetFocus(world, widget)
-               propagateToParent = false
-      extract(WidgetFocusGain):
-         propagateToParent = false
-      extract(WidgetFocusLoss):
-         propagateToParent = false
+      if widget == originatingWidget and ws.lastWidgetUnderMouse != widget:
+        updateLastWidgetUnderMouse[WorldType](ws, widget, world, display)
+      break
 
-   let w = event.widget
-   for callback in w.eventCallbacks:
+    extract(WidgetMouseRelease, widget):
+      if widget.acceptsFocus:
+        if ws.focusedWidget != some(widget):
+          ws.giveWidgetFocus(world, widget)
+          propagateToParent = false
+    extract(WidgetFocusGain):
+      propagateToParent = false
+    extract(WidgetFocusLoss):
+      propagateToParent = false
+
+
+  let w = event.widget
+  when world is World:
+    for callback in w.eventCallbacks:
       callback(event, world, display)
       if event.consumed: return true
-
-   for comp in ws.components:
-      comp.handleEvent(w, event, world, display)
+  elif world is LiveWorld:
+    for callback in w.liveWorldEventCallbacks:
+      callback(event, world, display)
       if event.consumed: return true
+  else:
+    warn "Unsupported world type for handleEvent in windowing system core"
 
-   if w.parent.isSome and propagateToParent and not event.nonPropagating:
-      if event.originatingWidget == event.widget:
-         event.originatingWidget = event.widget
-      event.widget = w.parent.get()
-      handleEvent(ws, event, world, display)
-   else:
-      false
+
+  for comp in ws.components:
+    comp.handleEvent(w, event, display)
+    if event.consumed: return true
+
+  if w.parent.isSome and propagateToParent and not event.nonPropagating:
+    if event.originatingWidget == event.widget:
+      event.originatingWidget = event.widget
+    event.widget = w.parent.get()
+    handleEvent(ws, event, world, display)
+  else:
+    false
 
 
 proc updateCursorBasedOnWidgetUnderMouse(ws: WindowingSystemRef, w: Widget) =
-   if w.cursor.isSome:
-      setCursorShape(w.cursor.get)
-   elif w.parent.isNone:
-      resetCursorShape()
-   else:
-      updateCursorBasedOnWidgetUnderMouse(ws, w.parent.get)
+  if w.cursor.isSome:
+    setCursorShape(w.cursor.get)
+  elif w.parent.isNone:
+    resetCursorShape()
+  else:
+    updateCursorBasedOnWidgetUnderMouse(ws, w.parent.get)
 
-proc updateLastWidgetUnderMouse(ws: WindowingSystemRef, widget: Widget, world: World, display: DisplayWorld) =
-   let prev = ws.lastWidgetUnderMouse
-   ws.lastWidgetUnderMouse = widget
-   updateCursorBasedOnWidgetUnderMouse(ws, widget)
+proc updateLastWidgetUnderMouse[WorldType](ws: WindowingSystemRef, widget: Widget, world: WorldType, display: DisplayWorld) =
+  let prev = ws.lastWidgetUnderMouse
+  ws.lastWidgetUnderMouse = widget
+  updateCursorBasedOnWidgetUnderMouse(ws, widget)
 
 
 
-   var pw = prev
-   while not pw.isNil:
-      if pw.containsWidget(prev) and not pw.containsWidget(widget):
-         discard ws.handleEvent(WidgetMouseExit(widget: pw, nonPropagating: true), world, display)
-      pw = pw.parent.get(nil)
+  var pw = prev
+  while not pw.isNil:
+    if pw.containsWidget(prev) and not pw.containsWidget(widget):
+      discard ws.handleEvent(WidgetMouseExit(widget: pw, nonPropagating: true), world, display)
+    pw = pw.parent.get(nil)
 
-   pw = widget
-   while not pw.isNil:
-      if pw.containsWidget(widget) and not pw.containsWidget(prev):
-         discard ws.handleEvent(WidgetMouseEnter(widget: pw, nonPropagating: true), world, display)
-      pw = pw.parent.get(nil)
+  pw = widget
+  while not pw.isNil:
+    if pw.containsWidget(widget) and not pw.containsWidget(prev):
+      discard ws.handleEvent(WidgetMouseEnter(widget: pw, nonPropagating: true), world, display)
+    pw = pw.parent.get(nil)
 
 import macros
 macro onEvent*(w: Widget, t: typedesc, name: untyped, body: untyped) =
-   result = quote do:
-      when not compiles(`t`().originatingWidget):
-         {.error: ("widget.onEvent only makes sense for WidgetEvents)").}
-      `w`.eventCallbacks.add(proc (evt: UIEvent, worldArg: World, displayWorldArg: DisplayWorld) {.gcsafe.} =
-         let world {.inject used.} = worldArg
-         let display {.inject used.} = displayWorldArg
-         if evt of `t`:
-            let `name` {.inject used.} = (`t`)evt
-            `body`
-      )
+  result = quote do:
+    when not compiles(`t`().originatingWidget):
+      {.error: ("widget.onEvent only makes sense for WidgetEvents)").}
+
+
+    `w`.eventCallbacks.add(proc (evt: UIEvent, worldArg: World, displayWorldArg: DisplayWorld) {.gcsafe.} =
+      let display {.inject used.} = displayWorldArg
+      if evt of `t`:
+        let `name` {.inject used.} = (`t`)evt
+        `body`
+    )
+
+    `w`.liveWorldEventCallbacks.add(proc (evt: UIEvent, worldArg: LiveWorld, displayWorldArg: DisplayWorld) {.gcsafe.} =
+      let display {.inject used.} = displayWorldArg
+      if evt of `t`:
+        let `name` {.inject used.} = (`t`)evt
+        `body`
+    )

@@ -54,12 +54,21 @@ proc runEngine(full: FullGameSetup) {.thread.} =
       op()
 
    var gameEngine = newGameEngine()
-   var graphicsEngine = newGraphicsEngine(gameEngine)
+   var liveGameEngine = newLiveGameEngine()
+
+   var graphicsEngine = if full.setup.useLiveWorld or full.setup.liveGameComponents.len > 0:
+     newGraphicsEngine(liveGameEngine)
+   else:
+     newGraphicsEngine(gameEngine)
+
    graphicsEngine.displayWorld.attachData(GraphicsContextData)
 
    for gc in full.setup.gameComponents:
       gameEngine.addComponent(gc)
    gameEngine.initialize()
+   for gc in full.setup.liveGameComponents:
+      liveGameEngine.addComponent(gc)
+      liveGameEngine.initialize()
    for gc in full.setup.graphicsComponents:
       graphicsEngine.addComponent(gc)
    graphicsEngine.initialize()
@@ -92,6 +101,7 @@ proc runEngine(full: FullGameSetup) {.thread.} =
             break
 
       gameEngine.update()
+      liveGameEngine.update()
       graphicsEngine.update(drawCommandChannel, 1.0f)
 
 

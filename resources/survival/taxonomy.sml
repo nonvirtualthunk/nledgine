@@ -2,6 +2,13 @@ Taxonomy {
   UnknownThing: []
 
 
+  GameConcept: []
+  GameConcepts {
+    Health : GameConcept
+    Stamina : GameConcept
+    Hydration : GameConcept
+
+  }
 }
 
 TaxonomySources : [

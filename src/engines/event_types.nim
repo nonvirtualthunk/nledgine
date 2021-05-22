@@ -66,6 +66,8 @@ type
    WindowFocusGained* = ref object of InputEvent
    WindowFocusLost* = ref object of InputEvent
 
+   WorldInitializedEvent* = ref object of GameEvent
+
 
 method isConsumed*(evt: Event): bool {.base.} = false
 method isConsumed*(evt: UIEvent): bool = evt.consumed

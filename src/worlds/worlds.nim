@@ -71,16 +71,18 @@ type
 
   # A game world not based on journaled modifications
   LiveWorld* = ref object
-    entities: seq[DisplayEntity]
+    entities: seq[Entity]
     dataContainers: seq[AbstractDataContainer]
     events*: EventBuffer
     entityCounter: int
     eventClock: WorldEventClock
-    dataCopyFunctions*: seq[(DisplayWorld, DisplayEntity, DisplayEntity) -> void]
+    eventCallbacks*: seq[(Event) -> void]
+
 
 converter toView*(world: World): WorldView = world.view
 
 var worldCallsForAllTypes* {.threadvar.}: seq[proc(world: WorldView) {.gcsafe.}]
+var liveWorldCallsForAllTypes* {.threadvar.}: seq[proc(world: LiveWorld) {.gcsafe.}]
 var displayWorldCallsForAllTypes* {.threadvar.}: seq[proc(world: DisplayWorld) {.gcsafe.}]
 
 proc hash*(e: Entity): int = e.id.hash
@@ -133,6 +135,11 @@ proc createEntity*(world: DisplayWorld): DisplayEntity =
   world.entities.add(result)
   world.entityCounter.inc
 
+proc createEntity*(world: LiveWorld): Entity =
+  result = Entity(id: world.entityCounter)
+  world.entities.add(result)
+  world.entityCounter.inc
+
 proc createWorld*(): World {.gcsafe.} =
   var ret = new World
   ret.view = new WorldView
@@ -149,10 +156,23 @@ proc createWorld*(): World {.gcsafe.} =
   for setup in worldCallsForAllTypes:
     setup(ret.view)
 
-  # create world entity, 0
+  # create world entity, 1
   discard ret.createEntity()
 
   return ret
+
+proc createLiveWorld*(): LiveWorld {.gcsafe.} =
+  result = new LiveWorld
+  result.entities = @[]
+  result.dataContainers = newSeq[AbstractDataContainer]()
+  result.entityCounter = 1
+  result.events = createEventBuffer(10000)
+
+  for setup in liveWorldCallsForAllTypes:
+    setup(result)
+
+  # create world entity, 1
+  discard result.createEntity()
 
 proc createDisplayWorld*(): DisplayWorld {.gcsafe.} =
   var ret = new DisplayWorld
@@ -163,7 +183,7 @@ proc createDisplayWorld*(): DisplayWorld {.gcsafe.} =
   for setup in displayWorldCallsForAllTypes:
     setup(ret)
 
-  # create world entity, 0
+  # create world entity, 1
   discard ret.createEntity()
 
   return ret
@@ -201,6 +221,39 @@ template eventStmts*(world: World, evt: GameEvent, stmts: untyped) =
     stmts
   world.postEvent(evt)
 
+
+proc currentTime*(world: LiveWorld) : WorldEventClock = world.eventClock
+
+proc addEvent*(world: LiveWorld, evt: Event): WorldEventClock {.discardable.} =
+  result = world.eventClock
+  world.events.addEvent(evt)
+  world.eventClock.inc
+  for callback in world.eventCallbacks:
+    callback(evt)
+
+proc preEvent*(world: LiveWorld, evt: GameEvent): WorldEventClock {.discardable.} =
+  evt.state = GameEventState.PreEvent
+  world.addEvent(evt)
+
+proc postEvent*(world: LiveWorld, evt: GameEvent): WorldEventClock {.discardable.} =
+  evt.state = GameEventState.PostEvent
+  world.addEvent(evt)
+
+proc addFullEvent*(world: LiveWorld, evt: GameEvent): WorldEventClock {.discardable.} =
+  let copy = evt.deepCopy()
+  preEvent(world, evt)
+  postEvent(world, copy)
+
+template eventStmts*(world: LiveWorld, evt: GameEvent, stmts: untyped) =
+  world.preEvent(evt.deepCopy())
+  block:
+    let injectedWorld {.inject used.} = world
+    stmts
+  world.postEvent(evt)
+
+
+
+
 proc addEvent*(world: DisplayWorld, evt: Event): WorldEventClock {.discardable.} =
   result = world.eventClock
   world.events.addEvent(evt)
@@ -226,6 +279,12 @@ proc setUpType*[C](view: WorldView, dataType: DataType[C]) =
     view.dataContainers.setLen(dataType.index + 1)
   let dataContainer = DataContainer[C](dataStore: Table[int, ref C](), defaultValue: new C, dataTypeIndex: dataType.index)
   view.dataContainers[dataType.index] = dataContainer
+
+proc setUpType*[C](world: LiveWorld, dataType: DataType[C]) =
+  if world.dataContainers.len <= dataType.index:
+    world.dataContainers.setLen(dataType.index + 1)
+  let dataContainer = DataContainer[C](dataStore: Table[int, ref C](), defaultValue: new C, dataTypeIndex: dataType.index)
+  world.dataContainers[dataType.index] = dataContainer
 
 proc setUpType*[C](world: DisplayWorld, dataType: DataType[C]) =
   if world.dataContainers.len <= dataType.index:
@@ -254,6 +313,10 @@ method getInitialCreationModificaton(container: AbstractDataContainer, entity: i
   {.warning[LockLevel]: off.}
   discard
 
+method printEntityData*(container: AbstractDataContainer, entity: Entity) {.base.} =
+  {.warning[LockLevel]: off.}
+  discard
+
 
 method applyModification[T](container: DataContainer[T], entMod: EntityModification, createNew: bool): bool {.base.} =
   var data = container.dataStore.getOrDefault(entMod.entity.id, nil)
@@ -279,6 +342,29 @@ method getInitialCreationModificaton[T](container: DataContainer[T], entity: int
     none(EntityModification)
   else:
     some(EntityModification(entity: Entity(id: entity), dataTypeIndex: container.dataTypeIndex, modification: InitialAssignmentModification[T](value: data[])))
+
+method printEntityData*[T](container: DataContainer[T], entity: Entity) =
+  var data = container.dataStore.getOrDefault(entity.id, nil)
+  if data != nil:
+    info $T & " {"
+    indentLogs()
+    for k,v in (data[]).fieldPairs:
+      when compiles($v):
+        info $k & " : " & $v
+      else:
+        info $k & " : " & repr(v)
+
+    unindentLogs()
+    info "}"
+
+
+proc printEntityData*(world: LiveWorld, entity: Entity) =
+  info &"Entity({entity.id}) " & "{"
+  indentLogs()
+  for dc in world.dataContainers:
+    dc.printEntityData(entity)
+  unindentLogs()
+  info "}"
 
 method clear[T](container: DataContainer[T]) =
   container.lastAppliedIndex = 0
@@ -451,6 +537,13 @@ iterator entitiesWithData*[C](view: WorldView, t: typedesc[C]): Entity =
       if not yielded.contains(ent):
         yield Entity(id: ent)
 
+iterator entitiesWithData*[C](view: LiveWorld, t: typedesc[C]): Entity =
+  let dataType = t.getDataType()
+  let dc = (DataContainer[C])view.dataContainers[dataType.index]
+  for ent in dc.dataStore.keys:
+    yield Entity(id: ent)
+
+
 proc addModification*(world: World, modification: EntityModification) =
   world.modificationContainer.modifications.add(modification)
   applyModificationToView(world.view, modification, world.modificationContainer.modificationClock)
@@ -564,13 +657,16 @@ macro hasData*(entity: Entity, view: WorldView, t: typedesc): untyped =
 macro `[]`*(entity: Entity, t: typedesc): untyped =
   let dataTypeIdent = newIdentNode($t & "Type")
   result = quote do:
-    when not compiles(injectedView):
-      {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
-    injectedView.data(`entity`, `dataTypeIdent`)
-    # when compiles(view.data(`entity`, `dataTypeIdent`)):
-    #   view.data(`entity`, `dataTypeIdent`)
-    # else:
-    #   world.data(`entity`, `dataTypeIdent`)
+    when injectedWorld is LiveWorld:
+      injectedWorld.data(`entity`, `dataTypeIdent`)
+    else:
+      when not compiles(injectedView):
+        {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
+      injectedView.data(`entity`, `dataTypeIdent`)
+      # when compiles(view.data(`entity`, `dataTypeIdent`)):
+      #   view.data(`entity`, `dataTypeIdent`)
+      # else:
+      #   world.data(`entity`, `dataTypeIdent`)
 
 macro data*(entity: Entity, t: typedesc): untyped =
   let dataTypeIdent = newIdentNode($t & "Type")
@@ -579,7 +675,13 @@ macro data*(entity: Entity, t: typedesc): untyped =
     #   view.data(`entity`, `dataTypeIdent`)
     # else:
     #   world.data(`entity`, `dataTypeIdent`)
-    injectedView.data(`entity`, `dataTypeIdent`)
+    when declared(injectedView):
+      injectedView.data(`entity`, `dataTypeIdent`)
+    else:
+      when injectedWorld is LiveWorld:
+        injectedWorld.data(`entity`, `dataTypeIdent`)
+      else:
+        {.error: ("implicit access of data[] must have access to an injected view").}
 
 macro attachData*(entity: Entity, t: typed): untyped =
   result = quote do:
@@ -593,9 +695,12 @@ macro attachData*[T](entity: DisplayEntity, t: T): untyped =
 
 macro hasData*(entity: Entity, t: typedesc): bool =
   result = quote do:
-    when not compiles(injectedView):
-      {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
-    injectedView.hasData(`entity`, `t`.getDataType())
+    when injectedWorld is LiveWorld:
+      injectedWorld.hasData(`entity`, `t`.getDataType())
+    else:
+      when not compiles(injectedView):
+        {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
+      injectedView.hasData(`entity`, `t`.getDataType())
     # when compiles(view.hasData(`entity`, `dataTypeIdent`)):
     #   view.hasData(`entity`, `dataTypeIdent`)
     # else:
@@ -609,6 +714,11 @@ template withView*(view: WorldView, stmts: untyped): untyped =
 template withWorld*(world: World, stmts: untyped): untyped =
   block:
     let injectedView {.inject used.} = world.view
+    let injectedWorld {.inject used.} = world
+    stmts
+
+template withWorld*(world: LiveWorld, stmts: untyped): untyped =
+  block:
     let injectedWorld {.inject used.} = world
     stmts
 
@@ -667,3 +777,65 @@ proc copyEntity*(display: DisplayWorld, original: DisplayEntity): DisplayEntity 
   result = display.createEntity()
   for copyFunc in display.dataCopyFunctions:
     copyFunc(display, original, result)
+
+
+
+
+
+proc mdata*[C] (world: LiveWorld, entity: Entity, dataType: DataType[C]): ref C =
+  var dc = (DataContainer[C])world.dataContainers[dataType.index]
+  result = dc.dataStore.getOrDefault(entity.id, nil)
+  if result == nil:
+    result = new C
+    dc.dataStore[entity.id] = result
+
+proc data*[C] (world: LiveWorld, entity: Entity, dataType: DataType[C]): ref C =
+  var dc = (DataContainer[C])world.dataContainers[dataType.index]
+  result = dc.dataStore.getOrDefault(entity.id, nil)
+  if result == nil:
+    writeStackTrace()
+    warn &"Warning: read data[{$C}] for entity {entity.id} that did not have access to data of that type"
+    result = dc.defaultValue
+
+proc data*[C] (world: LiveWorld, entity: Entity, dataType: typedesc[C]): ref C =
+  data(world, entity, dataType.getDatatype())
+
+# proc dataOpt*[C] (world: LiveWorld, entity: Entity, dataType: typedesc[C]): Option[ref C] =
+#   var dc = (DataContainer[C])world.dataContainers[dataType.getDataType().index]
+#   let tmp = dc.dataStore.getOrDefault(entity.id, nil)
+#   if tmp == nil:
+#     none(ref C)
+#   else:
+#     some(tmp)
+
+proc hasData*[C] (world: LiveWorld, entity: Entity, dataType: DataType[C]): bool =
+  var dc = (DataContainer[C])world.dataContainers[dataType.index]
+  dc.dataStore.contains(entity.id)
+
+proc data*[C] (world: LiveWorld, dataType: DataType[C]): ref C =
+  data(world, WorldEntity, dataType)
+
+proc `[]`*[C] (world: LiveWorld, dataType: typedesc[C]): ref C =
+  mdata(world, WorldEntity, dataType.getDataType())
+
+proc hasData*[C] (world: LiveWorld, dataType: DataType[C]): bool =
+  hasData(world, WorldEntity, dataType)
+
+proc attachData*[C] (world: LiveWorld, entity: Entity, dataValue: C) =
+  let dataType = C.getDataType()
+  var dc = (DataContainer[C])world.dataContainers[dataType.index]
+  let nv: ref C = new C
+  nv[] = dataValue
+  dc.dataStore[entity.id] = nv
+
+proc attachData*[C](world: LiveWorld, entity: Entity, t: typedesc[C]) : ref C {.discardable.} =
+  let dataType = t.getDataType()
+  var dc = (DataContainer[C])world.dataContainers[dataType.index]
+  result = new C
+  dc.dataStore[entity.id] = result
+
+proc attachData*[C] (world: LiveWorld, dataValue: C) =
+  attachData(world, WorldEntity, dataValue)
+
+
+

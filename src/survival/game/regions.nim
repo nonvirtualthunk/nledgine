@@ -5,11 +5,18 @@ import worlds
 import math
 import algorithm
 import tables
+import logic
+import glm
+import sets
 
 
-
-proc generateRegion*(world: World) : Region =
+proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
   withWorld(world):
+    let region = if regionEnt.hasData(Region):
+      regionEnt.data(Region)
+    else:
+      world.attachData(regionEnt, Region)
+
     let noise = newNoise()
 
     let grass = taxon("TileKinds", "Grass")
@@ -49,21 +56,26 @@ proc generateRegion*(world: World) : Region =
           else:
             dirt
 
-        let tileEnt = world.createEntity()
         var layerKinds = @[tileKind]
         while underLayers.contains(layerKinds[^1]):
           layerKinds.add(underLayers[layerKinds[^1]])
 
         layerKinds.reverse()
 
-        var tileLayers : seq[TileLayer]
         for layerKind in layerKinds:
-          tileLayers.add(TileLayer(tileKind: layerKind))
+          region.tile(x,y,MainLayer).floorLayers.add(TileLayer(tileKind: layerKind))
 
-        tileEnt.attachData(Tile(
-          floorLayers: tileLayers
-        ))
-        result.setTile(x,y,MainLayer, tileEnt)
+        if tileKind == grass or tileKind == dirt:
+          let forestNoise = noise.pureSimplex(x.float * 0.015f + 137.0f, y.float * 0.015f - 137.0f) * 0.5f +
+                              noise.pureSimplex(x.float * 0.075f - 333.0f, y.float * 0.075f - 333.0f) * 0.5f -
+                              (d * d)
+
+          if forestNoise > 0.4f:
+            let tree = createPlant(world, † PlantKinds.OakTree, vec3i(x.int32,y.int32,MainLayer.int32))
+            region.entities.incl(tree)
+            region.tile(x,y,MainLayer).entities.add(tree)
+
+
 
 
 
@@ -76,14 +88,17 @@ when isMainModule:
   import game/library
   import graphics/image_extras
   import prelude
+  import graphics/color
 
-  let world = createWorld()
+  echo &"SIZE: {(sizeof(Region) + sizeof(TileLayer) * RegionSize*RegionSize*3) div (1024*1024)}"
+
+  let world = createLiveWorld()
   withWorld(world):
     let regionEnt = world.createEntity()
-    regionEnt.attachData(generateRegion(world))
-    echo relTime(), " Generated, turning into image"
+    generateRegion(world, regionEnt)
+    let region = regionEnt.data(Region)
 
-    let region = world.view.data(regionEnt, Region)
+    echo relTime(), " Generated, turning into image"
 
     let lib = library(TileKind)
 
@@ -96,7 +111,11 @@ when isMainModule:
 
         let tileInfo = lib[tile.floorLayers[^1].tileKind]
         let img = tileInfo.images[0].asImage
-        imgOut[x + RegionHalfSize,y + RegionHalfSize] = img[0,0][]
+
+        if tile.entities.nonEmpty:
+          imgOut[x + RegionHalfSize,y + RegionHalfSize] = rgba(0.05f,0.4f,0.15f,1.0f)
+        else:
+          imgOut[x + RegionHalfSize,y + RegionHalfSize] = img[0,0][]
 
     imgOut.writeToFile("/tmp/map.png")
     discard execShellCmd("open /tmp/map.png")

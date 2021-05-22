@@ -5,7 +5,7 @@ import noto
 import modifiers
 import tables
 import options
-import randomness
+import game/randomness
 import targeting_types
 import effect_types
 import ax4/game/items

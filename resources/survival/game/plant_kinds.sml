@@ -4,9 +4,10 @@ PlantKinds {
     healthRecoveryTime: 1 day
     growthStages: {
       Seedling: 0
-      Sapling: 3 days
-      Mature: 1 season
+      Sapling: 1 season
+      Mature: 1 year
     }
+    lifespan: 5 years
     imagesByGrowthStage: {
       Seedling : "survival/graphics/plants/seedling.png"
       Sapling : "survival/graphics/plants/sapling.png"

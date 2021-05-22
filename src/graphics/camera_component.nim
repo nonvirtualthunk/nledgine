@@ -20,13 +20,16 @@ proc createCameraComponent*(camera: Camera): GraphicsComponent =
        eventPriority: -10
    )
 
-method initialize(g: CameraComponent, world: World, curView: WorldView, display: DisplayWorld) =
+method initialize(g: CameraComponent, display: DisplayWorld) =
    g.name = "CameraComponent"
    display.attachData(CameraData(camera: g.initialCamera))
 
-   g.onEvent(UIEvent, evt):
-      if not evt.consumed:
-         display[CameraData].camera.handleEvent(evt)
+
+method onEvent(g: CameraComponent, display: DisplayWorld, event: Event) =
+  if event of UIEvent:
+    let event = event.UIEvent
+    if not event.consumed:
+      display[CameraData].camera.handleEvent(event)
 
 method update(g: CameraComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =
    let time = glfwGetTime()

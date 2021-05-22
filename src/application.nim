@@ -9,5 +9,7 @@ type GameSetup* = object
     resizeable* : bool
     windowTitle* : string
     gameComponents* : seq[GameComponent]
+    liveGameComponents* : seq[LiveGameComponent]
     graphicsComponents*: seq[GraphicsComponent]
     clearColor*: RGBA
+    useLiveWorld*: bool

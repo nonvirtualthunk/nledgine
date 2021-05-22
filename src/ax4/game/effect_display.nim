@@ -9,7 +9,7 @@ import graphics/color
 import modifiers
 import prelude
 import noto
-import randomness
+import game/randomness
 import patty
 import ax4/game/targeting_types
 import sequtils

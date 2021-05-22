@@ -1,6 +1,6 @@
 import patty
 import worlds
-import randomness
+import game/randomness
 import config
 import arxregex
 import strutils
