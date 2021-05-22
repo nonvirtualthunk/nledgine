@@ -47,6 +47,14 @@ proc randomizer*(w: World): Randomizer =
   )
   discard result.rand.rand(0.0 .. 1.0)
 
+proc randomizer*(w: LiveWorld, extraOffset : int = 0): Randomizer =
+  let rwd = w[RandomizationWorldData]
+  result = Randomizer(
+    rand: initRand(1 + w.currentTime.int*1337 + rwd.seedOffset * 31 + extraOffset),
+    style: rwd.style
+  )
+  discard result.rand.rand(0.0 .. 1.0)
+
 proc randomizer*(w: WorldView): Randomizer =
   let rwd = w[RandomizationWorldData]
   result = Randomizer(
@@ -137,7 +145,7 @@ proc maxRoll*(d: DicePool): int = d.dice * d.pips
 
 
 
-const diceExpressionRegex = "([0-9]+d[0-9]+)?\\s?(x[0-9]+)?\\s?(\\[+-]?[0-9]+)?".re
+const diceExpressionRegex = "([0-9]+d[0-9]+)?\\s?(x[0-9]+)?\\s?([+-]?[0-9]+)?".re
 const rangeDiceExpressionRegex = "([0-9]+)\\s*\\-\\s*([0-9]+)".re
 
 proc multiplier*(d : DiceExpression): float = d.multiplier_rel_1 + 1.0f
@@ -211,6 +219,7 @@ proc roll*(de: DiceExpression, r: var Randomizer): DiceExpressionRoll =
   for dp in de.dicePools:
     for i in 0 ..< dp.dice:
       result.rolls.add(dp.roll(r))
+  result.expression = de
 
 proc total*(dr: DiceExpressionRoll): int =
   for roll in dr.rolls:

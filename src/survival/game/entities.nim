@@ -15,9 +15,9 @@ type
   Physical* = object
     # position in three dimensional space within the region, x/y/layer
     position*: Vec3i
-    # whether the entity is constructed/standing/built and therefore occupying the space
-    # as opposed to simply being present on the ground in item form
-    built*: bool
+    # indicates an object that is lying on the ground in a non-constructed just-sort-of-sitting-around state
+    # need to think of a better term
+    capsuled*: bool
     # images to display this entity on the map
     images*: seq[ImageLike]
     # general size/weight, how much space it takes up in an inventory and how hard it is to move
@@ -27,7 +27,11 @@ type
     # how many ticks before recovering a point of health
     healthRecoveryTime*: Option[Ticks]
     # when this entity was created in game ticks, used to calculate its age
+    # note: represents creation in world-time, not game-engine-time, so something may be created as
+    # many years old at world gen
     createdAt*: Ticks
+    # whether or not this entity moves of its own accord
+    dynamic*: bool
 
   Creature* = object
     # how much energy the creature has for performing difficult actons
@@ -58,9 +62,17 @@ type
     growthStage*: Taxon
 
 
-  ResourceSource* = object
+  GatherableResource* = object
+    # The actual resource that can be gathered
+    resource*: Taxon
+    # How much of the resource remains and its maximum possible
+    quantity*: Reduceable[int]
+    # From what the availability of this resource is derived (i.e. PlantKind, CreatureKind)
+    source*: Taxon
+
+  Gatherable* = object
     # resources that can be gathered from this entity
-    resources*: seq[ResourceYield]
+    resources*: seq[GatherableResource]
 
 
   LightSource* = object
@@ -94,6 +106,8 @@ type
     # stages of growth this plant goes through and at what ages. Expressed in terms of total age in
     # ticks to reach each, not in terms of the delta between them
     growthStages*: Table[Taxon, Ticks]
+    # total lifespan in ticks after which the plant will die of natural causes
+    lifespan*: Ticks
     # resource yields with each subsequent stage of growth
     resourcesByGrowthStage*: Table[Taxon, seq[ResourceYield]]
 
@@ -105,12 +119,13 @@ defineSimpleLibrary[PlantKind]("survival/game/plant_kinds.sml", "PlantKinds")
 defineReflection(Player)
 defineReflection(Creature)
 defineReflection(LightSource)
-defineReflection(ResourceSource)
+defineReflection(Gatherable)
 defineReflection(Plant)
 defineReflection(Physical)
+
+
+
 
 when isMainModule:
   let lib = library(PlantKind)
   let oak = lib[taxon("PlantKinds", "OakTree")]
-
-  echo oak

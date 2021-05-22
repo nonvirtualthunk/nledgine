@@ -115,8 +115,9 @@ proc bindValue*(f: RichText): BoundValue = BoundValue(kind: BoundValueKind.RichT
 proc bindValue*(f: ImageLike): BoundValue = BoundValue(kind: BoundValueKind.Image, image: f)
 proc bindValue*[K, V](f: ref Table[K, V]): BoundValue = BoundValue(kind: BoundValueKind.Nested, nestedValue: f)
 proc bindValue*[K, V](f: Table[K, V]): BoundValue =
-   let nt = newTable[K, V]()
-   nt[] = f
+   let nt = newTable[string, BoundValue]()
+   for k,v in f:
+     nt[$k] = bindValue(v)
    BoundValue(kind: BoundValueKind.Nested, nestedValues: nt)
 
 proc bindNestedValue*[T](t: T): BoundValue
@@ -351,7 +352,7 @@ proc updateBindingImpl(bindable: var Bindable[RichText], boundValues: BoundValue
    var cursor = 0
    for match in srcPattern.findAll(stringBindingPattern):
       if match.boundaries.a > cursor:
-         str.add(richText(srcPattern[cursor ..< match.boundaries.a]))
+         str.add(parseRichText(srcPattern[cursor ..< match.boundaries.a]))
       for cap in match.group(0):
          let resolved = boundValues.resolve(srcPattern[cap])
          case resolved.kind:
@@ -370,11 +371,17 @@ proc updateBindingImpl(bindable: var Bindable[RichText], boundValues: BoundValue
             discard
          of BoundValueKind.Color:
             str.tint = some(resolved.color)
+         of BoundValueKind.Number:
+            let num = resolved.number
+            if num == num.int.float:
+              str.add(richText($resolved.number.int))
+            else:
+              str.add(richText($resolved.number))
          else:
             warn &"Invalid bound value for rich text section: {resolved.kind}"
       cursor = match.boundaries.b+1
    if cursor < srcPattern.len:
-      str.add(richText(srcPattern[cursor ..< srcPattern.len]))
+      str.add(parseRichText(srcPattern[cursor ..< srcPattern.len]))
 
    if bindable.value != str:
       bindable.value = str

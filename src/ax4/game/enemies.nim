@@ -17,6 +17,7 @@ import arxregex
 import options
 import ax4/game/ax_events
 import ax4/game/root_types
+import game/randomness
 
 
 type

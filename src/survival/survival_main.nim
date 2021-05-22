@@ -31,23 +31,29 @@ import sets
 import survival/display/world_graphics
 
 type
-  InitializationComponent = ref object of GameComponent
+  InitializationComponent = ref object of LiveGameComponent
 
 
 
 
 
-method initialize(g: InitializationComponent, world: World) =
+method initialize(g: InitializationComponent, world: LiveWorld) =
   world.eventStmts(WorldInitializedEvent()):
     let regionEnt = world.createEntity()
     let player = world.createEntity()
     player.attachData(Player())
     player.attachData(Creature())
-    player.attachData(Physical(position : vec3i(0,0,0), images: @[imageLike("survival/graphics/creatures/player.png")]))
+    player.attachData(Physical(
+      position : vec3i(0,0,MainLayer),
+      images: @[imageLike("survival/graphics/creatures/player.png")],
+      dynamic: true
+    ))
 
-    regionEnt.attachData(generateRegion(world))
+    let region = regionEnt.attachData(Region)
+    generateRegion(world, regionEnt)
 
-    regionEnt.modify(Region.entities.incl(toHashSet([player])))
+    regionEnt[Region].entities.incl(player)
+    regionEnt[Region].dynamicEntities.incl(player)
 
 
 
@@ -55,8 +61,8 @@ main(GameSetup(
   windowSize: vec2i(1440, 900),
   resizeable: false,
   windowTitle: "Survival",
-  gameComponents: @[
-    BasicDebugComponent(),
+  liveGameComponents: @[
+    BasicLiveWorldDebugComponent(),
     InitializationComponent()
   ],
   graphicsComponents: @[
@@ -64,8 +70,7 @@ main(GameSetup(
     createWindowingSystemComponent("survival/widgets/"),
     WorldGraphicsComponent(),
     DynamicEntityGraphicsComponent(),
-    UpToDateAnimationComponent(),
-    PlayerCameraComponent(),
+    PlayerControlComponent(),
   ]
 ))
 

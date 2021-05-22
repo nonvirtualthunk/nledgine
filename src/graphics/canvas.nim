@@ -30,7 +30,7 @@ proc createCanvas*[T,I](shaderName : string, textureDimensions : int = 1024) : C
 
 proc createSimpleCanvas*(shaderName : string, textureDimensions : int = 1024) : SimpleCanvas = createCanvas[SimpleVertex,uint16](shaderName,textureDimensions)
 
-proc drawTo*(qb : QuadBuilder, cv : var SimpleCanvas) =
+proc drawTo*[I](qb : QuadBuilder, cv : var Canvas[SimpleVertex,I]) =
    let tc = cv.texture[qb.texture]
    var vi = cv.vao.vi
    var ii = cv.vao.ii

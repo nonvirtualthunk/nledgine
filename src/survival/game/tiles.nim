@@ -10,8 +10,8 @@ import config/config_helpers
 import resources
 import sets
 
-const RegionSize* = 256
-const RegionHalfSize* = 40 div 2
+const RegionSize* {.intdefine.} = 512
+const RegionHalfSize* = RegionSize div 2
 const RegionLayers* = 3
 const MainLayer* = 1
 
@@ -69,15 +69,16 @@ type
   Region* = object
     # all entities in the region
     entities*: HashSet[Entity]
+    # entities in the region that move of their own accord and may take actions
+    dynamicEntities*: HashSet[Entity]
     # all tiles in the region
-    tiles: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, Entity]
+    tiles: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, Tile]
     # flags for tiles (occupied, opaque, fluid impermeable, etc)
 #    tileFlags: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, int8]
 
   RegionLayerView* = object
     region*: ref Region
     layer*: int
-    view*: WorldView
 
 
 const Occupied          = TileFlag(0b1000000) # an entity / wall is physically occupying this tile
@@ -96,16 +97,15 @@ proc readFromConfig*(cv: ConfigValue, tk: var TileKind) =
   cv["images"].readInto(tk.images)
   cv["wallImages"].readInto(tk.wallImages)
 
-defineReflection(Tile)
+
 defineReflection(Region)
 
 
 defineSimpleLibrary[TileKind]("survival/game/tile_kinds.sml", "TileKinds")
 
-proc layer*(r: Entity, view: WorldView, z: int): RegionLayerView = RegionLayerView(region: view.data(r, Region), layer: z, view: view)
-proc tileEnt*(r: RegionLayerView, x: int, y: int): Entity = r.region.tiles[x + RegionHalfSize,y + RegionHalfSize,r.layer]
-proc tile*(r: RegionLayerView, x: int, y: int): ref Tile = r.view.data(tileEnt(r,x,y), Tile)
-proc setTile*(r: var Region, x,y,z: int, e: Entity) = r.tiles[x + RegionHalfSize, y + RegionHalfSize, z] = e
+proc layer*(r: Entity, view: LiveWorld, z: int): RegionLayerView = RegionLayerView(region: view.data(r, Region), layer: z)
+proc tile*(r: RegionLayerView, x: int, y: int): var Tile = r.region.tiles[x + RegionHalfSize,y + RegionHalfSize,r.layer]
+proc tile*(r: ref Region, x: int, y: int, z : int): var Tile = r.tiles[x + RegionHalfSize,y + RegionHalfSize,z]
 
 
 when isMainModule:
@@ -125,9 +125,9 @@ when isMainModule:
       regionEnt: Entity
       drawn: bool
 
-  method initialize(g: TestDrawComponent, world: World, curView: WorldView, display: DisplayWorld) =
+  method initialize(g: TestDrawComponent, world: LiveWorld, display: DisplayWorld) =
     g.canvas = createSimpleCanvas("shaders/simple")
-    
+
     let grassTaxon = taxon("TileKinds", "Grass")
     let dirtTaxon = taxon("TileKinds", "Dirt")
     let sandTaxon = taxon("TileKinds", "Sand")
@@ -136,7 +136,7 @@ when isMainModule:
       world.attachData(RandomizationWorldData())
 
       g.regionEnt = world.createEntity()
-      var region = Region()
+      let region = g.regionEnt.attachData(Region)
 
       var rand = randomizer(world)
 
@@ -150,23 +150,17 @@ when isMainModule:
           else:
             grassTaxon
 
-          tileEnt.attachData(Tile(
-            floorLayers: @[TileLayer(tileKind: kind)]
-          ))
-          region.setTile(x,y, MainLayer, tileEnt)
-          
-      g.regionEnt.attachData(region)
+          region.tile(x,y, MainLayer).floorLayers = @[TileLayer(tileKind: kind)]
 
 
-  method update(g: TestDrawComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =
+  method update(g: TestDrawComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
     var qb = QuadBuilder()
-    
+
     let lib = library(TileKind)
 
-    let rlayer = layer(g.regionEnt, world.view, MainLayer)
+    let rlayer = layer(g.regionEnt, world, MainLayer)
     for x in -20 .. 20:
       for y in -20 .. 20:
-        let tent = tileEnt(rlayer, x, y)
         let t = tile(rlayer, x, y)
 
         if t.floorLayers.nonEmpty:
@@ -190,6 +184,8 @@ when isMainModule:
      resizeable: false,
      windowTitle: "Tile Test",
      gameComponents: @[],
+     liveGameComponents: @[],
      graphicsComponents: @[TestDrawComponent(), createCameraComponent(createPixelCamera(2))],
-     clearColor: rgba(0.5f,0.5f,0.5f,1.0f)
+     clearColor: rgba(0.5f,0.5f,0.5f,1.0f),
+     useLiveWorld: true
   ))

@@ -5,7 +5,7 @@ import noto
 import modifiers
 import tables
 import options
-import randomness
+import game/randomness
 import targeting_types
 import options
 import root_types

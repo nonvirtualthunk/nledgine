@@ -10,11 +10,21 @@ export options
 
 type Ticks* = distinct int
 
+proc `==`*(a, b: Ticks): bool {.borrow.}
+proc `<`*(a, b: Ticks): bool {.borrow.}
+proc `<=`*(a, b: Ticks): bool {.borrow.}
+proc `>`*(a, b: Ticks): bool = a.int > b.int
+proc `>=`*(a, b: Ticks): bool = a.int >= b.int
+proc `!=`*(a, b: Ticks): bool = a.int != b.int
+proc `+`*(a, b: Ticks): Ticks = Ticks(a.int + b.int)
+proc `-`*(a, b: Ticks): Ticks = Ticks(a.int - b.int)
 
 
 const ticksRe = "([0-9]+)\\s*([a-zA-Z]+)?".re
 
 const ticksPerDay = 1000
+const daysPerSeason = 13
+const seasonsPerYear = 4
 
 proc `$`*(ticks: Ticks) : string =
   &"{ticks.int}"
@@ -31,7 +41,9 @@ proc readFromConfig*(cv: ConfigValue, ticks: var Ticks) =
             of "day", "days":
               ticks = Ticks(number * ticksPerDay)
             of "season", "seasons":
-              ticks = Ticks(number * ticksPerDay * 13)
+              ticks = Ticks(number * ticksPerDay * daysPerSeason)
+            of "year", "years":
+              ticks = Ticks(number * ticksPerDay * daysPerSeason * seasonsPerYear)
             else:
               warn &"Invalid unit of measure for ticks: {units}"
       warn &"Config string for ticks did not match expected format: {cv.asStr}"
@@ -39,3 +51,13 @@ proc readFromConfig*(cv: ConfigValue, ticks: var Ticks) =
     ticks = Ticks(cv.asFloat.int)
   else:
     warn &"Unexpected config value for ticks: {cv}"
+
+
+
+
+type
+  TimeData* = object
+    currentTime*: Ticks
+
+
+defineReflection(TimeData)

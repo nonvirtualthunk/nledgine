@@ -12,7 +12,7 @@ import core
 import tables
 import hex
 import ax4/game/ax_events
-import randomness
+import game/randomness
 import game/library
 import ax4/game/classes
 import ax4/game/map
