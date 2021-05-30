@@ -3,6 +3,7 @@ import config_core
 import strutils
 import noto
 import worlds/taxonomy
+import worlds/identity
 
 proc readFromConfig*(cv: ConfigValue, v: var HorizontalAlignment) =
    if cv.isStr:

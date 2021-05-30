@@ -149,6 +149,10 @@ proc moveTo*(camera: var Camera, to: Vec3f) =
    of WindowingCamera:
       warn &"Moving a WindowingCamera is not currently supported"
 
+proc withEye*(camera: Camera, eye: Vec3f) : Camera =
+   result = camera
+   moveTo(result, eye)
+
 proc worldToScreenSpace*(camera: Camera, framebufferSize: Vec2i, worldv: Vec3f): Vec3f =
    # let projected = (vec4(worldV, 1.0f) * camera.modelviewMatrix() * camera.projectionMatrix(framebufferSize))
    let projected = (camera.projectionMatrix(framebufferSize) * camera.modelviewMatrix() * vec4(worldV, 1.0f))

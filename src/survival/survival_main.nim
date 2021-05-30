@@ -29,6 +29,8 @@ import survival/game/tiles
 import reflect
 import sets
 import survival/display/world_graphics
+import survival/game/living_components
+import survival/game/survival_core
 
 type
   InitializationComponent = ref object of LiveGameComponent
@@ -40,17 +42,36 @@ type
 method initialize(g: InitializationComponent, world: LiveWorld) =
   world.eventStmts(WorldInitializedEvent()):
     let regionEnt = world.createEntity()
-    let player = world.createEntity()
-    player.attachData(Player())
-    player.attachData(Creature())
-    player.attachData(Physical(
-      position : vec3i(0,0,MainLayer),
-      images: @[imageLike("survival/graphics/creatures/player.png")],
-      dynamic: true
-    ))
-
     let region = regionEnt.attachData(Region)
     generateRegion(world, regionEnt)
+
+
+    let water = taxon("TileKinds", "Seawater")
+
+    var pos = vec3i(0,0,MainLayer)
+    for y in countdown(RegionHalfSize-1,0):
+      let tile = region.tile(0,y,MainLayer)
+      if tile.floorLayers.nonEmpty and tile.floorLayers[^1].tileKind != water:
+        pos = vec3i(0.int32,y.int32,MainLayer.int32)
+        break
+
+
+    let player = world.createEntity()
+    player.attachData(Player())
+    player.attachData(Creature(
+      stamina: vital(14),
+      hydration: vital(32).withLossTime(Ticks(400)),
+      hunger: vital(19).withLossTime(Ticks(600)),
+      baseMoveTime: Ticks(20)
+    ))
+    player.attachData(Physical(
+      position : pos,
+      images: @[imageLike("survival/graphics/creatures/player.png")],
+      dynamic: true,
+      health: vital(24),
+      region: regionEnt,
+    ))
+    player.attachData(Inventory(maximumWeight: 500))
 
     regionEnt[Region].entities.incl(player)
     regionEnt[Region].dynamicEntities.incl(player)
@@ -58,15 +79,17 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
 
 
 main(GameSetup(
-  windowSize: vec2i(1440, 900),
+  windowSize: vec2i(1800, 1200),
   resizeable: false,
   windowTitle: "Survival",
   liveGameComponents: @[
-    BasicLiveWorldDebugComponent(),
-    InitializationComponent()
+    BasicLiveWorldDebugComponent().ignoringEventType(WorldAdvancedEvent),
+    InitializationComponent(),
+    CreatureComponent(),
+    PhysicalComponent(),
   ],
   graphicsComponents: @[
-    createCameraComponent(createPixelCamera(2).withMoveSpeed(0.0f)),
+    createCameraComponent(createPixelCamera(3).withMoveSpeed(0.0f).withEye(vec3f(0.0f,10000.0f,0.0f))),
     createWindowingSystemComponent("survival/widgets/"),
     WorldGraphicsComponent(),
     DynamicEntityGraphicsComponent(),

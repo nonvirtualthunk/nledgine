@@ -15,5 +15,11 @@ GrowthStages {
 
   }
 
+  VegetativeGrowth {
 
+  }
+
+  Senescence {
+
+  }
 }

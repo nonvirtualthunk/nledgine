@@ -18,6 +18,7 @@ import game/library
 import ax4/game/turns
 import ax4/game/enemies
 import patty
+import worlds/identity
 
 proc simpleSlimeFight() =
    let (engine, world, worldInfo) = testEngine()

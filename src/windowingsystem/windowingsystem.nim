@@ -5,6 +5,7 @@ import prelude
 import text_widget
 import image_widget
 import list_widget
+import bar_widget
 import nimclipboard/libclipboard
 
 export windowing_system_core
@@ -26,6 +27,7 @@ proc createWindowingSystem*(display: DisplayWorld, rootConfigPath: string): Wind
    result.components.add(TextDisplayRenderer())
    result.components.add(ImageDisplayComponent())
    result.components.add(ListWidgetComponent())
+   result.components.add(BarWidgetComponent())
 
 
 

@@ -56,3 +56,30 @@ widget : {
    }
 
 }
+
+
+barWidget {
+   type: bar
+   width: 200
+   height: 60
+
+   x: 100
+   y: 100
+
+   background.draw: false
+
+   fill.image: ui/fancyBackground.png
+   fill.color: [0.8,0.1,0.2,1.0]
+   fill.edgeColor: [0.8,0.1,0.2,1.0]
+   frame.image: ui/minimalistBorder.png
+
+   pixelScale: 2
+
+   currentValue: "%(currentValue)"
+   maxValue: "%(maxValue)"
+
+   text {
+      x: centered
+      fontSize: 20
+   }
+}

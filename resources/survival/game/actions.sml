@@ -16,7 +16,15 @@ Actions {
 
   }
 
+  Chop {
+
+  }
+
   Scoop {
+
+  }
+
+  Grind {
 
   }
 }

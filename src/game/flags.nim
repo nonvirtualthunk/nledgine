@@ -19,6 +19,7 @@ type
       minValue*: Option[int]
       maxValue*: Option[int]
       hidden*: bool
+      boolean*: bool
 
 
 defineReflection(Flags)
@@ -28,4 +29,7 @@ proc readFromConfig*(cv: ConfigValue, v: var FlagInfo) =
    if cv["limitToZero"].asBool(orElse = false):
       v.minValue = some(0)
 
-defineSimpleLibrary[FlagInfo]("ax4/game/flags.sml", "Flags")
+when declared(ProjectName):
+  defineSimpleLibrary[FlagInfo](ProjectName & "/game/flags.sml", "Flags")
+else:
+  defineSimpleLibrary[FlagInfo]("ax4/game/flags.sml", "Flags")

@@ -113,7 +113,7 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
           let rune = arrangement.runes[runeIndex]
 
           res.lineInfo[res.lineInfo.len-1].maximumHeight.maxWith(font.lineHeight.int)
-          maxPos.y.maxWith(font.lineHeight.int32)
+          maxPos.y.maxWith(font.maxCharHeight.int32)
           let isWhitespace = rune == SpaceRune or rune == TabRune or rune == NewlineRune
 
           # Note: check if this should really be >= rather than >
@@ -169,7 +169,9 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
 
       # Center the image within the line. So far that seems like the best average point
       let ascent = font.ascent
-      let offset = if effDim.y < ascent:
+      let offset = if richText.sections.len == 1:
+        0.0f
+      elif effDim.y < ascent:
         (ascent - effDim.y).float + 1.0f
       else:
         (font.lineHeight - effDim.y).float * 0.5f

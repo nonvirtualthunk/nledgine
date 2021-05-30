@@ -23,6 +23,8 @@ import windowingsystem/windowingsystem
 import graphics/camera_component
 import graphics/cameras
 import core
+import survival/game/survival_core
+import survival/game/logic
 
 type
   WorldGraphicsComponent* = ref object of GraphicsComponent
@@ -43,8 +45,11 @@ method initialize(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayW
   g.needsUpdate = true
 
 method onEvent*(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
-   ifOfType(WorldInitializedEvent, event):
-     g.needsUpdate = true
+  matcher(event):
+    extract(WorldInitializedEvent):
+      g.needsUpdate = true
+    extract(EntityDestroyedEvent):
+      g.needsUpdate = true
 
 
 proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) =
@@ -70,11 +75,17 @@ proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) 
       for y in -RegionHalfSize ..< RegionHalfSize:
         let t = tile(rlayer, x, y)
 
+        qb.dimensions = vec2f(24.0f,24.0f)
+        qb.position = vec3f(x.float * 24.0f, y.float * 24.0f, 0.0f)
         if t.floorLayers.nonEmpty:
           let tileInfo = tileLib[t.floorLayers[^1].tileKind]
-          qb.dimensions = vec2f(24.0f,24.0f)
-          qb.position = vec3f(x.float * 24.0f, y.float * 24.0f, 0.0f)
           qb.texture = tileInfo.images[0]
+          qb.color = rgba(1.0f,1.0f,1.0f,1.0f)
+          qb.drawTo(g.canvas)
+
+        if t.wallLayers.nonEmpty:
+          let wallInfo = tileLib[t.wallLayers[^1].tileKind]
+          qb.texture = wallInfo.wallImages[0]
           qb.color = rgba(1.0f,1.0f,1.0f,1.0f)
           qb.drawTo(g.canvas)
 
@@ -182,10 +193,32 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
       if delta.x != 0 or delta.y != 0:
         withWorld(world):
           for player in world.entitiesWithData(Player):
-            let fromPos = player[Physical].position
-            let toPos = fromPos + vec3i(delta.x, delta.y, 0)
-            world.eventStmts(CreatureMovedEvent(entity: player, fromPosition: fromPos, toPosition: toPos)):
-              player[Physical].position = toPos
+            let phys = player[Physical]
+            let toPos = phys.position + vec3i(delta.x, delta.y, 0)
+            let toTile = tile(phys.region, toPos.x, toPos.y, toPos.z)
+
+            var interactingWithEntity = false
+            for ent in toTile.entities:
+              ifHasData(ent, Physical, phys):
+                if phys.occupiesTile:
+                  interactingWithEntity = true
+                  info "Destroying entity: "
+                  world.printEntityData(ent)
+                  if ent.hasData(Gatherable):
+                    let gatherable = ent.data(Gatherable)
+                    for res in gatherable.resources:
+                      for i in 0 ..< res.quantity.currentValue:
+                        let item = createItem(world, phys.region, res.resource)
+                        moveItemToInventory(world, item, player)
+
+                  destroyEntity(world, ent)
+                  break
+
+
+            if not interactingWithEntity:
+              moveEntityDelta(world, player, vec3i(delta.x, delta.y, 0))
+
+
 
 
 
@@ -198,6 +231,12 @@ method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld
 
       ws.desktop.bindValue("player", {
         "health" : phys.health.currentValue,
-        "maxHealth" : phys.health.maxValue
+        "maxHealth" : phys.health.maxValue,
+        "stamina" : creature.stamina.currentValue,
+        "maxStamina" : creature.stamina.maxValue,
+        "hydration" : creature.hydration.currentValue,
+        "maxHydration" : creature.hydration.maxValue,
+        "hunger" : creature.hunger.currentValue,
+        "maxHunger" : creature.hunger.maxValue,
       }.toTable())
     @[]
