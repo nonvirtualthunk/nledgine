@@ -1,9 +1,8 @@
-import worlds
+
 import tables
 import noto
 import sequtils
 import hashes
-import reflect
 import resources
 import strutils
 import strformat
@@ -22,11 +21,7 @@ type
     taxonsByName: Table[string, seq[Taxon]]
     namespaceParents: Table[string, string]
 
-  Identity* = object
-    name*: Option[string]
-    kind*: Taxon
 
-defineReflection(Identity)
 
 const RootNamespace = "root"
 var UnknownThing* {.threadvar.}: Taxon

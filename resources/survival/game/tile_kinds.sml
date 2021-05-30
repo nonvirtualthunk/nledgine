@@ -6,13 +6,8 @@ TileKinds {
       {
         resource: Items.Stone
         amountRange: 2-3
-        gatherMethods: [
-          {
-            action: Mine
-            difficulty: 5
-            minimumToolLevel: 1
-          }
-        ]
+        gatherMethod: Mine
+        gatherTime: 2 long actions
       }
     ]
 
@@ -24,27 +19,19 @@ TileKinds {
     moveCost : 0
     resources : [
       {
-        resource: Soil
-        amountRange: 3-5
-        gatherMethods: [
-          {
-            action: Dig
-            difficulty: 3
-          }
-        ],
-        destructive: true
-      },
-      {
         resource: Worm
         amountRange: 0-1
-        gatherMethods: [
-          {
-            action: Dig
-            difficulty: 4
-          }
-        ]
+        gatherMethods: [ [Dig, 1], [Gather, 3] ]
+        gatherTime: 1 long action
         regenerateTime: 3 days
       }
+      {
+        resource: Items.Soil
+        amountRange: 3-5
+        gatherMethods: [ [Dig, 1], [Gather, 3] ]
+        gatherTime: 1 long action
+        destructive: true
+      },
     ]
 
     images: ["survival/graphics/tiles/dirt.png"]
@@ -56,20 +43,8 @@ TileKinds {
       {
         resource: Blades of Grass
         amountRange: 2-3
-        gatherMethods: [
-          {
-            action: Dig
-            difficulty: 3
-          }
-          {
-            action: Cut
-            difficulty: 1
-          }
-          {
-            action: Gather
-            difficulty: 6
-          }
-        ]
+        gatherMethods: [ [Cut,1], [Dig, 2], [Gather, 3] ]
+        gatherTime: 1 short action
         destructive: true
         regenerateTime: 3 days
       }
@@ -84,16 +59,8 @@ TileKinds {
       {
         resource: Items.Sand
         amountRange: 4-5
-        gatherMethods: [
-          {
-            action: Dig
-            difficulty: 1
-          }
-          {
-            action: Gather
-            difficulty: 2
-          }
-        ]
+        gatherMethods: [ [Dig, 1], [Gather, 2] ]
+        gatherTime: 1 long action
         destructive: true
         regenerateTime: 10 days
       }
@@ -108,12 +75,8 @@ TileKinds {
       {
         resource: Items.SaltWater
         amountRange: 10000
-        gatherMethods: [
-          {
-            action: Scoop
-            difficulty: 0
-          }
-        ]
+        gatherMethods: [ [Scoop, 1] ]
+        gatherTime: 1 short action
       }
     ]
 

@@ -52,13 +52,18 @@ proc glyphImage*(f: ArxFont, r: Rune) : images.Image =
   else:
     var path = f.font.typeface.getGlyphPath(r)
     let bounds = f.computeBounds($r)
-    let gimg = newImage(bounds.x.int, ((f.font.typeface.ascent - f.font.typeface.descent) * f.scale).int)
+    if bounds.x <= 0.0f or bounds.y <= 0.0f:
+      echo "zero Rune: ", r, " Bounds: ", bounds
+      createImage(vec2i(1,1))
+    else:
+      let gimg = newImage(bounds.x.int, ((f.font.typeface.ascent - f.font.typeface.descent) * f.scale).int)
 
-    path.transform(translate(vec2(0,f.font.typeface.ascent * f.scale)) * scale(vec2(f.scale,f.scale)))
-    gimg.fillPath(path, f.font.paint, vec2(0,0))
-    let arxImg = createImage(cast[ptr uint8](gimg.data[0].unsafeAddr),glm.vec2i(gimg.width.int32, gimg.height.int32), false)
-    f.arxTypeface.glyphLibrary[(r, f.font.size.int)] = arxImg
-    arxImg
+      path.transform(translate(vec2(0,f.font.typeface.ascent * f.scale)) * scale(vec2(f.scale,f.scale)))
+      gimg.fillPath(path, Paint(kind: PaintKind.pkSolid, color: rgbx(255,255,255,255)), vec2(0,0))
+      let arxImg = createImage(cast[ptr uint8](gimg.data[0].unsafeAddr),glm.vec2i(gimg.width.int32, gimg.height.int32), false)
+      arxImg.writeToFile(&"/tmp/{r}.png")
+      f.arxTypeface.glyphLibrary[(r, f.font.size.int)] = arxImg
+      arxImg
 
 
 proc font*(t: ArxTypeface, size: int): ArxFont =
@@ -67,7 +72,7 @@ proc font*(t: ArxTypeface, size: int): ArxFont =
     font: Font(
       typeface: t.typeface,
       size: size.float32,
-      paint: Paint(kind: PaintKind.pkSolid, color: rgbx(0,0,0,255)),
+      paint: Paint(kind: PaintKind.pkSolid, color: rgbx(255,255,255,255)),
       lineHeight: AutoLineHeight
     )
   )
@@ -77,6 +82,9 @@ proc lineHeight*(f: ArxFont): int =
     f.font.lineHeight.int
   else:
     f.font.defaultLineHeight.int
+
+proc maxCharHeight*(f: ArxFont): int =
+  ((f.arxTypeface.typeface.ascent - f.arxTypeface.typeface.descent) * f.font.scale).int
 
 proc ascent*(f: ArxFont): int =
   (f.arxTypeface.typeface.ascent * f.font.scale).int

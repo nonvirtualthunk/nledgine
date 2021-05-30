@@ -25,6 +25,7 @@ import options
 import ax4/game/ax_events
 import ax4/game/cards
 import ax4/game/effects
+import worlds/identity
 
 export effect_display
 export root_types

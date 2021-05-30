@@ -299,11 +299,14 @@ method updateBindings*(ws: WindowingComponent, widget: Widget, resolver: var Bou
 method handleEvent*(ws: WindowingComponent, widget: Widget, event: UIEvent, display: DisplayWorld) {.base.} =
   discard
 
+method onCreated*(ws: WindowingComponent, widget: Widget) {.base.} =
+  discard
+
 
 proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock)
 
 var imageMetrics {.threadvar.}: Table[Image, ImageMetrics]
-proc imageMetricsFor(img: Image): ImageMetrics =
+proc imageMetricsFor*(img: Image): ImageMetrics =
   if not imageMetrics.contains(img):
     var metrics = ImageMetrics()
 
@@ -541,6 +544,9 @@ proc createWidgetFromArchetype*(ws: WindowingSystemRef, archetype: WidgetArchety
     let newChild = ws.createWidgetFromArchetype(childArchetype, result)
     newChild.identifier = childIdentifier
 
+  for comp in ws.components:
+    comp.onCreated(result)
+
 
 proc createWidget*(ws: WindowingSystemRef, parent: Widget = nil): Widget =
   result = new Widget
@@ -550,6 +556,9 @@ proc createWidget*(ws: WindowingSystemRef, parent: Widget = nil): Widget =
     result.parent = ws.desktop
   else:
     result.parent = parent
+
+  for comp in ws.components:
+    comp.onCreated(result)
 
 
 proc `x=`*(w: Widget, p: WidgetPosition) =
@@ -934,7 +943,7 @@ const edgeAxes: array[4, Axis] = [Axis.Y, Axis.X, Axis.Y, Axis.X]
 #   rect(vec2f(0.0f,0.0f), rectf)
 # ]
 
-iterator nineWayImageQuads(nwi: NineWayImage, inDim: Vec2i, pixelScale: int): WQuad =
+iterator nineWayImageQuads*(nwi: NineWayImage, inDim: Vec2i, pixelScale: int, allBeforeChildren: bool = false): WQuad =
   let offset = vec3f(nwi.dimensionDelta.x * nwi.pixelScale * pixelScale * -1, nwi.dimensionDelta.y * nwi.pixelScale * pixelScale * -1, 0)
   let dim = inDim + nwi.dimensionDelta * nwi.pixelScale * pixelScale * 2
   let img = nwi.image.asImage
@@ -977,7 +986,7 @@ iterator nineWayImageQuads(nwi: NineWayImage, inDim: Vec2i, pixelScale: int): WQ
     if corners[q].enabled:
       let pos = fwd * farDims.x.float32 * UnitSquareVertices[q].x + oto * farDims.y.float32 * UnitSquareVertices[q].y
       let tc = subRectTexCoords(cornerSubRect, q mod 3 != 0, q >= 2)
-      yield WQuad(shape: rectShape(position = pos + offset, dimensions = cornerDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: tc, beforeChildren: false)
+      yield WQuad(shape: rectShape(position = pos + offset, dimensions = cornerDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: tc, beforeChildren: allBeforeChildren)
 
     if nwi.drawEdges.contains(q.WidgetEdge):
       let primaryAxis = edgeAxes[q].ord
@@ -995,7 +1004,7 @@ iterator nineWayImageQuads(nwi: NineWayImage, inDim: Vec2i, pixelScale: int): WQ
         imgSubRect.dimensions[secondaryAxis] = ctcDim[secondaryAxis]
 
         yield WQuad(shape: rectShape(position = pos + offset, dimensions = edgeDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: subRectTexCoords(imgSubRect, q >= 2, q >= 2),
-            beforeChildren: false)
+            beforeChildren: allBeforeChildren)
 
 
 
@@ -1323,7 +1332,7 @@ proc readFromConfig*(cv: ConfigValue, e: var WidgetArchetype) =
     warn &"Children config for widget archetypes should be a map with names, was actually:\n{childrenCV}"
 
 
-proc createWidgetFromConfig*(ws: WindowingSystemRef, identifier: string, cv: ConfigValue, parent: Widget): Widget =
+proc createWidgetFromConfig*(ws: WindowingSystemRef, identifier: string, cv: ConfigValue, parent: Widget): Widget {.discardable.} =
   let t = relTime()
   if not ws.widgetArchetypes.contains(identifier):
     var arch = WidgetArchetype(widgetData: Widget(windowingSystem: ws, entity: ws.display.createEntity()))
@@ -1371,6 +1380,12 @@ proc bindValue*[T](widget: Widget, key: string, value: T) =
   if bindValueInto(key, value, widget.bindings):
     var resolver = BoundValueResolver()
     updateWidgetBindings(widget, resolver)
+
+proc hasBinding*(widget: Widget, key: string) : bool =
+  if widget.bindings.isNil:
+    false
+  else:
+    widget.bindings.contains(key)
 
 proc pixelScale*(widget: Widget): int = widget.windowingSystem.pixelScale
 

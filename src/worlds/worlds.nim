@@ -657,12 +657,17 @@ macro hasData*(entity: Entity, view: WorldView, t: typedesc): untyped =
 macro `[]`*(entity: Entity, t: typedesc): untyped =
   let dataTypeIdent = newIdentNode($t & "Type")
   result = quote do:
-    when injectedWorld is LiveWorld:
-      injectedWorld.data(`entity`, `dataTypeIdent`)
-    else:
-      when not compiles(injectedView):
-        {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
+    when declared(injectedView):
       injectedView.data(`entity`, `dataTypeIdent`)
+    elif declared(injectedWorld):
+      injectedWorld.data(`entity`, `dataTypeIdent`)
+    elif declared(world):
+      when world is LiveWorld:
+        world.data(`entity`, `dataTypeIdent`)
+      else:
+        {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
+    else:
+      {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
       # when compiles(view.data(`entity`, `dataTypeIdent`)):
       #   view.data(`entity`, `dataTypeIdent`)
       # else:
@@ -695,12 +700,17 @@ macro attachData*[T](entity: DisplayEntity, t: T): untyped =
 
 macro hasData*(entity: Entity, t: typedesc): bool =
   result = quote do:
-    when injectedWorld is LiveWorld:
-      injectedWorld.hasData(`entity`, `t`.getDataType())
-    else:
-      when not compiles(injectedView):
-        {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
+    when declared(injectedView):
       injectedView.hasData(`entity`, `t`.getDataType())
+    elif declared(injectedWorld):
+      injectedWorld.hasData(`entity`, `t`.getDataType())
+    elif declared(world):
+      when world is LiveWorld:
+        world.hasData(`entity`, `t`.getDataType())
+      else:
+        {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
+    else:
+      {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
     # when compiles(view.hasData(`entity`, `dataTypeIdent`)):
     #   view.hasData(`entity`, `dataTypeIdent`)
     # else:
@@ -812,6 +822,7 @@ proc hasData*[C] (world: LiveWorld, entity: Entity, dataType: DataType[C]): bool
   var dc = (DataContainer[C])world.dataContainers[dataType.index]
   dc.dataStore.contains(entity.id)
 
+
 proc data*[C] (world: LiveWorld, dataType: DataType[C]): ref C =
   data(world, WorldEntity, dataType)
 
@@ -839,3 +850,18 @@ proc attachData*[C] (world: LiveWorld, dataValue: C) =
 
 
 
+template ifHasData*[C] (world: LiveWorld, entity: Entity, t: typedesc[C], v : untyped, stmts: untyped) =
+  var dc = (DataContainer[C])world.dataContainers[t.getDataType().index]
+  let `v` {.inject.} = dc.dataStore.getOrDefault(entity.id, nil)
+  if `v` != nil:
+    `stmts`
+
+template ifHasData*[C] (entity: Entity, t: typedesc[C], v : untyped, stmts: untyped) =
+  when declared(injectedWorld):
+    var dc = (DataContainer[C])injectedWorld.dataContainers[t.getDataType().index]
+  else:
+    var dc = (DataContainer[C])world.dataContainers[t.getDataType().index]
+
+  let `v` {.inject.} = dc.dataStore.getOrDefault(entity.id, nil)
+  if `v` != nil:
+    `stmts`

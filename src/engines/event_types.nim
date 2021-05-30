@@ -103,3 +103,10 @@ method toString*(evt: MouseRelease): string =
 
 proc consume*(evt: UIEvent) =
    evt.consumed = true
+
+# matcher(...) but only applies when the value in question is a game event in the post event state
+template postMatcher*(value: typed, stmts: untyped) =
+  if value of GameEvent and value.GameEvent.state == GameEventState.PostEvent:
+    block:
+      let matchTarget {.inject.} = value
+      stmts

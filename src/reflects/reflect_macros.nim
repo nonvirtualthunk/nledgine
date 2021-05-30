@@ -268,10 +268,10 @@ template matchType*(value: untyped, stmts: untyped) =
     let matchTarget {.inject.} = value
     stmts
 
-macro ifSome*(x: untyped, stmts: untyped): untyped =
+macro ifSome*(x: untyped, extractTo: untyped, stmts: untyped): untyped =
   result = quote do:
     if `x`.isSome:
-      let `x` {.inject.} = `x`.get
+      let `extractTo` {.inject.} = `x`.get
       `stmts`
 
 when isMainModule:

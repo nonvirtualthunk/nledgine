@@ -193,7 +193,7 @@ proc parseRichText*(str: string): RichText =
 
       result.add(richText(findTaxon(taxonIdent)))
       nonStandard = true
-      marker = i+1
+      marker = i
     else:
       i.inc(c.size)
 

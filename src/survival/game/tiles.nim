@@ -18,9 +18,9 @@ const MainLayer* = 1
 type
   ResourceGatherMethod* = object
     # what action type triggers this gather method
-    action*: Taxon
+    actions*: seq[Taxon]
     # how difficult is it to successfully gather this way
-    difficulty*: int
+    difficulty*: float
     # how good a tool is required to be able to gather at all
     minimumToolLevel*: int
 
@@ -31,8 +31,13 @@ type
     amountRange*: DiceExpression
     # how can it be gathered
     gatherMethods*: seq[ResourceGatherMethod]
-    # is the tile destroyed when all resources are gathered
+    # base amount of time it takes to gather
+    gatherTime*: Ticks
+    # is the tile/entity destroyed when all resources are gathered
     destructive*: bool
+    # is this resource automatically gathered when the overall entity is destroyed by gathering
+    # i.e. automatically getting the seeds and leaves when you dig up a carrot
+    gatheredOnDestruction*: bool
     # how long it takes to regenerate 1 of this resource (in ticks)
     regenerateTime*: Option[Ticks]
 
@@ -86,8 +91,28 @@ const Opaque            = TileFlag(0b0100000) # an entity / wall is blocking lig
 const FluidImpermeable  = TileFlag(0b0010000) # an entity / wall is preventing water from flowing through this tile
 const AirImpermeable    = TileFlag(0b0001000) # an entity / wall is preventing air from flowing through this tile
 
-defineSimpleReadFromConfig(ResourceGatherMethod)
-defineSimpleReadFromConfig(ResourceYield)
+proc readFromConfig*(cv: ConfigValue, gm: var ResourceGatherMethod) =
+  if cv.isArr:
+    let arr = cv.asArr
+    cv[0].readInto(gm.actions)
+    cv[1].readInto(gm.difficulty)
+    cv[2].readInto(gm.minimumToolLevel)
+  elif cv.isStr:
+    gm.actions = @[taxon("Actions", cv.asStr)]
+    gm.difficulty = 1
+  else:
+    cv["action"].readInto(gm.actions)
+    cv["actions"].readInto(gm.actions)
+    cv["difficulty"].readInto(gm.difficulty)
+    cv["minimumToolLevel"].readInto(gm.minimumToolLevel)
+
+
+proc readFromConfig*(cv: ConfigValue, ry: var ResourceYield) =
+  readFromConfigByField(cv, ResourceYield, ry)
+  if cv["gatherMethod"].nonEmpty:
+    ry.gatherMethods = @[cv["gatherMethod"].readInto(ResourceGatherMethod)]
+  if ry.gatherTime == Ticks(0):
+    ry.gatherTime = Ticks(TicksPerShortAction)
 
 proc readFromConfig*(cv: ConfigValue, tk: var TileKind) =
   if tk == nil:
@@ -98,6 +123,7 @@ proc readFromConfig*(cv: ConfigValue, tk: var TileKind) =
   cv["wallImages"].readInto(tk.wallImages)
 
 
+
 defineReflection(Region)
 
 
@@ -106,6 +132,11 @@ defineSimpleLibrary[TileKind]("survival/game/tile_kinds.sml", "TileKinds")
 proc layer*(r: Entity, view: LiveWorld, z: int): RegionLayerView = RegionLayerView(region: view.data(r, Region), layer: z)
 proc tile*(r: RegionLayerView, x: int, y: int): var Tile = r.region.tiles[x + RegionHalfSize,y + RegionHalfSize,r.layer]
 proc tile*(r: ref Region, x: int, y: int, z : int): var Tile = r.tiles[x + RegionHalfSize,y + RegionHalfSize,z]
+template tile*(r: Entity, x: int, y: int, z : int): var Tile =
+  when declared(injectedWorld):
+    tile(injectedWorld.data(r, Region), x,y,z)
+  else:
+    tile(world.data(r, Region), x,y,z)
 
 
 when isMainModule:

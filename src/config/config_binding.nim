@@ -297,7 +297,7 @@ proc readFromConfig*(v: ConfigValue, b: var Bindable[RichText]) =
       if v.asStr.contains(stringBindingPattern):
          b.bindingPattern = v.str
       else:
-         b.value = richText(v.asStr)
+         b.value = parseRichText(v.asStr)
    else:
       readInto(v, b.value)
 

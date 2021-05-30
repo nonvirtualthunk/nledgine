@@ -8,6 +8,7 @@ import tables
 import logic
 import glm
 import sets
+import game/randomness
 
 
 proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
@@ -18,6 +19,7 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
       world.attachData(regionEnt, Region)
 
     let noise = newNoise()
+    var rand = randomizer(world)
 
     let grass = taxon("TileKinds", "Grass")
     let dirt = taxon("TileKinds", "Dirt")
@@ -65,15 +67,20 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
         for layerKind in layerKinds:
           region.tile(x,y,MainLayer).floorLayers.add(TileLayer(tileKind: layerKind))
 
+        if tileKind == stone and h2 > d * 3.0 + 0.25:
+          region.tile(x,y,MainLayer).wallLayers.add(TileLayer(tileKind: stone))
+
+
         if tileKind == grass or tileKind == dirt:
           let forestNoise = noise.pureSimplex(x.float * 0.015f + 137.0f, y.float * 0.015f - 137.0f) * 0.5f +
                               noise.pureSimplex(x.float * 0.075f - 333.0f, y.float * 0.075f - 333.0f) * 0.5f -
                               (d * d)
 
           if forestNoise > 0.4f:
-            let tree = createPlant(world, † PlantKinds.OakTree, vec3i(x.int32,y.int32,MainLayer.int32))
-            region.entities.incl(tree)
-            region.tile(x,y,MainLayer).entities.add(tree)
+            createPlant(world, regionEnt, † Plants.OakTree, vec3i(x.int32,y.int32,MainLayer.int32))
+          else:
+            if rand.nextInt(100) == 0:
+              createPlant(world, regionEnt, † Plants.Carrot, vec3i(x.int32, y.int32, MainLayer.int32))
 
 
 

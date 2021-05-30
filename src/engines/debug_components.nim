@@ -16,6 +16,7 @@ type
       lastPrint: UnitOfTime
       mostRecentEventStr: string
       worldInitSeen: bool
+      eventPrintFilters: seq[(Event) -> bool]
 
 method initialize(g: BasicDebugComponent, world: World) =
   g.name = "BasicDebugComponent"
@@ -72,8 +73,12 @@ method update(g: BasicLiveWorldDebugComponent, world: LiveWorld) =
 method onEvent(g: BasicLiveWorldDebugComponent, world: LiveWorld, event: Event) =
   ifOfType(GameEvent, event):
     if not g.worldInitSeen and event of WorldInitializedEvent and event.state == GameEventState.PostEvent:
+      info "World init seen: " & toString(event)
       g.worldInitSeen = true
     elif g.worldInitSeen:
+      for filter in g.eventPrintFilters:
+        if not filter(event):
+          return
       let eventStr = toString(event)
       if event.state == GameEventState.PreEvent:
         info("> " & eventStr)
@@ -88,3 +93,10 @@ method onEvent(g: BasicLiveWorldDebugComponent, world: LiveWorld, event: Event) 
           info("< " & eventStr)
 
       g.mostRecentEventStr = eventStr
+
+proc ignoringEventType*[C](g: BasicLiveWorldDebugComponent, t: typedesc[C]) : BasicLiveWorldDebugComponent =
+  g.eventPrintFilters.add(
+    proc (evt : Event) : bool =
+      result = not (evt of C)
+  )
+  g

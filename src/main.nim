@@ -68,7 +68,7 @@ proc runEngine(full: FullGameSetup) {.thread.} =
    gameEngine.initialize()
    for gc in full.setup.liveGameComponents:
       liveGameEngine.addComponent(gc)
-      liveGameEngine.initialize()
+   liveGameEngine.initialize()
    for gc in full.setup.graphicsComponents:
       graphicsEngine.addComponent(gc)
    graphicsEngine.initialize()

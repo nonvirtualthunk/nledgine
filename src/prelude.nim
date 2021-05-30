@@ -384,3 +384,19 @@ template findIt*[T](s: seq[T], pred: untyped): untyped =
    for it {.inject.} in items(s):
       if pred: result = some(it)
    result
+
+proc delValue*[T](s : var seq[T], value: T) : bool {.discardable.} =
+  let idx = s.find(value)
+  if idx == -1:
+    false
+  else:
+    s.del(idx)
+    true
+
+proc deleteValue*[T](s : var seq[T], value: T) : bool {.discardable.} =
+  let idx = s.find(value)
+  if idx == -1:
+    false
+  else:
+    s.delete(idx)
+    true
