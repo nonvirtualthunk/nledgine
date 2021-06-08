@@ -77,7 +77,7 @@ Plants {
           {
             resource: Log
             amountRange: 1-2
-            gatherMethods: [ [Chop, 4] ]
+            gatherMethods: [ [Chop, 1] ]
             gatherTime: 2 long actions
             destructive: true
           }

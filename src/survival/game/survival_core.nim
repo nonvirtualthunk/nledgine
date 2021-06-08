@@ -18,6 +18,7 @@ proc `>=`*(a, b: Ticks): bool = a.int >= b.int
 proc `!=`*(a, b: Ticks): bool = a.int != b.int
 proc `+`*(a, b: Ticks): Ticks = Ticks(a.int + b.int)
 proc `+=`*(a : var Ticks, b: Ticks) = a = Ticks(a.int + b.int)
+proc `+=`*(a : var Ticks, b: int) = a = Ticks(a.int + b.int)
 proc `-`*(a, b: Ticks): Ticks = Ticks(a.int - b.int)
 proc `+`*(a : Ticks, b: int): Ticks = Ticks(a.int + b)
 proc min(a,b: Ticks): Ticks = Ticks(min(a.int, b.int))

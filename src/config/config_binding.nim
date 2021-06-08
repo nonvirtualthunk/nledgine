@@ -113,6 +113,7 @@ proc bindValue*(f: int): BoundValue = BoundValue(kind: BoundValueKind.Number, nu
 proc bindValue*(f: RGBA): BoundValue = BoundValue(kind: BoundValueKind.Color, color: f)
 proc bindValue*(f: RichText): BoundValue = BoundValue(kind: BoundValueKind.RichText, richText: f)
 proc bindValue*(f: ImageLike): BoundValue = BoundValue(kind: BoundValueKind.Image, image: f)
+proc bindValue*(f: Taxon): BoundValue = BoundValue(kind: BoundValueKind.Taxon, taxon: f)
 proc bindValue*[K, V](f: ref Table[K, V]): BoundValue = BoundValue(kind: BoundValueKind.Nested, nestedValue: f)
 proc bindValue*[K, V](f: Table[K, V]): BoundValue =
    let nt = newTable[string, BoundValue]()
@@ -188,8 +189,8 @@ macro bindValueIntoMacro[T](key: string, v: T, t: typedesc[T], bindings: ref Tab
 # template bindValueIntoMacro[T](key : string, v : T, bindings : var Table[string, BoundValue]) = bindValueIntoMacro(key, v, T)
 
 proc bindValueInto*[T](key: string, v: T, bindings: ref Table[string, BoundValue]): bool =
-   when compiles(bindValue(v)) or compiles(asRichText(v)):
-      when compiles(bindValue(v)):
+   when v is seq or compiles(bindValue(v)) or compiles(asRichText(v)):
+      when v is seq or compiles(bindValue(v)):
          let bv = bindValue(v)
       else:
          let bv = bindValue(asRichText(v))
@@ -413,7 +414,7 @@ proc updateBindingImpl(bindable: var Bindable[RGBA], boundValues: BoundValueReso
    of BoundValueKind.Empty:
       none(RGBA)
    else:
-      warn &"Bound non-boolean value to Bindable[bool]: {bound}"
+      warn &"Bound non-rgba value to Bindable[RGBA]: {bound}"
       none(RGBA)
    if newValue.isSome and bindable.value != newValue.get:
       bindable.value = newValue.get

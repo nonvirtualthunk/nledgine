@@ -4,6 +4,7 @@ import glm
 import worlds
 import entities
 import survival_core
+import options
 
 
 type
@@ -40,9 +41,25 @@ type
     capsuled*: bool
 
   ItemMovedToInventoryEvent* = ref object of GameEvent
-      entity*: Entity
-      fromInventory*: Option[Entity]
-      toInventory*: Entity
+    entity*: Entity
+    fromInventory*: Option[Entity]
+    toInventory*: Entity
+
+  ItemRemovedFromInventoryEvent* = ref object of GameEvent
+    entity*: Entity
+    fromInventory*: Entity
+
+  GatheredEvent* = ref object of GameEvent
+    entity*: Entity
+    items*: seq[Entity]
+    actions*: seq[Taxon]
+    fromEntity*: Option[Entity]
+    gatherRemaining*: bool
+
+  CouldNotGatherEvent* = ref object of GameEvent
+    entity*: Entity
+    fromEntity*: Option[Entity]
+
 
   WorldAdvancedEvent* = ref object of GameEvent
     tick*: Ticks
@@ -66,6 +83,8 @@ eventToStr(EntityDestroyedEvent)
 eventToStr(ItemCreatedEvent)
 eventToStr(ItemPlacedEvent)
 eventToStr(ItemMovedToInventoryEvent)
+eventToStr(ItemRemovedFromInventoryEvent)
+eventToStr(GatheredEvent)
 
 method toString*(evt: WorldInitializedEvent): string =
    return &"WorldInitializedEvent{$evt[]}"

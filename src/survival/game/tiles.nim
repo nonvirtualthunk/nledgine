@@ -9,6 +9,7 @@ import config
 import config/config_helpers
 import resources
 import sets
+import glm
 
 const RegionSize* {.intdefine.} = 512
 const RegionHalfSize* = RegionSize div 2
@@ -138,6 +139,7 @@ template tile*(r: Entity, x: int, y: int, z : int): var Tile =
   else:
     tile(world.data(r, Region), x,y,z)
 
+proc entitiesAt*(r: ref Region, v: Vec3i): seq[Entity] = tile(r, v.x, v.y, v.z).entities
 
 when isMainModule:
   import engines

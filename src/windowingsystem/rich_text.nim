@@ -205,6 +205,20 @@ proc parseRichText*(str: string): RichText =
     if marker < str.len:
       result.add(richText(str[marker ..< str.len]))
 
+# Create a new rich text that is a subsection of the provided one, as delinieated by the given start and length
+# negative values will be interpreted from the end of the sections
+proc subsection*(rt: RichText, start: int, len: int = -1) : RichText =
+  result = rt
+  let effStart = if start < 0:
+    rt.sections.len + start
+  else:
+    start
+
+  if len == -1:
+    result.sections = rt.sections[max(effStart, 0) .. rt.sections.len + len]
+  else:
+    result.sections = rt.sections[max(effStart,0) ..< min(effStart + len, rt.sections.len)]
+
 
 proc readFromConfig*(v: ConfigValue, b: var RichText) =
   if v.isStr:

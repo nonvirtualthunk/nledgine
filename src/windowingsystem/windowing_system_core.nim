@@ -303,7 +303,7 @@ method onCreated*(ws: WindowingComponent, widget: Widget) {.base.} =
   discard
 
 
-proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock)
+proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock, bounds: Bounds)
 
 var imageMetrics {.threadvar.}: Table[Image, ImageMetrics]
 proc imageMetricsFor*(img: Image): ImageMetrics =
@@ -507,6 +507,7 @@ iterator dependentOn(p: WidgetDimension, axis: Axis, widget: Widget, parent: Wid
 proc toDependent(w: Widget, srcAxis: Axis, srcKind: DependencyKind, dep: Dependency): Dependent =
   (dependentWidget: w, dependsOnKind: dep.kind, sourceKind: srcKind, dependsOnAxis: dep.axis, sourceAxis: srcAxis)
 
+proc initializeWidgetBindings(widget: Widget)
 
 proc parent*(w: Widget): Option[Widget] = w.parent_f
 
@@ -525,6 +526,8 @@ proc `parent=`*(w: Widget, parent: Option[Widget]) =
       parent.get.children.add(w)
       for e in enumValues(RecalculationFlag): parent.get.markForUpdate(e)
     for e in enumValues(RecalculationFlag): w.markForUpdate(e)
+
+    # might need up re-initialize some bindings at this point
 
 
 proc `parent=`*(w: Widget, parent: Widget) =
@@ -927,7 +930,13 @@ proc update*[WorldType](ws: WindowingSystemRef, tb: TextureBlock, world: WorldTy
   if ws.rerenderSet.len != 0:
     for widget in ws.rerenderSet:
       ws.renderContentsCount.inc
-      renderContents(ws, widget, tb)
+      let bounds = if widget.parent.isSome:
+        let pClientOffset = widget.parent.get.clientOffset.xy
+        Bounds(origin: vec2f(widget.parent.get.resolvedPosition.xy), dimensions : vec2f(widget.parent.get.resolvedDimensions))
+      else:
+        Bounds(origin: vec2f(0,0), dimensions: vec2f(100000.0,10000.0))
+
+      renderContents(ws, widget, tb, bounds)
     ws.renderRevision.inc
     fine "Re-rendered"
     ws.rerenderSet.clear()
@@ -1009,8 +1018,8 @@ iterator nineWayImageQuads*(nwi: NineWayImage, inDim: Vec2i, pixelScale: int, al
 
 
 
-proc addQuadToWidget(w: Widget, tb: TextureBlock, quad: WQuad, offset: Vec2i, forceBeforeChildren: bool = false, forceAfterChildren: bool = false) =
-  for vertex in quadToVertices(quad, tb, Bounds()):
+proc addQuadToWidget(w: Widget, tb: TextureBlock, quad: WQuad, offset: Vec2i, bounds: Bounds, forceBeforeChildren: bool = false, forceAfterChildren: bool = false) =
+  for vertex in quadToVertices(quad, tb, bounds):
     if (quad.beforeChildren or forceBeforeChildren) and not forceAfterChildren:
       w.preVertices.add(vertex)
       w.preVertices[w.preVertices.len-1].vertex.x += offset.x.float
@@ -1020,23 +1029,23 @@ proc addQuadToWidget(w: Widget, tb: TextureBlock, quad: WQuad, offset: Vec2i, fo
       w.postVertices[w.postVertices.len-1].vertex.x += offset.x.float
       w.postVertices[w.postVertices.len-1].vertex.y += offset.y.float
 
-proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock) =
+proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock, bounds: Bounds) =
   fine &"Rendering widget {w}"
   w.preVertices.setLen(0)
   w.postVertices.setLen(0)
 
   if w.background.draw:
     for quad in w.background.nineWayImageQuads(w.resolvedDimensions, ws.pixelScale):
-      addQuadToWidget(w, tb, quad, w.resolvedPosition.xy)
+      addQuadToWidget(w, tb, quad, w.resolvedPosition.xy, bounds)
   for overlay in w.overlays:
     if overlay.draw:
       for quad in overlay.nineWayImageQuads(w.resolvedDimensions, ws.pixelScale):
-        addQuadToWidget(w, tb, quad, w.resolvedPosition.xy, forceAfterChildren = true)
+        addQuadToWidget(w, tb, quad, w.resolvedPosition.xy, bounds, forceAfterChildren = true)
 
   for renderer in ws.components:
     let quads = renderer.render(w)
     for quad in quads:
-      addQuadToWidget(w, tb, quad, w.resolvedPosition.xy + w.clientOffset.xy)
+      addQuadToWidget(w, tb, quad, w.resolvedPosition.xy + w.clientOffset.xy, bounds)
 
 proc render(ws: WindowingSystemRef, w: Widget, vao: VAO[WVertex, uint32], tb: TextureBlock, vi, ii: var int) =
   if w.showing:
@@ -1355,6 +1364,28 @@ proc createChild*(w: Widget, confPath: string, identifier: string): Widget {.dis
   createWidget(w.windowingSystem, confPath, identifier, w)
 
 proc createChild*(w: Widget, arch: WidgetArchetypeIdentifier): Widget {.discardable.} = createChild(w, arch.location, arch.identifier)
+
+# accumulate all the bindings this widget will use initially by traversing up through parents
+# the resulting resolver will be in reverse order since we go child->parent rather than parent->child
+proc accumulateBindings(widget: Widget, resolver: var BoundValueResolver) =
+  if not widget.bindings.isNil:
+    resolver.boundValues.add(widget.bindings)
+  if widget.parent_f.isSome:
+    accumulateBindings(widget.parent_f.get, resolver)
+
+# Note: currently unused! Does not appear to be needed, but retaining in case we find a need to do this
+# explicitly in the future.
+proc initializeWidgetBindings(widget: Widget) =
+  var resolver = BoundValueResolver()
+  accumulateBindings(widget, resolver)
+  resolver.boundValues.reverse()
+
+  discard updateBindings(widget[], resolver)
+  for i in 0 ..< widget.overlays.len:
+    discard updateBindings(widget.overlays[i], resolver)
+  for comp in widget.windowingSystem.components:
+    comp.updateBindings(widget, resolver)
+
 
 proc updateWidgetBindings(widget: Widget, resolver: var BoundValueResolver) =
   if not widget.bindings.isNil:

@@ -11,6 +11,7 @@ import config
 import resources
 import config/config_helpers
 import sets
+import sequtils
 
 type
   Vital* = object
@@ -23,7 +24,12 @@ type
     # The last point at which this stat recovered/lost
     lastRecoveryOrLoss*: Ticks
 
-
+  Direction* = enum
+    Center
+    Left
+    Up
+    Right
+    Down
 
   Physical* = object
     # position in three dimensional space within the region, x/y/layer
@@ -47,6 +53,8 @@ type
     # note: represents creation in world-time, not game-engine-time, so something may be created as
     # many years old at world gen
     createdAt*: Ticks
+    # what cardinal direction this entity is facing
+    facing*: Direction
 
   Creature* = object
     # how much energy the creature has for performing difficult actons
@@ -60,17 +68,20 @@ type
     # whether or not the creature has died
     dead*: bool
     # raw physical strength, applies to physical attacks, carrying, pushing, etc
-    strength*: int
+    strength*: int8
     # dexterity, quickness, nimbleness, applies to dodging, fine motor skills, etc
-    dexterity*: int
+    dexterity*: int8
     # general hardiness and resistance to damage, illness, etc
-    constitution*: int
+    constitution*: int8
     # baseline movement time required to traverse a single tile with no obstacles
     baseMoveTime*: Ticks
     # what kind of creature this is, its archetype/species/what have you
     creatureKind*: Taxon
+    # what items are equipped to what body parts
+    equipment*: Table[Taxon, Entity]
 
   Player* = object
+    quickSlots*: array[10, Entity]
 
   Plant* = object
     # current stage of growth (budding, vegetative growth, flowering, etc)
@@ -156,6 +167,8 @@ type
 
     # what other entity is holding this one in its inventory, if any
     heldBy*: Option[Entity]
+    # actions that this item can be used for
+    actions*: Table[Taxon, int]
 
 
   Inventory* = object
@@ -184,13 +197,21 @@ type
     fuel*: Ticks
     light*: Option[LightSource]
     food*: Option[FoodKind]
+    # Whether individual items of this kind are sufficiently interchangeable that they
+    # can be "stacked" when displayed rather than showing each individually
+    stackable*: bool
+    actions*: Table[Taxon, int]
 
-
+  ActionKind* = object
+    kind*: Taxon
+    presentVerb*: string
 
 
 defineSimpleReadFromConfig(PlantGrowthStageInfo)
 defineSimpleReadFromConfig(PlantKind)
 defineSimpleReadFromConfig(FoodKind)
+defineSimpleReadFromConfig(ActionKind)
+defineSimpleReadFromConfig(CreatureKind)
 
 defineReflection(Player)
 defineReflection(Creature)
@@ -203,6 +224,13 @@ defineReflection(Inventory)
 defineReflection(Food)
 defineReflection(Combustable)
 
+const DirectionVectors* = [vec2i(0,0), vec2i(-1,0), vec2i(0,1), vec2i(1,0), vec2i(0,-1)]
+const DirectionVectors3f* = [vec3f(0,0,0), vec3f(-1,0,0), vec3f(0,1,0), vec3f(1,0,0), vec3f(0,-1,0)]
+const DirectionVectors3i* = [vec3i(0,0,0), vec3i(-1,0,0), vec3i(0,1,0), vec3i(1,0,0), vec3i(0,-1,0)]
+
+proc vectorFor*(d: Direction) : Vec2i = DirectionVectors[d.ord]
+proc vector3fFor*(d: Direction) : Vec3f = DirectionVectors3f[d.ord]
+proc vector3iFor*(d: Direction) : Vec3i = DirectionVectors3i[d.ord]
 
 proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["durability"].readInto(ik.durability)
@@ -214,14 +242,26 @@ proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["occupiesTile"].readInto(ik.occupiesTile)
   cv["fuel"].readInto(ik.fuel)
   cv["food"].readInto(ik.food)
+  cv["stackable"].readInto(ik.stackable)
   let flags = cv["flags"]
   if flags.isObj:
     for k,v in flags.fields:
       ik.flags[taxon("Flags", k)] = v.asInt
 
+  let actions = cv["actions"]
+  if actions.isObj:
+    for k,v in actions.fields:
+      ik.actions[taxon("Actions", k)] = v.asInt
+
 defineSimpleLibrary[PlantKind]("survival/game/plant_kinds.sml", "Plants")
 defineSimpleLibrary[ItemKind]("survival/game/items.sml", "Items")
+defineSimpleLibrary[ActionKind]("survival/game/actions.sml", "Actions")
+defineSimpleLibrary[CreatureKind]("survival/game/creatures.sml", "Creatures")
 
+proc plantKind*(kind: Taxon) : PlantKind = library(PlantKind)[kind]
+proc itemKind*(kind: Taxon) : ItemKind = library(ItemKind)[kind]
+proc actionKind*(kind: Taxon) : ActionKind = library(ActionKind)[kind]
+proc creatureKind*(kind: Taxon) : CreatureKind = library(CreatureKind)[kind]
 
 proc vital*(maxV: int): Vital = Vital(value: reduceable(maxV))
 proc withRecoveryTime*(v: Vital, t : Ticks): Vital =
@@ -236,6 +276,9 @@ proc withLossTime*(v: Vital, t : Ticks): Vital =
 proc withLossTime*(v: Vital, t : Option[Ticks]): Vital =
   result = v
   result.lossTime = t
+
+proc allEquippedItems*(c: ref Creature) : seq[Entity] =
+  toSeq(c.equipment.values)
 
 proc currentValue*(v: Vital): int = v.value.currentValue
 proc maxValue*(v: Vital): int = v.value.maxValue
@@ -273,6 +316,8 @@ proc updateRecoveryAndLoss*(v: var Vital, tick: Ticks) : Ticks =
 
 
 
+proc regionEnt*(world: LiveWorld, entity: Entity) : Entity =
+  entity[Physical].region
 
 when isMainModule:
   let lib = library(PlantKind)

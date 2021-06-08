@@ -13,9 +13,13 @@ in vec4 VColor;
 out vec4 o_FragColor;
 
 void main (){
-    // if ((VClipCoord.x < VBounds.x || VClipCoord.y < VBounds.y || VClipCoord.x > VBounds.z || VClipCoord.y > VBounds.w)){
-    //     discard;
-    // }
+   float minX = VBoundsOrigin.x;
+   float minY = VBoundsOrigin.y;
+   float maxX = minX + VBoundsDimensions.x;
+   float maxY = minY + VBoundsDimensions.y;
+    if ((VClipCoord.x < minX || VClipCoord.y < minY || VClipCoord.x > maxX || VClipCoord.y > maxY)){
+       discard;
+    }
 
     o_FragColor = VColor * texture(mainTexture, VTexCoord);
     // o_FragColor = vec4(1,1,1,1);

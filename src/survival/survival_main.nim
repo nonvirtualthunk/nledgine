@@ -29,8 +29,11 @@ import survival/game/tiles
 import reflect
 import sets
 import survival/display/world_graphics
+import survival/display/player_control
 import survival/game/living_components
 import survival/game/survival_core
+import survival/game/logic
+import worlds/taxonomy
 
 type
   InitializationComponent = ref object of LiveGameComponent
@@ -55,14 +58,18 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
         pos = vec3i(0.int32,y.int32,MainLayer.int32)
         break
 
+    let axe = createItem(world, regionEnt, † Items.Axe)
 
     let player = world.createEntity()
-    player.attachData(Player())
+    player.attachData(Player(
+      quickSlots: [player, axe, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity]
+    ))
     player.attachData(Creature(
       stamina: vital(14),
-      hydration: vital(32).withLossTime(Ticks(400)),
+      hydration: vital(22).withLossTime(Ticks(400)),
       hunger: vital(19).withLossTime(Ticks(600)),
-      baseMoveTime: Ticks(20)
+      baseMoveTime: Ticks(20),
+      equipment: { † BodyParts.RightHand : axe }.toTable
     ))
     player.attachData(Physical(
       position : pos,
@@ -72,6 +79,7 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
       region: regionEnt,
     ))
     player.attachData(Inventory(maximumWeight: 500))
+    player[Inventory].items.incl(axe)
 
     regionEnt[Region].entities.incl(player)
     regionEnt[Region].dynamicEntities.incl(player)

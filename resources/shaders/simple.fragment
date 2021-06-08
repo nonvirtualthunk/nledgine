@@ -15,6 +15,7 @@ void main (){
 //       discard;
 //    }
     o_FragColor = effColor;
+    // o_FragColor = vec4(pow(effColor.r, 1.0/2.2), pow(effColor.g, 1.0/2.2), pow(effColor.b, 1.0/2.2), effColor.a);
     // o_FragColor = texture(tex0,texCoordV);
     // o_FragColor = colorV;
     // o_FragColor = colorV;
