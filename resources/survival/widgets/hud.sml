@@ -28,8 +28,8 @@ VitalsLabel {
 }
 
 VitalsWidget {
-  x: 10
-  y: 20
+  x: 0
+  y: 0
   width: 500
   height: 400
   background.draw: false
@@ -124,4 +124,83 @@ VitalsWidget {
 
   }
 
+}
+
+
+MessageLog {
+  type: Widget
+  height: 200
+  width: 400
+
+  x: 0
+  y: 0 from bottom
+  padding: [3,3]
+
+  background.draw: true
+  background.image: "ui/fancyBackgroundWhite.png"
+  background.color: [120, 120, 120, 200]
+  background.pixelScale: 2
+
+  children {
+    MessageText {
+      type: TextDisplay
+      width: 100%
+      x: 0
+      y: 0 from bottom
+
+      text: "%(messages)"
+      fontSize: 12
+      font: "ChevyRayThicket.ttf"
+    }
+  }
+}
+
+QuickSlots {
+  type: ListWidget
+  width: WrapContent
+  height: WrapContent
+  horizontal: true
+
+  x: centered
+  y: 0 from bottom
+
+  listItemArchetype: hud.QuickSlotItem
+  listItemBinding: "quickslots.items -> item"
+  listItemGapSize: 0
+
+  selectable: false
+}
+
+QuickSlotItem {
+  type: Widget
+  background.image: "ui/fancyBackgroundWhite.png"
+  background.color: [120, 120, 120, 200]
+  background.draw: true
+  background.pixelScale: 2
+
+  width: 88
+  height: 88
+
+  children {
+    ItemImage {
+      type: ImageDisplay
+      x: centered
+      y: centered
+      width: 64
+      height: 64
+      scale: scaleToFit
+      showing: "%(item.showing)"
+
+      image: "%(item.icon)"
+    }
+    IndexText {
+      type: TextDisplay
+      x: 3 from right
+      y: 3
+      z: 10
+      text: "%(item.index)"
+      fontSize: 24
+      font: "ChevyRayThicket.ttf"
+    }
+  }
 }

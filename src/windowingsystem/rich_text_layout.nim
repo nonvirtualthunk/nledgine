@@ -197,7 +197,7 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
     of VerticalBreak:
       let font = overallFont.font((effSize).round.int)
 
-      cursor.y += font.lineHeight.int32
+      cursor.y += font.lineHeight.int32 + (section.verticalOffset * pixelScale).int32
       cursor.x = 0
       endLine(true)
     of EnsureSpacing:

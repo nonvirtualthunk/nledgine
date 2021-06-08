@@ -88,4 +88,13 @@ Flags {
   Soil {
     description: "Earth that plants could grow in"
   }
+  Tool {
+    description: "An item that can assist in gathering or crafting"
+  }
+  Weapon {
+    description: "An item that can be used in combat"
+  }
+  Axe {
+    description: "A bladed tool or weapon used for chopping"
+  }
 }

@@ -25,6 +25,7 @@ import graphics/cameras
 import core
 import survival/game/survival_core
 import survival/game/logic
+import worlds/identity
 
 type
   WorldGraphicsComponent* = ref object of GraphicsComponent
@@ -36,7 +37,7 @@ type
     needsUpdate: bool
     lastDrawn: WorldEventClock
 
-  PlayerControlComponent* = ref object of GraphicsComponent
+
 
 method initialize(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) =
   g.name = "WorldGraphicsComponent"
@@ -151,6 +152,18 @@ proc render(g: DynamicEntityGraphicsComponent, world: LiveWorld, display: Displa
         qb.color = rgba(1.0f,1.0f,1.0f,1.0f)
         qb.drawTo(g.canvas)
 
+        if ent.hasData(Creature) and ent.hasData(Player):
+          if phys.facing != Direction.Center:
+            qb.position += vector3fFor(phys.facing) * 24
+            qb.color = rgba(1.0f,1.0f,1.0f,0.5f)
+            qb.texture = case phys.facing:
+              of Direction.Left: image("survival/icons/close_left_arrow.png")
+              of Direction.Up: image("survival/icons/close_up_arrow.png")
+              of Direction.Right: image("survival/icons/close_right_arrow.png")
+              of Direction.Down: image("survival/icons/close_down_arrow.png")
+              of Direction.Center: image("survival/icons/center.png")
+            qb.drawTo(g.canvas)
+
 
 method update(g: DynamicEntityGraphicsComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
   withWorld(world):
@@ -165,78 +178,3 @@ method update(g: DynamicEntityGraphicsComponent, world: LiveWorld, display: Disp
 
     @[g.canvas.drawCommand(display)]
 
-
-
-
-method initialize(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld) =
-  g.name = "PlayerControlComponent"
-
-  let ws = display[WindowingSystem]
-  ws.desktop.background.draw = bindable(false)
-  var overlay = nineWayImage(imageLike("ui/woodBorder.png"))
-  overlay.drawCenter = false
-  ws.desktop.overlays = @[overlay]
-
-  ws.desktop.createChild("hud", "VitalsWidget")
-
-
-method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
-  matcher(event):
-    extract(KeyPress, key):
-      let delta = case key:
-        of KeyCode.W: vec2i(0,1)
-        of KeyCode.A: vec2i(-1,0)
-        of KeyCode.S: vec2i(0,-1)
-        of KeyCode.D: vec2i(1,0)
-        else: vec2(0,0)
-
-      if delta.x != 0 or delta.y != 0:
-        withWorld(world):
-          for player in world.entitiesWithData(Player):
-            let phys = player[Physical]
-            let toPos = phys.position + vec3i(delta.x, delta.y, 0)
-            let toTile = tile(phys.region, toPos.x, toPos.y, toPos.z)
-
-            var interactingWithEntity = false
-            for ent in toTile.entities:
-              ifHasData(ent, Physical, phys):
-                if phys.occupiesTile:
-                  interactingWithEntity = true
-                  info "Destroying entity: "
-                  world.printEntityData(ent)
-                  if ent.hasData(Gatherable):
-                    let gatherable = ent.data(Gatherable)
-                    for res in gatherable.resources:
-                      for i in 0 ..< res.quantity.currentValue:
-                        let item = createItem(world, phys.region, res.resource)
-                        moveItemToInventory(world, item, player)
-
-                  destroyEntity(world, ent)
-                  break
-
-
-            if not interactingWithEntity:
-              moveEntityDelta(world, player, vec3i(delta.x, delta.y, 0))
-
-
-
-
-
-method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
-  withWorld(world):
-    let ws = display[WindowingSystem]
-    for player in world.entitiesWithData(Player):
-      let phys = player[Physical]
-      let creature = player[Creature]
-
-      ws.desktop.bindValue("player", {
-        "health" : phys.health.currentValue,
-        "maxHealth" : phys.health.maxValue,
-        "stamina" : creature.stamina.currentValue,
-        "maxStamina" : creature.stamina.maxValue,
-        "hydration" : creature.hydration.currentValue,
-        "maxHydration" : creature.hydration.maxValue,
-        "hunger" : creature.hunger.currentValue,
-        "maxHunger" : creature.hunger.maxValue,
-      }.toTable())
-    @[]

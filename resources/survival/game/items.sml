@@ -1,6 +1,7 @@
 Items {
   BladesOfGrass {
     durability: 2
+    stackable: true
   }
   Stone {
     durability: 40
@@ -9,24 +10,28 @@ Items {
       Hard: 3
       Sturdy: 3
     }
+    stackable: true
   }
   Soil {
     durability: 30
     flags {
       Soil: 2
     }
+    stackable: true
   }
   Worm {
     durability: 7
     flags {
       Bait: 3
     }
+    stackable: true
   }
   Sand {
     durability: 30
     flags {
       Powder: 1
     }
+    stackable: true
   }
   Twigs {
     durability: 10
@@ -37,6 +42,7 @@ Items {
     }
 
     image: "survival/graphics/items/plants/twigs.png"
+    stackable: true
   }
 
   Bark {
@@ -66,6 +72,7 @@ Items {
     }
 
     image: "survival/graphics/items/plants/bark.png"
+    stackable: true
   }
 
   Tannin {
@@ -75,6 +82,7 @@ Items {
     flags {
       Tannin: 1
     }
+    stackable: true
   }
 
   StrippedBark {
@@ -88,6 +96,7 @@ Items {
     }
 
     image: "survival/graphics/items/plants/stripped_bark.png"
+    stackable: true
   }
 
   Branch {
@@ -113,6 +122,7 @@ Items {
       Wood: 1
       Inflammable: 2
     }
+    stackable: true
   }
 
   Log {
@@ -141,6 +151,7 @@ Items {
     }
 
     image: "survival/graphics/items/plants/log.png"
+    stackable: true
   }
 
   Plank {
@@ -168,6 +179,7 @@ Items {
     }
 
     image: "survival/graphics/items/plants/plank.png"
+    stackable: true
   }
 
   WoodPole {
@@ -203,6 +215,7 @@ Items {
     }
 
     image: "survival/graphics/items/material/wood_pole.png"
+    stackable: true
   }
 
 
@@ -218,6 +231,7 @@ Items {
     }
 
     image: "survival/graphics/items/material/dowels.png"
+    stackable: true
 
   }
 
@@ -234,6 +248,7 @@ Items {
     }
 
     image: "survival/graphics/items/material/wood_stake.png"
+    stackable: true
   }
 
   WoodShavings {
@@ -246,6 +261,7 @@ Items {
     }
 
     image: "survival/graphics/items/material/wood_shavings.png"
+    stackable: true
   }
 
   RottingVegetation {
@@ -256,6 +272,7 @@ Items {
     }
 
     image: "survival/graphics/items/plants/rotting_vegetation.png"
+    stackable: true
   }
 
   SaltWater {
@@ -269,6 +286,8 @@ Items {
       hydration: -4
       sanity: -2
     }
+
+    stackable: true
   }
 
   CarrotRoot {
@@ -292,6 +311,7 @@ Items {
     decay: 7 days
     decaysInto: RottingVegetation
     image: "survival/graphics/items/plants/carrot_root.png"
+    stackable: true
   }
 
   CarrotSeed {
@@ -304,6 +324,7 @@ Items {
     seedOf: Carrot
 
     image: "survival/graphics/items/plants/seed.png"
+    stackable: true
   }
 
   Leaves {
@@ -316,5 +337,23 @@ Items {
     }
 
     image: "survival/graphics/items/plants/leaf.png"
+    stackable: true
+  }
+
+  Axe {
+    weight: 1000
+    durability: 100
+    flags {
+      Tool: 1
+      Weapon: 1
+      Axe: 1
+    }
+
+    actions {
+      Chop: 1
+      Cut: 1
+    }
+
+    image: "survival/graphics/items/tool/axe.png"
   }
 }
