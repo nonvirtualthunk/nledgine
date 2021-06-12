@@ -9,7 +9,7 @@ import logic
 import glm
 import sets
 import game/randomness
-
+import game/library
 
 proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
   withWorld(world):
@@ -32,6 +32,8 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
       dirt : stone,
       sand : seawater
     }.toTable()
+
+    let tileLib = library(TileKind)
 
     for x in -RegionHalfSize ..< RegionHalfSize:
       for y in -RegionHalfSize ..< RegionHalfSize:
@@ -64,12 +66,12 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
 
         layerKinds.reverse()
 
+        var t = region.tilePtr(x,y,MainLayer)
         for layerKind in layerKinds:
-          region.tile(x,y,MainLayer).floorLayers.add(TileLayer(tileKind: layerKind))
+          t.floorLayers.add(TileLayer(tileKind: layerKind, resources: createResourcesFromYields(world, tileLib[layerKind].resources, layerKind)))
 
         if tileKind == stone and h2 > d * 3.0 + 0.25:
-          region.tile(x,y,MainLayer).wallLayers.add(TileLayer(tileKind: stone))
-
+          t.wallLayers.add(TileLayer(tileKind: stone))
 
         if tileKind == grass or tileKind == dirt:
           let forestNoise = noise.pureSimplex(x.float * 0.015f + 137.0f, y.float * 0.015f - 137.0f) * 0.5f +

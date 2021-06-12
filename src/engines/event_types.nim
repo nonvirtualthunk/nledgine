@@ -67,6 +67,7 @@ type
    WindowFocusLost* = ref object of InputEvent
 
    WorldInitializedEvent* = ref object of GameEvent
+    time*: float
 
 
 method isConsumed*(evt: Event): bool {.base.} = false

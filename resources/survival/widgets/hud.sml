@@ -166,7 +166,7 @@ QuickSlots {
 
   listItemArchetype: hud.QuickSlotItem
   listItemBinding: "quickslots.items -> item"
-  listItemGapSize: 0
+  gapSize: 0
 
   selectable: false
 }

@@ -274,7 +274,18 @@ iterator descendantsWithData*[T](e: Widget, dataType : typedesc[T]): Widget =
   for c in descendantsMatching(e, w => w.hasData(dataType)):
     yield c
 
+proc isDescendantOf*(w: Widget, target: Widget): bool =
+  if w.parent_f.isSome:
+    if w.parent_f.get == target:
+      true
+    else:
+      isDescendantOf(w.parent_f.get, target)
+  else:
+    false
 
+
+proc isEmpty*(w: WidgetArchetypeIdentifier): bool =
+  w.location.isEmpty or w.identifier.isEmpty
 
 
 proc giveWidgetFocus*[WorldType](ws: WindowingSystemRef, world: WorldType, widget: Widget)
