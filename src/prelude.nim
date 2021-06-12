@@ -218,7 +218,9 @@ proc permute*(x: int): int =
    (((a * (x.uint64.bitand(0xffffffff.uint64))) + (x shr 32).uint64) mod 2000000000).int.abs
 
 proc isEmpty*[T](s: seq[T]): bool = s.len == 0
+proc isEmpty*(s: string): bool = s.len == 0
 proc nonEmpty*[T](s: seq[T]): bool = s.len != 0
+proc nonEmpty*(s: string): bool = s.len != 0
 
 proc nonEmpty*[K, V](t: Table[K, V]): bool = t.len != 0
 proc nonEmpty*[K](t: HashSet[K]): bool = t.len != 0
@@ -400,3 +402,8 @@ proc deleteValue*[T](s : var seq[T], value: T) : bool {.discardable.} =
   else:
     s.delete(idx)
     true
+
+proc withoutValue*[T](s : seq[T], value: T) : seq[T] =
+  for v in s:
+    if v != value:
+      result.add(v)

@@ -1,4 +1,3 @@
-import tiles
 import survival_core
 import game/randomness
 import worlds
@@ -12,8 +11,56 @@ import resources
 import config/config_helpers
 import sets
 import sequtils
+import patty
+
 
 type
+  TileLayerKind* {.pure.} = enum
+    Wall
+    Floor
+    Ceiling
+
+  TargetKind* {.pure.} = enum
+    Entity
+    Tile
+    TileLayer
+
+  Target* = object
+    case kind*: TargetKind
+    of TargetKind.Entity:
+      entity*: Entity
+    of TargetKind.Tile, TargetKind.TileLayer:
+      region*: Entity
+      tilePos*: Vec3i
+      # doesn't mean anything for `Tile` but that's fine
+      layer*: TileLayerKind
+      index*: int
+
+  ResourceGatherMethod* = object
+    # what action type triggers this gather method
+    actions*: seq[Taxon]
+    # how difficult is it to successfully gather this way
+    difficulty*: float
+    # how good a tool is required to be able to gather at all
+    minimumToolLevel*: int
+
+  ResourceYield* = object
+    # what resource is there
+    resource*: Taxon
+    # how much of it is present
+    amountRange*: DiceExpression
+    # how can it be gathered
+    gatherMethods*: seq[ResourceGatherMethod]
+    # base amount of time it takes to gather
+    gatherTime*: Ticks
+    # is the tile/entity destroyed when all resources are gathered
+    destructive*: bool
+    # is this resource automatically gathered when the overall entity is destroyed by gathering
+    # i.e. automatically getting the seeds and leaves when you dig up a carrot
+    gatheredOnDestruction*: bool
+    # how long it takes to regenerate 1 of this resource (in ticks)
+    regenerateTime*: Option[Ticks]
+
   Vital* = object
     # The maximum value and how much it has been reduced by currently
     value*: Reduceable[int]
@@ -91,12 +138,12 @@ type
   GatherableResource* = object
     # The actual resource that can be gathered
     resource*: Taxon
-    # How much of the resource remains and its maximum possible
-    quantity*: Reduceable[int]
     # From what the availability of this resource is derived (i.e. PlantKind, CreatureKind)
     source*: Taxon
+    # How much of the resource remains and its maximum possible
+    quantity*: Reduceable[int16]
     # How many ticks worth of progress have been made on gathering one unit of this resource
-    progress*: Ticks
+    progress*: Ticks16
 
   Gatherable* = object
     # resources that can be gathered from this entity
@@ -206,31 +253,33 @@ type
     kind*: Taxon
     presentVerb*: string
 
+proc readFromConfig*(cv: ConfigValue, gm: var ResourceGatherMethod) =
+  if cv.isArr:
+    let arr = cv.asArr
+    cv[0].readInto(gm.actions)
+    cv[1].readInto(gm.difficulty)
+    cv[2].readInto(gm.minimumToolLevel)
+  elif cv.isStr:
+    gm.actions = @[taxon("Actions", cv.asStr)]
+    gm.difficulty = 1
+  else:
+    cv["action"].readInto(gm.actions)
+    cv["actions"].readInto(gm.actions)
+    cv["difficulty"].readInto(gm.difficulty)
+    cv["minimumToolLevel"].readInto(gm.minimumToolLevel)
+
+proc readFromConfig*(cv: ConfigValue, ry: var ResourceYield) =
+  readFromConfigByField(cv, ResourceYield, ry)
+  if cv["gatherMethod"].nonEmpty:
+    ry.gatherMethods = @[cv["gatherMethod"].readInto(ResourceGatherMethod)]
+  if ry.gatherTime == Ticks(0):
+    ry.gatherTime = Ticks(TicksPerShortAction)
 
 defineSimpleReadFromConfig(PlantGrowthStageInfo)
 defineSimpleReadFromConfig(PlantKind)
 defineSimpleReadFromConfig(FoodKind)
 defineSimpleReadFromConfig(ActionKind)
 defineSimpleReadFromConfig(CreatureKind)
-
-defineReflection(Player)
-defineReflection(Creature)
-defineReflection(LightSource)
-defineReflection(Gatherable)
-defineReflection(Plant)
-defineReflection(Physical)
-defineReflection(Item)
-defineReflection(Inventory)
-defineReflection(Food)
-defineReflection(Combustable)
-
-const DirectionVectors* = [vec2i(0,0), vec2i(-1,0), vec2i(0,1), vec2i(1,0), vec2i(0,-1)]
-const DirectionVectors3f* = [vec3f(0,0,0), vec3f(-1,0,0), vec3f(0,1,0), vec3f(1,0,0), vec3f(0,-1,0)]
-const DirectionVectors3i* = [vec3i(0,0,0), vec3i(-1,0,0), vec3i(0,1,0), vec3i(1,0,0), vec3i(0,-1,0)]
-
-proc vectorFor*(d: Direction) : Vec2i = DirectionVectors[d.ord]
-proc vector3fFor*(d: Direction) : Vec3f = DirectionVectors3f[d.ord]
-proc vector3iFor*(d: Direction) : Vec3i = DirectionVectors3i[d.ord]
 
 proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["durability"].readInto(ik.durability)
@@ -252,6 +301,26 @@ proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   if actions.isObj:
     for k,v in actions.fields:
       ik.actions[taxon("Actions", k)] = v.asInt
+
+defineReflection(Player)
+defineReflection(Creature)
+defineReflection(LightSource)
+defineReflection(Gatherable)
+defineReflection(Plant)
+defineReflection(Physical)
+defineReflection(Item)
+defineReflection(Inventory)
+defineReflection(Food)
+defineReflection(Combustable)
+
+
+const DirectionVectors* = [vec2i(0,0), vec2i(-1,0), vec2i(0,1), vec2i(1,0), vec2i(0,-1)]
+const DirectionVectors3f* = [vec3f(0,0,0), vec3f(-1,0,0), vec3f(0,1,0), vec3f(1,0,0), vec3f(0,-1,0)]
+const DirectionVectors3i* = [vec3i(0,0,0), vec3i(-1,0,0), vec3i(0,1,0), vec3i(1,0,0), vec3i(0,-1,0)]
+
+proc vectorFor*(d: Direction) : Vec2i = DirectionVectors[d.ord]
+proc vector3fFor*(d: Direction) : Vec3f = DirectionVectors3f[d.ord]
+proc vector3iFor*(d: Direction) : Vec3i = DirectionVectors3i[d.ord]
 
 defineSimpleLibrary[PlantKind]("survival/game/plant_kinds.sml", "Plants")
 defineSimpleLibrary[ItemKind]("survival/game/items.sml", "Items")
@@ -314,7 +383,25 @@ proc updateRecoveryAndLoss*(v: var Vital, tick: Ticks) : Ticks =
 
   Ticks(interval)
 
+proc isEntityTarget*(target: Target) : bool =
+  target.kind == TargetKind.Entity
 
+proc isTileTarget*(target: Target) : bool =
+  case target.kind:
+    of TargetKind.Tile, TargetKind.TileLayer:
+      true
+    else:
+      false
+
+proc positionOf*(world: LiveWorld, target: Target): Option[Vec3i] =
+  case target.kind:
+    of TargetKind.Tile, TargetKind.TileLayer:
+      some(target.tilePos)
+    of TargetKind.Entity:
+      if target.entity.hasData(Physical):
+        some(target.entity[Physical].position)
+      else:
+        none(Vec3i)
 
 proc regionEnt*(world: LiveWorld, entity: Entity) : Entity =
   entity[Physical].region

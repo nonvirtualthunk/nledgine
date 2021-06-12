@@ -36,6 +36,9 @@ proc `[]`*[W: static[int], H: static[int], D: static[int], I: int, T](g: FiniteG
 proc `[]`*[W: static[int], H: static[int], D: static[int], I: int, T](g: var FiniteGrid3D[W, H, D, T], x: I, y: I, z: I): var T =
    g.values[x*H*D+y*D+z]
 
+proc getPtr*[W: static[int], H: static[int], D: static[int], I: int, T](g: var FiniteGrid3D[W, H, D, T], x: I, y: I, z: I): ptr T =
+   g.values[x*H*D+y*D+z].addr
+
 
 proc `[]=`*[W: static[int], H: static[int], D: static[int], I: int, T](g: var FiniteGrid3D[W, H, D, T], x: I, y: I, z: I, t: T) =
   if x < 0 or y < 0 or x >= W or y >= H:

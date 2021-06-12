@@ -122,6 +122,11 @@ proc readFromConfig*(cv: ConfigValue, v: var ListWidget) =
    readIntoOrElse(cv["gapSize"], v.gapSize, 2)
    readIntoOrElse(cv["separatorArchetype"], v.separatorArchetype, none(WidgetArchetypeIdentifier))
    readInto(cv["listItemArchetype"], v.listItemArchetype)
+   if v.listItemArchetype.isEmpty:
+     err &"Config for ListWidget does not provide a valid listItemArchetype:"
+     indentLogs()
+     err $cv
+     unindentLogs()
    readIntoOrElse(cv["selectable"], v.selectable, true)
    readInto(cv["horizontal"], v.horizontal)
    if not cv["vertical"].asBool(true): v.horizontal = true

@@ -31,5 +31,5 @@ method onEvent(g: TileComponent, world: World, event: Event) =
   matcher(event):
     extract(RegionInitializedEvent):
       discard
-    extract(TileChangedEvent, tileCoord):
+    extract(TileChangedEvent, tilePosition):
       discard

@@ -43,7 +43,7 @@ type
 
 
 method initialize(g: InitializationComponent, world: LiveWorld) =
-  world.eventStmts(WorldInitializedEvent()):
+  world.eventStmts(WorldInitializedEvent(time: relTime().inSeconds)):
     let regionEnt = world.createEntity()
     let region = regionEnt.attachData(Region)
     generateRegion(world, regionEnt)
@@ -54,7 +54,7 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     var pos = vec3i(0,0,MainLayer)
     for y in countdown(RegionHalfSize-1,0):
       let tile = region.tile(0,y,MainLayer)
-      if tile.floorLayers.nonEmpty and tile.floorLayers[^1].tileKind != water:
+      if tile.floorLayers.len > 0 and tile.floorLayers[^1].tileKind != water:
         pos = vec3i(0.int32,y.int32,MainLayer.int32)
         break
 
@@ -79,7 +79,7 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
       region: regionEnt,
     ))
     player.attachData(Inventory(maximumWeight: 500))
-    player[Inventory].items.incl(axe)
+    moveItemToInventory(world, axe, player)
 
     regionEnt[Region].entities.incl(player)
     regionEnt[Region].dynamicEntities.incl(player)

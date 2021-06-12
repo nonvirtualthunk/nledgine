@@ -27,6 +27,7 @@ import core
 import worlds/identity
 import algorithm
 import windowingsystem/rich_text
+import windowingsystem/list_widget
 
 type Latch* = object
   notValue: bool
@@ -37,8 +38,33 @@ type
     messageText*: RichText
     messageLatch*: Latch
     quickSlotLatch*: Latch
+    inventoryItems*: seq[ItemInfo]
+    actionItems*: seq[ActionInfo]
+    actionTarget*: Option[Entity]
+    actionMenu*: Widget
+
+  ItemInfo = object
+    kind*: Taxon
+    icon*: Imagelike
+    name*: string
+    count*: int
+    countStr*: string
+    itemEntities*: seq[Entity]
+
+  ActionInfo = object
+    kind: Taxon
+    icon: ImageLike
+    text: string
+    shortcut: string
+
+  QuickSlotInfo = object
+    kind: Taxon
+    icon: ImageLike
+    showing: bool
+    index: int
 
 
+proc constructActionInfo(world: LiveWorld, player: Entity, target: Entity): seq[ActionInfo] {.gcsafe.}
 
 proc flipOn*(latch: var Latch) : bool {.discardable.} =
   result = latch.notValue
@@ -52,13 +78,35 @@ proc flipOff*(latch: var Latch) : bool {.discardable.}  =
 method initialize(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld) =
   g.name = "PlayerControlComponent"
 
+  let player = player(world)
+
   let ws = display[WindowingSystem]
   ws.desktop.background.image = bindable(imageLike("ui/woodBorderTransparent.png"))
 
   ws.desktop.createChild("hud", "VitalsWidget")
-  ws.desktop.createChild("Inventory", "InventoryWidget")
+  let inventoryWidget = ws.desktop.createChild("Inventory", "InventoryWidget")
   ws.desktop.createChild("hud", "MessageLog")
   ws.desktop.createChild("hud", "QuickSlots")
+  g.actionMenu = ws.desktop.createChild("ActionMenu", "ActionMenu")
+  g.actionMenu.bindValue("ActionMenu.showing", false)
+
+
+  inventoryWidget.onEvent(ListItemSelect, lis):
+    let item = g.inventoryItems[lis.index].itemEntities[0]
+    g.actionTarget = some(item)
+    g.actionItems = constructActionInfo(world, player(world), item)
+    g.actionMenu.bindValue("ActionMenu.showing", true)
+    g.actionMenu.bindValue("ActionMenu.actions", g.actionItems)
+    g.actionMenu.x = absolutePos(lis.originatingWidget.resolvedPosition.x, WidgetOrientation.TopRight)
+    g.actionMenu.y = absolutePos(lis.originatingWidget.resolvedPosition.y, WidgetOrientation.TopRight)
+
+
+
+
+
+proc performAction(world: LiveWorld, display: DisplayWorld, player: Entity, target: Entity, action: Taxon) =
+  if action == † Actions.Place:
+    placeItem(world, some(player), target, facedPosition(world, player), true)
 
 
 proc naturalLanguageList*[T](s : seq[T], f : (T) -> string) : string =
@@ -111,11 +159,15 @@ proc message*(world: LiveWorld, evt: Event): Option[RichText] =
           result = some(richText(&"You could not gather anything further with the tools you are using"))
 
 
+proc closeMenus(g: PlayerControlComponent) =
+  g.actionMenu.bindValue("ActionMenu.showing", false)
+  g.actionTarget = none(Entity)
 
 
 method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
+  let ws = display[WindowingSystem]
   matcher(event):
-    extract(KeyPress, key):
+    extract(KeyPress, key, modifiers):
       let delta = case key:
         of KeyCode.W: vec2i(0,1)
         of KeyCode.A: vec2i(-1,0)
@@ -127,33 +179,38 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
         withWorld(world):
           for player in world.entitiesWithData(Player):
             let phys = player[Physical]
-            let toPos = phys.position + vec3i(delta.x, delta.y, 0)
-            let toTile = tile(phys.region, toPos.x, toPos.y, toPos.z)
+            let facing = primaryDirectionFrom(phys.position.xy, phys.position.xy + delta)
+            if modifiers.shift or facing != phys.facing:
+              world.eventStmts(FacingChangedEvent(entity: player, facing: facing)):
+                phys.facing = facing
+            else:
+              let toPos = phys.position + vec3i(delta.x, delta.y, 0)
+              let toTile = tile(phys.region, toPos.x, toPos.y, toPos.z)
 
-            var interactingWithBlockingEntity = false
-            var interactedSuccessfully = false
-            var interactedWithEntity : Entity
-            for ent in toTile.entities:
-              ifHasData(ent, Physical, phys):
-                if phys.occupiesTile:
-                  interactedWithEntity = ent
-                  interactingWithBlockingEntity = true
-                  if interact(world, player, player[Creature].allEquippedItems, ent):
-                    interactedSuccessfully = true
-                    break
-
-            if interactingWithBlockingEntity and not interactedSuccessfully:
-              world.addFullEvent(CouldNotGatherEvent(entity: player, fromEntity: some(interactedWithEntity)))
-
-            if not interactingWithBlockingEntity:
-              moveEntityDelta(world, player, vec3i(delta.x, delta.y, 0))
+              var interactingWithBlockingEntity = false
+              var interactedSuccessfully = false
+              var interactedWithEntity : Entity
               for ent in toTile.entities:
                 ifHasData(ent, Physical, phys):
-                  if phys.capsuled:
-                    if ent.hasData(Item):
-                      moveItemToInventory(world, ent, ent)
-                    else:
-                      warn &"Entity on the ground but not an item: {ent[Identity].kind}"
+                  if phys.occupiesTile:
+                    interactedWithEntity = ent
+                    interactingWithBlockingEntity = true
+                    if interact(world, player, player[Creature].allEquippedItems, Target(kind: TargetKind.Entity, entity: ent)):
+                      interactedSuccessfully = true
+                      break
+
+              if interactingWithBlockingEntity and not interactedSuccessfully:
+                world.addFullEvent(CouldNotGatherEvent(entity: player, fromEntity: some(interactedWithEntity)))
+
+              if not interactingWithBlockingEntity:
+                moveEntityDelta(world, player, vec3i(delta.x, delta.y, 0))
+                for ent in toTile.entities:
+                  ifHasData(ent, Physical, phys):
+                    if phys.capsuled:
+                      if ent.hasData(Item):
+                        moveItemToInventory(world, ent, player)
+                      else:
+                        warn &"Entity on the ground but not an item: {ent[Identity].kind}"
 
       elif key.ord >= KeyCode.K0.ord and key.ord <= KeyCode.K9.ord:
         # map 1-9 -> 0-8, 0 -> 9 so we can use the keys in order of the keyboard
@@ -175,6 +232,16 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
     extract(ItemRemovedFromInventoryEvent,fromInventory):
       if fromInventory.hasData(Player):
         g.inventoryLatch.flipOn()
+    extract(ListItemSelect, originatingWidget, index):
+      if originatingWidget.isDescendantOf(g.actionMenu):
+        let action = g.actionItems[index]
+        if g.actionTarget.isSome:
+          performAction(world, display, player(world), g.actionTarget.get, action.kind)
+        else:
+          warn &"Cannot perform action {action.kind} without a target"
+      else:
+        info &"List item select for : {originatingWidget.parent.get.identifier}"
+      g.closeMenus()
 
 
   let msg = message(world, event)
@@ -188,19 +255,18 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
       g.messageText = g.messageText.subsection(-30,-1)
     g.messageLatch.flipOn()
 
-type ItemInfo = object
-  kind*: Taxon
-  icon*: Imagelike
-  name*: string
-  count*: int
-  countStr*: string
 
 
 proc constructItemInfo*(world: LiveWorld, player: Entity): seq[ItemInfo] =
   var indexesByTaxon : Table[Taxon,int]
   let lib = library(ItemKind)
 
-  proc itemInfo(t: Taxon, k: ItemKind): ItemInfo = ItemInfo(kind: t, icon: k.images[0], name: t.displayName, count: 0, countStr: "")
+  proc itemInfo(t: Taxon, k: ItemKind): ItemInfo =
+    let img = if k.images.nonEmpty:
+      k.images[0]
+    else:
+      image("images/unknown.png")
+    ItemInfo(kind: t, icon: img, name: t.displayName, count: 0, countStr: "")
 
   withWorld(world):
     let itemsSeq = toSeq(player[Inventory].items.items).sortedByIt(it.id)
@@ -219,12 +285,8 @@ proc constructItemInfo*(world: LiveWorld, player: Entity): seq[ItemInfo] =
       result[itemInfoIdx].count = count
       if count > 1:
         result[itemInfoIdx].countStr = &" x{count}"
+      result[itemInfoIdx].itemEntities.add(item)
 
-type QuickSlotInfo = object
-  kind: Taxon
-  icon: ImageLike
-  showing: bool
-  index: int
 
 
 proc constructQuickSlotItemsInfo(world: LiveWorld, player: Entity): seq[QuickSlotInfo] =
@@ -249,6 +311,13 @@ proc constructQuickSlotItemsInfo(world: LiveWorld, player: Entity): seq[QuickSlo
     for i in 0 ..< result.len:
       result[i].index = (i+1) mod 10
 
+proc constructActionInfo(world: LiveWorld, player: Entity, target: Entity): seq[ActionInfo] =
+  for action in possibleActions(world, player, target):
+    let ak = actionKind(action)
+    result.add(ActionInfo(
+      kind: action,
+      text: ak.presentVerb,
+    ))
 
 method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
   withWorld(world):
@@ -270,8 +339,9 @@ method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld
 
       if g.inventoryLatch.flipOff():
         ws.desktop.bindValue("itemIconAndText", true)
+        g.inventoryItems = constructItemInfo(world, player)
         ws.desktop.bindValue("inventory", {
-          "items" : constructItemInfo(world, player)
+          "items" : g.inventoryItems
         }.toTable())
 
       if g.messageLatch.flipOff():

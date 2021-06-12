@@ -10,6 +10,9 @@ import config/config_helpers
 import resources
 import sets
 import glm
+import entities
+import core
+import noto
 
 const RegionSize* {.intdefine.} = 512
 const RegionHalfSize* = RegionSize div 2
@@ -17,30 +20,6 @@ const RegionLayers* = 3
 const MainLayer* = 1
 
 type
-  ResourceGatherMethod* = object
-    # what action type triggers this gather method
-    actions*: seq[Taxon]
-    # how difficult is it to successfully gather this way
-    difficulty*: float
-    # how good a tool is required to be able to gather at all
-    minimumToolLevel*: int
-
-  ResourceYield* = object
-    # what resource is there
-    resource*: Taxon
-    # how much of it is present
-    amountRange*: DiceExpression
-    # how can it be gathered
-    gatherMethods*: seq[ResourceGatherMethod]
-    # base amount of time it takes to gather
-    gatherTime*: Ticks
-    # is the tile/entity destroyed when all resources are gathered
-    destructive*: bool
-    # is this resource automatically gathered when the overall entity is destroyed by gathering
-    # i.e. automatically getting the seeds and leaves when you dig up a carrot
-    gatheredOnDestruction*: bool
-    # how long it takes to regenerate 1 of this resource (in ticks)
-    regenerateTime*: Option[Ticks]
 
   TileKind* = ref object
     # identity
@@ -58,7 +37,7 @@ type
     # what kind of tile layer is this
     tileKind*: Taxon
     # what resources are currently available
-    resources*: seq[Taxon]
+    resources*: seq[GatherableResource]
 
   Tile* = object
     # individual layers of the floor on this tile, in z-order
@@ -92,28 +71,7 @@ const Opaque            = TileFlag(0b0100000) # an entity / wall is blocking lig
 const FluidImpermeable  = TileFlag(0b0010000) # an entity / wall is preventing water from flowing through this tile
 const AirImpermeable    = TileFlag(0b0001000) # an entity / wall is preventing air from flowing through this tile
 
-proc readFromConfig*(cv: ConfigValue, gm: var ResourceGatherMethod) =
-  if cv.isArr:
-    let arr = cv.asArr
-    cv[0].readInto(gm.actions)
-    cv[1].readInto(gm.difficulty)
-    cv[2].readInto(gm.minimumToolLevel)
-  elif cv.isStr:
-    gm.actions = @[taxon("Actions", cv.asStr)]
-    gm.difficulty = 1
-  else:
-    cv["action"].readInto(gm.actions)
-    cv["actions"].readInto(gm.actions)
-    cv["difficulty"].readInto(gm.difficulty)
-    cv["minimumToolLevel"].readInto(gm.minimumToolLevel)
 
-
-proc readFromConfig*(cv: ConfigValue, ry: var ResourceYield) =
-  readFromConfigByField(cv, ResourceYield, ry)
-  if cv["gatherMethod"].nonEmpty:
-    ry.gatherMethods = @[cv["gatherMethod"].readInto(ResourceGatherMethod)]
-  if ry.gatherTime == Ticks(0):
-    ry.gatherTime = Ticks(TicksPerShortAction)
 
 proc readFromConfig*(cv: ConfigValue, tk: var TileKind) =
   if tk == nil:
@@ -129,19 +87,67 @@ defineReflection(Region)
 
 
 defineSimpleLibrary[TileKind]("survival/game/tile_kinds.sml", "TileKinds")
+proc tileKind*(t : Taxon): TileKind = library(TileKind)[t]
 
 proc layer*(r: Entity, view: LiveWorld, z: int): RegionLayerView = RegionLayerView(region: view.data(r, Region), layer: z)
 proc tile*(r: RegionLayerView, x: int, y: int): var Tile = r.region.tiles[x + RegionHalfSize,y + RegionHalfSize,r.layer]
 proc tile*(r: ref Region, x: int, y: int, z : int): var Tile = r.tiles[x + RegionHalfSize,y + RegionHalfSize,z]
+proc tilePtr*(r: ref Region, x: int, y: int, z : int): ptr Tile = r.tiles.getPtr(x + RegionHalfSize,y + RegionHalfSize,z)
+proc tilePtr*(r: ref Region, v: Vec3i): ptr Tile = tilePtr(r, v.x, v.y, v.z)
 template tile*(r: Entity, x: int, y: int, z : int): var Tile =
   when declared(injectedWorld):
     tile(injectedWorld.data(r, Region), x,y,z)
   else:
     tile(world.data(r, Region), x,y,z)
 
+template tile*(r: Entity, v: Vec3i): var Tile =
+  when declared(injectedWorld):
+    tile(injectedWorld.data(r, Region), v.x,v.y,v.z)
+  else:
+    tile(world.data(r, Region), v.x,v.y,v.z)
+
+template tile*(t: Target): var Tile =
+  case target.kind:
+    of TargetKind.Tile, TargetKind.TileLayer:
+      tile(world.data(t.region, Region), t.tilePos.x,t.tilePos.y,t.tilePos.z)
+    of TargetKind.Entity:
+      if t.entity.hasData(Physical):
+        let phys = world.data(t.entity, Physical)
+        let r = phys.region
+        tile(world.data(r, Region), phys.position.x,phys.position.y,phys.position.z)
+      else:
+        err &"Attempting to extract tile from non-pyhsical entity target, returning sentinel"
+        var r : Entity
+        for region in world.entitiesWithData(Region):
+          r = region
+        tile(world.data(r, Region), 0,0,0)
+
+proc layers*(t: var Tile, kind: TileLayerKind): var seq[TileLayer] =
+  case kind:
+    of TileLayerKind.Wall:
+      return t.wallLayers
+    of TileLayerKind.Floor:
+      return t.floorLayers
+    of TileLayerKind.Ceiling:
+      return t.ceilingLayers
+
+
 proc entitiesAt*(r: ref Region, v: Vec3i): seq[Entity] = tile(r, v.x, v.y, v.z).entities
 
+proc regionFor*(world: LiveWorld, e: Entity): Entity =
+  if e.hasData(Physical):
+    return e[Physical].region
+  else:
+    err &"Attempting to determine region for non-physical entity {e}"
+
+proc regionFor*(world: LiveWorld, t: Target): Entity =
+  case t.kind:
+    of TargetKind.Entity: regionFor(world, t.entity)
+    of TargetKind.Tile, TargetKind.TileLayer: t.region
+
 when isMainModule:
+
+
   import engines
   import prelude
   import graphics/cameras

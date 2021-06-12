@@ -51,6 +51,12 @@ method onEvent*(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWor
       g.needsUpdate = true
     extract(EntityDestroyedEvent):
       g.needsUpdate = true
+    extract(TileLayerDestroyedEvent):
+      g.needsUpdate = true
+    extract(ItemPlacedEvent):
+      g.needsUpdate = true
+    extract(ItemMovedToInventoryEvent):
+      g.needsUpdate = true
 
 
 proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) =
@@ -90,15 +96,21 @@ proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) 
           qb.color = rgba(1.0f,1.0f,1.0f,1.0f)
           qb.drawTo(g.canvas)
 
+        var offset = 0
         for ent in t.entities:
           if ent.hasData(Physical):
             let phys = ent.data(Physical)
             if not phys.dynamic:
-              qb.dimensions = vec2f(24.0f,24.0f)
-              qb.position = vec3f(phys.position.x.float * 24.0f, phys.position.y.float * 24.0f, 0.0f)
+              if phys.capsuled:
+                qb.dimensions = vec2f(16.0f,16.0f)
+                qb.position = vec3f(phys.position.x.float * 24.0f + 4.0f, phys.position.y.float * 24.0f + 6.0f - offset.float, 0.0f)
+              else:
+                qb.dimensions = vec2f(24.0f,24.0f)
+                qb.position = vec3f(phys.position.x.float * 24.0f, phys.position.y.float * 24.0f - offset.float, 0.0f)
               qb.texture = phys.images[0]
               qb.color = rgba(1.0f,1.0f,1.0f,1.0f)
               qb.drawTo(g.canvas)
+              offset += 4
 
 
 

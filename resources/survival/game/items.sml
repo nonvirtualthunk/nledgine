@@ -2,6 +2,8 @@ Items {
   BladesOfGrass {
     durability: 2
     stackable: true
+
+    image: "survival/graphics/items/plants/blades_of_grass.png"
   }
   Stone {
     durability: 40
@@ -11,6 +13,8 @@ Items {
       Sturdy: 3
     }
     stackable: true
+
+    image: "survival/graphics/items/material/stone.png"
   }
   Soil {
     durability: 30
@@ -18,6 +22,8 @@ Items {
       Soil: 2
     }
     stackable: true
+
+    image: "survival/graphics/items/material/soil.png"
   }
   Worm {
     durability: 7
@@ -25,6 +31,8 @@ Items {
       Bait: 3
     }
     stackable: true
+
+    image: "survival/graphics/items/animal/worm.png"
   }
   Sand {
     durability: 30
@@ -32,6 +40,8 @@ Items {
       Powder: 1
     }
     stackable: true
+
+    image: "survival/graphics/items/material/sand.png"
   }
   Twigs {
     durability: 10

@@ -100,7 +100,7 @@ CardWidget {
 
                listItemArchetype : CardWidgets.CardEffect
                listItemBinding: "card.effects -> effect"
-               listItemGapSize : 30
+               gapSize : 30
                separatorArchetype : "CardWidgets.CardEffectGroupDivider"
                selectable : true
             }

@@ -5,6 +5,7 @@ import worlds
 import entities
 import survival_core
 import options
+import tiles
 
 
 type
@@ -18,7 +19,7 @@ type
 
   TileChangedEvent* = ref object of GameEvent
     region*: Entity
-    tileCoord*: Vec3i
+    tilePosition*: Vec3i
 
   TileFlagsUpdatedEvent* = ref object of GameEvent
 
@@ -28,17 +29,23 @@ type
     fromPosition*: Vec3i
     toPosition*: Vec3i
 
+  FacingChangedEvent* = ref object of GameEvent
+    entity*: Entity
+    facing*: Direction
+
   EntityDestroyedEvent* = ref object of GameEvent
     entity*: Entity
+
+  TileLayerDestroyedEvent* = ref object of GameEvent
+    region*: Entity
+    tilePosition*: Vec3i
+    layerKind*: TileLayerKind
+    layerIndex*: int
+
 
   ItemCreatedEvent* = ref object of GameEvent
     entity*: Entity
     itemKind*: Taxon
-
-  ItemPlacedEvent* = ref object of GameEvent
-    entity*: Entity
-    position*: Vec3i
-    capsuled*: bool
 
   ItemMovedToInventoryEvent* = ref object of GameEvent
     entity*: Entity
@@ -60,6 +67,16 @@ type
     entity*: Entity
     fromEntity*: Option[Entity]
 
+  ItemPlacedEvent* = ref object of GameEvent
+    entity*: Option[Entity]
+    placedEntity*: Entity
+    position*: Vec3i
+    capsuled*: bool
+
+  CouldNotPlaceItemEvent* = ref object of GameEvent
+    entity*: Entity
+    placedEntity*: Entity
+    position*: Vec3i
 
   WorldAdvancedEvent* = ref object of GameEvent
     tick*: Ticks
@@ -85,6 +102,10 @@ eventToStr(ItemPlacedEvent)
 eventToStr(ItemMovedToInventoryEvent)
 eventToStr(ItemRemovedFromInventoryEvent)
 eventToStr(GatheredEvent)
+eventToStr(CouldNotGatherEvent)
+eventToStr(TileLayerDestroyedEvent)
+eventToStr(FacingChangedEvent)
+eventToStr(CouldNotPlaceItemEvent)
 
 method toString*(evt: WorldInitializedEvent): string =
    return &"WorldInitializedEvent{$evt[]}"

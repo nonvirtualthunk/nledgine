@@ -9,6 +9,7 @@ export options
 
 
 type Ticks* = distinct int
+type Ticks16* = distinct int16
 
 proc `==`*(a, b: Ticks): bool {.borrow.}
 proc `<`*(a, b: Ticks): bool {.borrow.}
@@ -23,6 +24,22 @@ proc `-`*(a, b: Ticks): Ticks = Ticks(a.int - b.int)
 proc `+`*(a : Ticks, b: int): Ticks = Ticks(a.int + b)
 proc min(a,b: Ticks): Ticks = Ticks(min(a.int, b.int))
 
+proc `==`*(a, b: Ticks16): bool {.borrow.}
+proc `<`*(a, b: Ticks16): bool {.borrow.}
+proc `<=`*(a, b: Ticks16): bool {.borrow.}
+proc `>`*(a, b: Ticks16): bool = a.int > b.int
+proc `>=`*(a, b: Ticks16): bool = a.int >= b.int
+proc `!=`*(a, b: Ticks16): bool = a.int != b.int
+proc `+`*(a, b: Ticks16): Ticks16 = Ticks16(a.int + b.int)
+proc `+=`*(a : var Ticks16, b: Ticks16) = a = Ticks16(a.int + b.int)
+proc `+=`*(a : var Ticks16, b: int) = a = Ticks16(a.int + b.int)
+proc `+=`*(a : var Ticks, b: Ticks16) = a = Ticks(a.int + b.int)
+proc `-`*(a, b: Ticks16): Ticks16 = Ticks16(a.int - b.int)
+proc `+`*(a : Ticks16, b: int): Ticks16 = Ticks16(a.int + b)
+proc min(a,b: Ticks16): Ticks16 = Ticks16(min(a.int, b.int))
+
+
+converter toTicksFull*(t: Ticks16) : Ticks = Ticks(t.int16.int)
 
 const ticksRe = "([0-9]+\\.?[0-9]?)\\s*([a-zA-Z ]+)?".re
 

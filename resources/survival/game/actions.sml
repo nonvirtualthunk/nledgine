@@ -27,4 +27,12 @@ Actions {
   Grind {
     presentVerb: "grind"
   }
+
+  Eat {
+    presentVerb: "eat"
+  }
+
+  Place {
+    presentVerb: "place"
+  }
 }

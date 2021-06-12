@@ -13,10 +13,10 @@ InventoryWidget {
 
   listItemArchetype: Inventory.Item
   listItemBinding: "inventory.items -> item"
-  listItemGapSize: 0
+  gapSize: -4
 
 
-  selectable : false
+  selectable : true
 }
 
 Item {
@@ -42,6 +42,6 @@ Item {
 
   background.draw: false
   font: "ChevyRayThicket.ttf"
-  fontSize: 12
+  fontSize: 16
   horizontalAlignment: left
 }
