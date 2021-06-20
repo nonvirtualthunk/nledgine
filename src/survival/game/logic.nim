@@ -111,6 +111,10 @@ proc tileMoveTime*(tile: Tile) : Ticks =
     let tileInfo = tileLib[floorLayer.tileKind]
     result += tileInfo.moveCost
 
+proc removeItemFromGroundInternal*(world: LiveWorld, item: Entity) =
+  if item.hasData(Physical):
+    tileOn(world, item).entities = tileOn(world, item).entities.withoutValue(item)
+
 proc primaryDirectionFrom*(a,b : Vec2i) : Direction =
   if a == b:
     Direction.Center
@@ -239,9 +243,7 @@ proc moveItemToInventory*(world: LiveWorld, item: Entity, toInventory: Entity) =
       world.eventStmts(ItemRemovedFromInventoryEvent(entity: item, fromInventory: it)):
         it[Inventory].items.excl(item)
     if fromInventory.isNone:
-      info &"Removing item from tile: {tileOn(world,item)}"
-      tileOn(world, item).entities = tileOn(world, item).entities.withoutValue(item)
-      info &"Removed item from tile: {tileOn(world,item)}"
+      removeItemFromGroundInternal(world, item)
     # note, check weight limits beforehand
     toInventory[Inventory].items.incl(item)
     itemData.heldBy = some(toInventory)
@@ -301,7 +303,7 @@ proc effectiveGatherLevelFor*(rYield: ResourceYield, actions: Table[Taxon, int])
 proc destroyEntity*(world: LiveWorld, entity: Entity) =
   world.eventStmts(EntityDestroyedEvent(entity: entity)):
     ifHasData(entity, Physical, phys):
-      tileOn(world, entity).entities.deleteValue(entity)
+      removeItemFromGroundInternal(world, entity)
       removeItemFromInventoryInternal(world, entity)
       phys.region[Region].entities.excl(entity)
 
@@ -460,6 +462,48 @@ proc possibleActions*(world: LiveWorld, actor: Entity, target: Entity) : seq[Tax
     result.add(† Actions.Eat)
 
 
+
+proc isRequirementMet*(world: LiveWorld, entity: Entity, req: RecipeRequirement): bool =
+  for spec in req.specifiers:
+
+
+proc matchingRecipes*(world: LiveWorld, actor: Entity, recipeTemplate: RecipeTemplate, ingredients: Table[RecipeSlotKind, RecipeInputChoice]) : seq[Recipe] =
+
+  for recipe in recipesForTemplate(recipeTemplate):
+    for slotKey, requirement in recipe.ingredients:
+      # Assume true if there are no specifiers (implicitly ought to match everything) or if the operator is an AND (it will then fail if any specifier fails)
+      var matches = requirement.specifiers.isEmpty or requirement.operator == BooleanOperator.AND
+      for specifier in requirement.specifiers:
+        if specifier.isA(† Flag):
+          actor[Flags]
+
+
+
+
+
+
+proc eat*(world: LiveWorld, actor: Entity, target: Entity) : bool {.discardable.} =
+  if target.hasData(Food) and actor.hasData(Creature):
+    let fd = target[Food]
+    let cd = actor[Creature]
+    let pd = actor[Physical]
+    let hungerRecover = min(cd.hunger.currentlyReducedBy, fd.hunger)
+    let staminaRecover = min(cd.stamina.currentlyReducedBy, fd.stamina)
+    let hydrationRecover = min(cd.hydration.currentlyReducedBy, fd.hydration)
+    let sanityRecover = min(cd.sanity.currentlyReducedBy, fd.sanity)
+    let healthRecover = min(pd.health.currentlyReducedBy, fd.health)
+
+    world.eventStmts(FoodEatenEvent(entity: actor, eaten: target, hungerRecovered: hungerRecover, staminaRecovered: staminaRecover, hydrationRecovered: hydrationRecover, sanityRecovered: sanityRecover, healthRecovered : healthRecover)):
+      cd.hunger.recoverBy(fd.hunger)
+      cd.stamina.recoverBy(fd.stamina)
+      cd.hydration.recoverBy(fd.hydration)
+      cd.sanity.recoverBy(fd.sanity)
+      pd.health.recoverBy(fd.health)
+
+      destroyEntity(world, target)
+    true
+  else:
+    false
 
 when isMainModule:
   let lib = library(PlantKind)

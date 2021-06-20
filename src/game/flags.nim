@@ -33,3 +33,4 @@ when declared(ProjectName):
   defineSimpleLibrary[FlagInfo](ProjectName & "/game/flags.sml", "Flags")
 else:
   defineSimpleLibrary[FlagInfo]("ax4/game/flags.sml", "Flags")
+

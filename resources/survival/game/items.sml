@@ -62,7 +62,7 @@ Items {
     durability: 12
     transforms : [
       {
-        action: Cut
+        recipeTemplate: Cut
         difficulty: 1
         output: [
           StrippedBark
@@ -116,7 +116,7 @@ Items {
     durability: 20
     transforms : [
       {
-        action: Cut
+        recipeTemplate: Cut
         difficulty: 2
         output: [
           WoodPole
@@ -142,7 +142,7 @@ Items {
     durability: 30
     transforms : [
       {
-        action: Chop
+        recipeTemplate: Cut
         difficulty: 3
         output: [
           Plank,
@@ -171,7 +171,7 @@ Items {
     durability: 20
     transforms: [
       {
-        action: Cut
+        recipeTemplate: Cut
         difficulty: 3
         output: [
           WoodPole
@@ -199,7 +199,7 @@ Items {
     durability: 15
     transforms: [
       {
-        actions: Cut
+        recipeTemplate: Cut
         difficulty: 1
         output: [
           WoodStake
@@ -207,7 +207,7 @@ Items {
         ]
       },
       {
-        actions: Cut
+        recipeTemplate: Cut
         difficulty: 2
         output: [
           Dowels,
@@ -301,7 +301,7 @@ Items {
   }
 
   CarrotRoot {
-    weight: 100-120
+    weight: 100
     durability: 10
 
     flags {
@@ -323,6 +323,31 @@ Items {
     image: "survival/graphics/items/plants/carrot_root.png"
     stackable: true
   }
+
+  RoastedVegetable {
+    flags {
+      Edible: "+1"
+      Cooked: "+1"
+    }
+
+    food {
+      hunger: "+1"
+      stamina: "+1"
+      hydration: "-1"
+      sanity: "+1"
+    }
+
+    decay: -1 days
+    decaysInto: RottingVegetation
+    image: "survival/graphics/items/plants/roasted_vegetable.png"
+    stackable: true
+  }
+
+  RoastedCarrot: ${Items.RoastedVegetable} {
+    image: "survival/graphics/items/plants/roasted_carrot.png"
+  }
+
+
 
   CarrotSeed {
     weight: 10

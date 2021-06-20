@@ -4,10 +4,12 @@ Taxonomy {
 
   GameConcept: []
   GameConcepts {
-    Health : GameConcept
-    Stamina : GameConcept
-    Hydration : GameConcept
-    Hunger: GameConcept
+    Vital: GameConcept
+    Health : Vital
+    Stamina : Vital
+    Hydration : Vital
+    Hunger: Vital
+    Sanity: Vital
   }
 }
 
@@ -20,4 +22,6 @@ TaxonomySources : [
   survival/game/flags.sml
   survival/game/creatures.sml
   survival/game/body_parts.sml
+  survival/game/recipe_templates.sml
+  survival/game/recipes.sml
 ]

@@ -68,6 +68,7 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
       stamina: vital(14),
       hydration: vital(22).withLossTime(Ticks(400)),
       hunger: vital(19).withLossTime(Ticks(600)),
+      sanity: vital(25),
       baseMoveTime: Ticks(20),
       equipment: { † BodyParts.RightHand : axe }.toTable
     ))
@@ -80,6 +81,8 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     ))
     player.attachData(Inventory(maximumWeight: 500))
     moveItemToInventory(world, axe, player)
+    moveItemToInventory(world, createItem(world, regionEnt, † Items.Log), player)
+    moveItemToInventory(world, createItem(world, regionEnt, † Items.CarrotRoot), player)
 
     regionEnt[Region].entities.incl(player)
     regionEnt[Region].dynamicEntities.incl(player)

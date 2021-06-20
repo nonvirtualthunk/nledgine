@@ -43,7 +43,7 @@ TileKinds {
       {
         resource: Blades of Grass
         amountRange: 2-3
-        gatherMethods: [ [Cut,1], [Dig, 2], [Gather, 3] ]
+        gatherMethods: [ [Actions.Cut,1], [Dig, 2], [Gather, 3] ]
         gatherTime: 1 short action
         destructive: true
         regenerateTime: 3 days

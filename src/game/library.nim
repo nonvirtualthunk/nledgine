@@ -2,6 +2,7 @@ import worlds/taxonomy
 import tables
 import macros
 import options
+import noto
 
 type
   Library*[T] = ref object
@@ -19,6 +20,9 @@ proc get*[T](lib: Library[T], key: Taxon): Option[T] =
   else:
     none(T)
 
+iterator pairs*[T](lib: Library[T]) : (Taxon, T) =
+  for k,v in lib.values:
+    yield (k,v)
 
 var libraryLoadChannel: Channel[proc() {.gcSafe.}]
 libraryLoadChannel.open()
@@ -37,8 +41,11 @@ template defineLibrary*[T](loadFn: untyped) =
   libraryCopyChannel.open()
 
 
+  const typeStr = repr(T)
   libraryLoadChannel.send(proc () {.gcsafe.} =
+    noto.setContext("Library[" & typeStr & "].load()")
     let res = loadFn
+    noto.unsetContext()
     libraryCopyChannel.send(res))
 
   proc library*(t: typedesc[T]): Library[T] =
@@ -56,13 +63,15 @@ template defineSimpleLibrary*[T](confPaths: seq[string], namespace: string) =
     for confPath in confPaths:
       let confs = config(confPath)
       if confs[namespace].isEmpty:
-        echo "Simple library load: config did not have top level value \"", namespace, "\""
+        err "Simple library load: config did not have top level value \"" & namespace & "\""
       for k, v in confs[namespace]:
         let key = taxon(namespace, k)
         var ri: T
         readInto(v, ri)
         when compiles(ri.taxon):
-         ri.taxon = key
+          ri.taxon = key
+        elif compiles(ri.identity = key):
+          ri.identity = key
         lib[key] = ri
 
     lib

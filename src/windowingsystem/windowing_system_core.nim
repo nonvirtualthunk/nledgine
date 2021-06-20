@@ -98,7 +98,7 @@ type
     of WidgetDimensionKind.WrapContent:
       discard
     of WidgetDimensionKind.ExpandTo:
-      expandToWidget: Widget
+      expandToWidget: string
       expandToGap: int
 
   RecalculationFlag* = enum
@@ -174,6 +174,8 @@ type
     dimensions*: Vec2i
     components*: seq[WindowingComponent]
     rootConfigPath*: string
+    # standard tilesheet to apply as defaults
+    stylesheet*: ConfigValue
 
     # recomputaton
     renderRevision: int
@@ -277,6 +279,15 @@ iterator descendantsWithData*[T](e: Widget, dataType : typedesc[T]): Widget =
 proc isDescendantOf*(w: Widget, target: Widget): bool =
   if w.parent_f.isSome:
     if w.parent_f.get == target:
+      true
+    else:
+      isDescendantOf(w.parent_f.get, target)
+  else:
+    false
+
+proc isDescendantOf*(w: Widget, target: string): bool =
+  if w.parent_f.isSome:
+    if w.parent_f.get.identifier == target:
       true
     else:
       isDescendantOf(w.parent_f.get, target)
@@ -401,6 +412,7 @@ proc relativeSize*(sizeDelta: int): WidgetDimension = WidgetDimension(kind: Widg
 proc proportionalSize*(proportion: float): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.Proportional, sizeProportion: proportion)
 proc wrapContent*(): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.WrapContent)
 proc expandToParent*(gap: int = 0): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.ExpandToParent, parentGap: gap)
+proc expandToWidget*(expandTo: string, gap: int = 0): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.ExpandTo, expandToWidget: expandTo,  expandToGap: gap)
 proc intrinsic*(): WidgetDimension = WidgetDimension(kind: WidgetDimensionKind.Intrinsic)
 
 proc centered*(): WidgetPosition = WidgetPosition(kind: WidgetPositionKind.Centered)
@@ -512,8 +524,13 @@ iterator dependentOn(p: WidgetDimension, axis: Axis, widget: Widget, parent: Wid
         yield (widget: c, kind: DependencyKind.PartialPosition, axis: axis)
         yield (widget: c, kind: DependencyKind.Dimensions, axis: axis)
     of WidgetDimensionKind.ExpandTo:
-      yield (widget: p.expandtoWidget, kind: DependencyKind.Position, axis: axis)
-      yield (widget: p.expandtoWidget, kind: DependencyKind.Dimensions, axis: axis) # todo: this could probably be tightened up a little bit
+      let expandToWidget = parent.childByIdentifier(p.expandToWidget)
+      if expandToWidget.isSome:
+        yield (widget: expandToWidget.get, kind: DependencyKind.Position, axis: axis)
+        yield (widget: expandToWidget.get, kind: DependencyKind.Dimensions, axis: axis) # todo: this could probably be tightened up a little bit
+      else:
+        warn &"ExpandTo dimension with target {p.expandToWidget} on widget {widget.identifier}, but no matching widget found"
+
 
 proc toDependent(w: Widget, srcAxis: Axis, srcKind: DependencyKind, dep: Dependency): Dependent =
   (dependentWidget: w, dependsOnKind: dep.kind, sourceKind: srcKind, dependsOnAxis: dep.axis, sourceAxis: srcAxis)
@@ -843,7 +860,12 @@ proc recalculateDimensions(w: Widget, axis: Axis, dirtySet: HashSet[Dependency],
       else:
         0
     of WidgetDimensionKind.ExpandTo:
-      dim.expandToWidget.resolvedPosition[axis] - dim.expandToGap * w.windowingSystem.pixelScale - w.resolvedPosition[axis]
+      let expandToWidget = w.parent.get.childByIdentifier(dim.expandToWidget)
+      if expandToWidget.isSome:
+        expandToWidget.get.resolvedPosition[axis] - dim.expandToGap * w.windowingSystem.pixelScale - w.resolvedPosition[axis]
+      else:
+        warn &"Resolving dimensions for widget {w.identifier} failed, could not expand to target, target {dim.expandToWidget} not found"
+        0
   else:
     w.resolvedDimensions[axis] = w.windowingSystem.dimensions[axis]
 
@@ -1208,6 +1230,7 @@ const orientedProportionPattern = re"(?i)([0-9.]+) from (.*)"
 const rightLeftPattern = re"(?i)([0-9]+) (right|left) of ([a-zA-Z0-9]+)"
 const belowAbovePattern = re"(?i)([0-9]+) (below|above) ([a-zA-Z0-9]+)"
 const expandToParentPattern = re"(?i)expand\s?to\s?parent(?:\(([0-9]+)\))?"
+const expandToWidgetPattern = re"(?i)expand\s?to\s?([a-zA-Z0-9]+)(?:\(([0-9]+)\))?"
 const percentagePattern = re"([0-9]+)%"
 const centeredPattern = re"(?i)center(ed)?"
 const wrapContentPattern = re"(?i)wrap\s?content"
@@ -1268,6 +1291,11 @@ proc readFromConfig*(cv: ConfigValue, e: var WidgetDimension) =
             e = expandToParent(parseInt(gapStr))
           else:
             e = expandToParent(0)
+        extractMatches(expandToWidgetPattern, widgetStr, gapStr):
+          if gapStr != "":
+            e = expandToWidget(widgetStr, parseInt(gapStr))
+          else:
+            e = expandToWidget(widgetStr, 0)
         extractMatches(percentagePattern, percentStr):
           e = proportionalSize(parseInt(percentStr).float / 100.0)
         extractMatches(wrapContentPattern):
@@ -1356,6 +1384,7 @@ proc createWidgetFromConfig*(ws: WindowingSystemRef, identifier: string, cv: Con
   let t = relTime()
   if not ws.widgetArchetypes.contains(identifier):
     var arch = WidgetArchetype(widgetData: Widget(windowingSystem: ws, entity: ws.display.createEntity()))
+    mergeInherit(ws.stylesheet, cv)
     readInto(cv, arch)
     ws.widgetArchetypes[identifier] = arch
 

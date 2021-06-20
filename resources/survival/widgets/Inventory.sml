@@ -5,11 +5,12 @@ InventoryWidget {
 
   y: 0
   x: 0 from right
-  background.pixelScale: 2
-  padding: [3,8]
+  padding: [3,3]
 
+  background.pixelScale: 2
   background.image: ui/fancyBackgroundWhite.png
   background.color: [120,120,120,200]
+  background.draw: true
 
   listItemArchetype: Inventory.Item
   listItemBinding: "inventory.items -> item"

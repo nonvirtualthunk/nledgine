@@ -263,6 +263,42 @@ macro extract*(t: typed, field1: untyped, field2: untyped, field3: untyped, fiel
       `stmts`
       break
 
+macro extract*(t: typed, field1: untyped, field2: untyped, field3: untyped, field4: untyped, field5: untyped, stmts: untyped): untyped =
+  result = quote do:
+    if matchTarget of `t`:
+      let `field1` {.inject.} = matchTarget.`t`.`field1`
+      let `field2` {.inject.} = matchTarget.`t`.`field2`
+      let `field3` {.inject.} = matchTarget.`t`.`field3`
+      let `field4` {.inject.} = matchTarget.`t`.`field4`
+      let `field5` {.inject.} = matchTarget.`t`.`field5`
+      `stmts`
+      break
+
+macro extract*(t: typed, field1: untyped, field2: untyped, field3: untyped, field4: untyped, field5: untyped, field6: untyped, stmts: untyped): untyped =
+  result = quote do:
+    if matchTarget of `t`:
+      let `field1` {.inject.} = matchTarget.`t`.`field1`
+      let `field2` {.inject.} = matchTarget.`t`.`field2`
+      let `field3` {.inject.} = matchTarget.`t`.`field3`
+      let `field4` {.inject.} = matchTarget.`t`.`field4`
+      let `field5` {.inject.} = matchTarget.`t`.`field5`
+      let `field6` {.inject.} = matchTarget.`t`.`field6`
+      `stmts`
+      break
+
+macro extract*(t: typed, field1: untyped, field2: untyped, field3: untyped, field4: untyped, field5: untyped, field6: untyped, field7: untyped, stmts: untyped): untyped =
+  result = quote do:
+    if matchTarget of `t`:
+      let `field1` {.inject.} = matchTarget.`t`.`field1`
+      let `field2` {.inject.} = matchTarget.`t`.`field2`
+      let `field3` {.inject.} = matchTarget.`t`.`field3`
+      let `field4` {.inject.} = matchTarget.`t`.`field4`
+      let `field5` {.inject.} = matchTarget.`t`.`field5`
+      let `field6` {.inject.} = matchTarget.`t`.`field6`
+      let `field7` {.inject.} = matchTarget.`t`.`field7`
+      `stmts`
+      break
+
 template matchType*(value: untyped, stmts: untyped) =
   block:
     let matchTarget {.inject.} = value

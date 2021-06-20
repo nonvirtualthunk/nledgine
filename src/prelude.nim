@@ -16,6 +16,7 @@ export sugar
 export worlds
 export strformat
 export tables
+export options
 
 type
    UnitOfTime* = Metric[metric.Time, float]
@@ -50,6 +51,12 @@ type
       LessThanOrEqualTo
       EqualTo
       NotEqualTo
+
+   BooleanOperator* = enum
+     OR,
+     AND,
+     XOR,
+     NOT
 
    Vec2d = Vec2[float64]
 
@@ -407,3 +414,18 @@ proc withoutValue*[T](s : seq[T], value: T) : seq[T] =
   for v in s:
     if v != value:
       result.add(v)
+
+proc fromCamelCase*(s : string) : string =
+  for i in 0 ..< s.len:
+    let c = s[i]
+    if i != 0 and c.isUpperAscii:
+      result.add(' ')
+    result.add(c.toLowerAscii)
+
+proc capitalize*(s : string) : string =
+  for i in 0 ..< s.len:
+    let c = s[i]
+    if i == 0 or s[i - 1] == ' ':
+      result.add(c.toUpperAscii)
+    else:
+      result.add(c)

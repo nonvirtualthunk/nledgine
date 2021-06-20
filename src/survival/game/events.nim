@@ -78,6 +78,15 @@ type
     placedEntity*: Entity
     position*: Vec3i
 
+  FoodEatenEvent* = ref object of GameEvent
+    entity*: Entity
+    eaten*: Entity
+    hungerRecovered*: int
+    staminaRecovered*: int
+    hydrationRecovered*: int
+    sanityRecovered*: int
+    healthRecovered*: int
+
   WorldAdvancedEvent* = ref object of GameEvent
     tick*: Ticks
 
@@ -106,6 +115,7 @@ eventToStr(CouldNotGatherEvent)
 eventToStr(TileLayerDestroyedEvent)
 eventToStr(FacingChangedEvent)
 eventToStr(CouldNotPlaceItemEvent)
+eventToStr(FoodEatenEvent)
 
 method toString*(evt: WorldInitializedEvent): string =
    return &"WorldInitializedEvent{$evt[]}"

@@ -135,12 +135,18 @@ proc `&`*(a, b: RichText): RichText =
 proc add*(a: var RichText, b: RichText) =
   a.sections.add(b.sections)
 
+proc add*(a: var RichText, b: RichTextSection) =
+  a.sections.add(b)
+
 proc add*(a: var RichText, b, c: RichText) =
   a.sections.add(b.sections)
   a.sections.add(c.sections)
 
+proc textSection*(str: string, size: float = 1.0f, color: Option[color.RGBA] = none(color.RGBA)): RichTextSection =
+  RichTextSection(size: size, verticalAlignment: VerticalAlignment.Bottom, kind: SectionKind.Text, text: str, color: color)
+
 proc richText*(str: string, size: float = 1.0f, color: Option[color.RGBA] = none(color.RGBA)): RichText =
-  richText(RichTextSection(size: size, verticalAlignment: VerticalAlignment.Bottom, kind: SectionKind.Text, text: str, color: color))
+  richText(textSection(str, size, color))
 
 proc richText*(img: ImageLike, size: float = 1.0f): RichText =
   richText(RichTextSection(size: size, verticalAlignment: VerticalAlignment.Bottom, kind: SectionKind.Image, image: img))
@@ -161,6 +167,23 @@ proc join*(s: seq[RichText], separator: RichText): RichText =
       result.add(separator)
     result.add(elem)
     first = false
+
+proc add*(s: var RichTextSection,
+          str: string,
+          textColor: Option[color.RGBA] = none(RGBA),
+          background: Option[color.RGBA] = none(RGBA),
+          underline: Option[color.RGBA] = none(RGBA)
+          ) =
+  if s.kind != SectionKind.Text:
+    warn &"Attempting to add a text subsection to a non-text richText section: {s}"
+  else:
+    if str.len > 0:
+      if (s.formatRanges.isEmpty and s.text.len > 0) or s.formatRanges[^1].endIndex < s.text.len:
+        let si = if s.formatRanges.isEmpty: 0 else: s.formatRanges[^1].endIndex
+        s.formatRanges.add(RichTextFormatRange(startIndex: si, endIndex: s.text.len))
+
+      s.formatRanges.add(RichTextFormatRange(startIndex: s.text.len, endIndex: s.text.len + str.len, color: textColor, background: background, underline: underline))
+      s.text.add(str)
 
 
 # Parse out a more involved rich text from a raw string

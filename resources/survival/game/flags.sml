@@ -48,6 +48,10 @@ Flags {
     description: "The body of a plant"
     boolean: true
   }
+  Meat {
+    description: "The body of an animal"
+    boolean: true
+  }
   Root {
     description: "The water absorbing root of a plant"
     boolean: true
@@ -96,5 +100,20 @@ Flags {
   }
   Axe {
     description: "A bladed tool or weapon used for chopping"
+  }
+  Tongs {
+    description: "A tool that can grip and hold things from a distance to keep your hands safe"
+  }
+  CookingImplement {
+    description: "A tool used for cooking and preparing food"
+  }
+  Fire {
+    description: "A light in the dark, a friend in the cold places of the world"
+  }
+  Cooked {
+    description: "Food that has been prepared and heated into a more pleasntly edible form"
+  }
+  All {
+    description: "Special flag indicating that all flags should be included in some consideration"
   }
 }

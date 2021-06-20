@@ -13,6 +13,7 @@ type NotoMessage = object
    indentationChange: int8
    originThread: int
    quit: bool
+   contextChange: bool
 
 var writeChannel: Channel[NotoMessage]
 writeChannel.open()
@@ -37,6 +38,7 @@ const threadColors = [
 proc notoThreadFunc(b: bool) {.thread.} =
    var indentationByThread: Table[int, int]
    var colorsByThread: Table[int, string]
+   var currentContext: Table[int, string]
 
    while true:
       var msg = writeChannel.recv
@@ -47,20 +49,25 @@ proc notoThreadFunc(b: bool) {.thread.} =
       indentationByThread[msg.originThread] = indentationByThread.getOrDefault(msg.originThread) + msg.indentationChange
       let indentation = indentationByThread.getOrDefault(msg.originThread)
 
-      let effMessage = if indentation > 0 and msg.message.len > 0:
-         msg.message.indent(indentation)
+      if msg.contextChange:
+        currentContext[msg.originThread] = msg.message & ": "
       else:
-         msg.message
+        let effMessage = if indentation > 0 and msg.message.len > 0:
+           msg.message.indent(indentation)
+        else:
+           msg.message
 
-      if effMessage.len > 0:
-         if msg.level == 1:
-            echo "\u001B[38;5;184m", effMessage
-         elif msg.level == 0:
-            echo "\u001B[38;5;196m", effMessage
-         else:
-            if not colorsByThread.hasKey(msg.originThread):
-               colorsByThread[msg.originThread] = threadColors[colorsByThread.len]
-            echo colorsByThread[msg.originThread], effMessage
+        let ctx = currentContext.getOrDefault(msg.originThread)
+
+        if effMessage.len > 0:
+           if msg.level == 1:
+              echo "\u001B[38;5;184m", ctx, effMessage
+           elif msg.level == 0:
+              echo "\u001B[38;5;196m", ctx, effMessage
+           else:
+              if not colorsByThread.hasKey(msg.originThread):
+                 colorsByThread[msg.originThread] = threadColors[colorsByThread.len]
+              echo colorsByThread[msg.originThread], ctx, effMessage
 
 createThread(notoThread, notoThreadFunc, true)
 
@@ -107,3 +114,9 @@ template indentSection*(stmts: untyped) =
    unindentLogs()
 
    tmp
+
+proc setContext*(ctxt: string) =
+  discard writeChannel.trySend(NotoMessage(message: ctxt, originThread: getThreadId(), contextChange: true))
+
+proc unsetContext*() =
+  setContext("")

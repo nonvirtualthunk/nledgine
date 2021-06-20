@@ -92,7 +92,6 @@ proc displayName*(t: Taxon): string =
     if i == 0 or result[i-1] == ' ':
       result[i] = result[i].toUpperAscii
 
-
 proc taxon*(t: ref Taxonomy, namespace: string, name: string, warnOnAbsence: bool = true): Taxon {.gcsafe.} =
   let name = normalizeTaxonStr(name)
   let namespace = normalizeTaxonStr(namespace)

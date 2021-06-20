@@ -55,6 +55,18 @@ proc readFromConfig*(cv: ConfigValue, v: var ComparisonKind) =
    else:
       warn &"Invalid config value for comparison kind: {cv}"
 
+proc readFromConfig*(cv: ConfigValue, v: var BooleanOperator) =
+   if cv.isStr:
+      case cv.asStr.toLowerAscii:
+      of "and", "&&": v = BooleanOperator.AND
+      of "or", "||": v = BooleanOperator.OR
+      of "xor", "^": v = BooleanOperator.XOR
+      of "not", "!": v = BooleanOperator.NOT
+      else:
+         warn &"Invalid string value for boolean operator kind: {cv.asStr}"
+   else:
+      warn &"Invalid config value for boolean operator kind: {cv}"
+
 proc writeToConfig*(t: Taxon) : ConfigValue =
   asConf(&"{t.namespace}.{t.name}")
 

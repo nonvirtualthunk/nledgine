@@ -41,7 +41,7 @@ proc min(a,b: Ticks16): Ticks16 = Ticks16(min(a.int, b.int))
 
 converter toTicksFull*(t: Ticks16) : Ticks = Ticks(t.int16.int)
 
-const ticksRe = "([0-9]+\\.?[0-9]?)\\s*([a-zA-Z ]+)?".re
+const ticksRe = "([+-]?[0-9]+\\.?[0-9]?)\\s*([a-zA-Z ]+)?".re
 
 const TicksPerDay* = 12000
 const DaysPerSeason* = 13

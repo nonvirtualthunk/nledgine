@@ -28,6 +28,9 @@ import worlds/identity
 import algorithm
 import windowingsystem/rich_text
 import windowingsystem/list_widget
+import strutils
+import crafting_display
+import inventory_display
 
 type Latch* = object
   notValue: bool
@@ -42,14 +45,7 @@ type
     actionItems*: seq[ActionInfo]
     actionTarget*: Option[Entity]
     actionMenu*: Widget
-
-  ItemInfo = object
-    kind*: Taxon
-    icon*: Imagelike
-    name*: string
-    count*: int
-    countStr*: string
-    itemEntities*: seq[Entity]
+    craftingMenu*: CraftingMenu
 
   ActionInfo = object
     kind: Taxon
@@ -89,10 +85,11 @@ method initialize(g: PlayerControlComponent, world: LiveWorld, display: DisplayW
   ws.desktop.createChild("hud", "QuickSlots")
   g.actionMenu = ws.desktop.createChild("ActionMenu", "ActionMenu")
   g.actionMenu.bindValue("ActionMenu.showing", false)
+  g.craftingMenu = newCraftingMenu(ws, world, player)
 
 
   inventoryWidget.onEvent(ListItemSelect, lis):
-    let item = g.inventoryItems[lis.index].itemEntities[0]
+    let item = g.inventoryItems[lis.index].itemEntities[^1]
     g.actionTarget = some(item)
     g.actionItems = constructActionInfo(world, player(world), item)
     g.actionMenu.bindValue("ActionMenu.showing", true)
@@ -107,6 +104,8 @@ method initialize(g: PlayerControlComponent, world: LiveWorld, display: DisplayW
 proc performAction(world: LiveWorld, display: DisplayWorld, player: Entity, target: Entity, action: Taxon) =
   if action == † Actions.Place:
     placeItem(world, some(player), target, facedPosition(world, player), true)
+  elif action == † Actions.Eat:
+    eat(world, player, target)
 
 
 proc naturalLanguageList*[T](s : seq[T], f : (T) -> string) : string =
@@ -157,6 +156,25 @@ proc message*(world: LiveWorld, evt: Event): Option[RichText] =
           result = some(richText(&"You could not gather anything further from the {kindStr} with the tools you are using"))
         else:
           result = some(richText(&"You could not gather anything further with the tools you are using"))
+    extract(FoodEatenEvent, entity, eaten, hungerRecovered, staminaRecovered, hydrationRecovered, sanityRecovered, healthRecovered):
+      if entity == player:
+        let kindStr = eaten[Identity].kind.displayName
+        var text = textSection(&"You eat a {kindStr} and recover ")
+        var first = true
+
+        proc addVital(amount: int, vital: Taxon, color: RGBA, last: bool) =
+          if amount > 0:
+            let commaStr = if first: "" elif last: " and " else: ", "
+            text.add(&"{commaStr}{amount} {vital.displayName.toLowerAscii}", textColor = some(color))
+            first = false
+
+        addVital(hungerRecovered, † GameConcepts.Hunger, rgba(100, 40, 120, 255), hydrationRecovered == 0 and staminaRecovered == 0 and healthRecovered == 0 and sanityRecovered == 0)
+        addVital(hydrationRecovered, † GameConcepts.Hydration, rgba(0.1, 0.15, 0.75, 1.0), staminaRecovered == 0 and healthRecovered == 0 and sanityRecovered == 0)
+        addVital(staminaRecovered, † GameConcepts.Stamina, rgba(0.1, 0.75, 0.2, 1.0), healthRecovered == 0 and sanityRecovered == 0)
+        addVital(healthRecovered, † GameConcepts.Health, rgba(0.75, 0.15, 0.2, 1.0), sanityRecovered == 0)
+        addVital(sanityRecovered, † GameConcepts.Sanity, rgba(0.75, 0.35, 0.4, 1.0), true)
+
+        result = some(richText(text))
 
 
 proc closeMenus(g: PlayerControlComponent) =
@@ -243,6 +261,7 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
         info &"List item select for : {originatingWidget.parent.get.identifier}"
       g.closeMenus()
 
+  g.craftingMenu.onEvent(world, display, event)
 
   let msg = message(world, event)
   if msg.isSome:
@@ -255,37 +274,6 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
       g.messageText = g.messageText.subsection(-30,-1)
     g.messageLatch.flipOn()
 
-
-
-proc constructItemInfo*(world: LiveWorld, player: Entity): seq[ItemInfo] =
-  var indexesByTaxon : Table[Taxon,int]
-  let lib = library(ItemKind)
-
-  proc itemInfo(t: Taxon, k: ItemKind): ItemInfo =
-    let img = if k.images.nonEmpty:
-      k.images[0]
-    else:
-      image("images/unknown.png")
-    ItemInfo(kind: t, icon: img, name: t.displayName, count: 0, countStr: "")
-
-  withWorld(world):
-    let itemsSeq = toSeq(player[Inventory].items.items).sortedByIt(it.id)
-    for item in itemsSeq:
-      let itemKindTaxon = item[Identity].kind
-      let itemKind = lib[itemKindTaxon]
-      var itemInfoIdx = if itemKind.stackable:
-        indexesByTaxon.getOrCreate(itemKindTaxon):
-          result.add(itemInfo(itemKindTaxon, itemKind))
-          result.len - 1
-      else:
-        result.add(itemInfo(itemKindTaxon, itemKind))
-        result.len - 1
-
-      let count = result[itemInfoIdx].count + 1
-      result[itemInfoIdx].count = count
-      if count > 1:
-        result[itemInfoIdx].countStr = &" x{count}"
-      result[itemInfoIdx].itemEntities.add(item)
 
 
 

@@ -3,6 +3,7 @@ import graphics/images
 import config/config_core
 import graphics/fonts
 import noto
+import options
 
 export config_core
 export images
@@ -29,6 +30,7 @@ type
 
   ResourceRequest = object
     path: string
+    acceptAbsence: bool
     case kind: ResourceRequestKind:
     of ImageRequest:
       imageChannel: ptr Channel[Image]
@@ -66,7 +68,8 @@ proc loadResources() {.thread.} =
           let configStr = readFile("resources/" & request.path)
           cur = parseConfig(configStr)
         except IoError:
-          err &"Could not load config file: {request.path}"
+          if not request.acceptAbsence:
+            err &"Could not load config file: {request.path}"
           cur = ConfigValue()
         r.config[request.path] = cur
       if request.configChannel != nil:
@@ -116,7 +119,7 @@ proc font*(path: string): ArxTypeface =
 proc typeface*(path: string): ArxTypeface =
   font(path)
 
-proc config*(path: string): ConfigValue =
+proc config*(path: string) : ConfigValue =
   let r = getGlobalResources()
   # todo: is this doing a bunch of copying behind the scenes?
   var cur = r.config.getOrDefault(path)
@@ -126,6 +129,20 @@ proc config*(path: string): ConfigValue =
     cur = r.configChannel.recv()
     r.config[path] = cur
   cur
+
+proc configOpt*(path: string) : Option[ConfigValue] =
+  let r = getGlobalResources()
+  # todo: is this doing a bunch of copying behind the scenes?
+  var cur = r.config.getOrDefault(path)
+  if cur.isEmpty:
+    requestChannel.send(ResourceRequest(kind: ConfigRequest, path: path, configChannel: r.configChannel))
+    assert r.configChannel != nil
+    cur = r.configChannel.recv()
+    r.config[path] = cur
+  if cur.isEmpty:
+    none(ConfigValue)
+  else:
+    some(cur)
 
 proc preloadImage*(path: string) =
   requestChannel.send(ResourceRequest(kind: ImageRequest, path: path))

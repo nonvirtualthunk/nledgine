@@ -12,7 +12,9 @@ import config/config_helpers
 import sets
 import sequtils
 import patty
-
+import arxregex
+import prelude
+import strutils
 
 type
   TileLayerKind* {.pure.} = enum
@@ -110,6 +112,8 @@ type
     hydration*: Vital
     # how much food the creature has remaining before it starts starving
     hunger*: Vital
+    # how sane the creature is
+    sanity*: Vital
     # how many ticks before losing a point of hunger
     hungerLossTime*: Option[Ticks]
     # whether or not the creature has died
@@ -253,6 +257,109 @@ type
     kind*: Taxon
     presentVerb*: string
 
+  RecipeRequirement* = object
+    # One of the given taxons must be matched in order for something to fit this specifier (OR'd together, effectively)
+    # The values are interpreted implicitly by the type of taxon, supplying an Action requires that the item be able to make
+    # that action, supplying a Flag indicates that the item must have that flag value, etc
+    # supplying no values implicitly indicates that anything will match this requirement
+    specifiers*: seq[Taxon]
+    operator*: BooleanOperator
+    # Minimum level required (if any) to count
+    minimumLevel*: int
+
+  RecipeSlot* = object
+    description*: string
+    kind*: RecipeSlotKind
+    # requirements that must be met for an item to go in this ingredient slot
+    requirement*: RecipeRequirement
+    # whether this slot must be filled for every recipe or if can be left out
+    optional*: bool
+
+  ContributionKind* {.pure.} = enum
+    Additive
+    Max
+    Min
+
+  Contribution* = object
+    case kind*: ContributionKind
+    of ContributionKind.Additive:
+      fraction*: float
+    of ContributionKind.Max, ContributionKind.Min:
+      discard
+
+  RecipeSlotKind* {.pure.} = enum
+    Ingredient
+    Tool
+    Location
+
+  RecipeTemplate* = ref object
+    taxon*: Taxon
+    description*: string
+    icon*: ImageLike
+    selectedIcon*: ImageLike
+    # Inputs (ingredients, tools, locations) that can be required by recipes that use this template
+    # i.e. Cooking needs an ingredient to cook, cookware (tool) to cook with, and a fire (location) to cook over
+    recipeSlots*: OrderedTable[string, RecipeSlot]
+    # What proportion of the food content of ingredients is incorporated into the new output
+    foodContribution*: Contribution
+    # What proportion of the durability of the ingredients is incorporated into the new output
+    durabilityContribution*: Contribution
+    # What proportion of the decay (max and current) of the ingredients is incorporated into the new output
+    decayContribution*: Contribution
+    # What flags from the ingredients are incorporated into the new output
+    flagContribution*: Table[Taxon, Contribution]
+    # What weight from the ingredients are incorporated into the new output
+    weightContribution*: Contribution
+
+  RecipeOutput* = object
+    # What item is produced
+    item*: Taxon
+
+  RecipeInputChoice* = object
+    slot*: string
+    kind*: RecipeSlotKind
+    items*: seq[Entity]
+
+  Recipe* = ref object
+    name*: string
+    # what general recipe template this is based on
+    recipeTemplate*: Taxon
+    # further specification in the ingredient requirements that make this recipe get made when matched
+    ingredients*: Table[string, RecipeRequirement]
+    # what items are created as a result of this recipe
+    outputs*: seq[RecipeOutput]
+    # what skill is used in performing this recipe
+    skill*: Taxon
+    # how difficult the recipe is to perform, affects failure chance, experience gain, speed, etc
+    difficulty*: int
+    # how long the recipe takes to make, assuming no modifications
+    duration*: Ticks
+
+    # Note: all contributions below override the recipe template if provided
+    # What proportion of the food content of ingredients is incorporated into the new output
+    foodContribution*: Option[Contribution]
+    # What proportion of the durability of the ingredients is incorporated into the new output
+    durabilityContribution*: Option[Contribution]
+    # What proportion of the decay (max and current) of the ingredients is incorporated into the new output
+    decayContribution*: Option[Contribution]
+    # What flags from the ingredients are incorporated into the new output (keys provided override the template)
+    flagContribution*: Table[Taxon, Contribution]
+    # What weight from the ingredients are incorporated into the new output
+    weightContribution*: Option[Contribution]
+
+
+
+proc readFromConfig*(cv: ConfigValue, gm: var Contribution) =
+  if cv.isStr:
+    case cv.asStr.toLowerAscii:
+      of "min": gm = Contribution(kind: ContributionKind.Min)
+      of "max": gm = Contribution(kind: ContributionKind.Max)
+      else: err &"Unknown contribution string representation: {cv.asStr}"
+  elif cv.isNumber:
+    gm = Contribution(kind: ContributionKind.Additive, fraction: cv.asFloat)
+  else:
+    err &"Unknown representation of Contribution value: {cv}"
+
 proc readFromConfig*(cv: ConfigValue, gm: var ResourceGatherMethod) =
   if cv.isArr:
     let arr = cv.asArr
@@ -275,11 +382,75 @@ proc readFromConfig*(cv: ConfigValue, ry: var ResourceYield) =
   if ry.gatherTime == Ticks(0):
     ry.gatherTime = Ticks(TicksPerShortAction)
 
+
+proc readFromConfig*(cv: ConfigValue, r: var RecipeOutput) =
+  if cv.isStr:
+    let t = if cv.asStr.contains(".") : findTaxon(cv.asStr) else: taxon("Items", cv.asStr)
+    if t != UnknownThing:
+      r.item = t
+  else:
+    readFromConfigByField(cv, RecipeOutput, r)
+
+
+const taxonPlusNumRe = "([a-zA-Z.]+)\\s?([0-9]+)?".re
+proc parseTaxonPlusNumber*(str: string) : Option[(Taxon, int)] =
+  matcher(str):
+    extractMatches(taxonPlusNumRe, taxonExpr, numExpr):
+      let t = findTaxon(taxonExpr)
+      if t == UnknownThing:
+        warn &"Recipe requirement looking for unknown taxon: {taxonExpr}"
+      else:
+        var num = 1
+        if numExpr.len > 0:
+          num = numExpr.parseInt
+        return some((t, num))
+    warn &"Recipe requirement had invalid formatted string: {str}"
+  none((Taxon,int))
+
+proc readFromConfig*(cv: ConfigValue, r: var RecipeRequirement) =
+  if cv.isStr:
+    let tpn = parseTaxonPlusNumber(cv.asStr)
+    if tpn.isSome:
+      r.specifiers = @[tpn.get()[0]]
+      r.minimumLevel = tpn.get()[1]
+  elif cv.isArr:
+    for v in cv.asArr:
+      let tpn = parseTaxonPlusNumber(cv.asStr)
+      if tpn.isSome:
+        r.specifiers.add(tpn.get()[0])
+        if r.minimumLevel != tpn.get()[1] and r.minimumLevel != 0:
+          warn &"Multiple minimum levels specified for recipe. Specifier {tpn.get()[1]}, levels: {r.minimumLevel}, {tpn.get()[1]}"
+        r.minimumLevel = tpn.get()[1]
+  else:
+    readFromConfigByField(cv, RecipeRequirement, r)
+
+proc readFromConfig*(cv: ConfigValue, k : var RecipeSlotKind) =
+  case cv.asStr.toLowerAscii:
+    of "tool": k = RecipeSlotKind.Tool
+    of "location": k = RecipeSlotKind.Location
+    of "ingredient": k = RecipeSlotKind.Ingredient
+
+defineSimpleReadFromConfig(RecipeSlot)
+
+proc readFromConfig*(cv: ConfigValue, r: var RecipeTemplate) =
+  readFromConfigByField(cv, RecipeTemplate, r)
+
+  for k,slot in cv["ingredients"].readInto(OrderedTable[string,RecipeSlot]):
+    r.recipeSlots[k] = slot
+    r.recipeSlots[k].kind = RecipeSlotKind.Ingredient
+  for k,slot in cv["tools"].readInto(OrderedTable[string,RecipeSlot]):
+    r.recipeSlots[k] = slot
+    r.recipeSlots[k].kind = RecipeSlotKind.Tool
+  for k,slot in cv["locations"].readInto(OrderedTable[string,RecipeSlot]):
+    r.recipeSlots[k] = slot
+    r.recipeSlots[k].kind = RecipeSlotKind.Location
+
 defineSimpleReadFromConfig(PlantGrowthStageInfo)
 defineSimpleReadFromConfig(PlantKind)
 defineSimpleReadFromConfig(FoodKind)
 defineSimpleReadFromConfig(ActionKind)
 defineSimpleReadFromConfig(CreatureKind)
+defineSimpleReadFromConfig(Recipe)
 
 proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["durability"].readInto(ik.durability)
@@ -326,11 +497,20 @@ defineSimpleLibrary[PlantKind]("survival/game/plant_kinds.sml", "Plants")
 defineSimpleLibrary[ItemKind]("survival/game/items.sml", "Items")
 defineSimpleLibrary[ActionKind]("survival/game/actions.sml", "Actions")
 defineSimpleLibrary[CreatureKind]("survival/game/creatures.sml", "Creatures")
+defineSimpleLibrary[RecipeTemplate]("survival/game/recipe_templates.sml", "RecipeTemplates")
+defineSimpleLibrary[Recipe]("survival/game/recipes.sml", "Recipes")
 
 proc plantKind*(kind: Taxon) : PlantKind = library(PlantKind)[kind]
 proc itemKind*(kind: Taxon) : ItemKind = library(ItemKind)[kind]
 proc actionKind*(kind: Taxon) : ActionKind = library(ActionKind)[kind]
 proc creatureKind*(kind: Taxon) : CreatureKind = library(CreatureKind)[kind]
+proc recipeTemplate*(kind: Taxon): RecipeTemplate = library(RecipeTemplate)[kind]
+proc recipe*(kind: Taxon): Recipe = library(Recipe)[kind]
+
+proc recipesForTemplate*(t: RecipeTemplate) : seq[Recipe] =
+  for k,recipe in library(Recipe):
+    if recipe.recipeTemplate == t.taxon:
+      result.add(recipe)
 
 proc vital*(maxV: int): Vital = Vital(value: reduceable(maxV))
 proc withRecoveryTime*(v: Vital, t : Ticks): Vital =
@@ -351,8 +531,16 @@ proc allEquippedItems*(c: ref Creature) : seq[Entity] =
 
 proc currentValue*(v: Vital): int = v.value.currentValue
 proc maxValue*(v: Vital): int = v.value.maxValue
-proc recoverBy*(v: var Vital, i : int) = v.value.recoverBy(i)
-proc reduceBy*(v: var Vital, i : int) = v.value.reduceBy(i)
+proc recoverBy*(v: var Vital, i : int) =
+  v.value.recoverBy(i)
+proc reduceBy*(v: var Vital, i : int) =
+  v.value.reduceBy(i)
+proc recoverBy*(v: var Vital, i : int32) =
+  v.value.recoverBy(i.int)
+proc reduceBy*(v: var Vital, i : int32) =
+  v.value.reduceBy(i.int)
+proc currentlyReducedBy*(v: Vital): int =
+  v.value.currentlyReducedBy
 # Updates the vital stat based on the recovery/loss frequency and returns the minimum resolution required to update accurately
 proc updateRecoveryAndLoss*(v: var Vital, tick: Ticks) : Ticks =
   var delta = 0
@@ -407,5 +595,8 @@ proc regionEnt*(world: LiveWorld, entity: Entity) : Entity =
   entity[Physical].region
 
 when isMainModule:
-  let lib = library(PlantKind)
-  let oak = lib[taxon("PlantKinds", "OakTree")]
+  let lib = library(ItemKind)
+  let carrot = lib[† Items.RoastedCarrot]
+  echo $carrot
+
+

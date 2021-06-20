@@ -22,6 +22,8 @@ proc createWindowingSystem*(display: DisplayWorld, rootConfigPath: string): Wind
    result.lastWidgetUnderMouse = result.desktop
    result.rootConfigPath = rootConfigPath
    result.clipboard = clipboard_new(nil)
+   ifPresent(configOpt(rootConfigPath & "Stylesheet.sml")):
+     result.stylesheet = it
    for e in RecalculationFlag:
       result.desktop.markForUpdate(e)
    result.components.add(TextDisplayRenderer())

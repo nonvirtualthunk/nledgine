@@ -14,28 +14,28 @@ Plants {
           {
             resource: Leaves
             amountRange: 1
-            gatherMethods: [ [Chop,1], [Cut,1], [Gather,2] ]
+            gatherMethods: [ [Chop,1], [Actions.Cut,1], [Gather,2] ]
             gatherTime: 0.5 short action
             regenerateTime: 2 day
           },
           {
             resource: Twigs
             amountRange: 1
-            gatherMethods: [ [Chop,1], [Cut,1], [Gather,2] ]
+            gatherMethods: [ [Chop,1], [Actions.Cut,1], [Gather,2] ]
             gatherTime: 0.5 short action
             regenerateTime: 2 day
           },
           {
             resource: Bark
             amountRange: 1
-            gatherMethods: [ [Chop,1], [Cut,2], [Gather,3] ]
+            gatherMethods: [ [Chop,1], [Actions.Cut,2], [Gather,3] ]
             gatherTime: 2 short actions
             regenerateTime: 3 day
           },
           {
             resource: Branch
             amountRange: 1
-            gatherMethods: [ [Cut,2], [Chop,1], [Gather,4] ]
+            gatherMethods: [ [Actions.Cut,2], [Chop,1], [Gather,4] ]
             gatherTime: 2 short actions
             destructive: true
           }
@@ -49,28 +49,28 @@ Plants {
           {
             resource: Leaves
             amountRange: 2-4
-            gatherMethods: [ [Cut,1], [Chop,1], [Gather,2] ]
+            gatherMethods: [ [Actions.Cut,1], [Chop,1], [Gather,2] ]
             gatherTime: 0.5 short action
             regenerateTime: 2 day
           },
           {
             resource: Twigs
             amountRange: 2-3
-            gatherMethods: [ [Cut,1], [Chop,1], [Gather,2] ]
+            gatherMethods: [ [Actions.Cut,1], [Chop,1], [Gather,2] ]
             gatherTime: 0.5 short action
             regenerateTime: 2 day
           },
           {
             resource: Bark
             amountRange: 2-3
-            gatherMethods: [ [Chop,1], [Cut,2], [Gather,3] ]
+            gatherMethods: [ [Chop,1], [Actions.Cut,2], [Gather,3] ]
             gatherTime: 2 short actions
             regenerateTime: 4 day
           },
           {
             resource: Branch
             amountRange: 1-2
-            gatherMethods: [ [Chop,1], [Cut,2], [Gather,3] ]
+            gatherMethods: [ [Chop,1], [Actions.Cut,2], [Gather,3] ]
             gatherTime: 1 long action
             regenerateTime: 10 day
           },

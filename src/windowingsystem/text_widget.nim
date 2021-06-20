@@ -44,6 +44,7 @@ type
     allowSelection*: bool
     selectedRange*: Option[(int,int)]
     selectionRect*: Recti
+    selectable*: bool
 
     textLayout*: TextLayout
 
@@ -514,11 +515,11 @@ method readDataFromConfig*(ws: TextDisplayRenderer, cv: ConfigValue, widget: Wid
       if isInput:
         td.allowSelection = true
       readFromConfig(cv, td)
+      if isInput or td.selectable:
+        widget.cursor = some(GLFWIbeamCursor)
       widget.attachData(td)
     else:
       readFromConfig(cv, widget.data(TextDisplay)[])
-
-    widget.cursor = some(GLFWIbeamCursor)
 
   if typeStr == "textinput":
     if not widget.hasData(TextInput):

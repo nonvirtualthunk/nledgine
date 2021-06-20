@@ -32,7 +32,7 @@ type
     str: string
     cursor: int
     buffer: string
-    config: ConfigValue
+    merges: seq[(ConfigValue, string)]
 
 template noAutoLoad* {.pragma.}
 
@@ -84,6 +84,18 @@ proc `[]`*(v: ConfigValue, key: string): ConfigValue =
   else:
     return ConfigValue(kind: ConfigValueKind.Empty)
 
+proc getByPath*(v: ConfigValue, path: string): ConfigValue =
+  case v.kind:
+  of ConfigValueKind.Object:
+    var curConfig = v
+    for section in path.split("."):
+      if curConfig.kind == ConfigValueKind.Empty:
+        break
+      curConfig = curConfig[section]
+    return curConfig
+  else:
+    return ConfigValue(kind: ConfigValueKind.Empty)
+
 proc `[]`*(v: ConfigValue, index: int): ConfigValue =
   case v.kind:
   of ConfigValueKind.Array:
@@ -132,6 +144,11 @@ proc asInt*(v: ConfigValue): int =
   case v.kind:
   of ConfigValueKind.Number:
     return int(v.num)
+  of ConfigValueKind.String:
+    try:
+      return v.str.parseInt
+    except ValueError:
+      warn fmt"Cannot parse int value for config value : {v}"
   else:
     warn fmt"Cannot get int value for config value : {v}"
 
@@ -482,8 +499,6 @@ proc fillField(fields: var OrderedTable[string, ConfigValue], sections: seq[stri
 
 proc parseObj(ctx: var ParseContext, skipEnclosingBraces: bool = false): ConfigValue =
   result = ConfigValue(kind: ConfigValueKind.Object, fields: OrderedTable[string, ConfigValue]())
-  if ctx.config == nil:
-    ctx.config = result
 
   if not skipEnclosingBraces:
     hoconAssert ctx, ctx.next() == '{'
@@ -511,23 +526,22 @@ proc parseObj(ctx: var ParseContext, skipEnclosingBraces: bool = false): ConfigV
     ctx.advance() # advance past the end }
 
 
-proc mergeInhert(base: ConfigValue, sub: ConfigValue) =
+proc mergeInherit*(base: ConfigValue, sub: ConfigValue) =
   for k,v in base.fields:
     if sub.fields.hasKeyOrPut(k, v):
       let subv = sub.fields[k]
       if v.kind == ConfigValueKind.Object and subv.kind == ConfigValueKind.Object:
-        mergeInhert(v, subv)
+        mergeInherit(v, subv)
 
 proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
   ctx.skipWhitespace()
 
-  var baseConfig : ConfigValue
+  var baseConfig: string
   if ctx.peek() == '$' and ctx.peek(1) == '{':
     ctx.advance()
     ctx.advance()
-    let parentName = ctx.parseUntil({'}'}).strip()
+    baseConfig = ctx.parseUntil({'}'}).strip()
     ctx.advance() # advance past the closing '}'
-    baseConfig = ctx.config[parentName]
 
   ctx.skipWhitespace()
 
@@ -554,19 +568,20 @@ proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
       except ValueError:
         ConfigValue(kind: ConfigValueKind.String, str: rawValue)
 
-  if result.kind == ConfigValueKind.Object and baseConfig != nil:
-    if baseConfig.kind == ConfigValueKind.Object:
-      mergeInhert(baseConfig, result)
-
-    else:
-      warn "Haven't implemented non-object-overlay inherited config values"
-
+  if result.kind == ConfigValueKind.Object and baseConfig.len > 0:
+    ctx.merges.add((result, baseConfig))
 
 
 proc parseConfig*(str: string): ConfigValue =
   var ctx = ParseContext(str: str, cursor: 0)
   ctx.skipWhitespace()
-  parseObj(ctx, ctx.peek() != '{')
+  result = parseObj(ctx, ctx.peek() != '{')
+  for (inheritor, basePath) in ctx.merges:
+    let baseConfig = result.getByPath(basePath)
+    if baseConfig.kind == ConfigValueKind.Object:
+      mergeInherit(baseConfig, inheritor)
+    else:
+      warn &"Haven't implemented non-object-overlay inherited config values\n\tbasePath: {basePath}"
 
 proc readConfigFromFile*(path: string): ConfigValue =
   parseConfig(readFile(path))

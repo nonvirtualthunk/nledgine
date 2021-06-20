@@ -209,7 +209,11 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
     renderSection(section)
     sectionIndex.inc
 
-  res.bounds = rect(minPos, maxPos - minPos)
+  if minPos.y < 0:
+    for i in 0 ..< res.quads.len:
+      res.quads[i].move(0.0f, -minPos.y.float32, 0.0f)
+
+  res.bounds = rect(vec2i(0,0), maxPos - minPos)
   endLine(false)
 
 
@@ -228,7 +232,6 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
             widthDelta
         for i in line.startIndex ..< line.endIndex:
           res.quads[i].move(shift.float32, 0.0f, 0.0f)
-
 
 
   return res
