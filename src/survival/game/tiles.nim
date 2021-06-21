@@ -21,7 +21,7 @@ const MainLayer* = 1
 
 type
 
-  TileKind* = ref object
+  TileKind* = object
     # identity
     taxon*: Taxon
     # additional cost to move into this tile, expressed in ticks
@@ -74,8 +74,6 @@ const AirImpermeable    = TileFlag(0b0001000) # an entity / wall is preventing a
 
 
 proc readFromConfig*(cv: ConfigValue, tk: var TileKind) =
-  if tk == nil:
-    tk = TileKind()
   cv["moveCost"].readInto(tk.moveCost)
   cv["resources"].readInto(tk.resources)
   cv["images"].readInto(tk.images)
@@ -87,7 +85,7 @@ defineReflection(Region)
 
 
 defineSimpleLibrary[TileKind]("survival/game/tile_kinds.sml", "TileKinds")
-proc tileKind*(t : Taxon): TileKind = library(TileKind)[t]
+proc tileKind*(t : Taxon): ref TileKind = library(TileKind)[t]
 
 proc layer*(r: Entity, view: LiveWorld, z: int): RegionLayerView = RegionLayerView(region: view.data(r, Region), layer: z)
 proc tile*(r: RegionLayerView, x: int, y: int): var Tile = r.region.tiles[x + RegionHalfSize,y + RegionHalfSize,r.layer]

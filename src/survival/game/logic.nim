@@ -16,6 +16,7 @@ import prelude
 import worlds/taxonomy
 import worlds/identity
 import tables
+import game/flags
 
 const MaxGatherTickIncrement = Ticks(100)
 
@@ -463,19 +464,86 @@ proc possibleActions*(world: LiveWorld, actor: Entity, target: Entity) : seq[Tax
 
 
 
-proc isRequirementMet*(world: LiveWorld, entity: Entity, req: RecipeRequirement): bool =
-  for spec in req.specifiers:
+proc matchesRequirement*(world: LiveWorld, actor: Entity, req: RecipeRequirement, item: Entity): bool =
+  # Assume true if there are no specifiers (implicitly ought to match everything) or if the operator is an AND (it will then fail if any specifier fails)
+  if req.specifiers.isEmpty:
+    true
+  else:
+    for specifier in req.specifiers:
+      let matchesSpecifier = if specifier.isA(† Flag):
+        let flagValue = item[Flags].flagValue(specifier)
+        flagValue > 0 and flagValue >= req.minimumLevel:
+      elif specifier.isA(† Action):
+        item.hasData(Item) and item[Item].actions.getOrDefault(specifier) >= max(req.minimumLevel, 1)
+      else:
+        item.hasData(Identity) and item[Identity].kind.isA(specifier)
+
+      case req.operator:
+        of BooleanOperator.AND:
+          if not matchesSpecifier: return false
+        of BooleanOperator.OR:
+          if matchesSpecifier: return true
+        else:
+          warn &"Only AND and OR operators supported for requirement analysis in recipes"
+
+    if req.operator == BooleanOperator.AND:
+      true
+    else:
+      false
+
+# Assumes that you have already checked that this matches the recipe template
+proc matchesRecipe*(world: LiveWorld, actor: Entity, recipe: ref Recipe, ingredients: Table[string, RecipeInputChoice]) : bool =
+  for slotKey, requirement in recipe.ingredients:
+    let choice = ingredients.getOrDefault(slotKey)
+    # if this recipe specifies a requirement for this slot, but there are no items in it (i.e. an optional slot) then don't match
+    if choice.items.isEmpty:
+      return false
+
+    # ensure that every item chosen matches the requirements
+    for item in choice.items:
+      if not matchesRequirement(world, actor, requirement, item):
+        return false
 
 
-proc matchingRecipes*(world: LiveWorld, actor: Entity, recipeTemplate: RecipeTemplate, ingredients: Table[RecipeSlotKind, RecipeInputChoice]) : seq[Recipe] =
 
-  for recipe in recipesForTemplate(recipeTemplate):
-    for slotKey, requirement in recipe.ingredients:
-      # Assume true if there are no specifiers (implicitly ought to match everything) or if the operator is an AND (it will then fail if any specifier fails)
-      var matches = requirement.specifiers.isEmpty or requirement.operator == BooleanOperator.AND
-      for specifier in requirement.specifiers:
-        if specifier.isA(† Flag):
-          actor[Flags]
+  true
+
+
+proc matchesSlot*(world: LiveWorld, actor: Entity, slot: RecipeSlot, item: Entity) : bool =
+  matchesRequirement(world, actor, slot.requirement, item)
+
+proc matchesRecipeTemplate*(world: LiveWorld, actor: Entity, recipeTemplate: ref RecipeTemplate, ingredients: Table[string, RecipeInputChoice]) : bool =
+  for slotKey, slot in recipeTemplate.recipeSlots:
+    let choice = ingredients.getOrDefault(slotKey)
+    # if this recipe template marks this as required but there is nothing chosen, fail
+    if choice.items.isEmpty and not slot.optional:
+      echo "No items, template does not match"
+      return false
+
+    # ensure that every item chosen matches the requirements
+    for item in choice.items:
+      if not matchesSlot(world, actor, slot, item):
+        return false
+
+  true
+
+
+
+
+proc matchingRecipes*(world: LiveWorld, actor: Entity, recipeTemplate: ref RecipeTemplate, ingredients: Table[string, RecipeInputChoice]) : seq[ref Recipe] =
+  if matchesRecipeTemplate(world, actor, recipeTemplate, ingredients):
+    for recipe in recipesForTemplate(recipeTemplate):
+      if matchesRecipe(world, actor, recipe, ingredients):
+        result.add(recipe)
+
+
+# Returns true if there is any recipe for which the given item would be a valid match for the listed slot key
+proc matchesAnyRecipeInSlot*(world: LiveWorld, actor: Entity, recipeTemplate: ref RecipeTemplate, slot: string, item: Entity): bool =
+  if recipeTemplate.recipeSlots.hasKey(slot) and matchesSlot(world, actor, recipeTemplate.recipeSlots[slot], item):
+    for recipe in recipesForTemplate(recipeTemplate):
+      if not recipe.ingredients.hasKey(slot) or matchesRequirement(world, actor, recipe.ingredients[slot], item):
+        return true
+  false
 
 
 
@@ -510,10 +578,42 @@ when isMainModule:
   let oakTaxon = taxon("Plants", "OakTree")
   let oak = lib[oakTaxon]
 
-  info $oak
   let world = createLiveWorld()
+
+  let region = world.createEntity()
+
   withWorld(world):
+    region.attachData(Region)
     world.attachData(RandomizationWorldData())
     for i in 0 ..< 10:
-      let plantEnt = createPlant(world, SentinelEntity, oakTaxon, vec3i(0,0,0), PlantCreationParameters())
-      world.printEntityData(plantEnt)
+      let plantEnt = createPlant(world, region, oakTaxon, vec3i(0,0,0), PlantCreationParameters())
+
+    let log = createItem(world, region, † Items.Log)
+    let axe = createItem(world, region, † Items.Axe)
+    let carrot = createItem(world, region, † Items.CarrotRoot)
+
+    let recipe = recipe(† Recipes.CarvePlank)
+    let recipeTemplate = recipeTemplate(recipe.recipeTemplate)
+
+    var ingredients : Table[string, RecipeInputChoice]
+    ingredients["Ingredient"] = RecipeInputChoice(items: @[log])
+    ingredients["Blade"] = RecipeInputChoice(items: @[axe])
+
+    assert matchingRecipes(world, SentinelEntity, recipeTemplate, ingredients).contains(recipe)
+
+    assert not matchesAnyRecipeInSlot(world, SentinelEntity, recipeTemplate, "Blade", carrot)
+    assert matchesAnyRecipeInSlot(world, SentinelEntity, recipeTemplate, "Blade", axe)
+    assert not matchesAnyRecipeInSlot(world, SentinelEntity, recipeTemplate, "Ingredient", axe)
+    assert matchesAnyRecipeInSlot(world, SentinelEntity, recipeTemplate, "Ingredient", log)
+
+    assert matchesRecipeTemplate(world, SentinelEntity, recipeTemplate, ingredients) and matchesRecipe(world, SentinelEntity, recipe, ingredients)
+
+    var wrongIngredients : Table[string, RecipeInputChoice]
+    wrongIngredients["Ingredient"] = RecipeInputChoice(items: @[carrot])
+    wrongIngredients["Blade"] = RecipeInputChoice(items: @[axe])
+    assert matchesRecipeTemplate(world, SentinelEntity, recipeTemplate, ingredients) and not matchesRecipe(world, SentinelEntity, recipe, wrongIngredients)
+
+    var wrongTool : Table[string, RecipeInputChoice]
+    wrongTool["Ingredient"] = RecipeInputChoice(items: @[log])
+    wrongTool["Blade"] = RecipeInputChoice(items: @[carrot])
+    assert not matchesRecipeTemplate(world, SentinelEntity, recipeTemplate, wrongTool)

@@ -28,7 +28,9 @@ defineLibrary[TaxonomyDisplay]:
       if cv.isObj:
          if cv.hasField("icon"):
             let t = qualifiedTaxon(keyAccum)
-            lib[t] = readInto(cv, TaxonomyDisplay)
+            let tmp = new TaxonomyDisplay
+            cv.readInto(tmp[])
+            lib[t] = tmp
          else:
             for k, v in cv:
                process(keyAccum & "." & k, v)

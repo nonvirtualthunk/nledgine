@@ -292,7 +292,7 @@ type
     Tool
     Location
 
-  RecipeTemplate* = ref object
+  RecipeTemplate* = object
     taxon*: Taxon
     description*: string
     icon*: ImageLike
@@ -316,14 +316,16 @@ type
     item*: Taxon
 
   RecipeInputChoice* = object
-    slot*: string
-    kind*: RecipeSlotKind
     items*: seq[Entity]
 
-  Recipe* = ref object
+  Recipe* = object
+    taxon*: Taxon
     name*: string
+    icon*: Option[string]
     # what general recipe template this is based on
     recipeTemplate*: Taxon
+    # what other recipe this recipe is a specialization of (i.e. steel axe is a specialization of axe)
+    specializationOf*: Taxon
     # further specification in the ingredient requirements that make this recipe get made when matched
     ingredients*: Table[string, RecipeRequirement]
     # what items are created as a result of this recipe
@@ -500,14 +502,14 @@ defineSimpleLibrary[CreatureKind]("survival/game/creatures.sml", "Creatures")
 defineSimpleLibrary[RecipeTemplate]("survival/game/recipe_templates.sml", "RecipeTemplates")
 defineSimpleLibrary[Recipe]("survival/game/recipes.sml", "Recipes")
 
-proc plantKind*(kind: Taxon) : PlantKind = library(PlantKind)[kind]
-proc itemKind*(kind: Taxon) : ItemKind = library(ItemKind)[kind]
-proc actionKind*(kind: Taxon) : ActionKind = library(ActionKind)[kind]
-proc creatureKind*(kind: Taxon) : CreatureKind = library(CreatureKind)[kind]
-proc recipeTemplate*(kind: Taxon): RecipeTemplate = library(RecipeTemplate)[kind]
-proc recipe*(kind: Taxon): Recipe = library(Recipe)[kind]
+proc plantKind*(kind: Taxon) : ref PlantKind = library(PlantKind)[kind]
+proc itemKind*(kind: Taxon) : ref ItemKind = library(ItemKind)[kind]
+proc actionKind*(kind: Taxon) : ref ActionKind = library(ActionKind)[kind]
+proc creatureKind*(kind: Taxon) : ref CreatureKind = library(CreatureKind)[kind]
+proc recipeTemplate*(kind: Taxon): ref RecipeTemplate = library(RecipeTemplate)[kind]
+proc recipe*(kind: Taxon): ref Recipe = library(Recipe)[kind]
 
-proc recipesForTemplate*(t: RecipeTemplate) : seq[Recipe] =
+proc recipesForTemplate*(t: ref RecipeTemplate) : seq[ref Recipe] =
   for k,recipe in library(Recipe):
     if recipe.recipeTemplate == t.taxon:
       result.add(recipe)

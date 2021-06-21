@@ -378,6 +378,14 @@ proc destroyEntity*(world: DisplayWorld, entity: DisplayEntity) =
   for c in world.dataContainers:
     c.removeEntity(entity.id)
 
+proc destroyEntity*(world: LiveWorld, entity: Entity) =
+  for i in countdown(world.entities.len - 1, 0):
+    if world.entities[i] == entity:
+      world.entities.del(i)
+      break
+  for c in world.dataContainers:
+    c.removeEntity(entity.id)
+
 
 proc createView*(world: World): WorldView =
   deepCopy(world.view)
@@ -833,11 +841,15 @@ proc hasData*[C] (world: LiveWorld, dataType: DataType[C]): bool =
   hasData(world, WorldEntity, dataType)
 
 proc attachData*[C] (world: LiveWorld, entity: Entity, dataValue: C) =
-  let dataType = C.getDataType()
-  var dc = (DataContainer[C])world.dataContainers[dataType.index]
-  let nv: ref C = new C
-  nv[] = dataValue
-  dc.dataStore[entity.id] = nv
+  when sizeof(C) > 10000:
+    # hack because I'm not allowed to use error(...) since it doesn't realize this is a compile time context
+    "data value too large to be passed in by copy: " = C
+  else:
+    let dataType = C.getDataType()
+    var dc = (DataContainer[C])world.dataContainers[dataType.index]
+    let nv: ref C = new C
+    nv[] = dataValue
+    dc.dataStore[entity.id] = nv
 
 proc attachData*[C](world: LiveWorld, entity: Entity, t: typedesc[C]) : ref C {.discardable.} =
   let dataType = t.getDataType()

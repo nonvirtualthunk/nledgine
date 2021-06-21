@@ -5,32 +5,139 @@ import config
 import library
 import resources
 import options
-
+import arxregex
+import noto
+import strutils
+import math
 
 type
-   Flags* = object
-      flags*: Table[Taxon, int]
-      keyedFlags*: Table[Taxon, Table[Taxon, int]]
+  Flags* = object
+    flags*: Table[Taxon, int]
+    keyedFlags*: Table[Taxon, Table[Taxon, int]]
 
-   FlagInfo* = object
-      mechanicalDescription*: string
-      description*: string
-      vagueDescription*: string
-      minValue*: Option[int]
-      maxValue*: Option[int]
-      hidden*: bool
-      boolean*: bool
+  FlagEquivalence* = object
+    flag*: Taxon
+    adder*: int
+    multiplier*: int
+
+
+  FlagInfo* = object
+    taxon*: Taxon
+    mechanicalDescription*: string
+    description*: string
+    vagueDescription*: string
+    equivalences*: seq[FlagEquivalence]
+    keyedEquivalences*: Table[Taxon, seq[FlagEquivalence]]
+    minValue*: Option[int]
+    maxValue*: Option[int]
+    hidden*: bool
+    boolean*: bool
 
 
 defineReflection(Flags)
 
+
+const flagEquivPattern = re"(?x)([a-zA-Z0-9]+)(?:\[(.+)\])?\(([0-9]+)\)"
+const countsAsNPattern = re"(?ix)counts\s?as(\d+)"
+
 proc readFromConfig*(cv: ConfigValue, v: var FlagInfo) =
-   readFromConfigByField(cv, FlagInfo, v)
-   if cv["limitToZero"].asBool(orElse = false):
-      v.minValue = some(0)
+  cv["mechanicalDescriptor"].readInto(v.mechanicalDescription)
+  cv["description"].readInto(v.description)
+  cv["vagueDescription"].readInto(v.vagueDescription)
+  cv["minValue"].readInto(v.minValue)
+  cv["maxValue"].readInto(v.maxValue)
+  cv["hidden"].readInto(v.hidden)
+  cv["boolean"].readInto(v.boolean)
+  if cv["equivalences"].nonEmpty:
+    warn &"Trying to supply equivalences directly for flag definition is not supported at this time: {cv}"
+
+  if cv["limitToZero"].asBool(orElse = false):
+    v.minValue = some(0)
+
+  var equivalenceConfigs = @[
+    (cv["countsAsNegative"], (0, -1)),
+    (cv["countsAs"], (0, 1)),
+    (cv["countsAsOne"], (1, 0)),
+    (cv["countsAsNegativeOne"], (-1, 0))
+  ]
+  # Allows for "countsAs25: DamageDealtReduction" or whatever arbitrary number, it's hacky, but :shrug:
+  for subK, subV in cv.fields:
+    matcher(subK):
+      extractMatches(countsAsNPattern, n):
+        equivalenceConfigs.add((subV, (n.parseInt, 0)))
+  for eqc in equivalenceConfigs:
+    let (subConf, addMul) = eqc
+    let (add, mul) = addMul
+    for ssv in subConf.asArr:
+      var mulAmount = 1
+      var flagName = ssv.asStr
+      var flagArg = none(Taxon)
+      matcher(ssv.asStr):
+        extractMatches(flagEquivPattern, word, arg, number):
+          flagName = word
+          mulAmount = number.parseInt
+          if arg != "":
+            flagArg = some(qualifiedTaxon(arg))
+
+      let equivalentTo = taxon("flags", flagName)
+      if flagArg.isSome:
+        v.keyedEquivalences.mgetOrPut(flagArg.get, default(seq[FlagEquivalence])).add(FlagEquivalence(flag: v.taxon, adder: add, multiplier: mul * mulAmount))
+      else:
+        v.equivalences.add(FlagEquivalence(flag: v.taxon, adder: add, multiplier: mul * mulAmount))
+
 
 when declared(ProjectName):
   defineSimpleLibrary[FlagInfo](ProjectName & "/game/flags.sml", "Flags")
 else:
   defineSimpleLibrary[FlagInfo]("ax4/game/flags.sml", "Flags")
 
+
+
+proc rawFlagValue*(flags: ref Flags, flag: Taxon, arg: Option[Taxon] = none(Taxon)): int =
+  if arg.isSome:
+    flags.keyedFlags.getOrDefault(flag).getOrDefault(arg.get)
+  else:
+    flags.flags.getOrDefault(flag)
+
+proc rawFlagValue*(view: WorldView, entity: Entity, flag: Taxon, arg: Option[Taxon] = none(Taxon)): int =
+  rawFlagValue(view.data(entity, Flags), flag, arg)
+
+proc flagValue*(flags: ref Flags, flag: Taxon, arg: Option[Taxon] = none(Taxon)): int =
+  var cur = rawFlagValue(flags, flag, arg)
+  let lib = library(FlagInfo)
+  let meta = lib[flag]
+  if arg.isSome:
+    for equiv in meta.keyedEquivalences.getOrDefault(arg.get):
+      let v = flagValue(flags, equiv.flag)
+      cur += v * equiv.multiplier + sgn(v) * equiv.adder
+  else:
+    for equiv in meta.equivalences:
+      let v = flagValue(flags, equiv.flag)
+      cur += v * equiv.multiplier + sgn(v) * equiv.adder
+
+  cur
+
+proc flagValue*(flags: ref Flags, flag: string, arg: Option[Taxon] = none(Taxon)): int =
+  flagValue(flags, taxon("flags", flag), arg)
+
+proc flagValue*(view: WorldView, entity: Entity, flag: Taxon, arg: Option[Taxon] = none(Taxon)): int =
+  withView(view):
+    let flags = view.data(entity, Flags)
+    flagValue(flags, flag)
+
+proc flagValues*(view: WorldView, entity: Entity): Table[Taxon, int] =
+  view.data(entity, Flags).flags
+
+
+
+proc keyedFlagValues*(flags: ref Flags, flag: string): Table[Taxon, int] =
+  let flag = taxon("flags", flag)
+  for key in flags.keyedFlags.getOrDefault(flag).keys:
+    result[key] = flagValue(flags, flag, some(key))
+
+when isMainModule:
+  for k,v in library(FlagInfo):
+    info &"{k}:\n"
+    indentLogs()
+    info &"{v[]}"
+    unindentLogs()

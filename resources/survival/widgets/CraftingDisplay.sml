@@ -122,7 +122,21 @@ CraftingMenu {
       width: ExpandToParent
 
       children {
+        OptionsList {
+          type: ListWidget
+          x: 0
+          y: 0
+          width: 100%
+          height: WrapContent
 
+          horizontal: true
+
+          background.draw: true
+          background.drawEdges : [Bottom]
+          background.drawCenter: false
+          listItemArchetype: "CraftingDisplay.RecipeSelectButton"
+          listItemBinding: "CraftingMenu.recipeOptions -> recipe"
+        }
       }
     }
   }
@@ -174,7 +188,6 @@ IngredientSlot {
 
       background.image: "ui/buttonBackground.png"
       background.draw: true
-      background.pixelScale: 2
 
       overlays: [
         {
@@ -196,6 +209,29 @@ IngredientSlot {
 
       text: "%(recipeSlot.name)"
       showing: "%(recipeSlot.showName)"
+    }
+  }
+}
+
+RecipeSelectButton {
+  type: Widget
+  x: 0
+  y: 0
+
+  width: WrapContent
+  height: WrapContent
+
+  children {
+    Icon {
+      type: ImageDisplay
+
+      width: 64
+      height: 64
+
+      background.draw: false
+
+      image: "%(recipe.icon)"
+      scale: scaleToFit
     }
   }
 }

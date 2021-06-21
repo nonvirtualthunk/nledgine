@@ -27,6 +27,7 @@ import algorithm
 import windowingsystem/rich_text
 import windowingsystem/list_widget
 import strutils
+import survival_display_core
 
 
 type
@@ -38,11 +39,24 @@ type
     countStr*: string
     itemEntities*: seq[Entity]
 
-proc constructItemInfo*(world: LiveWorld, player: Entity, filter: (LiveWorld, Entity) -> bool = (a: LiveWorld,b: Entity) => true): seq[ItemInfo] =
+
+proc toItemInfo*(world: LiveWorld, item: Entity) : ItemInfo =
+  let itemKindTaxon = item[Identity].kind
+  ItemInfo(
+    kind: itemKindTaxon,
+    icon: iconFor(itemKindTaxon),
+    name: itemKindTaxon.displayName,
+    count: 1,
+    itemEntities: @[item]
+  )
+
+
+
+proc constructItemInfo*(world: LiveWorld, items: seq[Entity], filter: (LiveWorld, Entity) -> bool = (a: LiveWorld,b: Entity) => true): seq[ItemInfo] =
   var indexesByTaxon : Table[Taxon,int]
   let lib = library(ItemKind)
 
-  proc itemInfo(t: Taxon, k: ItemKind): ItemInfo =
+  proc itemInfo(t: Taxon, k: ref ItemKind): ItemInfo =
     let img = if k.images.nonEmpty:
       k.images[0]
     else:
@@ -50,7 +64,7 @@ proc constructItemInfo*(world: LiveWorld, player: Entity, filter: (LiveWorld, En
     ItemInfo(kind: t, icon: img, name: t.displayName, count: 0, countStr: "")
 
   withWorld(world):
-    let itemsSeq = toSeq(player[Inventory].items.items).sortedByIt(it.id)
+    let itemsSeq = items.sortedByIt(it.id)
     for item in itemsSeq:
       if filter(world, item):
         let itemKindTaxon = item[Identity].kind
@@ -68,3 +82,6 @@ proc constructItemInfo*(world: LiveWorld, player: Entity, filter: (LiveWorld, En
         if count > 1:
           result[itemInfoIdx].countStr = &" x{count}"
         result[itemInfoIdx].itemEntities.add(item)
+
+proc constructItemInfo*(world: LiveWorld, player: Entity, filter: (LiveWorld, Entity) -> bool = (a: LiveWorld,b: Entity) => true): seq[ItemInfo] =
+  constructItemInfo(world, toSeq(player[Inventory].items.items), filter)

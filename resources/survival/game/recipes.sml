@@ -5,7 +5,7 @@ Recipes {
     recipeTemplate: Roast
     ingredients {
       Ingredient {
-        requirement: Flags.Vegetable
+        specifiers: Flags.Vegetable
       }
     }
     outputs: [{
@@ -18,7 +18,7 @@ Recipes {
     recipeTemplate: Roast
     ingredients {
       Ingredient {
-        requirement: Items.CarrotRoot
+        specifiers: Items.CarrotRoot
       }
     }
     outputs: [{
@@ -30,9 +30,7 @@ Recipes {
     name: "carve plank"
     recipeTemplate: Carve
     ingredients {
-      Ingredient {
-        requirement: Items.Log
-      }
+      Ingredient : Items.Log
     }
     outputs: [{
       item: Items.Plank

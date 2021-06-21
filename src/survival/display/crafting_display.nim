@@ -28,6 +28,7 @@ import windowingsystem/rich_text
 import windowingsystem/list_widget
 import strutils
 import inventory_display
+import survival_display_core
 
 type
   CraftingMenu* = ref object
@@ -36,6 +37,7 @@ type
     recipeTemplateInfo*: seq[RecipeTemplateInfo]
     recipeSlotInfo*: seq[RecipeSlotInfo]
     candidateItemInfo*: seq[ItemInfo]
+    recipeOptions*: seq[RecipeOption]
     player*: Entity
 
   RecipeSlotInfo* = object
@@ -46,6 +48,12 @@ type
     showName*: bool
     selected*: bool
     selectedItem*: ItemInfo
+
+  RecipeOption* = object
+    recipe*: Taxon
+    name*: string
+    icon*: ImageLike
+
 
   RecipeTemplateInfo* = object
     kind*: Taxon
@@ -63,15 +71,31 @@ proc toInfo(name: string, slot: RecipeSlot): RecipeSlotInfo =
   )
 
 
-proc selectCandidate(cm: CraftingMenu, world: LiveWorld, item: var ItemInfo) =
-  for s in cm.recipeSlotInfo.mitems:
-    if s.selected:
-      s.selectedItem = item
-      s.icon = item.icon
+
+proc recalculateOutcomes(cm: CraftingMenu, world: LiveWorld) =
+  var choices : Table[string, RecipeInputChoice]
+  for s in cm.recipeSlotInfo:
+    choices[s.name] = RecipeInputChoice(items: s.selectedItem.itemEntities)
+
+  cm.recipeOptions.setLen(0)
+  for recipe in matchingRecipes(world, cm.player, recipeTemplate(cm.activeTemplate), choices):
+    cm.recipeOptions.add(RecipeOption(
+      recipe: recipe.taxon,
+      name: recipe.name,
+      icon: iconFor(recipe.taxon)
+    ))
+    info &"Could make: {recipe.taxon.displayName}"
+
+  cm.widget.bindValue("CraftingMenu.recipeOptions", cm.recipeOptions)
+
+proc selectCandidate(cm: CraftingMenu, world: LiveWorld, slot: var RecipeSlotInfo, item: ItemInfo) =
+  slot.selectedItem = item
+  slot.icon = item.icon
 
   cm.widget.bindValue("CraftingMenu.recipeSlots", cm.recipeSlotInfo)
 
-  for
+  recalculateOutcomes(cm, world)
+
 
 proc selectRecipeSlot*(cm: CraftingMenu, world: LiveWorld, slot: var RecipeSlotInfo) =
   for s in cm.recipeSlotInfo.mitems:
@@ -80,7 +104,8 @@ proc selectRecipeSlot*(cm: CraftingMenu, world: LiveWorld, slot: var RecipeSlotI
   slot.selected = true
 
 
-  cm.candidateItemInfo = constructItemInfo(world, cm.player)
+  let selectedName = slot.name
+  cm.candidateItemInfo = constructItemInfo(world, cm.player, (w,e) => matchesAnyRecipeInSlot(w, cm.player, recipeTemplate(cm.activeTemplate), selectedName, e))
   cm.widget.bindValue("CraftingMenu.candidateItems", cm.candidateItemInfo)
 
   cm.widget.bindValue("CraftingMenu.recipeSlots", cm.recipeSlotInfo)
@@ -98,8 +123,19 @@ proc selectTemplate*(cm: CraftingMenu, world: LiveWorld, recipeTemplateKind: Tax
 
   let rt = recipeTemplate(recipeTemplateKind)
   cm.recipeSlotInfo.setLen(0)
-  for name, slot in rt.ingredientSlots:
+  for name, slot in rt.recipeSlots:
     cm.recipeSlotInfo.add( toInfo(name, slot) )
+    # never auto-fill ingredients
+    # if slot.kind != RecipeSlotKind.Ingredient:
+
+    # if there's only one valid match here, automatically select it
+    var matching: seq[Entity]
+    for item in cm.player[Inventory].items:
+      if matchesAnyRecipeInSlot(world, cm.player, rt, name, item):
+        matching.add(item)
+    # could add other distinctions on how to choose which tool to use
+    if matching.len == 1 or (matching.nonEmpty and slot.kind != RecipeSlotKind.Ingredient):
+      selectCandidate(cm, world, cm.recipeSlotInfo[^1], toItemInfo(world, matching[0]))
 
   if cm.recipeSlotInfo.nonEmpty:
     selectRecipeSlot(cm, world, cm.recipeSlotInfo[0])
@@ -138,7 +174,9 @@ proc onEvent*(cm: CraftingMenu, world: LiveWorld, display: DisplayWorld, event: 
       elif originatingWidget.isDescendantOf("IngredientSlotList"):
         selectRecipeSlot(cm, world, cm.recipeSlotInfo[index])
       elif originatingWidget.isDescendantOf("CandidateList"):
-        selectCandidate(cm, world, cm.candidateItemInfo[index])
+        for s in cm.recipeSlotInfo.mitems:
+          if s.selected:
+            selectCandidate(cm, world, s, cm.candidateItemInfo[index])
 
 
 proc update*(world: LiveWorld) =
