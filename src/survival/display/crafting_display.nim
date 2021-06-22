@@ -39,6 +39,7 @@ type
     candidateItemInfo*: seq[ItemInfo]
     recipeOptions*: seq[RecipeOption]
     player*: Entity
+    hypotheticalCreatedEntities*: seq[Entity]
 
   RecipeSlotInfo* = object
     slotKind*: RecipeSlotKind
@@ -53,6 +54,7 @@ type
     recipe*: Taxon
     name*: string
     icon*: ImageLike
+    selected*: bool
 
 
   RecipeTemplateInfo* = object
@@ -70,23 +72,52 @@ proc toInfo(name: string, slot: RecipeSlot): RecipeSlotInfo =
     showName: true
   )
 
+proc currentChoices(cm: CraftingMenu) : Table[string, RecipeInputChoice] =
+  for s in cm.recipeSlotInfo:
+    result[s.name] = RecipeInputChoice(items: s.selectedItem.itemEntities)
+
+proc selectRecipeOption(cm: CraftingMenu, world: LiveWorld, recipeOption: var RecipeOption) =
+  for ro in cm.recipeOptions.mitems:
+    ro.selected = false
+  recipeOption.selected = true
+
+  for ent in cm.hypotheticalCreatedEntities:
+    world.destroyEntity(ent)
+
+  let hypo = craftItem(world, cm.player, recipeOption.recipe, currentChoices(cm), true)
+  if hypo.isSome:
+    cm.hypotheticalCreatedEntities = hypo.get()
+    for ent in cm.hypotheticalCreatedEntities:
+      printEntityData(world, ent)
+
+  # cm.widget.bindValue("CraftingMenu.
+  cm.widget.bindValue("CraftingMenu.recipeOptions", cm.recipeOptions)
 
 
 proc recalculateOutcomes(cm: CraftingMenu, world: LiveWorld) =
-  var choices : Table[string, RecipeInputChoice]
-  for s in cm.recipeSlotInfo:
-    choices[s.name] = RecipeInputChoice(items: s.selectedItem.itemEntities)
+  var choices : Table[string, RecipeInputChoice] = currentChoices(cm)
 
-  cm.recipeOptions.setLen(0)
+  var newOptions: seq[RecipeOption]
   for recipe in matchingRecipes(world, cm.player, recipeTemplate(cm.activeTemplate), choices):
-    cm.recipeOptions.add(RecipeOption(
+    newOptions.add(RecipeOption(
       recipe: recipe.taxon,
       name: recipe.name,
       icon: iconFor(recipe.taxon)
     ))
-    info &"Could make: {recipe.taxon.displayName}"
 
+  var selectedIndex = if newOptions.mapIt(it.recipe) != cm.recipeOptions.mapIt(it.recipe):
+    0
+  else:
+    max(cm.recipeOptions.indexWhereIt(it.selected), 0)
+
+  if newOptions.nonEmpty:
+    newOptions[selectedIndex].selected = true
+
+  cm.recipeOptions = newOptions
   cm.widget.bindValue("CraftingMenu.recipeOptions", cm.recipeOptions)
+
+  if newOptions.nonEmpty:
+    selectRecipeOption(cm, world, cm.recipeOptions[selectedIndex])
 
 proc selectCandidate(cm: CraftingMenu, world: LiveWorld, slot: var RecipeSlotInfo, item: ItemInfo) =
   slot.selectedItem = item
@@ -110,7 +141,7 @@ proc selectRecipeSlot*(cm: CraftingMenu, world: LiveWorld, slot: var RecipeSlotI
 
   cm.widget.bindValue("CraftingMenu.recipeSlots", cm.recipeSlotInfo)
   cm.widget.bindValue("CraftingMenu.selectedRecipeSlot", slot)
-  cm.widget.bindValue("CraftingMenu.selectedItem.name", "TEST")
+  cm.widget.bindValue("CraftingMenu.selectedItem.name", slot.selectedItem.name)
 
 
 proc selectTemplate*(cm: CraftingMenu, world: LiveWorld, recipeTemplateKind: Taxon) =

@@ -199,9 +199,16 @@ proc createItem*(world: LiveWorld, region: Entity, itemKind: Taxon) : Entity =
       createdAt: world[TimeData].currentTime
     ))
 
+    ent.attachData(Flags(
+      flags: ik.flags
+    ))
+
+
     ent.attachData(Identity(kind: itemKind))
 
   ent
+
+
 
 proc removeItemFromInventoryInternal(world: LiveWorld, item: Entity) =
   if item.hasData(Item):
@@ -301,7 +308,7 @@ proc effectiveGatherLevelFor*(rYield: ResourceYield, actions: Table[Taxon, int])
   else:
     none((Taxon,float))
 
-proc destroyEntity*(world: LiveWorld, entity: Entity) =
+proc destroySurvivalEntity*(world: LiveWorld, entity: Entity) =
   world.eventStmts(EntityDestroyedEvent(entity: entity)):
     ifHasData(entity, Physical, phys):
       removeItemFromGroundInternal(world, entity)
@@ -319,7 +326,7 @@ proc destroyTileLayer*(world: LiveWorld, region: Entity, tilePos: Vec3i, layerKi
 proc destroyTarget*(world: LiveWorld, target: Target) =
   case target.kind:
     of TargetKind.Entity:
-      destroyEntity(world, target.entity)
+      destroySurvivalEntity(world, target.entity)
     of TargetKind.TileLayer:
       destroyTileLayer(world, regionFor(world, target), target.tilePos, target.layer, target.index)
     else:
@@ -471,8 +478,11 @@ proc matchesRequirement*(world: LiveWorld, actor: Entity, req: RecipeRequirement
   else:
     for specifier in req.specifiers:
       let matchesSpecifier = if specifier.isA(† Flag):
-        let flagValue = item[Flags].flagValue(specifier)
-        flagValue > 0 and flagValue >= req.minimumLevel:
+        if item.hasData(Flags):
+          let flagValue = item[Flags].flagValue(specifier)
+          flagValue > 0 and flagValue >= req.minimumLevel:
+        else:
+          false
       elif specifier.isA(† Action):
         item.hasData(Item) and item[Item].actions.getOrDefault(specifier) >= max(req.minimumLevel, 1)
       else:
@@ -547,6 +557,31 @@ proc matchesAnyRecipeInSlot*(world: LiveWorld, actor: Entity, recipeTemplate: re
 
 
 
+# Hypothetical indicates that we want to create what item would be crafted as a result of these parameters for the purpose of display
+# or decision making. So do not destroy any of the ingredients or make random choices if relevant
+proc craftItem*(world: LiveWorld, actor: Entity, recipeTaxon: Taxon, ingredients: Table[string, RecipeInputChoice], hypothetical: bool): Option[seq[Entity]] =
+  # hypothetical crafting should not be done in the current region, we don't actually want something showing up, this is being created in the ether
+  let region = if not hypothetical:
+    regionFor(world, actor)
+  else:
+    SentinelEntity
+
+  let recipe = recipe(recipeTaxon)
+  if matchesRecipe(world, actor, recipe, ingredients):
+    for k, ingredient in ingredients:
+      if not hypothetical:
+        for item in ingredient.items:
+          destroySurvivalEntity(world, item)
+
+    var results : seq[Entity]
+    for output in recipe.outputs:
+      for i in 0 ..< output.count:
+        results.add(createItem(world, region, output.item))
+
+    some(results)
+  else:
+    warn &"Generally, should not try to craft an item out of ingredients that cannot make that recipe: {recipeTaxon}"
+    none(seq[Entity])
 
 
 
@@ -568,7 +603,7 @@ proc eat*(world: LiveWorld, actor: Entity, target: Entity) : bool {.discardable.
       cd.sanity.recoverBy(fd.sanity)
       pd.health.recoverBy(fd.health)
 
-      destroyEntity(world, target)
+      destroySurvivalEntity(world, target)
     true
   else:
     false

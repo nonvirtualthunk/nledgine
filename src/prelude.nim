@@ -394,6 +394,17 @@ template findIt*[T](s: seq[T], pred: untyped): untyped =
       if pred: result = some(it)
    result
 
+template indexWhereIt*[T](s: seq[T], pred: untyped): untyped =
+   var resultIndex = -1
+   var index = 0
+   while resultIndex == -1 and index < s.len:
+     let it {.inject.} = s[index]
+     if pred:
+       resultIndex = index
+       break
+     index.inc
+   resultIndex
+
 proc delValue*[T](s : var seq[T], value: T) : bool {.discardable.} =
   let idx = s.find(value)
   if idx == -1:

@@ -32,8 +32,6 @@ Recipes {
     ingredients {
       Ingredient : Items.Log
     }
-    outputs: [{
-      item: Items.Plank
-    }]
+    outputs: [Items.Plank|2, Items.Bark|2, Items.Twigs]
   }
 }

@@ -314,6 +314,8 @@ type
   RecipeOutput* = object
     # What item is produced
     item*: Taxon
+    # How  many are produced
+    count*: int
 
   RecipeInputChoice* = object
     items*: seq[Entity]
@@ -387,11 +389,24 @@ proc readFromConfig*(cv: ConfigValue, ry: var ResourceYield) =
 
 proc readFromConfig*(cv: ConfigValue, r: var RecipeOutput) =
   if cv.isStr:
-    let t = if cv.asStr.contains(".") : findTaxon(cv.asStr) else: taxon("Items", cv.asStr)
+    let sections = cv.asStr.split('|')
+    let kind = sections[0]
+    let t = if kind.contains(".") : findTaxon(kind) else: taxon("Items", kind)
+    echo "S: ", sections
+    let count = if sections.len > 1:
+      sections[1].strip.parseInt
+    else:
+      1
+
     if t != UnknownThing:
       r.item = t
+      r.count = count
+    else:
+      warn &"Recipe output did not have a valid item type: {cv.asStr}"
   else:
     readFromConfigByField(cv, RecipeOutput, r)
+    if r.count == 0:
+      r.count = 1
 
 
 const taxonPlusNumRe = "([a-zA-Z.]+)\\s?([0-9]+)?".re

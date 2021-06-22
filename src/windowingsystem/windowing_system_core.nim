@@ -334,9 +334,17 @@ proc imageMetricsFor*(img: Image): ImageMetrics =
 
     while metrics.outerOffset < img.width and img[metrics.outerOffset, img.height div 2, 3] == 0:
       metrics.outerOffset += 1
+    # if it is entirely transparent, treat it as having no offset
+    if metrics.outerOffset == img.width:
+      metrics.outerOffset = 0
+
     metrics.borderWidth = metrics.outerOffset
     while metrics.borderWidth < img.width and img[metrics.borderWidth, img.height div 2, 3] > 0:
       metrics.borderWidth += 1
+    # if it is entirely transparent, treat it as having no border
+    if metrics.borderWidth == img.width:
+      metrics.borderWidth = 0
+
     metrics.centerColor = img[img.width - 1, 0][]
     imageMetrics[img] = metrics
   imageMetrics[img]
@@ -1034,6 +1042,7 @@ iterator nineWayImageQuads*(nwi: NineWayImage, inDim: Vec2i, pixelScale: int, al
       let primaryAxis = edgeAxes[q].ord
       let secondaryAxis = 1 - primaryAxis
       if dim[primaryAxis] > cornerDim[primaryAxis] * 2:
+        # Make this work properly with just drawing the bottom edge (should not draw corners but extend radius the full distance
         var pos = basis[primaryAxis] * cornerDim[primaryAxis].float +
               basis[secondaryAxis] * farDims[secondaryAxis].float * UnitSquareVertices2d[q][secondaryAxis]
         var edgeDim: Vec2i
@@ -1421,6 +1430,7 @@ proc initializeWidgetBindings(widget: Widget) =
   resolver.boundValues.reverse()
 
   discard updateBindings(widget[], resolver)
+  discard updateBindings(widget.background, resolver)
   for i in 0 ..< widget.overlays.len:
     discard updateBindings(widget.overlays[i], resolver)
   for comp in widget.windowingSystem.components:
@@ -1432,6 +1442,9 @@ proc updateWidgetBindings(widget: Widget, resolver: var BoundValueResolver) =
     resolver.boundValues.add(widget.bindings)
   if updateBindings(widget[], resolver):
     widget.markForUpdate(RecalculationFlag.Contents)
+  if updateBindings(widget.background, resolver):
+    widget.markForUpdate(RecalculationFlag.Contents)
+
   for i in 0 ..< widget.overlays.len:
     if updateBindings(widget.overlays[i], resolver):
       widget.markForUpdate(RecalculationFlag.Contents)

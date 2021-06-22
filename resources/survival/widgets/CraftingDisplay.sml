@@ -131,9 +131,8 @@ CraftingMenu {
 
           horizontal: true
 
-          background.draw: true
-          background.drawEdges : [Bottom]
-          background.drawCenter: false
+          background.draw: false
+
           listItemArchetype: "CraftingDisplay.RecipeSelectButton"
           listItemBinding: "CraftingMenu.recipeOptions -> recipe"
         }
@@ -220,6 +219,14 @@ RecipeSelectButton {
 
   width: WrapContent
   height: WrapContent
+
+  background {
+    image : "survival/graphics/ui/active_ingredient_slot_overlay.png"
+    pixelScale : 2
+    color : [1.0,1.0,1.0,1.0]
+    draw : true
+    drawCenter : false
+  }
 
   children {
     Icon {
