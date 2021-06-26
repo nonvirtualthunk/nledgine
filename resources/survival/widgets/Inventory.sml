@@ -25,7 +25,6 @@ Item {
 
   text: "%(item.name)%(item.countStr)"
 
-  // This doesn't actually work, just thinking about it
   conditionalText: [
     {
       condition: "%(itemTextOnly)"

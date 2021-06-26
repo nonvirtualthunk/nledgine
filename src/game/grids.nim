@@ -11,13 +11,13 @@ type
 
 
 
-proc `[]`*[W: static[int], H: static[int], I: int, T](g: FiniteGrid2D[W, H, T], x: I, y: I): T =
+proc `[]`*[W: static[int], H: static[int], T](g: FiniteGrid2D[W, H, T], x: int, y: int): T =
   if x < 0 or y < 0 or x >= W or y >= H:
     g.sentinel
   else:
     g.values[x*H+y]
 
-proc `[]`*[W: static[int], H: static[int], I: int, T](g: var FiniteGrid2D[W, H, T], x: I, y: I): var T =
+proc `[]`*[W: static[int], H: static[int], T](g: var FiniteGrid2D[W, H, T], x: int, y: int): var T =
    g.values[x*H+y]
 
 

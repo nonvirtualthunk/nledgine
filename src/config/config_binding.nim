@@ -43,7 +43,7 @@ type
 
    Bindable*[T] = object
       value*: T
-      bindingPattern: string
+      bindingPattern*: string
 
    BoundValueResolver* = object
       boundValues*: seq[ref Table[string, BoundValue]]

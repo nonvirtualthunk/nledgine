@@ -569,9 +569,10 @@ proc `parent=`*(w: Widget, parent: Option[Widget]) =
 proc `parent=`*(w: Widget, parent: Widget) =
   w.parent = some(parent)
 
-proc createWidgetFromArchetype*(ws: WindowingSystemRef, archetype: WidgetArchetype, parent: Widget = nil): Widget =
+proc createWidgetFromArchetype*(ws: WindowingSystemRef, archetype: WidgetArchetype, identifier: string, parent: Widget = nil): Widget =
   result = new Widget
   result[] = archetype.widgetData[]
+  result.identifier = identifier
   result.windowingSystem = ws
   result.entity = ws.display.copyEntity(archetype.widgetData.entity)
   if parent.isNil:
@@ -580,8 +581,7 @@ proc createWidgetFromArchetype*(ws: WindowingSystemRef, archetype: WidgetArchety
     result.parent = parent
 
   for childIdentifier, childArchetype in archetype.children:
-    let newChild = ws.createWidgetFromArchetype(childArchetype, result)
-    newChild.identifier = childIdentifier
+    let newChild = ws.createWidgetFromArchetype(childArchetype, childIdentifier, result)
 
   for comp in ws.components:
     comp.onCreated(result)
@@ -1319,7 +1319,7 @@ proc readFromConfig*(cv: ConfigValue, e: var NineWayImage) =
   readIntoOrElse(cv["pixelScale"], e.pixelScale, 1.int32)
   readIntoOrElse(cv["color"], e.color, bindable(rgba(255, 255, 255, 255)))
   readIntoOrElse(cv["edgeColor"], e.edgeColor, bindable(rgba(255, 255, 255, 255)))
-  readIntoOrElse(cv["draw"], e.draw, bindable(true))
+  readIntoOrElse(cv["draw"], e.draw, bindable(cv["image"].nonEmpty))
   readIntoOrElse(cv["drawCenter"], e.drawCenter, true)
   readIntoOrElse(cv["drawEdges"], e.drawEdges, AllEdges)
   readIntoOrElse(cv["dimensionDelta"], e.dimensionDelta, vec2i(0, 0))
@@ -1382,6 +1382,7 @@ proc readFromConfig*(cv: ConfigValue, e: var WidgetArchetype) =
     discard
   elif childrenCV.isObj:
     for k, childCV in cv["children"].fields:
+      mergeInherit(e.widgetData.windowingSystem.stylesheet, childCV)
       var childArch = WidgetArchetype(widgetData: Widget(windowingSystem: e.widgetData.windowingSystem, entity: e.widgetData.windowingSystem.display.createEntity()))
       childCV.readInto(childArch)
       e.children[k] = childArch
@@ -1397,8 +1398,7 @@ proc createWidgetFromConfig*(ws: WindowingSystemRef, identifier: string, cv: Con
     readInto(cv, arch)
     ws.widgetArchetypes[identifier] = arch
 
-  result = createWidgetFromArchetype(ws, ws.widgetArchetypes[identifier], parent)
-  result.identifier = identifier
+  result = createWidgetFromArchetype(ws, ws.widgetArchetypes[identifier], identifier, parent)
 
 
 proc createWidget*(ws: WindowingSystemRef, confPath: string, identifier: string, parent: Widget = nil): Widget =
@@ -1463,6 +1463,8 @@ proc bindValue*[T](widget: Widget, key: string, value: T) =
   # only run through the binding update process if there are actually any new values being bound
   if bindValueInto(key, value, widget.bindings):
     var resolver = BoundValueResolver()
+    if widget.parent_f.isSome:
+      accumulateBindings(widget.parent_f.get, resolver)
     updateWidgetBindings(widget, resolver)
 
 proc hasBinding*(widget: Widget, key: string) : bool =

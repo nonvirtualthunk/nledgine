@@ -102,6 +102,10 @@ proc vec3f*(x: int, y: int, z: int): Vec3f =
 proc vec2f*(v: Vec2i): Vec2f = vec2f(v.x, v.y)
 proc vec2d*(v: Vec2i): Vec2d = vec2d(v.x, v.y)
 
+proc vec2i8*(x,y: int)  : Vec2[int8] {.inline.} = Vec2[int8](arr: [x.int8, y.int8])
+proc vec2i8*(x,y: int8)  : Vec2[int8] {.inline.} = Vec2[int8](arr: [x, y])
+proc vec2i8*(v: Vec2i)  : Vec2[int8] {.inline.} = Vec2[int8](arr: [v.x.int8, v.y.int8])
+
 converter toVec2i*(v: Vec2[int]): Vec2i = vec2i(v.x.int32, v.y.int32)
 converter toVec2int*(v: Vec2i): Vec2[int] = vec2(v.x.int, v.y.int)
 
@@ -427,6 +431,7 @@ proc withoutValue*[T](s : seq[T], value: T) : seq[T] =
       result.add(v)
 
 proc fromCamelCase*(s : string) : string =
+  result = ""
   for i in 0 ..< s.len:
     let c = s[i]
     if i != 0 and c.isUpperAscii:
@@ -434,9 +439,25 @@ proc fromCamelCase*(s : string) : string =
     result.add(c.toLowerAscii)
 
 proc capitalize*(s : string) : string =
+  result = ""
   for i in 0 ..< s.len:
     let c = s[i]
     if i == 0 or s[i - 1] == ' ':
       result.add(c.toUpperAscii)
     else:
       result.add(c)
+
+
+proc getStackTrace*() : seq[PFrame] =
+  var tmp = getFrame()
+  while tmp != nil:
+    result.add(tmp)
+    tmp = tmp.prev
+
+proc singleLineStackTrace*() :string =
+  var accum = ""
+  var tmp = getFrame()
+  while tmp != nil:
+    let fileStr = ($tmp.filename).split('/')[^1].replace(".nim","")
+    accum.add(&"{fileStr}:{tmp.line}.{tmp.procname} <- ")
+    tmp = tmp.prev

@@ -539,10 +539,17 @@ proc updateAllBindings(td: var TextDisplay, resolver : var BoundValueResolver) :
     result = updateBindings(ct.condition, resolver) or result
     result = updateBindings(ct.text, resolver) or result
 
+
 method updateBindings*(ws: TextDisplayRenderer, widget: Widget, resolver: var BoundValueResolver) =
+
   if widget.hasData(TextDisplay) and updateAllBindings(widget.data(TextDisplay)[], resolver):
     widget.markForUpdate(RecalculationFlag.Contents)
     if widget.width.isIntrinsic:
       widget.markForUpdate(RecalculationFlag.DimensionsX)
     if widget.height.isIntrinsic:
       widget.markForUpdate(RecalculationFlag.DimensionsY)
+
+
+method onCreated*(ws: TextDisplayRenderer, widget: Widget) =
+  if widget.hasData(TextDisplay):
+    widget.data(TextDisplay).widget = widget

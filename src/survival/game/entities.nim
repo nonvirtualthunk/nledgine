@@ -392,7 +392,6 @@ proc readFromConfig*(cv: ConfigValue, r: var RecipeOutput) =
     let sections = cv.asStr.split('|')
     let kind = sections[0]
     let t = if kind.contains(".") : findTaxon(kind) else: taxon("Items", kind)
-    echo "S: ", sections
     let count = if sections.len > 1:
       sections[1].strip.parseInt
     else:

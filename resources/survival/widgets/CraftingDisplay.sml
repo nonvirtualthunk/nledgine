@@ -50,6 +50,7 @@ CraftingMenu {
           type: TextDisplay
 
           x: centered
+          y: 5
           text: "Select %(CraftingMenu.selectedRecipeSlot.name)"
 
           fontSize: 20
@@ -94,7 +95,7 @@ CraftingMenu {
           type: TextDisplay
 
           x: centered
-          y: 2
+          y: 5
 
           text: "%(CraftingMenu.activeTemplate.name)"
           fontSize: 20
@@ -135,6 +136,47 @@ CraftingMenu {
 
           listItemArchetype: "CraftingDisplay.RecipeSelectButton"
           listItemBinding: "CraftingMenu.recipeOptions -> recipe"
+        }
+        Divider {
+          type: Divider
+          y: 5 below OptionsList
+          width: 100%
+
+          pixelScale: 2
+        }
+        NameDisplay {
+          type: TextDisplay
+
+          x: centered
+          y: 5 below Divider
+
+          text: "%(CraftingMenu.selectedRecipeOption.name)"
+          showing: "%(CraftingMenu.selectedRecipeOption.selected)"
+          fontSize: 20
+        }
+        OutputDisplay {
+          type: ListWidget
+          x: centered
+          y: 5 below NameDisplay
+
+          width: WrapContent
+          height: ExpandToParent
+
+          listItemArchetype: "Inventory.Item"
+          listItemBinding: "CraftingMenu.selectedRecipeOption.outputs -> item"
+        }
+        ConfirmButton {
+          type: TextDisplay
+
+          x: centered
+          y: 5 from bottom
+          padding: [5,5]
+
+          text: "Craft"
+          fontSize: 20
+
+          showing: "%(CraftingMenu.selectedRecipeOption.selected)"
+          background.image: "ui/buttonBackground.png"
         }
       }
     }
@@ -204,7 +246,7 @@ IngredientSlot {
       type: TextDisplay
 
       x: centered
-      y: 0 below IngredientImage
+      y: 5 below IngredientImage
 
       text: "%(recipeSlot.name)"
       showing: "%(recipeSlot.showName)"

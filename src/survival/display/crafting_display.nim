@@ -87,10 +87,11 @@ proc selectRecipeOption(cm: CraftingMenu, world: LiveWorld, recipeOption: var Re
   let hypo = craftItem(world, cm.player, recipeOption.recipe, currentChoices(cm), true)
   if hypo.isSome:
     cm.hypotheticalCreatedEntities = hypo.get()
-    for ent in cm.hypotheticalCreatedEntities:
-      printEntityData(world, ent)
+    # for ent in cm.hypotheticalCreatedEntities:
+    #   printEntityData(world, ent)
 
-  # cm.widget.bindValue("CraftingMenu.
+  cm.widget.bindValue("CraftingMenu.selectedRecipeOption", recipeOption)
+  cm.widget.bindValue("CraftingMenu.selectedRecipeOption.outputs", constructItemInfo(world, cm.hypotheticalCreatedEntities))
   cm.widget.bindValue("CraftingMenu.recipeOptions", cm.recipeOptions)
 
 
@@ -101,7 +102,7 @@ proc recalculateOutcomes(cm: CraftingMenu, world: LiveWorld) =
   for recipe in matchingRecipes(world, cm.player, recipeTemplate(cm.activeTemplate), choices):
     newOptions.add(RecipeOption(
       recipe: recipe.taxon,
-      name: recipe.name,
+      name: recipe.name.capitalize,
       icon: iconFor(recipe.taxon)
     ))
 
@@ -115,6 +116,8 @@ proc recalculateOutcomes(cm: CraftingMenu, world: LiveWorld) =
 
   cm.recipeOptions = newOptions
   cm.widget.bindValue("CraftingMenu.recipeOptions", cm.recipeOptions)
+  cm.widget.bindValue("CraftingMenu.selectedRecipeOption.selected", false)
+  cm.widget.bindValue("CraftingMenu.selectedRecipeOption.outputs", newSeq[ItemInfo]())
 
   if newOptions.nonEmpty:
     selectRecipeOption(cm, world, cm.recipeOptions[selectedIndex])
