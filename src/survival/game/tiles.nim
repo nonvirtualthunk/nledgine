@@ -57,7 +57,7 @@ type
     # entities in the region that move of their own accord and may take actions
     dynamicEntities*: HashSet[Entity]
     # all tiles in the region
-    tiles: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, Tile]
+    tiles : FiniteGrid3D[RegionSize, RegionSize, RegionLayers, Tile]
     # flags for tiles (occupied, opaque, fluid impermeable, etc)
 #    tileFlags: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, int8]
 
@@ -91,6 +91,7 @@ proc layer*(r: Entity, view: LiveWorld, z: int): RegionLayerView = RegionLayerVi
 proc tile*(r: RegionLayerView, x: int, y: int): var Tile = r.region.tiles[x + RegionHalfSize,y + RegionHalfSize,r.layer]
 proc tile*(r: ref Region, x: int, y: int, z : int): var Tile = r.tiles[x + RegionHalfSize,y + RegionHalfSize,z]
 proc tilePtr*(r: ref Region, x: int, y: int, z : int): ptr Tile = r.tiles.getPtr(x + RegionHalfSize,y + RegionHalfSize,z)
+proc tilePtr*(r: RegionLayerView, x: int, y: int): ptr Tile = r.region.tiles.getPtr(x + RegionHalfSize,y + RegionHalfSize,r.layer)
 proc tilePtr*(r: ref Region, v: Vec3i): ptr Tile = tilePtr(r, v.x, v.y, v.z)
 template tile*(r: Entity, x: int, y: int, z : int): var Tile =
   when declared(injectedWorld):

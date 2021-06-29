@@ -62,8 +62,9 @@ method render*(ws: BarWidgetComponent, widget: Widget): seq[WQuad] =
     else:
       1.0
 
-    for quad in nineWayImageQuads(nwi, vec2i((widget.resolvedDimensions.x.float * pcnt).int, widget.resolvedDimensions.y), bw.pixelScale, true):
-      result.add(quad)
+    if pcnt > 0.0001:
+      for quad in nineWayImageQuads(nwi, vec2i((widget.resolvedDimensions.x.float * pcnt).int, widget.resolvedDimensions.y), bw.pixelScale, true):
+        result.add(quad)
 
 
 proc readFromConfig*(cv: ConfigValue, bw: var BarWidget) =

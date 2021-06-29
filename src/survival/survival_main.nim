@@ -31,18 +31,25 @@ import sets
 import survival/display/world_graphics
 import survival/display/player_control
 import survival/game/living_components
+import survival/game/vision
 import survival/game/survival_core
 import survival/game/logic
+import game/shadowcasting
 import worlds/taxonomy
+import graphics/color
 
 type
   InitializationComponent = ref object of LiveGameComponent
 
+  InitializationGraphicsComponent = ref object of GraphicsComponent
 
 
-
+proc initializationComponent() : InitializationComponent =
+  result = new InitializationComponent
+  result.initializePriority = 10000
 
 method initialize(g: InitializationComponent, world: LiveWorld) =
+  g.name = "InitializationComponent"
   world.eventStmts(WorldInitializedEvent(time: relTime().inSeconds)):
     let regionEnt = world.createEntity()
     let region = regionEnt.attachData(Region)
@@ -62,7 +69,9 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
 
     let player = world.createEntity()
     player.attachData(Player(
-      quickSlots: [player, axe, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity]
+      quickSlots: [player, axe, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity],
+      visionRange: 18,
+      vision: new ShadowGrid[64]
     ))
     player.attachData(Creature(
       stamina: vital(14),
@@ -87,24 +96,38 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     regionEnt[Region].entities.incl(player)
     regionEnt[Region].dynamicEntities.incl(player)
 
+    world.addFullEvent(RegionInitializedEvent(region: regionEnt))
+
+
+
+proc initializationGraphicsComponent() : InitializationGraphicsComponent =
+  result = new InitializationGraphicsComponent
+  result.initializePriority = 10000
+
+method initialize(g: InitializationGraphicsComponent, display: DisplayWorld) =
+  let cam = createPixelCamera(3).withMoveSpeed(0.0f).withEye(vec3f(0.0f,10000.0f,0.0f))
+  display.attachData(CameraData(camera: cam))
+
 
 
 main(GameSetup(
   windowSize: vec2i(1800, 1200),
   resizeable: false,
   windowTitle: "Survival",
+  clearColor: rgba(0.15,0.15,0.15,1.0),
   liveGameComponents: @[
     BasicLiveWorldDebugComponent().ignoringEventType(WorldAdvancedEvent),
-    InitializationComponent(),
+    initializationComponent(),
     CreatureComponent(),
     PhysicalComponent(),
+    VisionComponent()
   ],
   graphicsComponents: @[
-    createCameraComponent(createPixelCamera(3).withMoveSpeed(0.0f).withEye(vec3f(0.0f,10000.0f,0.0f))),
     createWindowingSystemComponent("survival/widgets/"),
     WorldGraphicsComponent(),
     DynamicEntityGraphicsComponent(),
     PlayerControlComponent(),
+    initializationGraphicsComponent()
   ]
 ))
 

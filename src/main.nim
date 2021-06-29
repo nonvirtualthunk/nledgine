@@ -4,6 +4,7 @@ import engines
 import reflect
 import tables
 import graphics/core
+import graphics/cameras
 import graphics/color
 import glm
 import application
@@ -97,6 +98,13 @@ proc runEngine(full: FullGameSetup) {.thread.} =
           let gctxt = graphicsEngine.displayWorld[GraphicsContextData]
           gctxt.windowSize = evt.windowSize
           gctxt.framebufferSize = evt.framebufferSize
+        ifOfType(KeyPress, evt):
+          if evt.key == KeyCode.F3:
+            let timingsReport =
+              componentTimingsReport(gameEngine) &
+              componentTimingsReport(liveGameEngine) &
+              componentTimingsReport(graphicsEngine)
+            info timingsReport
         graphicsEngine.displayWorld.addEvent(evt)
       else:
         break
@@ -240,6 +248,9 @@ proc main*(setup: GameSetup) =
   assert glInit()
 
   var drawCommands: seq[DrawCommand]
+  var cameras: seq[Camera]
+
+  var commandAccumulator: seq[DrawCommand]
 
   createThread(engineThread, runEngine, FullGameSetup(setup: setup, reflectInitializers: reflectInitializers))
 
@@ -303,16 +314,31 @@ proc main*(setup: GameSetup) =
         else:
           break
 
+
       while true:
         let drawCommandOpt = drawCommandChannel.tryRecv()
         if drawCommandOpt.dataAvailable:
-          let newComm = drawCommandOpt.msg
-          while drawCommands.len <= newComm.vao:
-            drawCommands.add(default(DrawCommand))
-          if drawCommands[newComm.vao].vao == 0:
-            drawCommands[newComm.vao] = newComm
-          else:
-            drawCommands[newComm.vao].merge(newComm)
+          let rawComm = drawCommandOpt.msg
+          case rawComm.kind:
+            of DrawCommandKind.Finish:
+              for newComm in commandAccumulator:
+                case newComm.kind:
+                  of DrawCommandKind.DrawCommandUpdate:
+                    while drawCommands.len <= newComm.vao:
+                      drawCommands.add(default(DrawCommand))
+                    if drawCommands[newComm.vao].vao == 0:
+                      drawCommands[newComm.vao] = newComm
+                    else:
+                      drawCommands[newComm.vao].merge(newComm)
+                  of DrawCommandKind.CameraUpdate:
+                    while cameras.len <= newComm.camera.id:
+                      cameras.add(default(Camera))
+                    cameras[newComm.camera.id] = newComm.camera
+                  of DrawCommandKind.Finish:
+                    err &"Command accumulator had a finish command? That doesn't make any sense"
+              commandAccumulator.setLen(0)
+            else:
+              commandAccumulator.add(rawComm)
         else:
           break
 
@@ -323,7 +349,7 @@ proc main*(setup: GameSetup) =
 
       for i in 0 ..< sortedDrawCommandIndices.len:
         if drawCommands[sortedDrawCommandIndices[i]].vao != 0:
-          drawCommands[sortedDrawCommandIndices[i]].render(framebufferSize)
+          drawCommands[sortedDrawCommandIndices[i]].render(cameras, framebufferSize)
 
       discard goChannel.trySend(true)
       w.swapBuffers()

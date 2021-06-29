@@ -146,10 +146,12 @@ method onEvent(g: WindowingSystemComponent, world: LiveWorld, display: DisplayWo
       event.consume()
 
 proc updateBase[WorldType](g: WindowingSystemComponent, world: WorldType, display: DisplayWorld, df: float): seq[DrawCommand] =
-  display[WindowingSystem].update(g.texture, world, display)
-  g.render(display)
+  if display[WindowingSystem].update(g.texture, world, display):
+    g.render(display)
 
-  @[draw(g.vao, g.shader, @[g.texture], g.camera, 100, RenderSettings(depthTestEnabled: false))]
+    @[draw(g.vao, g.shader, @[g.texture], g.camera, 100, RenderSettings(depthTestEnabled: false))]
+  else:
+    @[]
 
 method update(g: WindowingSystemComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
   updateBase(g, world, display, df)

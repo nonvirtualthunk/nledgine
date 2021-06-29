@@ -90,13 +90,8 @@ type
   WorldAdvancedEvent* = ref object of GameEvent
     tick*: Ticks
 
-
-template eventToStr(eventName: untyped) =
-  method toString*(evt: `eventName`): string =
-    result = eventName.astToStr
-    result.add("(")
-    result.add($(evt[]))
-    result.add(")")
+  VisionChangedEvent* = ref object of GameEvent
+    entity*: Entity
 
 
 eventToStr(PlantCreatedEvent)
@@ -116,6 +111,7 @@ eventToStr(TileLayerDestroyedEvent)
 eventToStr(FacingChangedEvent)
 eventToStr(CouldNotPlaceItemEvent)
 eventToStr(FoodEatenEvent)
+eventToStr(VisionChangedEvent)
 
 method toString*(evt: WorldInitializedEvent): string =
    return &"WorldInitializedEvent{$evt[]}"

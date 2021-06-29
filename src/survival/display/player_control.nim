@@ -41,11 +41,13 @@ type
     messageText*: RichText
     messageLatch*: Latch
     quickSlotLatch*: Latch
+    anyLatch*: Latch
     inventoryItems*: seq[ItemInfo]
     actionItems*: seq[ActionInfo]
     actionTarget*: Option[Entity]
     actionMenu*: Widget
     craftingMenu*: CraftingMenu
+    lastRepeat*: UnitOfTime
 
   ActionInfo = object
     kind: Taxon
@@ -185,7 +187,14 @@ proc closeMenus(g: PlayerControlComponent) =
 method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
   let ws = display[WindowingSystem]
   matcher(event):
-    extract(KeyPress, key, modifiers):
+    extract(KeyPress, key, modifiers, repeat):
+      if not repeat:
+        g.lastRepeat = relTime()
+      else:
+        if (relTime() - g.lastRepeat).inSeconds < 0.1:
+          return
+        g.lastRepeat = relTime()
+
       let delta = case key:
         of KeyCode.W: vec2i(0,1)
         of KeyCode.A: vec2i(-1,0)
@@ -198,7 +207,8 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
           for player in world.entitiesWithData(Player):
             let phys = player[Physical]
             let facing = primaryDirectionFrom(phys.position.xy, phys.position.xy + delta)
-            if modifiers.shift or facing != phys.facing:
+            # or facing != phys.facing
+            if modifiers.shift:
               world.eventStmts(FacingChangedEvent(entity: player, facing: facing)):
                 phys.facing = facing
             else:
@@ -243,7 +253,13 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
             if not inSlot.isSentinel:
               if not interact(world, player, @[inSlot], facedPosition(world, player)):
                 world.addFullEvent(CouldNotGatherEvent(entity: player, fromEntity: none(Entity)))
+      elif key == KeyCode.Z:
+        display[CameraData].camera.changeScale(+1)
+      elif key == KeyCode.X:
+        display[CameraData].camera.changeScale(-1)
 
+
+  postMatcher(event):
     extract(ItemMovedToInventoryEvent, toInventory):
       if toInventory.hasData(Player):
         g.inventoryLatch.flipOn()
@@ -260,6 +276,8 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
       else:
         info &"List item select for : {originatingWidget.parent.get.identifier}"
       g.closeMenus()
+    extract(GameEvent):
+      g.anyLatch.flipOn()
 
   g.craftingMenu.onEvent(world, display, event)
 
@@ -314,16 +332,17 @@ method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld
       let phys = player[Physical]
       let creature = player[Creature]
 
-      ws.desktop.bindValue("player", {
-        "health" : phys.health.currentValue,
-        "maxHealth" : phys.health.maxValue,
-        "stamina" : creature.stamina.currentValue,
-        "maxStamina" : creature.stamina.maxValue,
-        "hydration" : creature.hydration.currentValue,
-        "maxHydration" : creature.hydration.maxValue,
-        "hunger" : creature.hunger.currentValue,
-        "maxHunger" : creature.hunger.maxValue,
-      }.toTable())
+      if g.anyLatch.flipOff():
+        ws.desktop.bindValue("player", {
+          "health" : phys.health.currentValue,
+          "maxHealth" : phys.health.maxValue,
+          "stamina" : creature.stamina.currentValue,
+          "maxStamina" : creature.stamina.maxValue,
+          "hydration" : creature.hydration.currentValue,
+          "maxHydration" : creature.hydration.maxValue,
+          "hunger" : creature.hunger.currentValue,
+          "maxHunger" : creature.hunger.maxValue,
+        }.toTable())
 
       if g.inventoryLatch.flipOff():
         ws.desktop.bindValue("itemIconAndText", true)

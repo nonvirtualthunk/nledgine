@@ -42,7 +42,6 @@ method render*(ws: DividerComponent, widget: Widget): seq[WQuad] =
 
     let sideDim = dim.y div 2
     if dim.x > sideDim * 2:
-      info "Drawing divider in three parts"
       let leftShape = rectShape(position = vec3f(pos.x.float, pos.y.float, 0.0f), dimensions = vec2i(sideDim, dim.y))
       let rightShape = rectShape(position = vec3f(pos.x.float + dim.x.float - sideDim.float, pos.y.float, 0.0f), dimensions = vec2i(sideDim, dim.y))
       let mainShape = rectShape(position = vec3f(pos.x.float + sideDim.float, pos.y.float, 0.0f), dimensions = vec2i(dim.x - sideDim * 2 + 1, dim.y))
@@ -52,7 +51,6 @@ method render*(ws: DividerComponent, widget: Widget): seq[WQuad] =
         WQuad(shape: mainShape, texCoords: mainSR, color: DD.color, beforeChildren: true, image: DD.image)
       ]
     else:
-      info "Drawing divider in one part"
       let shape = rectShape(position = vec3f(pos.x.float, pos.y.float, 0.0f), dimensions = vec2i(dim.x, dim.y))
       @[
         WQuad(shape: shape, texCoords: mainSR, color: DD.color, beforeChildren: true, image: DD.image)

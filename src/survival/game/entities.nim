@@ -15,6 +15,7 @@ import patty
 import arxregex
 import prelude
 import strutils
+import game/shadowcasting
 
 type
   TileLayerKind* {.pure.} = enum
@@ -133,6 +134,8 @@ type
 
   Player* = object
     quickSlots*: array[10, Entity]
+    vision*: ref ShadowGrid[64]
+    visionRange*: int
 
   Plant* = object
     # current stage of growth (budding, vegetative growth, flowering, etc)

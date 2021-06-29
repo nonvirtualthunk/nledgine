@@ -950,7 +950,7 @@ proc updateGeometry(ws: WindowingSystemRef) {.gcsafe.} =
 
 proc widgetAtPosition*(ws: WindowingSystemRef, position: Vec2f): Widget
 
-proc update*[WorldType](ws: WindowingSystemRef, tb: TextureBlock, world: WorldType, display: DisplayWorld) =
+proc update*[WorldType](ws: WindowingSystemRef, tb: TextureBlock, world: WorldType, display: DisplayWorld) : bool =
   ws.updateDependentsCount = 0
   ws.updateDimensionsCount = 0
   ws.updatePositionCount = 0
@@ -981,6 +981,9 @@ proc update*[WorldType](ws: WindowingSystemRef, tb: TextureBlock, world: WorldTy
     ws.renderRevision.inc
     fine "Re-rendered"
     ws.rerenderSet.clear()
+    true
+  else:
+    false
 
 
 type Corner = object

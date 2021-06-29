@@ -70,6 +70,14 @@ type
     time*: float
 
 
+template eventToStr*(eventName: untyped) =
+  method toString*(evt: `eventName`): string =
+    result = eventName.astToStr
+    result.add("(")
+    result.add($(evt[]))
+    result.add(")")
+
+
 method isConsumed*(evt: Event): bool {.base.} = false
 method isConsumed*(evt: UIEvent): bool = evt.consumed
 
@@ -90,17 +98,16 @@ method toString*(evt: Event): string {.base.} =
 method toString*(evt: GameEvent): string =
   return repr(evt)
 
-method toString*(evt: KeyPress): string =
-   return $evt[]
-
-method toString*(evt: KeyRelease): string =
-   return $evt[]
-
-method toString*(evt: MousePress): string =
-   return $evt[]
-
-method toString*(evt: MouseRelease): string =
-   return $evt[]
+eventToStr(KeyPress)
+eventToStr(KeyRelease)
+eventToStr(MousePress)
+eventToStr(MouseRelease)
+eventToStr(RuneEnter)
+eventToStr(MouseDrag)
+eventToStr(MouseMove)
+eventToStr(WindowFocusGained)
+eventToStr(WindowFocusLost)
+eventToStr(WorldInitializedEvent)
 
 proc consume*(evt: UIEvent) =
    evt.consumed = true

@@ -196,6 +196,8 @@ proc newCraftingMenu*(ws: ref WindowingSystem, world: LiveWorld, player: Entity)
     ))
 
   selectTemplate(cm, world, cm.recipeTemplateInfo[0].kind)
+
+  cm.widget.showing = bindable(false)
   cm
 
 

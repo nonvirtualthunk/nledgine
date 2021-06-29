@@ -30,6 +30,16 @@ proc player*(world: LiveWorld) : Entity =
     return ent
   SentinelEntity
 
+proc debugIdentifier*(world: LiveWorld, entity: Entity) : string =
+  if entity.hasData(Identity):
+    let ID = entity[Identity]
+    if ID.name.isSome:
+      ID.kind.displayName & ":" & ID.name.get
+    else:
+      ID.kind.displayName
+  else:
+    "Entity(" & $entity.id & ")"
+
 
 proc createResourcesFromYields*(world: LiveWorld, yields: seq[ResourceYield], source: Taxon) : seq[GatherableResource] =
   withWorld(world):
@@ -607,6 +617,8 @@ proc eat*(world: LiveWorld, actor: Entity, target: Entity) : bool {.discardable.
     true
   else:
     false
+
+
 
 when isMainModule:
   let lib = library(PlantKind)
