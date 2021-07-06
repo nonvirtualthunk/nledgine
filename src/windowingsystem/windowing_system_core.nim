@@ -244,6 +244,22 @@ type
 
 defineDisplayReflection(WindowingSystem)
 
+
+method toString*(evt: WidgetEvent) : string =
+  "WidgetEvent(?)"
+  
+eventToStr(WidgetFocusLoss)
+eventToStr(WidgetFocusGain)
+eventToStr(WidgetRuneEnter)
+eventToStr(WidgetKeyRelease)
+eventToStr(WidgetKeyPress)
+eventToStr(WidgetMouseRelease)
+eventToStr(WidgetMousePress)
+eventToStr(WidgetMouseExit)
+eventToStr(WidgetMouseEnter)
+eventToStr(WidgetMouseDrag)
+eventToStr(WidgetMouseMove)
+
 const AllEdges = {WidgetEdge.Left, WidgetEdge.Top, WidgetEdge.Right, WidgetEdge.Bottom}
 
 proc childByIdentifier*(e: Widget, identifier: string): Option[Widget] =
@@ -276,6 +292,7 @@ iterator descendantsWithData*[T](e: Widget, dataType : typedesc[T]): Widget =
   for c in descendantsMatching(e, w => w.hasData(dataType)):
     yield c
 
+
 proc isDescendantOf*(w: Widget, target: Widget): bool =
   if w.parent_f.isSome:
     if w.parent_f.get == target:
@@ -294,6 +311,11 @@ proc isDescendantOf*(w: Widget, target: string): bool =
   else:
     false
 
+proc isSelfOrDescendantOf*(w: Widget, target: string): bool =
+  if w.identifier == target:
+    true
+  else:
+    isDescendantOf(w, target)
 
 proc isEmpty*(w: WidgetArchetypeIdentifier): bool =
   w.location.isEmpty or w.identifier.isEmpty
@@ -646,7 +668,11 @@ proc width*(w: Widget): WidgetDimension = w.dimensions[0]
 proc height*(w: Widget): WidgetDimension = w.dimensions[1]
 
 # converter toEntity* (w : Widget) : DisplayEntity = w.entity
-proc `$`*(w: Widget): string = "Widget(" & $w.entity.id & ")"
+proc `$`*(w: Widget): string =
+  if w.identifier.len > 0:
+    "Widget(" & w.identifier & ")"
+  else:
+    "Widget(" & $w.entity.id & ")"
 
 proc recalculateDependents(w: Widget, axis: Axis) =
   if w.parent.isSome:
@@ -1168,7 +1194,7 @@ proc widgetAtPosition*(ws: WindowingSystemRef, w: Widget, position: Vec2f): Widg
 
   if widgetContainsPositionInClientArea(w, position):
     # iterate over the children, finding the child that contains the position with the highest Z
-    for i in countdown(w.children.len-1, 0):
+    for i in 0 ..< w.children.len:
       let c = w.children[i]
       if c.showing and widgetContainsPosition(c, position):
         if c.resolvedPosition.z > highestZ:

@@ -277,6 +277,8 @@ type
     requirement*: RecipeRequirement
     # whether this slot must be filled for every recipe or if can be left out
     optional*: bool
+    # how many items go into this slot
+    count*: int
 
   ContributionKind* {.pure.} = enum
     Additive
@@ -353,6 +355,16 @@ type
     flagContribution*: Table[Taxon, Contribution]
     # What weight from the ingredients are incorporated into the new output
     weightContribution*: Option[Contribution]
+
+
+  ActionUse* = object
+    # what action this is, i.e. Chop, Carve
+    kind*: Taxon
+    # the relative level of ability, with 0 being no ability at all, should generally be >= 1
+    value*: int
+    # from where this action comes, the player if it is innate, or a tool if it is not
+    source*: Entity
+
 
 
 
@@ -517,7 +529,39 @@ defineSimpleLibrary[ItemKind]("survival/game/items.sml", "Items")
 defineSimpleLibrary[ActionKind]("survival/game/actions.sml", "Actions")
 defineSimpleLibrary[CreatureKind]("survival/game/creatures.sml", "Creatures")
 defineSimpleLibrary[RecipeTemplate]("survival/game/recipe_templates.sml", "RecipeTemplates")
-defineSimpleLibrary[Recipe]("survival/game/recipes.sml", "Recipes")
+# defineSimpleLibrary[Recipe]("survival/game/recipes.sml", "Recipes")
+defineLibrary[Recipe]:
+  let namespace = "Recipes"
+  var lib = new Library[Recipe]
+  lib.defaultNamespace = namespace
+
+  for confPath in @["survival/game/recipes.sml", "survival/game/items.sml"]:
+    let confs = config(confPath)
+    for k, v in confs["Recipes"].pairsOpt:
+      let key = taxon("Recipes", k)
+      var ri: ref Recipe = new Recipe
+      ri.taxon = key
+
+      readInto(v, ri[])
+      lib[key] = ri
+    for k, v in confs["Items"].pairsOpt:
+      let itemKey = taxon("Items", k)
+      if v.hasField("recipe"):
+        let key = taxon("Recipes", k)
+        var ri : ref Recipe = new Recipe
+        ri.taxon = key
+
+        readInto(v["recipe"], ri[])
+        if ri.outputs.isEmpty:
+          ri.outputs.add(
+            RecipeOutput(
+              item: itemKey,
+              count: 1
+            )
+          )
+        lib[key] = ri
+
+  lib
 
 proc plantKind*(kind: Taxon) : ref PlantKind = library(PlantKind)[kind]
 proc itemKind*(kind: Taxon) : ref ItemKind = library(ItemKind)[kind]
@@ -525,6 +569,20 @@ proc actionKind*(kind: Taxon) : ref ActionKind = library(ActionKind)[kind]
 proc creatureKind*(kind: Taxon) : ref CreatureKind = library(CreatureKind)[kind]
 proc recipeTemplate*(kind: Taxon): ref RecipeTemplate = library(RecipeTemplate)[kind]
 proc recipe*(kind: Taxon): ref Recipe = library(Recipe)[kind]
+
+
+
+
+addTaxonomyLoader(TaxonomyLoader(
+  loadTaxonsFrom: proc(cv: ConfigValue) : seq[ProtoTaxon] {.gcsafe.} =
+      var r : seq[ProtoTaxon]
+      for key, item in cv["Items"].pairsOpt:
+        if item["recipe"].nonEmpty:
+          info &"Generating proto taxon: {key}"
+          r.add(ProtoTaxon(namespace: "Recipes", name: key, parents : @["Recipe"]))
+      r
+))
+
 
 proc recipesForTemplate*(t: ref RecipeTemplate) : seq[ref Recipe] =
   for k,recipe in library(Recipe):

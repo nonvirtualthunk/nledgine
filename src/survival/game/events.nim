@@ -59,7 +59,7 @@ type
   GatheredEvent* = ref object of GameEvent
     entity*: Entity
     items*: seq[Entity]
-    actions*: seq[Taxon]
+    actions*: seq[ActionUse]
     fromEntity*: Option[Entity]
     gatherRemaining*: bool
 
@@ -87,6 +87,11 @@ type
     sanityRecovered*: int
     healthRecovered*: int
 
+  DurabilityReducedEvent* = ref object of GameEvent
+    entity*: Entity
+    reducedBy*: int
+    newDurability*: int
+
   WorldAdvancedEvent* = ref object of GameEvent
     tick*: Ticks
 
@@ -112,6 +117,7 @@ eventToStr(FacingChangedEvent)
 eventToStr(CouldNotPlaceItemEvent)
 eventToStr(FoodEatenEvent)
 eventToStr(VisionChangedEvent)
+eventToStr(DurabilityReducedEvent)
 
 method toString*(evt: WorldInitializedEvent): string =
    return &"WorldInitializedEvent{$evt[]}"

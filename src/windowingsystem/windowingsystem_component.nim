@@ -55,6 +55,16 @@ method initialize(g: WindowingSystemComponent, display: DisplayWorld) =
   windowingSystem.desktop.background = nineWayImage("ui/woodBorder.png")
   windowingSystem.desktop.background.pixelScale = 1
 
+proc handleEventWrapper(ws: WindowingSystemRef, event: WidgetEvent, world: LiveWorld, display: DisplayWorld) : bool =
+  result = handleEvent(ws, event, world, display)
+  if not result:
+    display.addEvent(event)
+
+proc handleEventWrapper(ws: WindowingSystemRef, event: WidgetEvent, world: WorldView, display: DisplayWorld) : bool =
+  result = handleEvent(ws, event, world, display)
+  if not result:
+    display.addEvent(event)
+
 method onEvent(g: WindowingSystemComponent, world: World, curView: WorldView, display: DisplayWorld, event: Event) =
   let gcd = display[GraphicsContextData]
   let ws = display[WindowingSystem]
@@ -69,33 +79,33 @@ method onEvent(g: WindowingSystemComponent, world: World, curView: WorldView, di
         let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
         ws.lastMousePosition = wsPos.xy
         var widget = ws.widgetAtPosition(wsPos.xy)
-        shouldConsume = handleEvent(ws, WidgetMouseMove(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
+        shouldConsume = handleEventWrapper(ws, WidgetMouseMove(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
       extract(MouseDrag, position, button, modifiers, origin):
         let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
         let wsOrigin = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, origin)
         ws.lastMousePosition = wsPos.xy
         var widget = ws.widgetAtPosition(wsPos.xy)
-        shouldConsume = ws.handleEvent(WidgetMouseDrag(widget: widget, position: wsPos.xy, origin: wsOrigin.xy, button: button, modifiers: modifiers), world, display)
+        shouldConsume = handleEventWrapper(ws, WidgetMouseDrag(widget: widget, position: wsPos.xy, origin: wsOrigin.xy, button: button, modifiers: modifiers), world, display)
       extract(MousePress, position, button, modifiers, doublePress):
         let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
         var widget = ws.widgetAtPosition(wsPos.xy)
-        shouldConsume = ws.handleEvent(WidgetMousePress(widget: widget, position: wsPos.xy, modifiers: modifiers, doublePress: doublePress), world, display)
+        shouldConsume = handleEventWrapper(ws, WidgetMousePress(widget: widget, position: wsPos.xy, modifiers: modifiers, doublePress: doublePress), world, display)
       extract(MouseRelease, position, button, modifiers):
         let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
         var widget = ws.widgetAtPosition(wsPos.xy)
-        shouldConsume = ws.handleEvent(WidgetMouseRelease(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
+        shouldConsume = handleEventWrapper(ws, WidgetMouseRelease(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
       extract(KeyPress, key, repeat, modifiers):
         if ws.focusedWidget.isSome:
           let widget = ws.focusedWidget.get
-          shouldConsume = ws.handleEvent(WidgetKeyPress(widget: widget, key: key, repeat: repeat, modifiers: modifiers), world, display)
+          shouldConsume = handleEventWrapper(ws, WidgetKeyPress(widget: widget, key: key, repeat: repeat, modifiers: modifiers), world, display)
       extract(KeyRelease, key, modifiers):
         if ws.focusedWidget.isSome:
           let widget = ws.focusedWidget.get
-          shouldConsume = ws.handleEvent(WidgetKeyRelease(widget: widget, key: key, modifiers: modifiers), world, display)
+          shouldConsume = handleEventWrapper(ws, WidgetKeyRelease(widget: widget, key: key, modifiers: modifiers), world, display)
       extract(RuneEnter, rune, modifiers):
         if ws.focusedWidget.isSome:
           let widget = ws.focusedWidget.get
-          shouldConsume = ws.handleEvent(WidgetRuneEnter(widget: widget, rune: rune, modifiers: modifiers), world, display)
+          shouldConsume = handleEventWrapper(ws, WidgetRuneEnter(widget: widget, rune: rune, modifiers: modifiers), world, display)
     if shouldConsume:
       event.consume()
 
@@ -115,33 +125,33 @@ method onEvent(g: WindowingSystemComponent, world: LiveWorld, display: DisplayWo
         let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
         ws.lastMousePosition = wsPos.xy
         var widget = ws.widgetAtPosition(wsPos.xy)
-        shouldConsume = handleEvent(ws, WidgetMouseMove(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
+        shouldConsume = handleEventWrapper(ws, WidgetMouseMove(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
       extract(MouseDrag, position, button, modifiers, origin):
         let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
         let wsOrigin = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, origin)
         ws.lastMousePosition = wsPos.xy
         var widget = ws.widgetAtPosition(wsPos.xy)
-        shouldConsume = ws.handleEvent(WidgetMouseDrag(widget: widget, position: wsPos.xy, origin: wsOrigin.xy, button: button, modifiers: modifiers), world, display)
+        shouldConsume = handleEventWrapper(ws, WidgetMouseDrag(widget: widget, position: wsPos.xy, origin: wsOrigin.xy, button: button, modifiers: modifiers), world, display)
       extract(MousePress, position, button, modifiers, doublePress):
         let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
         var widget = ws.widgetAtPosition(wsPos.xy)
-        shouldConsume = ws.handleEvent(WidgetMousePress(widget: widget, position: wsPos.xy, modifiers: modifiers, doublePress: doublePress), world, display)
+        shouldConsume = handleEventWrapper(ws, WidgetMousePress(widget: widget, position: wsPos.xy, modifiers: modifiers, doublePress: doublePress), world, display)
       extract(MouseRelease, position, button, modifiers):
         let wsPos = g.camera.pixelToWorld(gcd.framebufferSize, gcd.windowSize, position)
         var widget = ws.widgetAtPosition(wsPos.xy)
-        shouldConsume = ws.handleEvent(WidgetMouseRelease(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
+        shouldConsume = handleEventWrapper(ws, WidgetMouseRelease(widget: widget, position: wsPos.xy, modifiers: modifiers), world, display)
       extract(KeyPress, key, repeat, modifiers):
         if ws.focusedWidget.isSome:
           let widget = ws.focusedWidget.get
-          shouldConsume = ws.handleEvent(WidgetKeyPress(widget: widget, key: key, repeat: repeat, modifiers: modifiers), world, display)
+          shouldConsume = handleEventWrapper(ws, WidgetKeyPress(widget: widget, key: key, repeat: repeat, modifiers: modifiers), world, display)
       extract(KeyRelease, key, modifiers):
         if ws.focusedWidget.isSome:
           let widget = ws.focusedWidget.get
-          shouldConsume = ws.handleEvent(WidgetKeyRelease(widget: widget, key: key, modifiers: modifiers), world, display)
+          shouldConsume = handleEventWrapper(ws, WidgetKeyRelease(widget: widget, key: key, modifiers: modifiers), world, display)
       extract(RuneEnter, rune, modifiers):
         if ws.focusedWidget.isSome:
           let widget = ws.focusedWidget.get
-          shouldConsume = ws.handleEvent(WidgetRuneEnter(widget: widget, rune: rune, modifiers: modifiers), world, display)
+          shouldConsume = handleEventWrapper(ws, WidgetRuneEnter(widget: widget, rune: rune, modifiers: modifiers), world, display)
     if shouldConsume:
       event.consume()
 

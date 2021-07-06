@@ -139,6 +139,16 @@ proc regionFor*(world: LiveWorld, e: Entity): Entity =
   else:
     err &"Attempting to determine region for non-physical entity {e}"
 
+proc regionForOpt*(world: LiveWorld, e: Entity): Option[Entity] =
+  if e.hasData(Physical):
+    let r = e[Physical].region
+    if r == SentinelEntity:
+      none(Entity)
+    else:
+      some(r)
+  else:
+    none(Entity)
+
 proc regionFor*(world: LiveWorld, t: Target): Entity =
   case t.kind:
     of TargetKind.Entity: regionFor(world, t.entity)

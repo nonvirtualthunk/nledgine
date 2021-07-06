@@ -3,10 +3,11 @@ import tables
 import macros
 import options
 import noto
+import sugar
 
 type
   Library*[T] = ref object
-    values*: Table[Taxon, ref T]
+    values*: OrderedTable[Taxon, ref T]
     defaultNamespace*: string
 
 
@@ -54,7 +55,10 @@ template defineLibrary*[T](loadFn: untyped) =
       libraryCopyChannel.send(libraryRef)
     libraryRef
 
-template defineSimpleLibrary*[T](confPaths: seq[string], namespace: string) =
+func noOpLib[T](lib: Library[T]) =
+  discard
+
+template defineSimpleLibrary*[T](confPaths: seq[string], namespace: string, postProcess: proc(t: Library[T])) =
   defineLibrary[T]:
     var lib = new Library[T]
     lib.defaultNamespace = namespace
@@ -75,10 +79,21 @@ template defineSimpleLibrary*[T](confPaths: seq[string], namespace: string) =
         readInto(v, ri[])
         lib[key] = ri
 
+    postProcess(lib)
     lib
-    
+
+template defineSimpleLibrary*[T](confPaths: seq[string], namespace: string) =
+  let noop = proc(t: Library[T]) =
+    discard
+  defineSimpleLibrary(confPaths, namespace, noop)
+
+template defineSimpleLibrary*[T](confPath: string, namespace: string, postProcess: proc(t: Library[T])) =
+  defineSimpleLibrary[T](@[confPath], namespace, postProcess)
+
 template defineSimpleLibrary*[T](confPath: string, namespace: string) =
-  defineSimpleLibrary[T](@[confPath], namespace)
+  let noop = proc(t: Library[T]) =
+    discard
+  defineSimpleLibrary[T](@[confPath], namespace, noop)
 
 when isMainModule:
 

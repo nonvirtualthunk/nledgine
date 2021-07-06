@@ -30,8 +30,9 @@ VitalsLabel {
 VitalsWidget {
   x: 0
   y: 0
-  width: 500
-  height: 400
+  z: -1
+  width: WrapContent
+  height: WrapContent
   background.draw: false
 
   children {

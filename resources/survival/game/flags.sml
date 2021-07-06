@@ -116,4 +116,7 @@ Flags {
   All {
     description: "Special flag indicating that all flags should be included in some consideration"
   }
+  Binding {
+    description: "An item that can bind two things together"
+  }
 }

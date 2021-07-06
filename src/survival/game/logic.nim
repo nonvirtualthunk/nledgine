@@ -40,6 +40,12 @@ proc debugIdentifier*(world: LiveWorld, entity: Entity) : string =
   else:
     "Entity(" & $entity.id & ")"
 
+proc distance(world: LiveWorld, a,b: Entity): float =
+  if a.hasData(Physical) and b.hasData(Physical):
+    distance(a[Physical].position, b[Physical].position)
+  else:
+    warn &"Trying to compute distance between entities when not both are physical ({debugIdentifier(world, a)}, {debugIdentifier(world, b)})"
+    100000.0
 
 proc createResourcesFromYields*(world: LiveWorld, yields: seq[ResourceYield], source: Taxon) : seq[GatherableResource] =
   withWorld(world):
@@ -58,6 +64,13 @@ proc createGatherableDataFromYields*(world: LiveWorld, ent: Entity, yields: seq[
       ent.attachData(Gatherable())
     ent.data(Gatherable).resources.add(createResourcesFromYields(world, yields, source))
 
+
+proc reduceDurability*(world: LiveWorld, ent: Entity, reduceBy: int) =
+  if ent.hasData(Item):
+    world.eventStmts(DurabilityReducedEvent(entity: ent, reducedBy: reduceBy, newDurability: max(0, ent[Item].durability.currentValue - reduceBy))):
+      ent[Item].durability.reduceBy(reduceBy)
+  else:
+    info &"reduceDurability() called on non-item: {ent}"
 
 
 proc createPlant*(world: LiveWorld, region: Entity, kind: Taxon, position: Vec3i, params: PlantCreationParameters = PlantCreationParameters()): Entity {.discardable.} =
@@ -266,6 +279,18 @@ proc moveItemToInventory*(world: LiveWorld, item: Entity, toInventory: Entity) =
     toInventory[Inventory].items.incl(item)
     itemData.heldBy = some(toInventory)
 
+## Returns true if the entity given can access the item given for the purposes of crafting
+proc canAccessForCrafting*(world: LiveWorld, entity: Entity, item: Entity) : bool =
+  # if we're holding the item, we can definitely access it
+  if item.hasData(Item):
+    if item[Item].heldBy == some(entity):
+      return true
+  elif item.hasData(Physical):
+    if distance(world, entity, item) <= 2:
+      return true
+
+  false
+
 
 proc resourceYieldFor*(world: LiveWorld, target: Target, rsrc: GatherableResource): ResourceYield =
   let allYields = if rsrc.source.isA(† Plant):
@@ -300,23 +325,23 @@ proc resourceYieldFor*(world: LiveWorld, target: Target, rsrc: GatherableResourc
 
   warn "resourceYieldFor(...) found no matching resource in source"
 
-proc effectiveGatherLevelFor*(rYield: ResourceYield, actions: Table[Taxon, int]) : Option[(Taxon, float)] =
-  var bestMethod = († UnknownThing, 0.0)
+proc effectiveGatherLevelFor*(rYield: ResourceYield, actions: Table[Taxon, ActionUse]) : Option[(ActionUse, float)] =
+  var bestMethod = (ActionUse(kind: † UnknownThing), 0.0)
   echo "Determining effective gather level for ", rYield, " | ", actions
   for rMethod in rYield.gatherMethods:
     for action in rMethod.actions:
-      echo "Examining ", rMethod, " ", action
       # todo: incorporate minimum tool level
-      let levelForAction = actions.getOrDefault(action)
+      let possibleAct = actions.getOrDefault(action)
+      let levelForAction = possibleAct.value
       let effLevel = levelForAction.float / rMethod.difficulty.float
 
       if bestMethod[1] < effLevel:
-        bestMethod = (action, effLevel)
+        bestMethod = (possibleAct, effLevel)
 
   if bestMethod[1] > 0.0:
     some(bestMethod)
   else:
-    none((Taxon,float))
+    none((ActionUse,float))
 
 proc destroySurvivalEntity*(world: LiveWorld, entity: Entity) =
   world.eventStmts(EntityDestroyedEvent(entity: entity)):
@@ -324,6 +349,7 @@ proc destroySurvivalEntity*(world: LiveWorld, entity: Entity) =
       removeItemFromGroundInternal(world, entity)
       removeItemFromInventoryInternal(world, entity)
       phys.region[Region].entities.excl(entity)
+      phys.region = SentinelEntity
 
 proc destroyTileLayer*(world: LiveWorld, region: Entity, tilePos: Vec3i, layerKind: TileLayerKind, index: int) =
   world.eventStmts(TileLayerDestroyedEvent(region: region, tilePosition: tilePos, layerKind: layerKind, layerIndex: index)):
@@ -348,10 +374,11 @@ proc destroyTarget*(world: LiveWorld, target: Target) =
 type GatherResult = object
   gatheredItems : seq[Entity]
   gatherRemaining : bool
-  actionsUsed: seq[Taxon]
+  actionsUsed: seq[ActionUse]
 
 
-proc gatherFrom*(world: LiveWorld, target: Target, ticks: var Ticks, resources: var seq[GatherableResource], actions: Table[Taxon, int]): GatherResult =
+# Perofrm the gathering of the target using the provided parameters, storing outputs in `resources` and recording the time taken in `ticks`
+proc gatherFrom*(world: LiveWorld, target: Target, ticks: var Ticks, resources: var seq[GatherableResource], actions: Table[Taxon, ActionUse]): GatherResult =
   let region = regionFor(world, target)
   for rsrc in resources.mitems:
     if rsrc.quantity.currentValue > 0:
@@ -361,6 +388,7 @@ proc gatherFrom*(world: LiveWorld, target: Target, ticks: var Ticks, resources: 
         let actionToUse = bestMethod.get()[0]
         if not result.actionsUsed.contains(actionToUse):
           result.actionsUsed.add(actionToUse)
+          
         let progressPerTick = bestMethod.get()[1]
         let (ticksPerDelta, delta) = if progressPerTick < 0.99999:
           (floor(1.0 / progressPerTick + 0.0001).int, 1)
@@ -391,7 +419,7 @@ proc gatherFrom*(world: LiveWorld, target: Target, ticks: var Ticks, resources: 
           warn &"No ticks per delta or no delta: {ticksPerDelta}, {delta}"
 
 
-proc interact*(world: LiveWorld, entity: Entity, target: Target, actions: Table[Taxon, int]) : bool {.discardable.} =
+proc interact*(world: LiveWorld, entity: Entity, target: Target, actions: Table[Taxon, ActionUse]) : bool {.discardable.} =
   var ticks = Ticks(0)
 
   let region = regionEnt(world, entity)
@@ -416,6 +444,9 @@ proc interact*(world: LiveWorld, entity: Entity, target: Target, actions: Table[
     world.eventStmts(GatheredEvent(entity: entity, items: gr.gatheredItems, actions: gr.actionsUsed, fromEntity: fromEntity, gatherRemaining: gr.gatherRemaining)):
       for item in gr.gatheredItems:
         moveItemToInventory(world, item, entity)
+      for action in gr.actionsUsed:
+        if action.source != entity:
+          reduceDurability(world, action.source, 1)
 
   # if we're interacting with something pyhsical then turn to face it
   let targetPos = positionOf(world, target)
@@ -436,26 +467,25 @@ proc facedPosition*(world: LiveWorld, entity: Entity) : Vec3i =
     vec3i(0,0,0)
 
 proc interact*(world: LiveWorld, entity: Entity, tools: seq[Entity], target: Target) : bool {.discardable.} =
-  var actions: Table[Taxon, int]
-  proc addPossibleAction(action: Taxon, value: int) =
-    actions[action] = max(actions.getOrDefault(action), value)
+  var actions: Table[Taxon, ActionUse]
+  proc addPossibleAction(action: Taxon, value: int, source: Entity) =
+    if actions.getOrDefault(action).value < value:
+      actions[action] = ActionUse(kind: action, value: value, source: source)
 
   if tools.isEmpty:
-    addPossibleAction(† Actions.Gather, 1)
+    addPossibleAction(† Actions.Gather, 1, entity)
 
   for tool in tools:
     if tool.hasData(Item):
       for action, value in tool[Item].actions:
-        addPossibleAction(action, value)
+        addPossibleAction(action, value, tool)
     elif tool.hasData(Player):
-      addPossibleAction(† Actions.Gather, 1)
+      addPossibleAction(† Actions.Gather, 1, tool)
 
-  echo "Interaction possibilities: ", actions
   interact(world, entity, target, actions)
 
 proc interact*(world: LiveWorld, entity: Entity, tools: seq[Entity], targetPos: Vec3i) : bool {.discardable.} =
   for target in entitiesAt(entity[Physical].region[Region], targetPos):
-    echo "Checking to interact with target : ", target[Identity].kind
     if interact(world, entity, tools, Target(kind: TargetKind.Entity, entity: target)):
       return true
     if target.hasData(Physical) and target[Physical].occupiesTile:
@@ -537,7 +567,6 @@ proc matchesRecipeTemplate*(world: LiveWorld, actor: Entity, recipeTemplate: ref
     let choice = ingredients.getOrDefault(slotKey)
     # if this recipe template marks this as required but there is nothing chosen, fail
     if choice.items.isEmpty and not slot.optional:
-      echo "No items, template does not match"
       return false
 
     # ensure that every item chosen matches the requirements
@@ -559,6 +588,8 @@ proc matchingRecipes*(world: LiveWorld, actor: Entity, recipeTemplate: ref Recip
 
 # Returns true if there is any recipe for which the given item would be a valid match for the listed slot key
 proc matchesAnyRecipeInSlot*(world: LiveWorld, actor: Entity, recipeTemplate: ref RecipeTemplate, slot: string, item: Entity): bool =
+  if not recipeTemplate.recipeSlots.hasKey(slot):
+    warn &"recipe template does not have slot it advertized? {slot}"
   if recipeTemplate.recipeSlots.hasKey(slot) and matchesSlot(world, actor, recipeTemplate.recipeSlots[slot], item):
     for recipe in recipesForTemplate(recipeTemplate):
       if not recipe.ingredients.hasKey(slot) or matchesRequirement(world, actor, recipe.ingredients[slot], item):
@@ -577,17 +608,27 @@ proc craftItem*(world: LiveWorld, actor: Entity, recipeTaxon: Taxon, ingredients
     SentinelEntity
 
   let recipe = recipe(recipeTaxon)
+  let recipeTemplate = recipeTemplate(recipe.recipeTemplate)
   if matchesRecipe(world, actor, recipe, ingredients):
     for k, ingredient in ingredients:
+      let slot = recipeTemplate.recipeSlots[k]
       if not hypothetical:
-        for item in ingredient.items:
-          destroySurvivalEntity(world, item)
+        # Ingredients are consumed, tools are used (durability), and locations just... chill
+        if slot.kind == RecipeSlotKind.Ingredient:
+          for item in ingredient.items:
+            destroySurvivalEntity(world, item)
+        elif slot.kind == RecipeSlotKind.Tool:
+          for item in ingredient.items:
+            reduceDurability(world, item, 1)
 
     var results : seq[Entity]
     for output in recipe.outputs:
       for i in 0 ..< output.count:
         results.add(createItem(world, region, output.item))
 
+    if not hypothetical:
+      # Todo: modify by skill
+      advanceWorld(world, recipe.duration)
     some(results)
   else:
     warn &"Generally, should not try to craft an item out of ingredients that cannot make that recipe: {recipeTaxon}"
@@ -614,6 +655,8 @@ proc eat*(world: LiveWorld, actor: Entity, target: Entity) : bool {.discardable.
       pd.health.recoverBy(fd.health)
 
       destroySurvivalEntity(world, target)
+
+      advanceWorld(world, TicksPerShortAction.Ticks)
     true
   else:
     false

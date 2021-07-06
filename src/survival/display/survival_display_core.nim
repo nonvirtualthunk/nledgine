@@ -27,6 +27,15 @@ import algorithm
 import windowingsystem/rich_text
 import windowingsystem/list_widget
 import strutils
+import engines/event_types
+
+
+type
+  # Signal to cancel whatever is being done, i.e. open menus, etc
+  CancelContext* = ref object of UIEvent
+
+
+eventToStr(CancelContext)
 
 
 proc iconFor*(t: Taxon): ImageLike =
@@ -42,5 +51,5 @@ proc iconFor*(t: Taxon): ImageLike =
       else:
         return imageLike("images/unknown.png")
   else:
-    warn &"iconFor(...) only supports items at this time: {t}"
+    warn &"iconFor(...) only supports items and recipes at this time: {t}"
     return imageLike("images/unknown.png")

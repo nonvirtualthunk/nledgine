@@ -30,6 +30,7 @@ import reflect
 import sets
 import survival/display/world_graphics
 import survival/display/player_control
+import survival/display/survival_debug
 import survival/game/living_components
 import survival/game/vision
 import survival/game/survival_core
@@ -127,7 +128,8 @@ main(GameSetup(
     WorldGraphicsComponent(),
     DynamicEntityGraphicsComponent(),
     PlayerControlComponent(),
-    initializationGraphicsComponent()
+    initializationGraphicsComponent(),
+    SurvivalDebugComponent()
   ]
 ))
 

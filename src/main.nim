@@ -39,6 +39,7 @@ type FullGameSetup = object
   reflectInitializers: ReflectInitializers
 
 var engineThread: Thread[FullGameSetup]
+var stdinDebugThread: Thread[void]
 
 var lastMousePosition: Vec2f
 var lastMousePressPosition: Vec2f
@@ -114,6 +115,11 @@ proc runEngine(full: FullGameSetup) {.thread.} =
     graphicsEngine.update(drawCommandChannel, 1.0f)
 
 
+proc runStdinDebugging() {.thread.} =
+  while true:
+    let str = readLine(stdin)
+    eventChannel.send(DebugCommandEvent(command: str))
+    discard goChannel.trySend(true)
 
 proc toKeyModifiers(mods: int32): KeyModifiers =
   let shift = (mods.bitand(GLFWModShift)) != 0
@@ -206,6 +212,8 @@ proc toGLFWBool(b: bool): int32 =
     GLFW_FALSE
 
 proc main*(setup: GameSetup) =
+  GC_setMaxPause(1000)
+
   assert glfwInit()
 
   glfwWindowHint(GLFWContextVersionMajor, 3)
@@ -253,6 +261,7 @@ proc main*(setup: GameSetup) =
   var commandAccumulator: seq[DrawCommand]
 
   createThread(engineThread, runEngine, FullGameSetup(setup: setup, reflectInitializers: reflectInitializers))
+  createThread(stdinDebugThread, runStdinDebugging)
 
   var lastViewport = vec2i(0, 0)
 

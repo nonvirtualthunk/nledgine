@@ -404,7 +404,18 @@ proc distance*[T](x1: T, y1: T, x2: T, y2: T): T =
   else:
     0
 
+proc distance*[T](x1: T, y1: T, z1: T, x2: T, y2: T, z2: T): T =
+  let dx = x2-x1
+  let dy = y2-y1
+  let dz = z2-z1
+  let sq = dx*dx+dy*dy+dz*dz
+  if sq != 0:
+    sqrt(sq)
+  else:
+    0
+
 proc distance*(a, b: Vec2i) : float = distance(a.x.float, a.y.float, b.x.float, b.y.float)
+proc distance*(a, b: Vec3i) : float = distance(a.x.float, a.y.float, a.z.float, b.x.float, b.y.float, b.z.float)
 
 template findIt*[T](s: seq[T], pred: untyped): untyped =
   var result: Option[T]
@@ -475,3 +486,13 @@ proc singleLineStackTrace*() :string =
    let fileStr = ($tmp.filename).split('/')[^1].replace(".nim","")
    accum.add(&"{fileStr}:{tmp.line}.{tmp.procname} <- ")
    tmp = tmp.prev
+
+template anyMatchIt*[T](s : seq[T], stmts) : bool =
+  var result: bool = false
+  for v in s:
+    let it {.inject.} = v
+    if stmts:
+      result = true
+      break
+
+  result

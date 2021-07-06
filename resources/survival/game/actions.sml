@@ -35,4 +35,8 @@ Actions {
   Place {
     presentVerb: "place"
   }
+
+  Ignite {
+    presentVerb: "ignite"
+  }
 }

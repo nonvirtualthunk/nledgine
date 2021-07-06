@@ -197,6 +197,14 @@ iterator pairs*(v: ConfigValue): tuple[a: string, b: ConfigValue] =
     writeStackTrace()
     warn &"Invalid type of configvalue to be iterating over by k/v : {v}"
 
+iterator pairsOpt*(v: ConfigValue): tuple[a: string, b: ConfigValue] =
+  case v.kind:
+  of ConfigValueKind.Object:
+    for k, v in v.fields:
+      yield (k, v)
+  else:
+    discard
+
 proc isEmpty*(v: ConfigValue): bool =
   return v == nil or v.kind == ConfigValueKind.Empty
 

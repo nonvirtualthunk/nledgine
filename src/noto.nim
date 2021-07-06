@@ -14,6 +14,7 @@ type NotoMessage = object
    originThread: int
    quit: bool
    contextChange: bool
+   flush: bool
 
 var writeChannel: Channel[NotoMessage]
 writeChannel.open()
@@ -45,6 +46,9 @@ proc notoThreadFunc(b: bool) {.thread.} =
       if msg.quit:
          flushFile(stdout)
          break
+      elif msg.flush:
+         flushFile(stdout)
+         continue
 
       indentationByThread[msg.originThread] = indentationByThread.getOrDefault(msg.originThread) + msg.indentationChange
       let indentation = indentationByThread.getOrDefault(msg.originThread)
@@ -97,6 +101,9 @@ template warn*(msg: string) =
 
 template err*(msg: string) =
    write(msg, 0)
+
+proc flush*() =
+  writeChannel.send(NotoMessage(flush: true))
 
 proc indentLogs*(enabled: bool = true) =
    if enabled:

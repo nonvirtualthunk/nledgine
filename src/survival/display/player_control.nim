@@ -31,6 +31,7 @@ import windowingsystem/list_widget
 import strutils
 import crafting_display
 import inventory_display
+import survival_display_core
 
 type Latch* = object
   notValue: bool
@@ -137,20 +138,26 @@ proc message*(world: LiveWorld, evt: Event): Option[RichText] =
           itemList.add(&"{spacer}{count} {kind.displayName}")
           spacer = ", "
 
-        var actionStr = naturalLanguageList(actions, (a) => actionKind(a).presentVerb)
+        var actionStr = naturalLanguageList(actions, (a) => actionKind(a.kind).presentVerb)
+        let toolsUsed = actions.mapIt(it.source).filterIt(it != player)
+        let toolStr = if toolsUsed.isEmpty:
+          ""
+        else:
+          " with your " & naturalLanguageList(toolsUsed, (t) => t[Identity].kind.displayName.fromCamelCase)
+
 
         if fromEntity.isSome:
           let fromEnt = fromEntity.get
           let kindStr = fromEnt[Identity].kind.displayName
           if items.isEmpty:
-            result = some(richText(&"You {actionStr} the {kindStr} but haven't yet acquired any resources"))
+            result = some(richText(&"You {actionStr} the {kindStr}{toolStr} but haven't yet acquired any resources"))
           else:
-            result = some(richText(&"You {actionStr} the {kindStr} and acquire {itemList}"))
+            result = some(richText(&"You {actionStr} the {kindStr}{toolStr} and acquire {itemList}"))
         else:
           if items.isEmpty:
-            result = some(richText(&"You {actionStr} the ground but haven't yet acquired any resources"))
+            result = some(richText(&"You {actionStr} the ground{toolStr} but haven't yet acquired any resources"))
           else:
-            result = some(richText(&"You {actionStr} the ground and acquire {itemList}"))
+            result = some(richText(&"You {actionStr} the ground{toolStr} and acquire {itemList}"))
     extract(CouldNotGatherEvent, entity, fromEntity):
       if entity == player:
         if fromEntity.isSome:
@@ -257,6 +264,23 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
         display[CameraData].camera.changeScale(+1)
       elif key == KeyCode.X:
         display[CameraData].camera.changeScale(-1)
+      elif key == KeyCode.C:
+        g.craftingMenu.toggle(world)
+      elif key == KeyCode.Escape:
+        display.addEvent(CancelContext())
+    extract(WidgetMouseRelease, originatingWidget):
+      if originatingWidget == ws.desktop:
+        display.addEvent(CancelContext())
+    extract(CancelContext):
+      g.actionMenu.bindValue("ActionMenu.showing", false)
+    extract(ListItemSelect, originatingWidget, index):
+      if originatingWidget.isDescendantOf(g.actionMenu):
+        let action = g.actionItems[index]
+        if g.actionTarget.isSome:
+          performAction(world, display, player(world), g.actionTarget.get, action.kind)
+        else:
+          warn &"Cannot perform action {action.kind} without a target"
+      g.closeMenus()
 
 
   postMatcher(event):
@@ -266,16 +290,6 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
     extract(ItemRemovedFromInventoryEvent,fromInventory):
       if fromInventory.hasData(Player):
         g.inventoryLatch.flipOn()
-    extract(ListItemSelect, originatingWidget, index):
-      if originatingWidget.isDescendantOf(g.actionMenu):
-        let action = g.actionItems[index]
-        if g.actionTarget.isSome:
-          performAction(world, display, player(world), g.actionTarget.get, action.kind)
-        else:
-          warn &"Cannot perform action {action.kind} without a target"
-      else:
-        info &"List item select for : {originatingWidget.parent.get.identifier}"
-      g.closeMenus()
     extract(GameEvent):
       g.anyLatch.flipOn()
 
@@ -326,6 +340,8 @@ proc constructActionInfo(world: LiveWorld, player: Entity, target: Entity): seq[
     ))
 
 method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
+  g.craftingMenu.update(world)
+
   withWorld(world):
     let ws = display[WindowingSystem]
     for player in world.entitiesWithData(Player):

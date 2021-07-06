@@ -26,7 +26,9 @@ type
     mechanicalDescription*: string
     description*: string
     vagueDescription*: string
+    targetEquivalences*: seq[FlagEquivalence]
     equivalences*: seq[FlagEquivalence]
+    targetKeyedEquivalences*: Table[Taxon, seq[FlagEquivalence]]
     keyedEquivalences*: Table[Taxon, seq[FlagEquivalence]]
     minValue*: Option[int]
     maxValue*: Option[int]
@@ -81,15 +83,26 @@ proc readFromConfig*(cv: ConfigValue, v: var FlagInfo) =
 
       let equivalentTo = taxon("flags", flagName)
       if flagArg.isSome:
-        v.keyedEquivalences.mgetOrPut(flagArg.get, default(seq[FlagEquivalence])).add(FlagEquivalence(flag: v.taxon, adder: add, multiplier: mul * mulAmount))
+        v.targetKeyedEquivalences.mgetOrPut(flagArg.get, default(seq[FlagEquivalence])).add(FlagEquivalence(flag: v.taxon, adder: add, multiplier: mul * mulAmount))
       else:
-        v.equivalences.add(FlagEquivalence(flag: v.taxon, adder: add, multiplier: mul * mulAmount))
+        v.targetEquivalences.add(FlagEquivalence(flag: equivalentTo, adder: add, multiplier: mul * mulAmount))
+
+  if v.targetEquivalences.nonEmpty:
+    info &"{v.taxon} : {v.targetEquivalences}: {v.equivalences}"
+
+
+
+proc postProcessEquivalencies(lib: Library[FlagInfo]) =
+  for k, v in lib:
+    for targetEq in v.targetEquivalences:
+      let newEquiv = FlagEquivalence(flag: k, adder: targetEq.adder, multiplier: targetEq.multiplier)
+      lib[targetEq.flag].equivalences.add(newEquiv)
 
 
 when declared(ProjectName):
-  defineSimpleLibrary[FlagInfo](ProjectName & "/game/flags.sml", "Flags")
+  defineSimpleLibrary[FlagInfo](ProjectName & "/game/flags.sml", "Flags", postProcessEquivalencies)
 else:
-  defineSimpleLibrary[FlagInfo]("ax4/game/flags.sml", "Flags")
+  defineSimpleLibrary[FlagInfo]("ax4/game/flags.sml", "Flags", postProcessEquivalencies)
 
 
 

@@ -62,4 +62,24 @@ RecipeTemplates {
     decayContribution: 1.34
     weightContribution: 0.9
   }
+
+  Assemble {
+    description: Assemble multiple pieces into a more useful whole
+    icon: "survival/graphics/recipes/assemble.png"
+    selectedIcon: "survival/graphics/recipes/assemble_selected.png"
+
+    ingredients {
+      Base {
+        description: "Base piece to attach to"
+      }
+      Binding {
+        description: "Something to attach the two pieces together"
+        requirement: Flags.Binding
+        optional: true
+      }
+      Attachment {
+        description: "What to attach to the base"
+      }
+    }
+  }
 }

@@ -34,4 +34,22 @@ Recipes {
     }
     outputs: [Items.Plank|2, Items.Bark|2, Items.Twigs]
   }
+
+  CarvePoleFromBranch {
+    name: "carve pole from branch"
+    recipeTemplate: Carve
+    ingredients {
+      Ingredient : Items.Branch
+    }
+    outputs: [Items.WoodPole|1, Items.Bark|1, Items.Twigs]
+  }
+
+  CarvePoleFromPlank {
+    name: "carve pole from plank"
+    recipeTemplate: Carve
+    ingredients {
+      Ingredient : Items.Plank
+    }
+    outputs: [Items.WoodPole|2, Items.WoodShavings]
+  }
 }

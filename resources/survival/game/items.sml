@@ -259,6 +259,43 @@ Items {
 
     image: "survival/graphics/items/material/wood_stake.png"
     stackable: true
+
+    recipe {
+      name: "carve wooden stake"
+      recipeTemplate: Carve
+      ingredients {
+        Ingredient : Items.WoodPole
+      }
+    }
+  }
+
+  FireDrill {
+    weight: 500
+    durability: 30
+    flags {
+      Wood: 1
+
+    }
+    actions {
+      Ignite: 1
+    }
+
+    image: "survival/graphics/items/tool/fire_drill.png"
+
+    recipe {
+      name: "craft fire drill"
+      recipeTemplate: Assemble
+      ingredients {
+        Base: {
+          specifiers: [Flags.Flat, Flags.Wood, Flags.Inflammable]
+          operator: AND
+        }
+        Attachment {
+          specifiers: [Flags.Wood, Flags.Pointed, Flags.Sturdy]
+          operator: AND
+        }
+      }
+    }
   }
 
   WoodShavings {

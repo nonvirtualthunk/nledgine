@@ -71,7 +71,7 @@ type
 
   # A game world not based on journaled modifications
   LiveWorld* = ref object
-    entities: seq[Entity]
+    entities: HashSet[Entity]
     dataContainers: seq[AbstractDataContainer]
     events*: EventBuffer
     entityCounter: int
@@ -137,7 +137,7 @@ proc createEntity*(world: DisplayWorld): DisplayEntity =
 
 proc createEntity*(world: LiveWorld): Entity =
   result = Entity(id: world.entityCounter)
-  world.entities.add(result)
+  world.entities.incl(result)
   world.entityCounter.inc
 
 proc createWorld*(): World {.gcsafe.} =
@@ -163,7 +163,6 @@ proc createWorld*(): World {.gcsafe.} =
 
 proc createLiveWorld*(): LiveWorld {.gcsafe.} =
   result = new LiveWorld
-  result.entities = @[]
   result.dataContainers = newSeq[AbstractDataContainer]()
   result.entityCounter = 1
   result.events = createEventBuffer(10000)
@@ -379,10 +378,8 @@ proc destroyEntity*(world: DisplayWorld, entity: DisplayEntity) =
     c.removeEntity(entity.id)
 
 proc destroyEntity*(world: LiveWorld, entity: Entity) =
-  for i in countdown(world.entities.len - 1, 0):
-    if world.entities[i] == entity:
-      world.entities.del(i)
-      break
+  world.entities.excl(entity)
+
   for c in world.dataContainers:
     c.removeEntity(entity.id)
 
@@ -877,3 +874,6 @@ template ifHasData*[C] (entity: Entity, t: typedesc[C], v : untyped, stmts: unty
   let `v` {.inject.} = dc.dataStore.getOrDefault(entity.id, nil)
   if `v` != nil:
     `stmts`
+
+proc isDestroyed*(world: LiveWorld, entity: Entity): bool =
+  not world.entities.contains(entity)

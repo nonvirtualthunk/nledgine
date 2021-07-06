@@ -13,6 +13,7 @@ CraftingMenu {
 
   x: centered
   y: centered
+  z: 10
   width: 1200
   height: 700
 
@@ -51,7 +52,7 @@ CraftingMenu {
 
           x: centered
           y: 5
-          text: "Select %(CraftingMenu.selectedRecipeSlot.name)"
+          text: "Select %(CraftingMenu.selectedRecipeSlot.displayName)"
 
           fontSize: 20
         }
@@ -154,17 +155,7 @@ CraftingMenu {
           showing: "%(CraftingMenu.selectedRecipeOption.selected)"
           fontSize: 20
         }
-        OutputDisplay {
-          type: ListWidget
-          x: centered
-          y: 5 below NameDisplay
 
-          width: WrapContent
-          height: ExpandToParent
-
-          listItemArchetype: "Inventory.Item"
-          listItemBinding: "CraftingMenu.selectedRecipeOption.outputs -> item"
-        }
         ConfirmButton {
           type: TextDisplay
 
@@ -177,6 +168,18 @@ CraftingMenu {
 
           showing: "%(CraftingMenu.selectedRecipeOption.selected)"
           background.image: "ui/buttonBackground.png"
+        }
+
+        OutputDisplay {
+          type: ListWidget
+          x: centered
+          y: 5 below NameDisplay
+
+          width: WrapContent
+          height: ExpandToConfirmButton
+
+          listItemArchetype: "Inventory.Item"
+          listItemBinding: "CraftingMenu.selectedRecipeOption.outputs -> item"
         }
       }
     }
@@ -248,7 +251,7 @@ IngredientSlot {
       x: centered
       y: 5 below IngredientImage
 
-      text: "%(recipeSlot.name)"
+      text: "%(recipeSlot.displayName)"
       showing: "%(recipeSlot.showName)"
     }
   }

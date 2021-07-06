@@ -7,6 +7,7 @@ import resources
 import strutils
 import strformat
 import options
+import sugar
 
 type
   Taxon* = ref object
@@ -15,13 +16,28 @@ type
     namespace*: string
     parents*: seq[Taxon]
 
+  ProtoTaxon* = object
+    name*: string
+    namespace*: string
+    parents*: seq[string]
+
   Taxonomy* = object
     idCounter: int
     taxonsByNameAndNamespace: Table[(string, string), Taxon]
     taxonsByName: Table[string, seq[Taxon]]
     namespaceParents: Table[string, string]
 
+  TaxonomyLoader* = object
+    loadTaxonsFrom*: proc (cv: ConfigValue) : seq[ProtoTaxon] {.gcsafe.}
 
+
+var TaxonomyLoaderCount = 0
+var TaxonomyLoaders: array[10,ptr TaxonomyLoader]
+
+proc addTaxonomyLoader*(t: TaxonomyLoader) =
+  TaxonomyLoaders[TaxonomyLoaderCount] = cast[ptr TaxonomyLoader](allocShared(sizeof(TaxonomyLoader)))
+  TaxonomyLoaders[TaxonomyLoaderCount][] = t
+  TaxonomyLoaderCount.inc
 
 const RootNamespace = "root"
 var UnknownThing* {.threadvar.}: Taxon
@@ -65,10 +81,16 @@ proc `==`*(a, b: seq[Taxon]): bool =
 
 
 proc hash*(a: Taxon): Hash =
-  a.id.hash
+  if a.isNil:
+    0.hash
+  else:
+    a.id.hash
 
 proc `$`*(a: Taxon): string =
-  a.namespace.replace(" ", "_") & "." & a.name.replace(" ", "_")
+  if a == nil:
+    "nil"
+  else:
+    a.namespace.replace(" ", "_") & "." & a.name.replace(" ", "_")
 
 proc `$`*(a: seq[Taxon]): string =
   result = "["
@@ -87,10 +109,13 @@ proc normalizeTaxonStr(s: string): string =
     prevPunctOrSpace = (c == '.' or c == ' ')
 
 proc displayName*(t: Taxon): string =
-  result = t.name
-  for i in 0 ..< result.len:
-    if i == 0 or result[i-1] == ' ':
-      result[i] = result[i].toUpperAscii
+  if t.isNil:
+    result = "Unknown"
+  else:
+    result = t.name
+    for i in 0 ..< result.len:
+      if i == 0 or result[i-1] == ' ':
+        result[i] = result[i].toUpperAscii
 
 proc taxon*(t: ref Taxonomy, namespace: string, name: string, warnOnAbsence: bool = true): Taxon {.gcsafe.} =
   let name = normalizeTaxonStr(name)
@@ -222,6 +247,20 @@ proc load(taxonomy: ref Taxonomy) {.gcsafe.} =
         for parentK in v["isA"].asArr:
           parents.add(taxonomy.taxon(namespace, parentK.asStr))
         discard taxonomy.addTaxon(namespace, name, parents)
+
+  for v in conf["TaxonomySources"].asArr:
+    let sourcePath = v.asStr
+    let sourceConf = resources.config(sourcePath)
+    for i in 0 ..< TaxonomyLoaderCount:
+      for t in TaxonomyLoaders[i].loadTaxonsFrom(sourceConf):
+        var parents : seq[Taxon]
+        for p in t.parents:
+          let norm = normalizeTaxonStr(p)
+          if taxonomy.taxonsByName.contains(norm):
+            parents.add(taxonomy.taxonsByName[norm])
+          else:
+            warn &"Could not resolve parent when using custom taxon loader {p}"
+        discard taxonomy.addTaxon(t.namespace, t.name, parents)
 
 
 
