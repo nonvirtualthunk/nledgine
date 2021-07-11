@@ -31,7 +31,7 @@ type
     Bottom
 
   NineWayImage* = object
-    image*: Bindable[ImageLike]
+    image*: Bindable[ImageRef]
     pixelScale*: int32
     drawCenter*: bool
     dimensionDelta*: Vec2i
@@ -374,7 +374,7 @@ proc imageMetricsFor*(img: Image): ImageMetrics =
 
 proc isIntrinsic*(dim: WidgetDimension): bool = dim.kind == WidgetDimensionKind.Intrinsic
 
-proc nineWayImage*(img: ImageLike, pixelScale: int = 1, color: RGBA = rgba(1.0f, 1.0f, 1.0f, 1.0f), edges: set[WidgetEdge] = AllEdges): NineWayImage =
+proc nineWayImage*(img: ImageRef, pixelScale: int = 1, color: RGBA = rgba(1.0f, 1.0f, 1.0f, 1.0f), edges: set[WidgetEdge] = AllEdges): NineWayImage =
   NineWayImage(
     image: bindable(img),
     pixelScale: pixelScale.int32,
@@ -1026,7 +1026,7 @@ iterator nineWayImageQuads*(nwi: NineWayImage, inDim: Vec2i, pixelScale: int, al
   let offset = vec3f(nwi.dimensionDelta.x * nwi.pixelScale * pixelScale * -1, nwi.dimensionDelta.y * nwi.pixelScale * pixelScale * -1, 0)
   let dim = inDim + nwi.dimensionDelta * nwi.pixelScale * pixelScale * 2
   let img = nwi.image.asImage
-  let imgLike = imageLike(img)
+  let imgLike = imageRef(img)
   let imgMetrics = imageMetricsFor(img)
 
   let fwd = vec3f(1, 0, 0)
@@ -1344,7 +1344,7 @@ proc readFromConfig*(cv: ConfigValue, e: var WidgetDimension) =
       warn &"Invalid config for widget position : {cv}"
 
 proc readFromConfig*(cv: ConfigValue, e: var NineWayImage) =
-  readIntoOrElse(cv["image"], e.image, bindable(imageLike("ui/minimalistBorder.png")))
+  readIntoOrElse(cv["image"], e.image, bindable(imageRef("ui/minimalistBorder.png")))
   readIntoOrElse(cv["pixelScale"], e.pixelScale, 1.int32)
   readIntoOrElse(cv["color"], e.color, bindable(rgba(255, 255, 255, 255)))
   readIntoOrElse(cv["edgeColor"], e.edgeColor, bindable(rgba(255, 255, 255, 255)))

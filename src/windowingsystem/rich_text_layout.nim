@@ -1,6 +1,6 @@
 import rich_text
 import worlds/taxonomy
-import graphics/image_extras
+import graphics/images
 import windowing_rendering
 import glm
 import prelude
@@ -140,7 +140,7 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
               forward = vec2f(1.0f, 0.0f)
             ),
             texCoords: simpleTexCoords(false, true),
-            image: imageLike(img),
+            image: imageRef(img),
             color: subColor,
             beforeChildren: true), not isWhitespace, runeIndex)
           cursor.x = (pos.x.int + img.width).int32 + 1

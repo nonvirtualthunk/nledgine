@@ -46,7 +46,7 @@ Items {
   Twigs {
     durability: 10
     weight: 20-30
-    fuel: 100
+    fuel: 225
     flags {
       Tinder: 1
     }
@@ -58,7 +58,7 @@ Items {
   Bark {
     description: "The tough outer material of a tree"
     weight: 40-60
-    fuel: 150
+    fuel: 300
     durability: 12
     transforms : [
       {
@@ -99,7 +99,7 @@ Items {
     description: "Thin strips of bark"
     weight: 20-30
     durability: 8
-    fuel: 75
+    fuel: 100
     flags {
       Cordage : 1
       Tinder: 2
@@ -107,6 +107,13 @@ Items {
 
     image: "survival/graphics/items/plants/stripped_bark.png"
     stackable: true
+
+    recipe {
+      name: "strip bark"
+      recipeTemplate: Carve
+      ingredients.Ingredient: Items.Bark
+      count: 2
+    }
   }
 
   Branch {
@@ -243,6 +250,13 @@ Items {
     image: "survival/graphics/items/material/dowels.png"
     stackable: true
 
+    recipe {
+      name: "carve wooden dowels"
+      recipeTemplate: Carve
+      ingredients {
+        Ingredient : Items.WoodPole
+      }
+    }
   }
 
   WoodStake {
@@ -265,35 +279,6 @@ Items {
       recipeTemplate: Carve
       ingredients {
         Ingredient : Items.WoodPole
-      }
-    }
-  }
-
-  FireDrill {
-    weight: 500
-    durability: 30
-    flags {
-      Wood: 1
-
-    }
-    actions {
-      Ignite: 1
-    }
-
-    image: "survival/graphics/items/tool/fire_drill.png"
-
-    recipe {
-      name: "craft fire drill"
-      recipeTemplate: Assemble
-      ingredients {
-        Base: {
-          specifiers: [Flags.Flat, Flags.Wood, Flags.Inflammable]
-          operator: AND
-        }
-        Attachment {
-          specifiers: [Flags.Wood, Flags.Pointed, Flags.Sturdy]
-          operator: AND
-        }
       }
     }
   }
@@ -382,6 +367,14 @@ Items {
 
   RoastedCarrot: ${Items.RoastedVegetable} {
     image: "survival/graphics/items/plants/roasted_carrot.png"
+
+    recipe {
+      name: "roast carrot"
+      specializationOf: Recipes.RoastedVegetable
+      recipeTemplate: Roast
+      ingredients.Ingredient : Items.CarrotRoot
+      outputs: Items.RoastedCarrot
+    }
   }
 
 
@@ -412,8 +405,58 @@ Items {
     stackable: true
   }
 
-  Axe {
-    weight: 1000
+  FireDrill {
+    weight: 500
+    durability: 30
+    flags {
+      Wood: 1
+
+    }
+    actions {
+      Ignite: 1
+    }
+
+    image: "survival/graphics/items/tool/fire_drill.png"
+
+    recipe {
+      name: "craft fire drill"
+      recipeTemplate: Assemble
+      ingredients {
+        Base: {
+          specifiers: [Flags.Flat, Flags.Wood, Flags.Inflammable]
+          operator: AND
+        }
+        Attachment {
+          specifiers: [Flags.Wood, Flags.Pointed, Flags.Sturdy]
+          operator: AND
+        }
+      }
+    }
+  }
+
+  StoneAxeHead {
+    weight: 250
+    durability: 20
+    flags {
+      AxeHead: 1
+      Stone: 1
+    }
+
+    actions {
+      Cut: 1
+    }
+
+    images: "survival/graphics/items/tool/axe_head.png"
+
+    recipe {
+      name: "carve stone axe head"
+      recipeTemplate: Carve
+      ingredients.Ingredient: Flags.Stone
+    }
+  }
+
+  StoneAxe {
+    weight: 2000
     durability: 100
     flags {
       Tool: 1
@@ -427,5 +470,61 @@ Items {
     }
 
     image: "survival/graphics/items/tool/axe.png"
+
+    recipe {
+      name: "craft axe"
+      recipeTemplate: Assemble
+      ingredients {
+        Base: {
+          specifiers: [Flags.Pole, Flags.Sturdy]
+          operator: AND
+        }
+        Attachment {
+          specifiers: [Flags.Stone, Flags.AxeHead]
+          operator: AND
+        }
+        Binding {
+          specifiers: Flags.Binding
+        }
+      }
+    }
+  }
+
+  RoughString {
+    weight: 50
+    durability: 10
+    flags {
+      Binding: 1
+    }
+
+    image: "survival/graphics/items/material/string.png"
+
+    recipe {
+      name: "braid string"
+      recipeTemplate: Combine
+      ingredients {
+        Ingredient: [
+          {
+            specifiers: Flags.Cordage
+          },
+          {
+            specifiers: Flags.Cordage
+          }
+        ]
+      }
+    }
+
+    stackable: true
+  }
+
+  Ash {
+    weight: 40
+    durability: 5
+    flags {
+      Ash: 1
+    }
+
+    image: "survival/graphics/items/material/ash.png"
+    stackable: true
   }
 }

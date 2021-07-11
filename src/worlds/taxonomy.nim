@@ -67,8 +67,9 @@ proc getGlobalTaxonomy(): ref Taxonomy =
 
 
 proc `==`*(a, b: Taxon): bool =
-  if a.isNil or b.isNil:
-    a.isNil and b.isNil
+  # treat nil as equivalent to UnknownThing (id == 0)
+  if a.isNil or b.isNil or a.id == 0 or b.id == 0:
+    (a.isNil or a.id == 0) and (b.isNil or b.id == 0)
   else:
     a.id == b.id
 

@@ -546,6 +546,7 @@ proc render*(command: var DrawCommand; cameras: seq[Camera], framebufferSize: Ve
 
   command.shader.uniformMat4["ModelViewMatrix"] = command.camera.modelviewMatrix()
   command.shader.uniformMat4["ProjectionMatrix"] = command.camera.projectionMatrix(framebufferSize)
+  command.shader.uniformFloats["CurrentTime"] = time
 
   bindVertexArray(glVaoIDs[command.vao])
   checkGLError()
@@ -603,31 +604,45 @@ proc render*(command: var DrawCommand; cameras: seq[Camera], framebufferSize: Ve
       glTextureRevisions[tex.id] = tex.revision
       checkGLError()
 
-
+  # TODO: cache and do not set these if they remain constant
   for k, v in command.shader.uniformMat4:
     var tmp = v
-    glUniformMatrix4fv(lookupUniformLocation(command.shader.id, shader, k).GLint, 1, false, tmp.caddr)
+    let loc = lookupUniformLocation(command.shader.id, shader, k).GLint
+    if loc != -1:
+      glUniformMatrix4fv(loc, 1, false, tmp.caddr)
     checkGLError()
   for k, v in command.shader.uniformVec4:
     var tmp = v
-    glUniform4fv(lookupUniformLocation(command.shader.id, shader, k).GLint, 1, tmp.caddr)
+    let loc = lookupUniformLocation(command.shader.id, shader, k).GLint
+    if loc != -1:
+      glUniform4fv(loc, 1, tmp.caddr)
     checkGLError()
   for k, v in command.shader.uniformVec3:
     var tmp = v
-    glUniform3fv(lookupUniformLocation(command.shader.id, shader, k).GLint, 1, tmp.caddr)
+    let loc = lookupUniformLocation(command.shader.id, shader, k).GLint
+    if loc != -1:
+      glUniform3fv(loc, 1, tmp.caddr)
     checkGLError()
   for k, v in command.shader.uniformVec2:
     var tmp = v
-    glUniform2fv(lookupUniformLocation(command.shader.id, shader, k).GLint, 1, tmp.caddr)
+    let loc = lookupUniformLocation(command.shader.id, shader, k).GLint
+    if loc != -1:
+      glUniform2fv(loc, 1, tmp.caddr)
     checkGLError()
   for k, v in command.shader.uniformFloats:
-    glUniform1f(lookupUniformLocation(command.shader.id, shader, k).GLint, v)
+    let loc = lookupUniformLocation(command.shader.id, shader, k).GLint
+    if loc != -1:
+      glUniform1f(loc, v)
     checkGLError()
   for k, v in command.shader.uniformBools:
-    glUniform1i(lookupUniformLocation(command.shader.id, shader, k).GLint, v.GLint)
+    let loc = lookupUniformLocation(command.shader.id, shader, k).GLint
+    if loc != -1:
+      glUniform1i(loc, v.GLint)
     checkGLError()
   for k, v in command.shader.uniformInts:
-    glUniform1i(lookupUniformLocation(command.shader.id, shader, k).GLint, v.GLint)
+    let loc = lookupUniformLocation(command.shader.id, shader, k).GLint
+    if loc != -1:
+      glUniform1i(loc, v.GLint)
     checkGLError()
 
   if command.renderSettings.depthTestEnabled:

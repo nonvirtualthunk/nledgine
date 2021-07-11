@@ -92,11 +92,31 @@ type
     reducedBy*: int
     newDurability*: int
 
+  DamageTakenEvent* = ref object of GameEvent
+    entity*: Entity
+    damageTaken*: int
+    source*: Entity
+    reason*: string
+
   WorldAdvancedEvent* = ref object of GameEvent
     tick*: Ticks
 
   VisionChangedEvent* = ref object of GameEvent
     entity*: Entity
+
+  IgnitedEvent* = ref object of GameEvent
+    actor*: Entity
+    target*: Target
+    tool*: Entity
+
+  ExtinguishedEvent* = ref object of GameEvent
+    extinguishedEntity*: Entity
+
+  FailedToIgniteEvent* = ref object of GameEvent
+    actor*: Entity
+    target*: Target
+    tool*: Entity
+    reason*: string
 
 
 eventToStr(PlantCreatedEvent)
@@ -118,6 +138,9 @@ eventToStr(CouldNotPlaceItemEvent)
 eventToStr(FoodEatenEvent)
 eventToStr(VisionChangedEvent)
 eventToStr(DurabilityReducedEvent)
+eventToStr(IgnitedEvent)
+eventToStr(FailedToIgniteEvent)
+eventToStr(ExtinguishedEvent)
 
 method toString*(evt: WorldInitializedEvent): string =
    return &"WorldInitializedEvent{$evt[]}"

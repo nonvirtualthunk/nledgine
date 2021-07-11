@@ -1,5 +1,5 @@
 import glm except vec2
-import images
+import image_core
 import unicode
 import tables
 import os
@@ -27,7 +27,7 @@ import stb_image/write as stbi
 type
   ArxTypeface* = ref object
     typeface* : Typeface
-    glyphLibrary*: Table[(Rune,int), images.Image]
+    glyphLibrary*: Table[(Rune,int), image_core.Image]
     pixelFont*: bool
     baseSize*: int
 
@@ -46,7 +46,7 @@ proc loadArxTypeface*(path: string) : ArxTypeface =
   )
 
 
-proc glyphImage*(f: ArxFont, r: Rune) : images.Image =
+proc glyphImage*(f: ArxFont, r: Rune) : image_core.Image =
   if f.arxTypeface.glyphLibrary.contains((r, f.font.size.int)):
     f.arxTypeface.glyphLibrary[(r, f.font.size.int)]
   else:

@@ -11,7 +11,7 @@ import graphics/color
 import options
 import reflect
 import resources
-import graphics/image_extras
+import graphics/images
 import glm
 import random
 import times
@@ -47,34 +47,36 @@ type
     name*: string
     displayName*: string
     description*: string
-    icon*: ImageLike
+    icon*: ImageRef
     showName*: bool
     selected*: bool
     selectedItem*: ItemInfo
     count*: int
+    index*: int # when there is more than 1 slot of the same name (i.e. distinct ingredients), which index is this
 
   RecipeOption* = object
     recipe*: Taxon
     name*: string
-    icon*: ImageLike
+    icon*: ImageRef
     selected*: bool
 
 
   RecipeTemplateInfo* = object
     kind*: Taxon
     name*: string
-    icon*: ImageLike
-    selectedIcon*: ImageLike
+    icon*: ImageRef
+    selectedIcon*: ImageRef
     selected*: bool
 
-proc toInfo(name: string, slot: RecipeSlot): RecipeSlotInfo =
+proc toInfo(name: string, slot: RecipeSlot,index: int = 0): RecipeSlotInfo =
   RecipeSlotInfo(
     slotKind: slot.kind,
     displayName: name.fromCamelCase.capitalize,
     name: name,
     icon: image("survival/icons/blank.png"),
     showName: true,
-    count: slot.count
+    count: if slot.`distinct`: 1 else: slot.count,
+    index: index
   )
 
 proc currentChoices(cm: CraftingMenu) : Table[string, RecipeInputChoice] =
@@ -83,7 +85,10 @@ proc currentChoices(cm: CraftingMenu) : Table[string, RecipeInputChoice] =
     # todo: actually deal with counts other than 1
     for i in 0 ..< min(max(s.count,1), s.selectedItem.itemEntities.len):
       items.add(s.selectedItem.itemEntities[i])
-    result[s.name] = RecipeInputChoice(items: items)
+    if not result.contains(s.name):
+      result[s.name] = RecipeInputChoice(items: items)
+    else:
+      result[s.name].items.add(items)
 
 proc selectedRecipeOption(cm: CraftingMenu): Option[Taxon] =
   for ro in cm.recipeOptions:
@@ -139,6 +144,9 @@ proc recalculateOutcomes(cm: CraftingMenu, world: LiveWorld) =
 
 proc selectCandidate(cm: CraftingMenu, world: LiveWorld, slot: var RecipeSlotInfo, item: ItemInfo) =
   slot.selectedItem = item
+  slot.selectedItem.count = min(slot.selectedItem.count, max(slot.count, 1))
+  if slot.selectedItem.itemEntities.len > max(slot.selectedItem.count, 1):
+    slot.selectedItem.itemEntities.setLen(max(slot.selectedItem.count, 1))
   slot.icon = item.icon
 
   cm.widget.bindValue("CraftingMenu.recipeSlots", cm.recipeSlotInfo)
@@ -148,13 +156,20 @@ proc selectCandidate(cm: CraftingMenu, world: LiveWorld, slot: var RecipeSlotInf
 
 proc selectRecipeSlot*(cm: CraftingMenu, world: LiveWorld, slot: var RecipeSlotInfo) =
   for s in cm.recipeSlotInfo.mitems:
-    if s.name != slot.name:
-      s.selected = false
+    s.selected = false
   slot.selected = true
 
+  # gather all the entities that are in use by any of the slots
+  var entitiesAlreadyInUse : HashSet[Entity]
+  for s in cm.recipeSlotInfo:
+    entitiesAlreadyInUse.incl(s.selectedItem.itemEntities)
+  # and exclude any in use by this specific recipe slot, we can still show those
+  entitiesAlreadyInUse.excl(slot.selectedItem.itemEntities)
+
+  let accessibleEntities = entitiesAccessibleForCrafting(world, cm.player)
 
   let selectedName = slot.name
-  cm.candidateItemInfo = constructItemInfo(world, cm.player, (w,e) => matchesAnyRecipeInSlot(w, cm.player, recipeTemplate(cm.activeTemplate), selectedName, e))
+  cm.candidateItemInfo = constructItemInfo(world, accessibleEntities, (w,e) => not entitiesAlreadyInUse.contains(e) and matchesAnyRecipeInSlot(w, cm.player, recipeTemplate(cm.activeTemplate), selectedName, e))
   cm.widget.bindValue("CraftingMenu.candidateItems", cm.candidateItemInfo)
 
   cm.widget.bindValue("CraftingMenu.recipeSlots", cm.recipeSlotInfo)
@@ -164,6 +179,10 @@ proc selectRecipeSlot*(cm: CraftingMenu, world: LiveWorld, slot: var RecipeSlotI
 proc updateRecipeSlotSelections*(cm: CraftingMenu, world: LiveWorld) =
   var selectedName = ""
   let rt = recipeTemplate(cm.activeTemplate)
+
+
+  let accessibleEntities = entitiesAccessibleForCrafting(world, cm.player)
+
   for slot in cm.recipeSlotInfo.mitems:
     let slotName = slot.name
     if slot.selected:
@@ -174,14 +193,15 @@ proc updateRecipeSlotSelections*(cm: CraftingMenu, world: LiveWorld) =
         selectCandidate(cm, world, slot, ItemInfo(icon: image("survival/icons/blank.png")))
 
     if slot.selectedItem.itemEntities.isEmpty:
-      # if there's only one valid match here, automatically select it
-      var matchingItemInfo = constructItemInfo(world, cm.player, (w,e) => matchesAnyRecipeInSlot(w, cm.player, recipeTemplate(cm.activeTemplate), slotName, e))
-      # could add other distinctions on how to choose which tool to use
-      if matchingItemInfo.len == 1 or (matchingItemInfo.nonEmpty and slot.slotKind != RecipeSlotKind.Ingredient):
-        selectCandidate(cm, world, slot, matchingItemInfo[0])
+      # if there's only one valid match here and it's not an ingredient (i.e. tool or location), automatically select it
+      if slot.slotKind != RecipeSlotKind.Ingredient:
+        var matchingItemInfo = constructItemInfo(world, accessibleEntities, (w,e) => matchesAnyRecipeInSlot(w, cm.player, recipeTemplate(cm.activeTemplate), slotName, e))
+        # could add other distinctions on how to choose which tool to use
+        if matchingItemInfo.len == 1 or (matchingItemInfo.nonEmpty and slot.slotKind != RecipeSlotKind.Ingredient):
+          selectCandidate(cm, world, slot, matchingItemInfo[0])
 
   if selectedName != "":
-    cm.candidateItemInfo = constructItemInfo(world, cm.player, (w,e) => matchesAnyRecipeInSlot(w, cm.player, recipeTemplate(cm.activeTemplate), selectedName, e))
+    cm.candidateItemInfo = constructItemInfo(world, accessibleEntities, (w,e) => matchesAnyRecipeInSlot(w, cm.player, recipeTemplate(cm.activeTemplate), selectedName, e))
     cm.widget.bindValue("CraftingMenu.candidateItems", cm.candidateItemInfo)
 
 proc selectTemplate*(cm: CraftingMenu, world: LiveWorld, recipeTemplateKind: Taxon) =
@@ -195,7 +215,11 @@ proc selectTemplate*(cm: CraftingMenu, world: LiveWorld, recipeTemplateKind: Tax
   let rt = recipeTemplate(recipeTemplateKind)
   cm.recipeSlotInfo.setLen(0)
   for name, slot in rt.recipeSlots:
-    cm.recipeSlotInfo.add( toInfo(name, slot) )
+    if slot.`distinct`:
+      for i in 0 ..< slot.count:
+        cm.recipeSlotInfo.add( toInfo(name, slot, i) )
+    else:
+      cm.recipeSlotInfo.add( toInfo(name, slot) )
 
   updateRecipeSlotSelections(cm, world)
 
@@ -259,6 +283,8 @@ proc onEvent*(cm: CraftingMenu, world: LiveWorld, display: DisplayWorld, event: 
         for s in cm.recipeSlotInfo.mitems:
           if s.selected:
             selectCandidate(cm, world, s, cm.candidateItemInfo[index])
+      elif originatingWidget.isDescendantOf("OptionsList"):
+        selectRecipeOption(cm, world, cm.recipeOptions[index])
     extract(WidgetMouseRelease, originatingWidget):
       if originatingWidget.isSelfOrDescendantOf("ConfirmButton"):
         if cm.hypotheticalCreatedEntities.nonEmpty and selectedRecipeOption(cm).isSome:

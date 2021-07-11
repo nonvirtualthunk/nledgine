@@ -1,70 +1,122 @@
-import images
+import image_core
 import resources
 import config/config_core
 import glm
+import prelude
+import arxregex
+import strutils
+import noto
 
 type
-   ImageLikeKinds = enum
-      Sentinel
-      ImageRef
-      Path
-   Imagelike* = object
-      case kind: ImageLikeKinds
-      of ImageRef: img: Image
-      of Path: path: string
-      of Sentinel: discard
+  ImageRefKinds = enum
+    Sentinel
+    ImageObj
+    Path
+
+  ImageRef* = object
+    case kind: ImageRefKinds
+    of ImageObj: img: Image
+    of Path: path: string
+    of Sentinel: discard
+
+  Animation* = object
+    image*: ImageRef
+    frameCount*: int
+    frameDuration*: UnitOfTime
+
+
+  ImageLikeKind* {.pure.} = enum
+    Sentinel
+    Image
+    Animation
+
+  ImageLike* = object
+    case kind: ImageLikeKind
+    of ImageLikeKind.Sentinel: discard
+    of ImageLikeKind.Image: image: ImageRef
+    of ImageLikeKind.Animation: animation: Animation
 
 var sentinelImage {.threadvar.}: Image
 
-proc `==`*(a, b: ImageLike): bool =
-   a.kind == b.kind and
-   (case a.kind:
-      of ImageRef: a.img == b.img
-      of Path: a.path == b.path
-      of Sentinel: true)
+proc `==`*(a, b: ImageRef): bool =
+  a.kind == b.kind and
+  (case a.kind:
+    of ImageObj: a.img == b.img
+    of Path: a.path == b.path
+    of Sentinel: true)
 
-proc imageLike*(img: Image): ImageLike = ImageLike(kind: ImageRef, img: img)
-proc imageLike*(img: string): ImageLike =
-   if img != "":
-      ImageLike(kind: Path, path: img)
-   else:
-      ImageLike(kind: Sentinel)
+proc imageRef*(img: Image): ImageRef = ImageRef(kind: ImageObj, img: img)
+proc imageRef*(img: string): ImageRef =
+  if img != "":
+    ImageRef(kind: Path, path: img)
+  else:
+    ImageRef(kind: Sentinel)
 
-proc preload*(img: ImageLike) =
-   case img.kind:
-   of ImageLikeKinds.Path: preloadImage(img.path)
-   else: discard
+proc preload*(img: ImageRef) =
+  case img.kind:
+  of ImageRefKinds.Path: preloadImage(img.path)
+  else: discard
 
-proc `$`*(img: ImageLike): string =
-   case img.kind:
-   of ImageLikeKinds.Sentinel: "SentinelImage"
-   of ImageLikeKinds.ImageRef: $img.img
-   of ImageLikeKinds.Path: "ImageAt(" & img.path & ")"
+proc `$`*(img: ImageRef): string =
+  case img.kind:
+  of ImageRefKinds.Sentinel: "SentinelImage"
+  of ImageRefKinds.ImageObj: $img.img
+  of ImageRefKinds.Path: "ImageAt(" & img.path & ")"
 
-proc isNil*(img: ImageLike): bool = false
+proc isNil*(img: ImageRef): bool = false
 
-proc asImage*(il: ImageLike): Image =
-   case il.kind:
-   of ImageLikeKinds.ImageRef:
-      il.img
-   of ImageLikeKinds.Path:
-      image(il.path)
-   of ImageLikeKinds.Sentinel:
-      if sentinelImage == nil:
-         sentinelImage = new Image
-         sentinelImage = createImage(vec2i(1, 1))
-         sentinelImage.sentinel = true
-      sentinelImage
+proc asImage*(il: ImageRef): Image =
+  case il.kind:
+  of ImageRefKinds.ImageObj:
+    il.img
+  of ImageRefKinds.Path:
+    image(il.path)
+  of ImageRefKinds.Sentinel:
+    if sentinelImage == nil:
+      sentinelImage = createImage(vec2i(1, 1))
+      sentinelImage.sentinel = true
+    sentinelImage
+
+proc readFromConfig*(cv: ConfigValue, img: var ImageRef) =
+  if cv.nonEmpty:
+    img = imageRef(cv.asStr)
+
+
+const timeRegex = "([0-9.]+)\\s?([a-z]+)".re
+proc readFromConfig*(cv: ConfigValue, anim: var Animation) =
+  if cv.nonEmpty:
+    cv["image"].readInto(anim.image)
+    cv["frameCount"].readInto(anim.frameCount)
+    let durcv = cv["frameDuration"]
+    if durcv.isStr:
+      matcher(durcv.asStr):
+        extractMatches(timeRegex, amountStr, unit):
+          let amount = amountStr.parseFloat
+          case unit.toLowerAscii:
+            of "s", "second", "seconds": anim.frameDuration = amount.seconds
+            else: warn &"Unknown units for duration: {unit}"
+        warn &"Unknown format for frame duration: {durcv}"
+    else:
+      warn &"Unknown format for frame duration: {durcv}"
+
+
+
 
 proc readFromConfig*(cv: ConfigValue, img: var ImageLike) =
-   if cv.nonEmpty:
-      img = imageLike(cv.asStr)
+  if cv.isStr:
+    img = ImageLike(kind: ImageLikeKind.Image, image: readInto(cv, ImageRef))
+  else:
+    if cv.hasField("frameCount"):
+      img = ImageLike(kind: ImageLikeKind.Animation, animation: readInto(cv, Animation))
+    else:
+      img = ImageLike(kind: ImageLikeKind.Image, image: readInto(cv, ImageRef))
 
-converter toImage*(il: ImageLike): Image =
-   asImage(il)
 
-converter toImageLike*(img: Image): ImageLike = ImageLike(kind: ImageRef, img: img)
-converter toImageLike*(img: string): ImageLike = ImageLike(kind: Path, path: img)
+converter toImage*(il: ImageRef): Image =
+  asImage(il)
 
-proc isEmpty*(img: ImageLike): bool = img.kind == ImageLikeKinds.Sentinel
-proc isSentinel*(img: ImageLike): bool = img.kind == ImageLikeKinds.Sentinel
+converter toImageRef*(img: Image): ImageRef = ImageRef(kind: ImageObj, img: img)
+converter toImageRef*(img: string): ImageRef = ImageRef(kind: Path, path: img)
+
+proc isEmpty*(img: ImageRef): bool = img.kind == ImageRefKinds.Sentinel
+proc isSentinel*(img: ImageRef): bool = img.kind == ImageRefKinds.Sentinel

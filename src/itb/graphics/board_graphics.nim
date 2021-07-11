@@ -8,7 +8,7 @@ import options
 import prelude
 import reflect
 import resources
-import graphics/image_extras
+import graphics/images
 import glm
 import random
 import times

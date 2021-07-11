@@ -15,6 +15,7 @@ Recipes {
 
   RoastedCarrot {
     name: "roasted carrot"
+    specializationOf: Recipes.RoastedVegetable
     recipeTemplate: Roast
     ingredients {
       Ingredient {

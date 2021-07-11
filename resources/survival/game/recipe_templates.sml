@@ -48,19 +48,23 @@ RecipeTemplates {
     ingredients {
       Ingredient {
         description: "what to roast over the fire"
+        requirement: "!Flags.Roasted"
       }
     }
 
     foodContribution: 1.34
     flagContribution: {
       Edible: 1.0
-      Root: 1.0
       Vegetable: 1.0
       Meat: 1.0
     }
     durabilityContribution: 0.75
     decayContribution: 1.34
     weightContribution: 0.9
+
+    addFlags {
+      Roasted: 1
+    }
   }
 
   Assemble {
@@ -79,6 +83,24 @@ RecipeTemplates {
       }
       Attachment {
         description: "What to attach to the base"
+      }
+    }
+  }
+
+  Combine {
+    # Braid stripped bark into string
+    # Braid string into rope
+    # Weave string into cloth
+    #
+    description: Meld multiple items together into a stronger whole
+    icon: "survival/graphics/recipes/braid.png"
+    selectedIcon: "survival/graphics/recipes/braid_selected.png"
+
+    ingredients {
+      Ingredient {
+        description: "what to combine"
+        count: 2
+        distinct: true
       }
     }
   }

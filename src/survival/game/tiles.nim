@@ -4,9 +4,8 @@ import worlds
 import game/library
 import options
 import survival/game/survival_core
-import graphics/image_extras
+import graphics/images
 import config
-import config/config_helpers
 import resources
 import sets
 import glm
@@ -29,9 +28,9 @@ type
     # resources that this tile may have
     resources* : seq[ResourceYield]
     # images to display the tile
-    images*: seq[ImageLike]
+    images*: seq[ImageRef]
     # images to display the tile as a wall
-    wallImages*: seq[ImageLike]
+    wallImages*: seq[ImageRef]
 
   TileLayer* = object
     # what kind of tile layer is this
@@ -131,7 +130,18 @@ proc layers*(t: var Tile, kind: TileLayerKind): var seq[TileLayer] =
       return t.ceilingLayers
 
 
+iterator tilesInRange*(world: LiveWorld, reg: Entity, center: Vec3i, range: int): ptr Tile =
+  let range2 = range * range
+  let region = reg[Region]
+  for dx in -range .. range:
+    for dy in -range .. range:
+      if dx*dx + dy*dy < range2:
+        yield tilePtr(region, center.x + dx, center.y + dy, center.z)
+
 proc entitiesAt*(r: ref Region, v: Vec3i): seq[Entity] = tile(r, v.x, v.y, v.z).entities
+
+proc entitiesAt*(world: LiveWorld, region: Entity, position: Vec3i) : seq[Entity] =
+  tile(region, position).entities
 
 proc regionFor*(world: LiveWorld, e: Entity): Entity =
   if e.hasData(Physical):

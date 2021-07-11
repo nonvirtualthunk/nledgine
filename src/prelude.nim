@@ -251,6 +251,14 @@ proc nonEmpty*[K, V](t: Table[K, V]): bool = t.len != 0
 proc nonEmpty*[K](t: HashSet[K]): bool = t.len != 0
 proc isEmpty*[K](t: HashSet[K]): bool = t.len == 0
 
+proc incl*[K](t: var HashSet[K], s: seq[K]) =
+  for v in s:
+    t.incl(v)
+
+proc excl*[K](t: var HashSet[K], s: seq[K]) =
+  for v in s:
+    t.excl(v)
+
 proc hasChanged*[T](w: var Watcher[T]): bool =
   if w.lastValue.isNone:
     w.lastValue = some(w.function())
@@ -496,3 +504,4 @@ template anyMatchIt*[T](s : seq[T], stmts) : bool =
       break
 
   result
+

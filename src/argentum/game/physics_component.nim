@@ -4,7 +4,7 @@ import game/grids
 import glm
 import tables
 import windowingsystem/windowing_system_core
-import graphics/image_extras
+import graphics/images
 import graphics/color
 import resources
 import patty

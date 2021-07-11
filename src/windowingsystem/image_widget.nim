@@ -1,6 +1,6 @@
 import windowing_system_core
 import config
-import graphics/image_extras
+import graphics/images
 import graphics/color
 import reflect
 import options
@@ -31,11 +31,11 @@ type
 
   ConditionalImage = object
     condition: Bindable[bool]
-    image: Bindable[ImageLike]
+    image: Bindable[ImageRef]
 
   ImageDisplay* = object
     widget*: Widget
-    image*: Bindable[ImageLike]
+    image*: Bindable[ImageRef]
     conditionalImage*: seq[ConditionalImage]
     scale*: ImageDisplayScale
     color*: Bindable[RGBA]
@@ -73,7 +73,7 @@ proc readFromConfig*(cv: ConfigValue, v: var ConditionalImage) =
     warn &"Unsupported config format for conditional image section: {cv}"
 
 proc readFromConfig*(cv: ConfigValue, v: var ImageDisplay) =
-  readIntoOrElse(cv["image"], v.image, bindable(imageLike("images/defaultium.png")))
+  readIntoOrElse(cv["image"], v.image, bindable(imageRef("images/defaultium.png")))
   readIntoOrElse(cv["conditionalImage"], v.conditionalImage, @[])
   readIntoOrElse(cv["scale"], v.scale, ImageDisplayScale(kind: Scale, scale: 1.0))
   readIntoOrElse(cv["fractionalScaling"], v.fractionalScaling, false)
@@ -83,7 +83,7 @@ proc readFromConfig*(cv: ConfigValue, v: var ImageDisplay) =
 defineDisplayReflection(ImageDisplay)
 
 
-proc effectiveImage*(ID: ref ImageDisplay) : ImageLike =
+proc effectiveImage*(ID: ref ImageDisplay) : ImageRef =
   result = ID.image.value
   for ci in ID.conditionalImage:
     if ci.condition.value:

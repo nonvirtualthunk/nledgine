@@ -4,6 +4,7 @@ import strutils
 import noto
 import worlds/taxonomy
 import worlds/identity
+import arxregex
 
 proc readFromConfig*(cv: ConfigValue, v: var HorizontalAlignment) =
    if cv.isStr:
@@ -69,6 +70,20 @@ proc readFromConfig*(cv: ConfigValue, v: var BooleanOperator) =
 
 proc writeToConfig*(t: Taxon) : ConfigValue =
   asConf(&"{t.namespace}.{t.name}")
+
+
+const timeRegex = "([0-9.]+)\\s?([a-z]+)".re
+proc readFromConfig*(cv: ConfigValue, v: var UnitOfTime) =
+  if cv.isStr:
+    matcher(cv.asStr):
+      extractMatches(timeRegex, amountStr, unit):
+        let amount = amountStr.parseFloat
+        case unit.toLowerAscii:
+          of "s", "second", "seconds": v = amount.seconds
+          else: warn &"Unknown unit of time: {unit}"
+      warn &"Unknown format for unit of time: {cv.asStr}"
+  else:
+    warn &"Unknown config value for unit of time: {cv}"
 
 
 defineSimpleReadFromConfig(Identity)

@@ -695,7 +695,15 @@ macro data*(entity: Entity, t: typedesc): untyped =
 
 macro attachData*(entity: Entity, t: typed): untyped =
   result = quote do:
-    injectedWorld.attachData(`entity`, `t`)
+    when declared(injectedWorld):
+      injectedWorld.attachData(`entity`, `t`)
+    elif declared(world):
+      when world is LiveWorld:
+        world.attachData(`entity`, `t`)
+      else:
+        {.error: ("implicit access of attachData must be in a withWorld(...) block").}
+    else:
+      {.error: ("implicit access of data[] must be in a withWorld(...) block").}
 
 macro attachData*[T](entity: DisplayEntity, t: T): untyped =
   let dataTypeIdent = newIdentNode(t[0].strVal & "Type")
@@ -827,6 +835,10 @@ proc hasData*[C] (world: LiveWorld, entity: Entity, dataType: DataType[C]): bool
   var dc = (DataContainer[C])world.dataContainers[dataType.index]
   dc.dataStore.contains(entity.id)
 
+proc hasData*[C] (world: LiveWorld, entity: Entity, dataType: typedesc[C]): bool =
+  var dc = (DataContainer[C])world.dataContainers[dataType.getDataType().index]
+  dc.dataStore.contains(entity.id)
+
 
 proc data*[C] (world: LiveWorld, dataType: DataType[C]): ref C =
   data(world, WorldEntity, dataType)
@@ -864,6 +876,7 @@ template ifHasData*[C] (world: LiveWorld, entity: Entity, t: typedesc[C], v : un
   let `v` {.inject.} = dc.dataStore.getOrDefault(entity.id, nil)
   if `v` != nil:
     `stmts`
+
 
 template ifHasData*[C] (entity: Entity, t: typedesc[C], v : untyped, stmts: untyped) =
   when declared(injectedWorld):

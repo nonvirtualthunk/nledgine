@@ -11,7 +11,7 @@ import graphics/color
 import options
 import reflect
 import resources
-import graphics/image_extras
+import graphics/images
 import glm
 import random
 import times
@@ -33,7 +33,7 @@ import survival_display_core
 type
   ItemInfo* = object
     kind*: Taxon
-    icon*: Imagelike
+    icon*: ImageRef
     name*: string
     count*: int
     countStr*: string
@@ -56,8 +56,10 @@ proc constructItemInfo*(world: LiveWorld, items: seq[Entity], filter: (LiveWorld
   var indexesByTaxon : Table[Taxon,int]
   let lib = library(ItemKind)
 
-  proc itemInfo(t: Taxon, k: ref ItemKind): ItemInfo =
-    let img = if k.images.nonEmpty:
+  proc itemInfo(t: Taxon, item: Entity, k: ref ItemKind): ItemInfo =
+    let img = if item.hasData(Fire) and item[Fire].active:
+      image("survival/graphics/effects/fire_c_24.png")
+    elif k.images.nonEmpty:
       k.images[0]
     else:
       image("images/unknown.png")
@@ -69,12 +71,12 @@ proc constructItemInfo*(world: LiveWorld, items: seq[Entity], filter: (LiveWorld
       if filter(world, item):
         let itemKindTaxon = item[Identity].kind
         let itemKind = lib[itemKindTaxon]
-        var itemInfoIdx = if itemKind.stackable:
+        var itemInfoIdx = if itemKind.stackable and (not item.hasData(Fire) or not item[Fire].active):
           indexesByTaxon.getOrCreate(itemKindTaxon):
-            result.add(itemInfo(itemKindTaxon, itemKind))
+            result.add(itemInfo(itemKindTaxon, item, itemKind))
             result.len - 1
         else:
-          result.add(itemInfo(itemKindTaxon, itemKind))
+          result.add(itemInfo(itemKindTaxon, item, itemKind))
           result.len - 1
 
         let count = result[itemInfoIdx].count + 1

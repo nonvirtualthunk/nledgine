@@ -87,9 +87,6 @@ proc readFromConfig*(cv: ConfigValue, v: var FlagInfo) =
       else:
         v.targetEquivalences.add(FlagEquivalence(flag: equivalentTo, adder: add, multiplier: mul * mulAmount))
 
-  if v.targetEquivalences.nonEmpty:
-    info &"{v.taxon} : {v.targetEquivalences}: {v.equivalences}"
-
 
 
 proc postProcessEquivalencies(lib: Library[FlagInfo]) =
@@ -142,6 +139,11 @@ proc flagValues*(view: WorldView, entity: Entity): Table[Taxon, int] =
   view.data(entity, Flags).flags
 
 
+proc flagValue*(world: LiveWorld, entity: Entity, flag: Taxon): int =
+  if hasData(world, entity, Flags):
+    flagValue(entity[Flags], flag)
+  else:
+    0
 
 proc keyedFlagValues*(flags: ref Flags, flag: string): Table[Taxon, int] =
   let flag = taxon("flags", flag)

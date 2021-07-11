@@ -1,4 +1,3 @@
-import config/config_helpers
 import rich_text
 import graphics
 import graphics/fonts
@@ -174,7 +173,7 @@ method render*(ws: ChartDisplayRenderer, widget: Widget): seq[WQuad] =
                                  finalizePos(toWPos(scaledPoints[i]) + vec3f(-hlw, -hlw, 0.0f)),
                               ]),
                texCoords: simpleTexCoords(),
-               image: imageLike(oval),
+               image: imageRef(oval),
                color: lineColor,
                beforeChildren: true))
 

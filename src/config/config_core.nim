@@ -110,8 +110,6 @@ proc asSeq*(v: ConfigValue): seq[ConfigValue] =
   case v.kind:
   of ConfigValueKind.Array:
     return v.values
-  of ConfigValueKind.Object:
-    return toSeq(v.fields.values)
   of ConfigValueKind.Empty:
     return @[]
   else:

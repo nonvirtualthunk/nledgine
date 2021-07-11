@@ -2,7 +2,6 @@ import game/library
 import worlds/taxonomy
 import options
 import images
-import image_extras
 import config
 import resources
 import strformat
@@ -11,7 +10,7 @@ export library
 
 type
    TaxonomyDisplay* = object
-      icon*: Option[ImageLike]
+      icon*: Option[ImageRef]
 
 defineSimpleReadFromConfig(TaxonomyDisplay)
 

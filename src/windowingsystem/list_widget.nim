@@ -1,4 +1,3 @@
-import config/config_helpers
 import graphics
 import windowing_system_core
 import options
@@ -11,6 +10,7 @@ import arxregex
 import noto
 import tables
 import worlds
+import engines/event_types
 
 type
    ListWidget* = object
@@ -41,6 +41,8 @@ type
 defineDisplayReflection(ListWidget)
 defineDisplayReflection(ListItemWidget)
 
+eventToStr(ListItemMouseOver)
+eventToStr(ListItemSelect)
 
 method updateBindings*(ws: ListWidgetComponent, widget: Widget, resolver: var BoundValueResolver) =
    if widget.hasData(ListWidget):

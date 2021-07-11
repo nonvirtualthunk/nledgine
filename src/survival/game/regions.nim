@@ -95,7 +95,7 @@ when isMainModule:
   import os
   import glm
   import game/library
-  import graphics/image_extras
+  import graphics/images
   import prelude
   import graphics/color
 

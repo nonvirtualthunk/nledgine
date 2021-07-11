@@ -1,6 +1,6 @@
 import windowing_system_core
 import config
-import graphics/image_extras
+import graphics/images
 import graphics/color
 import reflect
 import options
@@ -16,14 +16,14 @@ import arxmath
 
 type
   Divider* = object
-    image*: Bindable[ImageLike]
+    image*: Bindable[ImageRef]
     pixelScale*: int
     color*: Bindable[RGBA]
 
   DividerComponent* = ref object of WindowingComponent
 
 proc readFromConfig*(cv: ConfigValue, v: var Divider) =
-  readIntoOrElse(cv["image"], v.image, bindable(imageLike("ui/divider.png")))
+  readIntoOrElse(cv["image"], v.image, bindable(imageRef("ui/divider.png")))
   readIntoOrElse(cv["pixelScale"], v.pixelScale, 1)
   readIntoOrElse(cv["color"], v.color, bindable(rgba(0.25, 0.25, 0.25, 1.0)))
 

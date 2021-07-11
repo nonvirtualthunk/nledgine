@@ -9,7 +9,7 @@ import noto
 import options
 import config_core
 import graphics/color
-import graphics/image_extras
+import graphics/images
 import macros
 
 type
@@ -38,7 +38,7 @@ type
       of BoundValueKind.Seq: values*: seq[BoundValue]
       of BoundValueKind.Grid: gridValues*: seq[seq[BoundValue]]
       of BoundValueKind.Bool: truth: bool
-      of BoundValueKind.Image: image: ImageLike
+      of BoundValueKind.Image: image: ImageRef
       of BoundValueKind.Nested: nestedValues*: ref Table[string, BoundValue]
 
    Bindable*[T] = object
@@ -112,7 +112,7 @@ proc bindValue*(f: string): BoundValue = BoundValue(kind: BoundValueKind.Text, t
 proc bindValue*(f: int): BoundValue = BoundValue(kind: BoundValueKind.Number, number: f.toFloat)
 proc bindValue*(f: RGBA): BoundValue = BoundValue(kind: BoundValueKind.Color, color: f)
 proc bindValue*(f: RichText): BoundValue = BoundValue(kind: BoundValueKind.RichText, richText: f)
-proc bindValue*(f: ImageLike): BoundValue = BoundValue(kind: BoundValueKind.Image, image: f)
+proc bindValue*(f: ImageRef): BoundValue = BoundValue(kind: BoundValueKind.Image, image: f)
 proc bindValue*(f: Taxon): BoundValue = BoundValue(kind: BoundValueKind.Taxon, taxon: f)
 proc bindValue*[K, V](f: ref Table[K, V]): BoundValue = BoundValue(kind: BoundValueKind.Nested, nestedValue: f)
 proc bindValue*[K, V](f: Table[K, V]): BoundValue =
@@ -311,7 +311,7 @@ proc readFromConfig*(v: ConfigValue, b: var Bindable[RGBA]) =
    else:
       readInto(v, b.value)
 
-proc readFromConfig*(v: ConfigValue, b: var Bindable[ImageLike]) =
+proc readFromConfig*(v: ConfigValue, b: var Bindable[ImageRef]) =
    if v.isStr:
       if v.asStr.contains(stringBindingPattern):
          extractSimpleBindingPattern(v.asStr, b.bindingPattern)
@@ -422,16 +422,16 @@ proc updateBindingImpl(bindable: var Bindable[RGBA], boundValues: BoundValueReso
    else:
       false
 
-proc updateBindingImpl(bindable: var Bindable[ImageLike], boundValues: BoundValueResolver): bool =
+proc updateBindingImpl(bindable: var Bindable[ImageRef], boundValues: BoundValueResolver): bool =
    let bound = boundValues.resolve(bindable.bindingPattern)
    let newValue = case bound.kind:
    of BoundValueKind.Image:
       some(bound.image)
    of BoundValueKind.Empty:
-      none(ImageLike)
+      none(ImageRef)
    else:
-      warn &"Bound non-image value to Bindable[ImageLike]: {bound}"
-      none(ImageLike)
+      warn &"Bound non-image value to Bindable[ImageRef]: {bound}"
+      none(ImageRef)
    if newValue.isSome and bindable.value != newValue.get:
       bindable.value = newValue.get
       true
@@ -550,7 +550,7 @@ when isMainModule:
       nestedValue: NestedBindingObject
       colorValue: RGBA
       richBinding: RichText
-      imageValue: ImageLike
+      imageValue: ImageRef
 
    var container: BindContainer
    readInto(conf, container)
@@ -570,7 +570,7 @@ when isMainModule:
       ),
       colorValue: rgba(0.0f, 1.0f, 0.0f, 1.0f),
       richBinding: richText("simple rich text"),
-      imageValue: imageLike("fakepath.png")
+      imageValue: imageRef("fakepath.png")
    )
    let collectedBindings: ref Table[string, BoundValue] = newTable[string, BoundValue]()
    assert bindValueInto("a", bindingObj, collectedBindings)

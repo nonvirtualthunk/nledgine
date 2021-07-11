@@ -47,6 +47,7 @@ const TicksPerDay* = 12000
 const DaysPerSeason* = 13
 const SeasonsPerYear* = 4
 const TicksPerShortAction* = 20
+const TicksPerMediumAction* = 50
 const TicksPerLongAction* = 100
 
 proc `$`*(ticks: Ticks) : string =

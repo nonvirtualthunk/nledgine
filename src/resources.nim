@@ -1,12 +1,12 @@
 import tables
-import graphics/images
+import graphics/image_core
 import config/config_core
 import graphics/fonts
 import noto
 import options
 
 export config_core
-export images
+export image_core
 
 const ProjectName* {.strdefine.} : string = "project"
 

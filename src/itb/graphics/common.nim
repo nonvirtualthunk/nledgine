@@ -1,7 +1,7 @@
 import prelude
 import glm
 import graphics/canvas
-import graphics/image_extras
+import graphics/images
 import graphics/color
 import graphics
 import nimgl/opengl
@@ -35,7 +35,7 @@ type ITBQuad* = object
   position* : Vec2f
   layer*: int
   dimensions* : Vec2f
-  texture* : ImageLike
+  texture* : ImageRef
   color* : RGBA
   origin* : Vec2f
 

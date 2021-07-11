@@ -11,7 +11,7 @@ import graphics/color
 import options
 import reflect
 import resources
-import graphics/image_extras
+import graphics/images
 import glm
 import random
 import times
@@ -52,13 +52,13 @@ type
 
   ActionInfo = object
     kind: Taxon
-    icon: ImageLike
+    icon: ImageRef
     text: string
     shortcut: string
 
   QuickSlotInfo = object
     kind: Taxon
-    icon: ImageLike
+    icon: ImageRef
     showing: bool
     index: int
 
@@ -80,7 +80,7 @@ method initialize(g: PlayerControlComponent, world: LiveWorld, display: DisplayW
   let player = player(world)
 
   let ws = display[WindowingSystem]
-  ws.desktop.background.image = bindable(imageLike("ui/woodBorderTransparent.png"))
+  ws.desktop.background.image = bindable(imageRef("ui/woodBorderTransparent.png"))
 
   ws.desktop.createChild("hud", "VitalsWidget")
   let inventoryWidget = ws.desktop.createChild("Inventory", "InventoryWidget")
@@ -109,6 +109,8 @@ proc performAction(world: LiveWorld, display: DisplayWorld, player: Entity, targ
     placeItem(world, some(player), target, facedPosition(world, player), true)
   elif action == † Actions.Eat:
     eat(world, player, target)
+  elif action == † Actions.Ignite:
+    ignite(world, player, target, none(Target))
 
 
 proc naturalLanguageList*[T](s : seq[T], f : (T) -> string) : string =

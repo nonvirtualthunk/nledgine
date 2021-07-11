@@ -3,12 +3,11 @@ import game/randomness
 import worlds
 import game/library
 import glm
-import graphics/image_extras
+import graphics/images
 import core
 import tables
 import config
 import resources
-import config/config_helpers
 import sets
 import sequtils
 import patty
@@ -96,7 +95,7 @@ type
     # general size/weight, how much space it takes up in an inventory and how hard it is to move
     weight*: int32
     # images to display this entity on the map
-    images*: seq[ImageLike]
+    images*: seq[ImageRef]
     # abstraction over how close to destruction the entity is, may be replaced with higher fidelity later
     health*: Vital
     # when this entity was created in game ticks, used to calculate its age
@@ -168,9 +167,11 @@ type
     # how many tiles out the light will travel if uninterrupted
     brightness*: int
 
-  Combustable* = object
+  Fuel* = object
     # how many ticks of fuel this provides to a standard fire
     fuel*: Ticks
+    # the maximum ticks of fuel this provides in the event that it is possible to partially consume
+    maxFuel*: Ticks
 
   CreatureKind* = object
     health*: DiceExpression
@@ -184,7 +185,7 @@ type
     constitution*: DiceExpression
     baseMoveTime*: Ticks
     weight*: DiceExpression
-    images*: seq[ImageLike]
+    images*: seq[ImageRef]
     # resources that can be gathered from the creature while it is alive
     liveResources*: seq[ResourceYield]
     # resources that can only be gathered from the creature's corpse
@@ -192,7 +193,7 @@ type
 
   PlantGrowthStageInfo* = object
     # images for this stage of growth
-    images*: seq[ImageLike]
+    images*: seq[ImageRef]
     # the age in ticks at which the plant enters this stage
     startAge*: Ticks
     # the resources the plant yields at this stage
@@ -245,16 +246,18 @@ type
     decaysInto*: Option[Taxon]
     weight*: DiceExpression
     health*: DiceExpression
-    images*: seq[ImageLike]
+    images*: seq[ImageRef]
     occupiesTile*: bool
     flags*: Table[Taxon, int]
     fuel*: Ticks
     light*: Option[LightSource]
     food*: Option[FoodKind]
+    fire*: Option[Fire]
     # Whether individual items of this kind are sufficiently interchangeable that they
     # can be "stacked" when displayed rather than showing each individually
     stackable*: bool
     actions*: Table[Taxon, int]
+
 
   ActionKind* = object
     kind*: Taxon
@@ -279,6 +282,9 @@ type
     optional*: bool
     # how many items go into this slot
     count*: int
+    # whether the items in this slot should be treated individually (ingredients in a stew) or collectively (bricks in a wall)
+    # a distinct slot allows you to treat it as many slots with a common definition
+    `distinct`*: bool
 
   ContributionKind* {.pure.} = enum
     Additive
@@ -300,8 +306,8 @@ type
   RecipeTemplate* = object
     taxon*: Taxon
     description*: string
-    icon*: ImageLike
-    selectedIcon*: ImageLike
+    icon*: ImageRef
+    selectedIcon*: ImageRef
     # Inputs (ingredients, tools, locations) that can be required by recipes that use this template
     # i.e. Cooking needs an ingredient to cook, cookware (tool) to cook with, and a fire (location) to cook over
     recipeSlots*: OrderedTable[string, RecipeSlot]
@@ -315,6 +321,8 @@ type
     flagContribution*: Table[Taxon, Contribution]
     # What weight from the ingredients are incorporated into the new output
     weightContribution*: Contribution
+    # Flags that are added to every item created from this template
+    addFlags*: Table[Taxon, int]
 
   RecipeOutput* = object
     # What item is produced
@@ -334,7 +342,7 @@ type
     # what other recipe this recipe is a specialization of (i.e. steel axe is a specialization of axe)
     specializationOf*: Taxon
     # further specification in the ingredient requirements that make this recipe get made when matched
-    ingredients*: Table[string, RecipeRequirement]
+    ingredients*: Table[string, seq[RecipeRequirement]]
     # what items are created as a result of this recipe
     outputs*: seq[RecipeOutput]
     # what skill is used in performing this recipe
@@ -365,8 +373,29 @@ type
     # from where this action comes, the player if it is innate, or a tool if it is not
     source*: Entity
 
+  # Used to track items that are on fire. Includes bonfires, clothes that got to close to bonfires, and creatures thrown into bonfires
+  Fire* = object
+    # whether this fire is actively aflame or if this is simply something that _could_ be lit
+    active*: bool
+    # how many ticks of fuel remain at standard consumption rate of 1 tick / tick. In the case of things that are not "supposed" to
+    # be on fire this represents the duration until the fire naturally goes out
+    fuelRemaining*: Ticks
+    # relative rate of fuel consumption, 1.0 being 1 tick per tick, 2.0 being double consumption speed. No value equates to 1.0
+    fuelConsumptionRate*: Option[float]
+    # how many ticks between durability loss to the entity that is aflame (optional, i.e. creatures on fire do not lose durability)
+    durabilityLossTime*: Option[Ticks]
+    # how many ticks between health loss to the entity that is aflame (optional, i.e. campfires are not "damaged" by fire)
+    healthLossTime*: Option[Ticks]
+    # what this can be fueled by (if not set then cannot be refueled, i.e. a stick cannot be "refueled" if it is half burned)
+    fueledBy*: Option[Taxon]
+    # images to use when ignited
+    activeImages*: seq[ImageLike]
+    # what this entity becomes when consumed by fire. If not specified the default will just be ash
+    burnsInto*: Option[Taxon]
 
 
+
+defineSimpleReadFromConfig(Fire)
 
 proc readFromConfig*(cv: ConfigValue, gm: var Contribution) =
   if cv.isStr:
@@ -423,7 +452,8 @@ proc readFromConfig*(cv: ConfigValue, r: var RecipeOutput) =
       r.count = 1
 
 
-const taxonPlusNumRe = "([a-zA-Z.]+)\\s?([0-9]+)?".re
+const taxonPlusNumRe = "([a-zA-Z0-9.]+)\\s?([0-9]+)?".re
+const excludeTaxonRe = "!\\s?([a-zA-Z0-9.]+)".re
 proc parseTaxonPlusNumber*(str: string) : Option[(Taxon, int)] =
   matcher(str):
     extractMatches(taxonPlusNumRe, taxonExpr, numExpr):
@@ -435,6 +465,12 @@ proc parseTaxonPlusNumber*(str: string) : Option[(Taxon, int)] =
         if numExpr.len > 0:
           num = numExpr.parseInt
         return some((t, num))
+    extractMatches(excludeTaxonRe, taxonExpr):
+      let t = findTaxon(taxonExpr)
+      if t == UnknownThing:
+        warn &"Recipe requirement looking for unknown taxon: {taxonExpr}"
+      else:
+        return some((t, -1))
     warn &"Recipe requirement had invalid formatted string: {str}"
   none((Taxon,int))
 
@@ -493,6 +529,7 @@ proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["occupiesTile"].readInto(ik.occupiesTile)
   cv["fuel"].readInto(ik.fuel)
   cv["food"].readInto(ik.food)
+  cv["fire"].readInto(ik.fire)
   cv["stackable"].readInto(ik.stackable)
   let flags = cv["flags"]
   if flags.isObj:
@@ -513,7 +550,8 @@ defineReflection(Physical)
 defineReflection(Item)
 defineReflection(Inventory)
 defineReflection(Food)
-defineReflection(Combustable)
+defineReflection(Fuel)
+defineReflection(Fire)
 
 
 const DirectionVectors* = [vec2i(0,0), vec2i(-1,0), vec2i(0,1), vec2i(1,0), vec2i(0,-1)]
@@ -556,7 +594,7 @@ defineLibrary[Recipe]:
           ri.outputs.add(
             RecipeOutput(
               item: itemKey,
-              count: 1
+              count: v["recipe"]["count"].asInt(1)
             )
           )
         lib[key] = ri
@@ -568,6 +606,7 @@ proc itemKind*(kind: Taxon) : ref ItemKind = library(ItemKind)[kind]
 proc actionKind*(kind: Taxon) : ref ActionKind = library(ActionKind)[kind]
 proc creatureKind*(kind: Taxon) : ref CreatureKind = library(CreatureKind)[kind]
 proc recipeTemplate*(kind: Taxon): ref RecipeTemplate = library(RecipeTemplate)[kind]
+proc recipeTemplateFor*(recipe: ref Recipe): ref RecipeTemplate = recipeTemplate(recipe.recipeTemplate)
 proc recipe*(kind: Taxon): ref Recipe = library(Recipe)[kind]
 
 
@@ -578,7 +617,6 @@ addTaxonomyLoader(TaxonomyLoader(
       var r : seq[ProtoTaxon]
       for key, item in cv["Items"].pairsOpt:
         if item["recipe"].nonEmpty:
-          info &"Generating proto taxon: {key}"
           r.add(ProtoTaxon(namespace: "Recipes", name: key, parents : @["Recipe"]))
       r
 ))
@@ -648,6 +686,36 @@ proc updateRecoveryAndLoss*(v: var Vital, tick: Ticks) : Ticks =
 
   Ticks(interval)
 
+proc applyContribution*(con: Contribution, cur: int, arg: int) : int =
+  case con.kind:
+    of ContributionKind.Additive: cur + (arg.float * con.fraction).int
+    of ContributionKind.Max: max(cur, arg)
+    of ContributionKind.Min: min(cur, arg)
+
+proc applyContribution*(con: Contribution, cur: int32, arg: int32) : int32 =
+  case con.kind:
+    of ContributionKind.Additive: cur + (arg.float * con.fraction).int32
+    of ContributionKind.Max: max(cur, arg)
+    of ContributionKind.Min: min(cur, arg)
+    
+proc applyContribution*(con: Contribution, cur: float, arg: float) : float =
+  case con.kind:
+    of ContributionKind.Additive: cur + (arg.float * con.fraction).float
+    of ContributionKind.Max: max(cur, arg)
+    of ContributionKind.Min: min(cur, arg)
+
+proc applyContribution*(con: Contribution, cur: Ticks, arg: Ticks) : Ticks =
+  case con.kind:
+    of ContributionKind.Additive: cur + (arg.int.float * con.fraction).int.Ticks
+    of ContributionKind.Max: max(cur.int, arg.int).Ticks
+    of ContributionKind.Min: min(cur.int, arg.int).Ticks
+
+proc applyContribution*[T](con: Contribution, cur: Reduceable[T], arg: Reduceable[T]) : Reduceable[T] =
+  case con.kind:
+    of ContributionKind.Additive: reduceable(applyContribution(con, cur.maxValue, arg.currentValue))
+    of ContributionKind.Max: reduceable(max(cur.maxValue, arg.currentValue))
+    of ContributionKind.Min: reduceable(min(cur.maxValue, arg.currentValue))
+
 proc isEntityTarget*(target: Target) : bool =
   target.kind == TargetKind.Entity
 
@@ -657,6 +725,12 @@ proc isTileTarget*(target: Target) : bool =
       true
     else:
       false
+
+proc targetEntity*(entity: Entity): Target =
+  Target(kind: TargetKind.Entity, entity: entity)
+
+proc targetTile*(region: Entity, tilePos: Vec3i): Target =
+  Target(kind: TargetKind.Tile, region: region, tilePos: tilePos)
 
 proc positionOf*(world: LiveWorld, target: Target): Option[Vec3i] =
   case target.kind:

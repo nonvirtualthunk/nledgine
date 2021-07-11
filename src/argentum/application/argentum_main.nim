@@ -17,7 +17,6 @@ import core
 import worlds/gamedebug
 import strutils
 import graphics/cameras
-import graphics/image_extras
 import game/grids
 import graphics/canvas
 import argentum/game/physics_component

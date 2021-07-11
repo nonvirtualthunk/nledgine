@@ -26,7 +26,7 @@ Flags {
   }
   Tinder {
     description: "Easily flammable material that can help start a larger fire"
-    countsAs: Fuel
+    countsAs: [Fuel, Inflammable]
   }
   Seed {
     description: "The seed of a plant that can grow into a new mature one"
@@ -118,5 +118,14 @@ Flags {
   }
   Binding {
     description: "An item that can bind two things together"
+  }
+  Ash {
+    description: "The remnants of a burned thing"
+  }
+  Roasted {
+    description: "Roasted in a fire"
+  }
+  AxeHead {
+    description: "Sturdy blade suitable for attaching to a handle to make a rough cutting tool"
   }
 }

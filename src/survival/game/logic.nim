@@ -19,10 +19,22 @@ import tables
 import game/flags
 
 const MaxGatherTickIncrement = Ticks(100)
+const CraftingRange = 2
 
 type PlantCreationParameters* = object
   # optionally specified growth stage to create at, defaults to a random stage distributed evenly across total age
   growthStage*: Option[Taxon]
+
+
+
+
+
+# /+===================================================+\
+# ||               Predefinitions                      ||
+# \+===================================================+/
+proc destroySurvivalEntity*(world: LiveWorld, ent: Entity, bypassDestructiveCreation: bool = false)
+
+
 
 
 proc player*(world: LiveWorld) : Entity =
@@ -30,13 +42,15 @@ proc player*(world: LiveWorld) : Entity =
     return ent
   SentinelEntity
 
+
+
 proc debugIdentifier*(world: LiveWorld, entity: Entity) : string =
   if entity.hasData(Identity):
     let ID = entity[Identity]
     if ID.name.isSome:
-      ID.kind.displayName & ":" & ID.name.get
+      ID.kind.displayName & ":" & ID.name.get & "(" & $entity.id & ")"
     else:
-      ID.kind.displayName
+      ID.kind.displayName & "(" & $entity.id & ")"
   else:
     "Entity(" & $entity.id & ")"
 
@@ -67,10 +81,15 @@ proc createGatherableDataFromYields*(world: LiveWorld, ent: Entity, yields: seq[
 
 proc reduceDurability*(world: LiveWorld, ent: Entity, reduceBy: int) =
   if ent.hasData(Item):
-    world.eventStmts(DurabilityReducedEvent(entity: ent, reducedBy: reduceBy, newDurability: max(0, ent[Item].durability.currentValue - reduceBy))):
-      ent[Item].durability.reduceBy(reduceBy)
+    let evt = DurabilityReducedEvent(entity: ent, reducedBy: reduceBy, newDurability: max(0, ent[Item].durability.currentValue - reduceBy))
+    world.eventStmts(evt):
+      let item = ent[Item]
+      item.durability.reduceBy(reduceBy)
+      if item.durability.currentValue <= 0:
+        destroySurvivalEntity(world, ent)
   else:
     info &"reduceDurability() called on non-item: {ent}"
+
 
 
 proc createPlant*(world: LiveWorld, region: Entity, kind: Taxon, position: Vec3i, params: PlantCreationParameters = PlantCreationParameters()): Entity {.discardable.} =
@@ -206,11 +225,15 @@ proc createItem*(world: LiveWorld, region: Entity, itemKind: Taxon) : Entity =
       ))
 
     if ik.fuel > Ticks(0):
-      ent.attachData(Combustable(
-        fuel: ik.fuel
+      ent.attachData(Fuel(
+        fuel: ik.fuel,
+        maxFuel: ik.fuel
       ))
 
     ifPresent(ik.light):
+      ent.attachData(it)
+
+    ifPresent(ik.fire):
       ent.attachData(it)
 
     ent.attachData(Physical(
@@ -283,13 +306,40 @@ proc moveItemToInventory*(world: LiveWorld, item: Entity, toInventory: Entity) =
 proc canAccessForCrafting*(world: LiveWorld, entity: Entity, item: Entity) : bool =
   # if we're holding the item, we can definitely access it
   if item.hasData(Item):
-    if item[Item].heldBy == some(entity):
-      return true
-  elif item.hasData(Physical):
-    if distance(world, entity, item) <= 2:
+    if item[Item].heldBy.isSome:
+      let heldBy = item[Item].heldBy.get
+      if heldBy == entity:
+        return true
+      else:
+        # if we can access its container we can access it
+        return canAccessForCrafting(world, entity, heldBy)
+
+  if item.hasData(Physical):
+    if distance(world, entity, item) <= CraftingRange:
       return true
 
   false
+
+proc recursivelyExpandInventoryIncludingSelf(world: LiveWorld, entity: Entity, into : var seq[Entity]) =
+  if entity.hasData(Item):
+    into.add(entity)
+
+  if entity.hasData(Inventory):
+    for item in entity[Inventory].items:
+      recursivelyExpandInventoryIncludingSelf(world, item, into)
+
+proc entitiesAccessibleForCrafting*(world: LiveWorld, actor: Entity): seq[Entity] =
+  recursivelyExpandInventoryIncludingSelf(world, actor, result)
+
+  for tile in tilesInRange(world, regionFor(world, actor), actor[Physical].position, CraftingRange):
+    for entity in tile.entities:
+      if entity != actor:
+        recursivelyExpandInventoryIncludingSelf(world, entity, result)
+
+
+
+
+
 
 
 proc resourceYieldFor*(world: LiveWorld, target: Target, rsrc: GatherableResource): ResourceYield =
@@ -343,13 +393,12 @@ proc effectiveGatherLevelFor*(rYield: ResourceYield, actions: Table[Taxon, Actio
   else:
     none((ActionUse,float))
 
-proc destroySurvivalEntity*(world: LiveWorld, entity: Entity) =
-  world.eventStmts(EntityDestroyedEvent(entity: entity)):
-    ifHasData(entity, Physical, phys):
-      removeItemFromGroundInternal(world, entity)
-      removeItemFromInventoryInternal(world, entity)
-      phys.region[Region].entities.excl(entity)
-      phys.region = SentinelEntity
+
+
+proc isSurvivalEntityDestroyed*(world: LiveWorld, entity: Entity) : bool =
+  ifHasData(entity, Physical, phys):
+    return phys.region == SentinelEntity
+  false
 
 proc destroyTileLayer*(world: LiveWorld, region: Entity, tilePos: Vec3i, layerKind: TileLayerKind, index: int) =
   world.eventStmts(TileLayerDestroyedEvent(region: region, tilePosition: tilePos, layerKind: layerKind, layerIndex: index)):
@@ -368,6 +417,38 @@ proc destroyTarget*(world: LiveWorld, target: Target) =
     else:
       err &"Trying to destroy invalid target {target}"
       discard
+
+
+# Place an entity in the same location as an existing entity, either inside an inventory
+# or on the ground, as appropriate
+proc placeEntityWith*(world: LiveWorld, ent: Entity, with: Entity) =
+  if with.hasData(Item) and with[Item].heldBy.isSome:
+    if ent.hasData(Item):
+      moveItemToInventory(world, ent, with[Item].heldBy.get)
+    else:
+      placeItem(world, none(Entity), ent, with[Item].heldBy.get[Physical].position, true)
+  elif with.hasData(Physical):
+    placeItem(world, none(Entity), ent, with[Physical].position, with[Physical].capsuled)
+  else:
+    warn &"Placing entity with another makes no sense if the other is non-physical: {debugIdentifier(world, ent)}, {debugIdentifier(world, with)}"
+
+
+
+
+# Do damage to the health of the given entity, returns true if that entity was destroyed in the process
+# Note that when an entity is destroyed its data is no longer accessible from the world
+proc damageEntity*(world: LiveWorld, ent: Entity, damageAmount: int, reason: string) : bool =
+  if ent.hasData(Physical):
+    world.eventStmts(DamageTakenEvent(entity: ent, damageTaken: damageAmount, reason: reason)):
+      let phys = ent[Physical]
+      phys.health.reduceBy(damageAmount)
+      if phys.health.currentValue <= 0:
+        destroySurvivalEntity(world, ent)
+
+    ent[Physical].region == SentinelEntity
+  else:
+    info &"damageEntity() called on non-physical entity: {debugIdentifier(world, ent)}"
+    false
 
 
 
@@ -508,6 +589,9 @@ proc possibleActions*(world: LiveWorld, actor: Entity, target: Entity) : seq[Tax
   result.add(† Actions.Place)
   if target.hasData(Food):
     result.add(† Actions.Eat)
+  if target.hasData(Item):
+    let item = target[Item]
+    result.add(toSeq(item.actions.keys))
 
 
 
@@ -516,13 +600,30 @@ proc matchesRequirement*(world: LiveWorld, actor: Entity, req: RecipeRequirement
   if req.specifiers.isEmpty:
     true
   else:
+    # Special case for disallowing items that are on fire, unless fire is explicitly allowed
+    if item.hasData(Fire) and item[Fire].active:
+      var fireOk = false
+      for specifier in req.specifiers:
+        if specifier == † Flags.Fire:
+          fireOk = true
+          break
+      if not fireOk:
+        return false
+
     for specifier in req.specifiers:
       let matchesSpecifier = if specifier.isA(† Flag):
         if item.hasData(Flags):
           let flagValue = item[Flags].flagValue(specifier)
-          flagValue > 0 and flagValue >= req.minimumLevel:
+          if req.minimumLevel >= 0:
+            flagValue > 0 and flagValue >= req.minimumLevel
+          else:
+            flagValue <= 0
         else:
-          false
+          # Negative value indicates that the flag must not be present
+          if req.minimumLevel < 0:
+            true
+          else:
+            false
       elif specifier.isA(† Action):
         item.hasData(Item) and item[Item].actions.getOrDefault(specifier) >= max(req.minimumLevel, 1)
       else:
@@ -541,19 +642,48 @@ proc matchesRequirement*(world: LiveWorld, actor: Entity, req: RecipeRequirement
     else:
       false
 
+
+func eachMatchedAtLeastOnce(matchesByItem: seq[set[int8]], usedItems: set[int8], remainingReqs : set[int8], numReqs: int) : bool =
+  if remainingReqs == {}:
+    true
+  else:
+    for ri in 0 ..< numReqs:
+      if remainingReqs.contains(ri.int8):
+        for ii in 0 ..< matchesByItem.len:
+          # we haven't already used this item and it is a match for this requirement
+          if not usedItems.contains(ii.int8) and matchesByItem[ii].contains(ri.int8):
+            if eachMatchedAtLeastOnce(matchesByItem, usedItems + {ii.int8}, remainingReqs - {ri.int8}, numReqs):
+              return true
+    false
+
+
+
 # Assumes that you have already checked that this matches the recipe template
 proc matchesRecipe*(world: LiveWorld, actor: Entity, recipe: ref Recipe, ingredients: Table[string, RecipeInputChoice]) : bool =
-  for slotKey, requirement in recipe.ingredients:
+  let recipeTemplate = recipeTemplateFor(recipe)
+  for slotKey, requirements in recipe.ingredients:
     let choice = ingredients.getOrDefault(slotKey)
     # if this recipe specifies a requirement for this slot, but there are no items in it (i.e. an optional slot) then don't match
     if choice.items.isEmpty:
       return false
 
     # ensure that every item chosen matches the requirements
-    for item in choice.items:
-      if not matchesRequirement(world, actor, requirement, item):
-        return false
-
+    let isDistinct = recipeTemplate.recipeSlots[slotKey].`distinct`
+    if isDistinct:
+      # in the case of distinct slots we want to make sure that each of the specified requirements
+      # is matched by at least one of the items
+      var requirementsMatchedByItem : seq[set[int8]]
+      for itemIndex in 0 ..< choice.items.len:
+        requirementsMatchedByItem.add({})
+        for reqIndex in 0 ..< requirements.len:
+          if matchesRequirement(world, actor, requirements[reqIndex], choice.items[itemIndex]):
+            requirementsMatchedByItem[itemIndex].incl(reqIndex.int8)
+      return eachMatchedAtLeastOnce(requirementsMatchedByItem, {}, {0.int8 .. (requirements.len.int8-1)}, requirements.len)
+    else:
+      for item in choice.items:
+        for req in requirements:
+          if not matchesRequirement(world, actor, req, item):
+            return false
 
 
   true
@@ -577,13 +707,30 @@ proc matchesRecipeTemplate*(world: LiveWorld, actor: Entity, recipeTemplate: ref
   true
 
 
+proc recursivelyAddSpecializations(r: ref Recipe, set: var HashSet[Taxon]) =
+  if r.specializationOf != UnknownThing:
+    set.incl(r.specializationOf)
+    recursivelyAddSpecializations(recipe(r.specializationOf), set)
 
 
 proc matchingRecipes*(world: LiveWorld, actor: Entity, recipeTemplate: ref RecipeTemplate, ingredients: Table[string, RecipeInputChoice]) : seq[ref Recipe] =
   if matchesRecipeTemplate(world, actor, recipeTemplate, ingredients):
+    # track all the general recipes that have a more specific version that matches so we can ignore the general case
+    var generalRecipesWithSpecificMatch : HashSet[Taxon]
+    var matchingRecipes : seq[ref Recipe]
+
     for recipe in recipesForTemplate(recipeTemplate):
       if matchesRecipe(world, actor, recipe, ingredients):
-        result.add(recipe)
+        matchingRecipes.add(recipe)
+        recursivelyAddSpecializations(recipe, generalRecipesWithSpecificMatch)
+
+    matchingRecipes.filterIt(not generalRecipesWithSpecificMatch.contains(it.taxon))
+  else:
+    @[]
+
+
+
+
 
 
 # Returns true if there is any recipe for which the given item would be a valid match for the listed slot key
@@ -592,8 +739,20 @@ proc matchesAnyRecipeInSlot*(world: LiveWorld, actor: Entity, recipeTemplate: re
     warn &"recipe template does not have slot it advertized? {slot}"
   if recipeTemplate.recipeSlots.hasKey(slot) and matchesSlot(world, actor, recipeTemplate.recipeSlots[slot], item):
     for recipe in recipesForTemplate(recipeTemplate):
-      if not recipe.ingredients.hasKey(slot) or matchesRequirement(world, actor, recipe.ingredients[slot], item):
+      if not recipe.ingredients.hasKey(slot):
         return true
+      else:
+        if recipeTemplate.recipeSlots[slot].`distinct`:
+          for req in recipe.ingredients[slot]:
+            if matchesRequirement(world, actor, req, item):
+              return true
+        else:
+          var matchesAll = true
+          for req in recipe.ingredients[slot]:
+            if not matchesRequirement(world, actor, req, item):
+              matchesAll = false
+          if matchesAll:
+            return true
   false
 
 
@@ -610,21 +769,61 @@ proc craftItem*(world: LiveWorld, actor: Entity, recipeTaxon: Taxon, ingredients
   let recipe = recipe(recipeTaxon)
   let recipeTemplate = recipeTemplate(recipe.recipeTemplate)
   if matchesRecipe(world, actor, recipe, ingredients):
+    var results : seq[Entity]
+    for output in recipe.outputs:
+      for i in 0 ..< output.count:
+        let createdItem = createItem(world, region, output.item)
+        if not createdItem.hasData(Flags):
+          createdItem.attachData(Flags())
+        for flag,v in recipeTemplate.addFlags:
+          createdItem[Flags].flags[flag] = v
+
+        results.add(createdItem)
+
+    # Apply all of the contributions that the ingredients make to the final object
     for k, ingredient in ingredients:
       let slot = recipeTemplate.recipeSlots[k]
+      if slot.kind == RecipeSlotKind.Ingredient:
+        let foodCon = recipe.foodContribution.get(recipeTemplate.foodContribution)
+        let durCon = recipe.durabilityContribution.get(recipeTemplate.durabilityContribution)
+        let decayCon = recipe.decayContribution.get(recipeTemplate.decayContribution)
+        let weightCon = recipe.weightContribution.get(recipeTemplate.weightContribution)
+        var flagCon = recipe.flagContribution
+        for k,v in recipeTemplate.flagContribution:
+          flagCon[k] = v
+
+        for output in results:
+          for ingredient in ingredient.items:
+            if output.hasData(Food) and ingredient.hasData(Food):
+              let outFood = output[Food]
+              let inFood = ingredient[Food]
+              outFood.hunger = applyContribution(foodCon, outFood.hunger, inFood.hunger)
+              outFood.stamina = applyContribution(foodCon, outFood.stamina, inFood.stamina)
+              outFood.hydration = applyContribution(foodCon, outFood.hydration, inFood.hydration)
+              outFood.sanity = applyContribution(foodCon, outFood.sanity, inFood.sanity)
+              outFood.health = applyContribution(foodCon, outFood.health, inFood.health)
+            if output.hasData(Item) and ingredient.hasData(Item):
+              output[Item].durability = applyContribution(durCon, output[Item].durability, ingredient[Item].durability)
+            if output.hasData(Item) and ingredient.hasData(Item):
+              output[Item].decay = applyContribution(decayCon, output[Item].decay, ingredient[Item].decay)
+            if output.hasData(Physical) and ingredient.hasData(Physical):
+              output[Physical].weight = applyContribution(weightCon, output[Physical].weight, ingredient[Physical].weight)
+            if output.hasData(Flags) and ingredient.hasData(Flags):
+              let outFlags = output[Flags]
+              let inFlags = ingredient[Flags]
+              for k,v in flagCon:
+                outFlags.flags[k] = applyContribution(v, outFlags.flags.getOrDefault(k), inFlags.rawFlagValue(k))
+
+
+
       if not hypothetical:
         # Ingredients are consumed, tools are used (durability), and locations just... chill
         if slot.kind == RecipeSlotKind.Ingredient:
           for item in ingredient.items:
-            destroySurvivalEntity(world, item)
+            destroySurvivalEntity(world, item, bypassDestructiveCreation = true)
         elif slot.kind == RecipeSlotKind.Tool:
           for item in ingredient.items:
             reduceDurability(world, item, 1)
-
-    var results : seq[Entity]
-    for output in recipe.outputs:
-      for i in 0 ..< output.count:
-        results.add(createItem(world, region, output.item))
 
     if not hypothetical:
       # Todo: modify by skill
@@ -662,6 +861,84 @@ proc eat*(world: LiveWorld, actor: Entity, target: Entity) : bool {.discardable.
     false
 
 
+# If a target is supplied, will attempt to ignite that. If not, will attempt to ignite whatever is in front of the actor
+proc ignite*(world: LiveWorld, actor: Entity, tool: Entity, targetSpecified: Option[Target]) =
+  let region = regionFor(world, actor)
+  let target: Target = if targetSpecified.isSome:
+    targetSpecified.get
+  else:
+    let facedPos = facedPosition(world, actor)
+    let entities = entitiesAt(world, actor[Physical].region, facedPos)
+    if entities.nonEmpty:
+      targetEntity(entities[^1])
+    else:
+      targetTile(region, facedPos)
+
+  case target.kind:
+    of TargetKind.Entity:
+      let targetEnt = target.entity
+
+      if targetEnt.hasData(Fire):
+        let fire = targetEnt[Fire]
+        if not fire.active:
+          world.eventStmts(IgnitedEvent(actor: actor, target: target, tool: tool)):
+            fire.active = true
+        else:
+          world.addFullEvent(FailedToIgniteEvent(actor: actor, target: target, tool: tool, reason: "already on fire"))
+      elif flagValue(world, targetEnt, † Flags.Inflammable) > 0:
+        if targetEnt.hasData(Item) and targetEnt.hasData(Fuel):
+          world.eventStmts(IgnitedEvent(actor: actor, target: target, tool: tool)):
+            targetEnt.attachData(Fire(
+              active: true,
+              fuelRemaining: targetEnt[Fuel].fuel + 1,
+              durabilityLossTime: some((targetEnt[Fuel].maxFuel.int div targetEnt[Item].durability.maxValue).Ticks)
+            ))
+        else:
+          warn &"Logic for setting a non-(item+fuel) that is inflammable (but without specific burning qualities) aflame is not fleshed out {debugIdentifier(world, targetEnt)}"
+          world.eventStmts(IgnitedEvent(actor: actor, target: target, tool: tool)):
+            targetEnt.attachData(Fire(
+              active: true,
+              fuelRemaining: 100.Ticks,
+              healthLossTime: some(10.Ticks),
+              durabilityLossTime: some(10.Ticks)
+            ))
+      else:
+        world.addFullEvent(FailedToIgniteEvent(actor: actor, target: target, tool: tool, reason: "is not flammable"))
+    else:
+      world.addFullEvent(FailedToIgniteEvent(actor: actor, target: target, tool: tool, reason: "is not implemented yet"))
+
+  advanceWorld(world, TicksPerMediumAction.Ticks)
+
+
+
+
+
+proc destroySurvivalEntity*(world: LiveWorld, ent: Entity, bypassDestructiveCreation: bool = false) =
+  world.eventStmts(EntityDestroyedEvent(entity: ent)):
+    if ent.hasData(Physical):
+      let phys = ent[Physical]
+      if not phys.region.isSentinel: # this indicates an entity has already been destroyed
+        if not bypassDestructiveCreation:
+          if ent.hasData(Creature):
+            ent[Creature].dead = true
+            # TODO: Create corpse
+          elif ent.hasData(Fire) and ent[Fire].active:
+            let burnsInto = ent[Fire].burnsInto.get(† Items.Ash)
+            let newItem = createItem(world, phys.region, burnsInto)
+            placeEntityWith(world, newItem, ent)
+          elif ent.hasData(Item):
+            let item = ent[Item]
+            if item.breaksInto.isSome:
+              let newItem = createItem(world, phys.region, item.breaksInto.get)
+              placeEntityWith(world, newItem, ent)
+
+        removeItemFromGroundInternal(world, ent)
+        removeItemFromInventoryInternal(world, ent)
+        phys.region[Region].entities.excl(ent)
+        phys.region = SentinelEntity
+    else:
+      warn &"No current means of destroying non-physical entity {debugIdentifier(world, ent)}"
+
 
 when isMainModule:
   let lib = library(PlantKind)
@@ -679,7 +956,7 @@ when isMainModule:
       let plantEnt = createPlant(world, region, oakTaxon, vec3i(0,0,0), PlantCreationParameters())
 
     let log = createItem(world, region, † Items.Log)
-    let axe = createItem(world, region, † Items.Axe)
+    let axe = createItem(world, region, † Items.StoneAxe)
     let carrot = createItem(world, region, † Items.CarrotRoot)
 
     let recipe = recipe(† Recipes.CarvePlank)

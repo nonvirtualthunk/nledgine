@@ -1,7 +1,7 @@
 import glm
 import arxmath
 import graphics/color
-import graphics/image_extras
+import graphics/images
 import noto
 
 type
@@ -55,7 +55,7 @@ type
 
    WQuad* = object
       shape*: WShape
-      image* : ImageLike
+      image* : ImageRef
       texCoords* : WTexCoords
       color* : RGBA
       beforeChildren* : bool

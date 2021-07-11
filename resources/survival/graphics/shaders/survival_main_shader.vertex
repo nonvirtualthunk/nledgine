@@ -1,0 +1,28 @@
+#version 330 core
+
+layout (location = 0) in vec3 Vertex;
+layout (location = 1) in vec2 TexCoords;
+layout (location = 2) in vec4 Color;
+layout (location = 3) in vec3 Animation;
+
+out vec2 texCoordV;
+out vec4 colorV;
+
+uniform mat4 ProjectionMatrix;
+uniform mat4 ModelViewMatrix;
+uniform float CurrentTime;
+
+void main (){
+    animationOffsetPerFrame = Animation.x;
+    animationFrameCount = max(Animation.y, 1.0);
+    animationSecondsPerFrame = Animation.z;
+
+    currentFrame = floor(mod(CurrentTime / animationSecondsPerFrame, animationFrameCount));
+
+    texCoords = TexCoords;
+    texCoords.x += animationOffsetPerFrame * currentFrame;
+
+    texCoordV = texCoords;
+    colorV = Color;
+    gl_Position = ProjectionMatrix * ModelViewMatrix * vec4(Vertex,1.0);
+}

@@ -6,7 +6,7 @@ import options
 import prelude
 import reflect
 import resources
-import graphics/image_extras
+import graphics/images
 import glm
 import random
 import times
@@ -63,6 +63,10 @@ method onEvent*(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWor
       g.needsUpdate = true
     extract(VisionChangedEvent):
       g.needsUpdate = true
+    extract(IgnitedEvent):
+      g.needsUpdate = true
+    extract(ExtinguishedEvent):
+      g.needsUpdate = true
 
 
 proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) =
@@ -90,7 +94,7 @@ proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) 
     var qb = QuadBuilder()
     let rlayer = layer(activeRegion, world, MainLayer)
     for x in playerPos.x - visionRange - 1 .. playerPos.x + visionRange + 1:
-      for y in playerPos.y - visionRange - 1 .. playerPos.y + visionRange + 1:
+      for y in countdown(playerPos.y + visionRange + 1, playerPos.y - visionRange - 1):
         let dx = x - playerPos.x
         let dy = y - playerPos.y
         let d2 = dx*dx + dy*dy
@@ -134,16 +138,26 @@ proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) 
           if ent.hasData(Physical):
             let phys = ent.data(Physical)
             if not phys.dynamic:
+
               if phys.capsuled:
                 qb.dimensions = vec2f(16.0f,16.0f)
                 qb.position = vec3f(phys.position.x.float * 24.0f + 4.0f, phys.position.y.float * 24.0f + 6.0f - offset.float, 0.0f)
               else:
                 qb.dimensions = vec2f(24.0f, 24.0f)
                 qb.position = vec3f(x.float * 24.0f, y.float * 24.0f, 0.0f)
+
               qb.texture = phys.images[0]
               qb.color = rgba(1.0f,1.0f,1.0f, maxVision)
               qb.textureSubRect = rect(0.0f32,0.0f32,0.0f32,0.0f32)
               qb.drawTo(g.canvas)
+
+              if ent.hasData(Fire) and ent[Fire].active:
+                qb.position = vec3f(x.float * 24.0f, y.float * 24.0f + 6.0f, 0.0f)
+                qb.texture = image("survival/graphics/effects/fire_c_24.png")
+                qb.dimensions = vec2f(24.0f,24.0f)
+                qb.color = rgba(1.0f,1.0f,1.0f,maxVision)
+                qb.drawTo(g.canvas)
+
               offset += 4
 
 

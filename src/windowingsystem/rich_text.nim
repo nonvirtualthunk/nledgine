@@ -1,5 +1,5 @@
 import worlds/taxonomy
-import graphics/image_extras
+import graphics/images
 import windowing_rendering
 import glm
 import prelude
@@ -53,7 +53,7 @@ type
     of SectionKind.Taxon:
       taxon*: Taxon
     of SectionKind.Image:
-      image*: ImageLike
+      image*: ImageRef
     of SectionKind.VerticalBreak:
       verticalOffset*: int
     of SectionKind.EnsureSpacing:
@@ -148,7 +148,7 @@ proc textSection*(str: string, size: float = 1.0f, color: Option[color.RGBA] = n
 proc richText*(str: string, size: float = 1.0f, color: Option[color.RGBA] = none(color.RGBA)): RichText =
   richText(textSection(str, size, color))
 
-proc richText*(img: ImageLike, size: float = 1.0f): RichText =
+proc richText*(img: ImageRef, size: float = 1.0f): RichText =
   richText(RichTextSection(size: size, verticalAlignment: VerticalAlignment.Bottom, kind: SectionKind.Image, image: img))
 
 proc richText*(taxon: Taxon, size: float = 1.0f): RichText =

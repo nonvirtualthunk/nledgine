@@ -1,6 +1,5 @@
 import windowingsystem/windowing_system_core
 import config
-import config/config_helpers
 import graphics
 import arxregex
 import options

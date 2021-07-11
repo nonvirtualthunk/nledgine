@@ -17,7 +17,6 @@ import core
 import worlds/gamedebug
 import strutils
 import graphics/cameras
-import graphics/image_extras
 import game/grids
 import graphics/canvas
 import engines/debug_components
@@ -31,7 +30,7 @@ import sets
 import survival/display/world_graphics
 import survival/display/player_control
 import survival/display/survival_debug
-import survival/game/living_components
+import survival/game/common_game_components
 import survival/game/vision
 import survival/game/survival_core
 import survival/game/logic
@@ -66,7 +65,7 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
         pos = vec3i(0.int32,y.int32,MainLayer.int32)
         break
 
-    let axe = createItem(world, regionEnt, † Items.Axe)
+    let axe = createItem(world, regionEnt, † Items.StoneAxe)
 
     let player = world.createEntity()
     player.attachData(Player(
@@ -84,15 +83,26 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     ))
     player.attachData(Physical(
       position : pos,
-      images: @[imageLike("survival/graphics/creatures/player.png")],
+      images: @[imageRef("survival/graphics/creatures/player.png")],
       dynamic: true,
       health: vital(24),
       region: regionEnt,
     ))
     player.attachData(Inventory(maximumWeight: 500))
+
+    let fireDrill = createItem(world, regionEnt, † Items.FireDrill)
+
     moveItemToInventory(world, axe, player)
     moveItemToInventory(world, createItem(world, regionEnt, † Items.Log), player)
     moveItemToInventory(world, createItem(world, regionEnt, † Items.CarrotRoot), player)
+    moveItemToInventory(world, createItem(world, regionEnt, † Items.WoodPole), player)
+    moveItemToInventory(world, createItem(world, regionEnt, † Items.StrippedBark), player)
+    moveItemToInventory(world, createItem(world, regionEnt, † Items.StrippedBark), player)
+    moveItemToInventory(world, fireDrill, player)
+
+    let fireLog = createItem(world, regionEnt, † Items.Log)
+    placeItem(world, none(Entity), fireLog, player[Physical].position + vec3i(1,0,0), true)
+    ignite(world, player, fireDrill, some(targetEntity(fireLog)))
 
     regionEnt[Region].entities.incl(player)
     regionEnt[Region].dynamicEntities.incl(player)
@@ -121,6 +131,7 @@ main(GameSetup(
     initializationComponent(),
     CreatureComponent(),
     PhysicalComponent(),
+    FireComponent(),
     VisionComponent()
   ],
   graphicsComponents: @[
