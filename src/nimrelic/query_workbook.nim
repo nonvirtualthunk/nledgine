@@ -56,7 +56,7 @@ method initialize(g: QueryWorkbookComponent, world: World, curView: WorldView, d
 
    g.queryHistory = loadQueryHistory()
 
-   # queryInput.onEvent(TextDataEnter, enter):
+   # queryInput.onEventOfType(TextDataEnter, enter):
    #    g.query = queryAsync(313870, enter.textData)
    #    g.updated = false
 

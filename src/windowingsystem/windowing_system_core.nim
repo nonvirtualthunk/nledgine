@@ -245,9 +245,18 @@ type
 defineDisplayReflection(WindowingSystem)
 
 
+
+proc `$`*(w: Widget): string =
+  if w.identifier.len > 0:
+    "Widget(" & w.identifier & ")"
+  else:
+    "Widget(" & $w.entity.id & ")"
+
+
+
 method toString*(evt: WidgetEvent) : string =
   "WidgetEvent(?)"
-  
+
 eventToStr(WidgetFocusLoss)
 eventToStr(WidgetFocusGain)
 eventToStr(WidgetRuneEnter)
@@ -457,7 +466,11 @@ proc relativePos*(relativeTo: string, offset: int, anchorPoint: WidgetOrientatio
   WidgetPosition(kind: WidgetPositionKind.Relative, relativeToWidget: relativeTo, relativeOffset: offset.int32, relativeToWidgetAnchorPoint: anchorPoint)
 
 proc hash*(w: Widget): Hash = w.entity.hash
-proc `==`*(a, b: Widget): bool = a.entity == b.entity
+proc `==`*(a, b: Widget): bool =
+  if a.isNil or b.isNil:
+    a.isNil and b.isNil
+  else:
+    a.entity == b.entity
 
 proc `==`*(a, b: WidgetPosition): bool =
   if a.kind != b.kind: return false
@@ -668,11 +681,6 @@ proc width*(w: Widget): WidgetDimension = w.dimensions[0]
 proc height*(w: Widget): WidgetDimension = w.dimensions[1]
 
 # converter toEntity* (w : Widget) : DisplayEntity = w.entity
-proc `$`*(w: Widget): string =
-  if w.identifier.len > 0:
-    "Widget(" & w.identifier & ")"
-  else:
-    "Widget(" & $w.entity.id & ")"
 
 proc recalculateDependents(w: Widget, axis: Axis) =
   if w.parent.isSome:
@@ -1026,7 +1034,6 @@ iterator nineWayImageQuads*(nwi: NineWayImage, inDim: Vec2i, pixelScale: int, al
   let offset = vec3f(nwi.dimensionDelta.x * nwi.pixelScale * pixelScale * -1, nwi.dimensionDelta.y * nwi.pixelScale * pixelScale * -1, 0)
   let dim = inDim + nwi.dimensionDelta * nwi.pixelScale * pixelScale * 2
   let img = nwi.image.asImage
-  let imgLike = imageRef(img)
   let imgMetrics = imageMetricsFor(img)
 
   let fwd = vec3f(1, 0, 0)
@@ -1065,7 +1072,7 @@ iterator nineWayImageQuads*(nwi: NineWayImage, inDim: Vec2i, pixelScale: int, al
     if corners[q].enabled:
       let pos = fwd * farDims.x.float32 * UnitSquareVertices[q].x + oto * farDims.y.float32 * UnitSquareVertices[q].y
       let tc = subRectTexCoords(cornerSubRect, q mod 3 != 0, q >= 2)
-      yield WQuad(shape: rectShape(position = pos + offset, dimensions = cornerDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: tc, beforeChildren: allBeforeChildren)
+      yield WQuad(shape: rectShape(position = pos + offset, dimensions = cornerDim, forward = fwd.xy), image: img, color: nwi.edgeColor, texCoords: tc, beforeChildren: allBeforeChildren)
 
     if nwi.drawEdges.contains(q.WidgetEdge):
       let primaryAxis = edgeAxes[q].ord
@@ -1083,7 +1090,7 @@ iterator nineWayImageQuads*(nwi: NineWayImage, inDim: Vec2i, pixelScale: int, al
         imgSubRect.position[secondaryAxis] = ctcPos[secondaryAxis]
         imgSubRect.dimensions[secondaryAxis] = ctcDim[secondaryAxis]
 
-        yield WQuad(shape: rectShape(position = pos + offset, dimensions = edgeDim, forward = fwd.xy), image: imgLike, color: nwi.edgeColor, texCoords: subRectTexCoords(imgSubRect, q >= 2, q >= 2),
+        yield WQuad(shape: rectShape(position = pos + offset, dimensions = edgeDim, forward = fwd.xy), image: img, color: nwi.edgeColor, texCoords: subRectTexCoords(imgSubRect, q >= 2, q >= 2),
             beforeChildren: allBeforeChildren)
 
 
@@ -1626,22 +1633,85 @@ proc updateLastWidgetUnderMouse[WorldType](ws: WindowingSystemRef, widget: Widge
     pw = pw.parent.get(nil)
 
 import macros
-macro onEvent*(w: Widget, t: typedesc, name: untyped, body: untyped) =
-  result = quote do:
-    when not compiles(`t`().originatingWidget):
-      {.error: ("widget.onEvent only makes sense for WidgetEvents)").}
+
+template onEventOfType*(w: Widget, t: typedesc, name: untyped, body: untyped) =
+  when not compiles(`t`().originatingWidget):
+    {.error: ("widget.onEvent only makes sense for WidgetEvents)").}
+
+  `w`.eventCallbacks.add(proc (evt: UIEvent, worldArg: World, displayWorldArg: DisplayWorld) {.gcsafe.} =
+    let display {.inject used.} = displayWorldArg
+    if evt of `t`:
+      let `name` {.inject used.} = (`t`)evt
+      `body`
+  )
+  `w`.liveWorldEventCallbacks.add(proc (evt: UIEvent, worldArg: LiveWorld, displayWorldArg: DisplayWorld) {.gcsafe.} =
+    let display {.inject used.} = displayWorldArg
+    if evt of `t`:
+      let `name` {.inject used.} = (`t`)evt
+      `body`
+  )
+
+template onEventOfTypeLW*(w: Widget, t: typedesc, name: untyped, body: untyped) =
+  when not compiles(`t`().originatingWidget):
+    {.error: ("widget.onEvent only makes sense for WidgetEvents)").}
+
+  `w`.liveWorldEventCallbacks.add(proc (evt: UIEvent, worldArg: LiveWorld, displayWorldArg: DisplayWorld) {.gcsafe.} =
+    let display {.inject used.} = displayWorldArg
+    let world {.inject used.} = worldArg
+    if evt of `t`:
+      let `name` {.inject used.} = (`t`)evt
+      `body`
+  )
 
 
-    `w`.eventCallbacks.add(proc (evt: UIEvent, worldArg: World, displayWorldArg: DisplayWorld) {.gcsafe.} =
+template onEventOfTypeW*(w: Widget, t: typedesc, name: untyped, body: untyped) =
+  when not compiles(`t`().originatingWidget):
+    {.error: ("widget.onEvent only makes sense for WidgetEvents)").}
+
+  `w`.eventCallbacks.add(proc (evt: UIEvent, worldArg: World, displayWorldArg: DisplayWorld) {.gcsafe.} =
+    let display {.inject used.} = displayWorldArg
+    let world {.inject used.} = worldArg
+    if evt of `t`:
+      let `name` {.inject used.} = (`t`)evt
+      `body`
+  )
+
+
+template onEvent*(w: Widget, body: untyped) =
+  `w`.eventCallbacks.add(proc (evtArg: UIEvent, worldArg: World, displayWorldArg: DisplayWorld) {.gcsafe.} =
+    block:
+      let event {.inject used.} = evtArg
       let display {.inject used.} = displayWorldArg
-      if evt of `t`:
-        let `name` {.inject used.} = (`t`)evt
-        `body`
-    )
+      let matchTarget {.inject used.} = evtArg
+      `body`
+  )
 
-    `w`.liveWorldEventCallbacks.add(proc (evt: UIEvent, worldArg: LiveWorld, displayWorldArg: DisplayWorld) {.gcsafe.} =
+  `w`.liveWorldEventCallbacks.add(proc (evtArg: UIEvent, worldArg: LiveWorld, displayWorldArg: DisplayWorld) {.gcsafe.} =
+    block:
+      let event {.inject used.} = evtArg
       let display {.inject used.} = displayWorldArg
-      if evt of `t`:
-        let `name` {.inject used.} = (`t`)evt
-        `body`
-    )
+      let matchTarget {.inject used.} = evtArg
+      `body`
+  )
+
+
+template onEventW*(w: Widget, body: untyped) =
+  `w`.eventCallbacks.add(proc (evtArg: UIEvent, worldArg: World, displayWorldArg: DisplayWorld) {.gcsafe.} =
+    block:
+      let event {.inject used.} = evtArg
+      let display {.inject used.} = displayWorldArg
+      let world {.inject used.} = worldArg
+      let matchTarget {.inject used.} = evtArg
+      `body`
+  )
+
+
+template onEventLW*(w: Widget, body: untyped) =
+  `w`.liveWorldEventCallbacks.add(proc (evtArg: UIEvent, worldArg: LiveWorld, displayWorldArg: DisplayWorld) {.gcsafe.} =
+    block:
+      let event {.inject used.} = evtArg
+      let display {.inject used.} = displayWorldArg
+      let world {.inject used.} = worldArg
+      let matchTarget {.inject used.} = evtArg
+      `body`
+  )

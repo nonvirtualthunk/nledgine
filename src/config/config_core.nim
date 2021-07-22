@@ -203,6 +203,14 @@ iterator pairsOpt*(v: ConfigValue): tuple[a: string, b: ConfigValue] =
   else:
     discard
 
+iterator fieldsOpt*(v: ConfigValue): tuple[a: string, b: ConfigValue] =
+  case v.kind:
+  of ConfigValueKind.Object:
+    for k, v in v.fields:
+      yield (k, v)
+  else:
+    discard
+
 proc isEmpty*(v: ConfigValue): bool =
   return v == nil or v.kind == ConfigValueKind.Empty
 

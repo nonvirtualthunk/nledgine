@@ -31,6 +31,7 @@ import survival/display/world_graphics
 import survival/display/player_control
 import survival/display/survival_debug
 import survival/game/common_game_components
+import survival/game/tile_component
 import survival/game/vision
 import survival/game/survival_core
 import survival/game/logic
@@ -59,9 +60,15 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     let water = taxon("TileKinds", "Seawater")
 
     var pos = vec3i(0,0,MainLayer)
-    for y in countdown(RegionHalfSize-1,0):
+
+    let countSlice = if GenerateIslandRegion:
+      RegionHalfSize-1 .. 0
+    else:
+      0 .. RegionHalfSize - 1
+
+    for y in upOrDownIter(countSlice):
       let tile = region.tile(0,y,MainLayer)
-      if tile.floorLayers.len > 0 and tile.floorLayers[^1].tileKind != water:
+      if tile.floorLayers.len > 0 and tile.floorLayers[^1].tileKind != water and tile.wallLayers.isEmpty:
         pos = vec3i(0.int32,y.int32,MainLayer.int32)
         break
 
@@ -98,7 +105,10 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     moveItemToInventory(world, createItem(world, regionEnt, † Items.WoodPole), player)
     moveItemToInventory(world, createItem(world, regionEnt, † Items.StrippedBark), player)
     moveItemToInventory(world, createItem(world, regionEnt, † Items.StrippedBark), player)
+    moveItemToInventory(world, createItem(world, regionEnt, † Items.Stone), player)
     moveItemToInventory(world, fireDrill, player)
+
+    tilePtr(regionEnt[Region], player[Physical].position + vec3i(5,-5,0)).wallLayers = @[TileLayer(tileKind: † TileKinds.RoughStone, resources : @[GatherableResource(resource: † Items.Stone, quantity: reduceable(3.int16), source: † TileKinds.RoughStone)])]
 
     let fireLog = createItem(world, regionEnt, † Items.Log)
     placeItem(world, none(Entity), fireLog, player[Physical].position + vec3i(1,0,0), true)
@@ -107,6 +117,7 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     regionEnt[Region].entities.incl(player)
     regionEnt[Region].dynamicEntities.incl(player)
 
+    regionEnt[Region].initialized = true
     world.addFullEvent(RegionInitializedEvent(region: regionEnt))
 
 
@@ -132,7 +143,9 @@ main(GameSetup(
     CreatureComponent(),
     PhysicalComponent(),
     FireComponent(),
-    VisionComponent()
+    VisionComponent(),
+    LightingComponent(),
+    tileComponent()
   ],
   graphicsComponents: @[
     createWindowingSystemComponent("survival/widgets/"),

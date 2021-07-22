@@ -6,16 +6,53 @@ Items {
     image: "survival/graphics/items/plants/blades_of_grass.png"
   }
   Stone {
-    durability: 40
+    durability: 30
     flags {
       Stone: 1
       Hard: 3
       Sturdy: 3
+      Material: 1
     }
     stackable: true
 
     image: "survival/graphics/items/material/stone.png"
   }
+
+  StoneShards {
+    durability: 5
+    flags {
+      Stone: 1
+      Hard: 1
+      Debris: 1
+    }
+    stackable: true
+
+    image: "survival/graphics/items/material/stone_shards.png"
+  }
+
+  SharpStone {
+    durability: 15
+    flags {
+      Stone: 1
+      Hard: 3
+      Sturdy: 3
+      Material: 1
+    }
+    stackable: true
+
+    actions {
+      Cut: 1
+    }
+
+    image: "survival/graphics/items/tool/sharp_stone.png"
+
+    recipe {
+      name: "sharpen stone"
+      recipeTemplate: Carve
+      ingredients.Ingredient: Items.Stone
+    }
+  }
+
   Soil {
     durability: 30
     flags {
@@ -43,15 +80,31 @@ Items {
 
     image: "survival/graphics/items/material/sand.png"
   }
+
   Twigs {
     durability: 10
     weight: 20-30
     fuel: 225
     flags {
       Tinder: 1
+      Compostable: 1
     }
 
     image: "survival/graphics/items/plants/twigs.png"
+    stackable: true
+  }
+
+  WoodPieces {
+    durability: 10
+    weight: 20-30
+    fuel: 225
+    flags {
+      Tinder: 1
+      Debris: 1
+      Compostable: 1
+    }
+
+    image: "survival/graphics/items/material/wood_pieces.png"
     stackable: true
   }
 
@@ -60,23 +113,7 @@ Items {
     weight: 40-60
     fuel: 300
     durability: 12
-    transforms : [
-      {
-        recipeTemplate: Cut
-        difficulty: 1
-        output: [
-          StrippedBark
-          StrippedBark
-        ]
-      },
-      {
-        action: Grind
-        difficulty: 3
-        output: [
-          Tannin
-        ]
-      }
-    ]
+
     flags {
       Compostable: 1
     }
@@ -112,7 +149,7 @@ Items {
       name: "strip bark"
       recipeTemplate: Carve
       ingredients.Ingredient: Items.Bark
-      count: 2
+      amount: 2
     }
   }
 
@@ -451,7 +488,28 @@ Items {
     recipe {
       name: "carve stone axe head"
       recipeTemplate: Carve
-      ingredients.Ingredient: Flags.Stone
+      ingredients.Ingredient: [Flags.Stone, Flags.Material]
+    }
+  }
+
+  StonePickaxeHead {
+    weight: 250
+    durability: 20
+    flags {
+      PickaxeHead: 1
+      Stone: 1
+    }
+
+    actions {
+      Cut: 1
+    }
+
+    images: "survival/graphics/items/tool/stone_pickaxe_head.png"
+
+    recipe {
+      name: "carve stone pickaxe head"
+      recipeTemplate: Carve
+      ingredients.Ingredient: [Flags.Stone, Flags.Material]
     }
   }
 
@@ -481,6 +539,40 @@ Items {
         }
         Attachment {
           specifiers: [Flags.Stone, Flags.AxeHead]
+          operator: AND
+        }
+        Binding {
+          specifiers: Flags.Binding
+        }
+      }
+    }
+  }
+
+  StonePickaxe {
+    weight: 2000
+    durability: 100
+    flags {
+      Tool: 1
+      Weapon: 1
+      Pickaxe: 1
+    }
+
+    actions {
+      Mine: 1
+    }
+
+    image: "survival/graphics/items/tool/pick.png"
+
+    recipe {
+      name: "craft pickaxe"
+      recipeTemplate: Assemble
+      ingredients {
+        Base: {
+          specifiers: [Flags.Pole, Flags.Sturdy]
+          operator: AND
+        }
+        Attachment {
+          specifiers: [Flags.Stone, Flags.PickaxeHead]
           operator: AND
         }
         Binding {

@@ -104,4 +104,26 @@ RecipeTemplates {
       }
     }
   }
+
+  Smash {
+    description: Use force and a heavy tool to break something apart
+    icon: "survival/graphics/recipes/smash_selected.png"
+    selectedIcon: "survival/graphics/recipes/smash_selected.png"
+
+    ingredients {
+      Ingredient {
+        description: "what to smash"
+      }
+    }
+
+    tools {
+      Smasher {
+        description: ""
+        requirement {
+          specifiers: [Flags.Sturdy, Flags.Hard]
+          operator: AND
+        }
+      }
+    }
+  }
 }

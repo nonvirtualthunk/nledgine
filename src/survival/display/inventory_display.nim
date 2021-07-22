@@ -28,7 +28,7 @@ import windowingsystem/rich_text
 import windowingsystem/list_widget
 import strutils
 import survival_display_core
-
+import noto
 
 type
   ItemInfo* = object
@@ -38,6 +38,16 @@ type
     count*: int
     countStr*: string
     itemEntities*: seq[Entity]
+
+  InventoryDisplayData* = object
+    items*: seq[ItemInfo]
+
+  InventoryItemSelectedEvent* = ref object of WidgetEvent
+    itemInfo*: ItemInfo
+    originatingPosition*: Vec3i
+
+
+defineDisplayReflection(InventoryDisplayData)
 
 
 proc toItemInfo*(world: LiveWorld, item: Entity) : ItemInfo =
@@ -82,8 +92,30 @@ proc constructItemInfo*(world: LiveWorld, items: seq[Entity], filter: (LiveWorld
         let count = result[itemInfoIdx].count + 1
         result[itemInfoIdx].count = count
         if count > 1:
-          result[itemInfoIdx].countStr = &" x{count}"
+          result[itemInfoIdx].countStr = &"x{count}"
         result[itemInfoIdx].itemEntities.add(item)
 
 proc constructItemInfo*(world: LiveWorld, player: Entity, filter: (LiveWorld, Entity) -> bool = (a: LiveWorld,b: Entity) => true): seq[ItemInfo] =
   constructItemInfo(world, toSeq(player[Inventory].items.items), filter)
+
+
+import macros
+proc createInventoryDisplay*(parent: Widget, name: string) : Widget =
+  let invWidget = parent.createChild("Inventory", "InventoryWidget")
+  invwidget.identifier = name
+  invWidget.attachData(InventoryDisplayData())
+  onEventLW(invWidget):
+    extract(ListItemSelect, index, widget, originatingWidget):
+      display.addEvent(InventoryItemSelectedEvent(widget: widget, itemInfo: widget.data(InventoryDisplayData).items[index], originatingPosition: originatingWidget.resolvedPosition))
+  invWidget
+
+
+proc setInventoryDisplayItems*(w: Widget, world: LiveWorld, items: seq[Entity], filter: (LiveWorld, Entity) -> bool =  (a: LiveWorld,b: Entity) => true) =
+  if w.hasData(InventoryDisplayData):
+    let inv = w.data(InventoryDisplayData)
+    inv.items = constructItemInfo(world, items, filter)
+    w.bindValue("inventory.items", inv.items)
+  else:
+    warn &"Attempting to update the inventory contents of non-inventory widget: {w}"
+
+

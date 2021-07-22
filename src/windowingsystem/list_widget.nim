@@ -64,10 +64,10 @@ method updateBindings*(ws: ListWidgetComponent, widget: Widget, resolver: var Bo
                newItem.identifier = widget.identifier & ".item[" & $i & "]"
 
                capture newItem, i:
-                  newItem.onEvent(WidgetMouseEnter, enter):
+                  newItem.onEventOfType(WidgetMouseEnter, enter):
                      display.addEvent(ListItemMouseOver(index: i, data: newItem.data(ListItemWidget).data, widget: newItem))
                   if lw.selectable:
-                     newItem.onEvent(WidgetMouseRelease, evt):
+                     newItem.onEventOfType(WidgetMouseRelease, evt):
                         display.addEvent(ListItemSelect(index: i, data: newItem.data(ListItemWidget).data, widget: newItem))
 
                lw.listItemChildren.add(newItem)

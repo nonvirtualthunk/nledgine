@@ -42,6 +42,23 @@ type
 
 
 
+# proc `==`*(a,b: Camera): bool =
+#   if a.id == b.id and
+#       a.kind == b.kind and
+#       a.initialized == b.initialized and
+#       a.moveSpeed == b.moveSpeed and
+#       a.lastUpdated == b.lastUpdated and
+#       a.useWasd == b.useWasd and
+#       a.cameraMovement == b.cameraMovement:
+#     case a.kind:
+#       of CameraKind.PixelCamera:
+#         a.translation == b.translation and
+#         a.delta == b.delta and
+#         a.scale == b.scale
+#       of CameraKind.WindowingCamera:
+#         a.windowingScale == b.windowingScale
+
+
 
 proc createPixelCamera*(scale: int, translation : Vec2f = vec2f(0.0f,0.0f)): Camera =
   Camera(
@@ -184,6 +201,9 @@ proc pixelToWorld*(camera: Camera, framebufferSize: Vec2i, windowSize: Vec2i, pi
   let unprojected = (camera.projectionMatrix(framebufferSize) * camera.modelviewMatrix()).inverse * screenSpace
   vec3f(unprojected.x / unprojected.w, unprojected.y / unprojected.w, unprojected.z / unprojected.w)
 
+
+proc effectivelyEquivalent*(a,b: Camera) : bool =
+  a.modelviewMatrix == b.modelviewMatrix and a.projectionMatrix(vec2i(100,100)) == b.projectionMatrix(vec2i(100,100))
 
 # proc pixelToWorld*(camera : Camera, framebufferSize : Vec2i, worldv : Vec3f) : Vec3f =
 #    (camera.projectionMatrix(framebufferSize) * camera.modelviewMatrix() * vec4(worldV, 0.0f)).xyz

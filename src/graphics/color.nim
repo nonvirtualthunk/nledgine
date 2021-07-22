@@ -58,8 +58,11 @@ proc `$`*(rgba: RGBA): string =
 proc `*`*(a, b: RGBA): RGBA =
    rgba(a.r * b.r, a.g * b.g, a.b * b.b, a.a * b.a)
 
+proc `*`*(a: RGBA, f: float): RGBA =
+   rgba(a.r * f, a.g * f, a.b * f, a.a * f)
+
 proc mix*(a, b: RGBA, f: float): RGBA =
-   rgba(a.r * f + b.r * (1.0f - f), a.g * f + b.g * (1.0f - f), a.b * f + b.b * (1.0f - f), a.a * f + b.a * (1.0f - f))
+   rgba(b.r * f + a.r * (1.0f - f), b.g * f + a.g * (1.0f - f), b.b * f + a.b * (1.0f - f), b.a * f + a.a * (1.0f - f))
 
 proc readFromConfig*(v: ConfigValue, color: var RGBA) =
    if v.isStr:

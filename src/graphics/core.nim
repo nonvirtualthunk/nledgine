@@ -14,6 +14,7 @@ import ../worlds
 import cameras
 import images
 import options
+import prelude
 
 var vaoID: Atomic[int]
 var bufferID: Atomic[int]
@@ -119,6 +120,7 @@ type
     case kind*: DrawCommandKind:
       of DrawCommandUpdate:
         vao*: VaoID
+        vaoRevision*: int
         vertexBuffer*: VertexBuffer
         vertexArrayDefinitions*: seq[VertexArrayDefinition]
         indexBuffer*: VertexBuffer
@@ -128,6 +130,7 @@ type
         textures*: seq[TextureInfo]
         renderSettings*: RenderSettings
         drawOrder*: int
+        requiredUpdateFrequency*: Option[UnitOfTime]
       of DrawCommandKind.CameraUpdate:
         discard
       of DrawCommandKind.Finish:
@@ -330,6 +333,7 @@ proc swap*[VT, IT](vao: VAO[VT, IT]) =
   vao.vertices.swap()
   vao.indices.swap()
   vao.swapped = true
+  vao.revision.inc
 
 proc `$`*[T](buffer: var GrowableBuffer[T]): string =
   result = "["
@@ -458,6 +462,7 @@ proc draw*[VT; IT: uint16 | uint32; TT: Texture](vao: Vao[VT, IT]; shader: Shade
   return DrawCommand(
     kind: DrawCommandKind.DrawCommandUpdate,
     vao: vao.id,
+    vaoRevision: vao.revision,
     vertexBuffer: vertexBuffer,
     vertexArrayDefinitions: vertexArrayDefinitions(VT),
     indexBuffer: indexBuffer,
@@ -470,25 +475,103 @@ proc draw*[VT; IT: uint16 | uint32; TT: Texture](vao: Vao[VT, IT]; shader: Shade
     drawOrder: drawOrder,
   )
 
-proc merge*(command: var DrawCommand; next: DrawCommand) =
+
+# proc `==`*(a,b: Shader) : bool =
+#   if a.id != b.id:
+#     echo "id difference"
+#     return false
+#   if a.uniformBools != b.uniformBools:
+#     echo "uniform difference: " & $a.uniformBools & " != " & $b.uniformBools
+#     return false
+#   if a.uniformInts != b.uniformInts:
+#     echo "uniform difference: " & $a.uniformInts & " != " & $b.uniformInts
+#     return false
+#   if a.uniformFloats != b.uniformFloats:
+#     echo "uniform difference: " & $a.uniformFloats & " != " & $b.uniformFloats
+#     return false
+#   if a.uniformVec2 != b.uniformVec2:
+#     echo "uniform difference: " & $a.uniformVec2 & " != " & $b.uniformVec2
+#     return false
+#   if a.uniformVec3 != b.uniformVec3:
+#     echo "uniform difference: " & $a.uniformVec3 & " != " & $b.uniformVec3
+#     return false
+#   if a.uniformVec4 != b.uniformVec4:
+#     echo "uniform difference: " & $a.uniformVec4 & " != " & $b.uniformVec4
+#     return false
+#   if a.uniformMat4 != b.uniformMat4:
+#     echo "uniform difference: " & $a.uniformMat4 & " != " & $b.uniformMat4
+#     return false
+#   if a.fragmentSource != b.fragmentSource or a.vertexSource != b.vertexSource:
+#     echo "source difference"
+#     return false
+#   true
+
+proc `$`*(shader: Shader) : string =
+  result = "Shader(" & $shader.id.int & "):\n"
+  for k,v in shader.uniformBools:
+    result.add("\t" & $k & " : " & $v)
+  for k,v in shader.uniformInts:
+    result.add("\t" & $k & " : " & $v)
+  for k,v in shader.uniformFloats:
+    result.add("\t" & $k & " : " & $v)
+  for k,v in shader.uniformVec2:
+    result.add("\t" & $k & " : " & $v)
+  for k,v in shader.uniformVec3:
+    result.add("\t" & $k & " : " & $v)
+  for k,v in shader.uniformVec4:
+    result.add("\t" & $k & " : " & $v)
+  for k,v in shader.uniformMat4:
+    result.add("\t" & $k & " : " & $v)
+  result.add("src\n" & shader.fragmentSource & "\n" & shader.vertexSource)
+
+# Returns true if there was any practical change to the draw command that would require a redraw
+proc merge*(command: var DrawCommand; next: DrawCommand) : bool =
+  var redrawNeeded = false
+  template compareAndSet(a,b: typed) =
+    if a != b:
+      a = b
+      redrawNeeded = true
+      # info "Redraw needed due to inequality " & $a & " != " & $b
+
   if command.vao != next.vao or
     command.vertexBuffer.id != next.vertexBuffer.id or
     command.indexBuffer.id != next.indexBuffer.id:
-    echo "Merge called with mismatched vao/vbo/iio"
+    redrawNeeded = true
 
   if next.vertexBuffer.data != nil:
     command.vertexBuffer = next.vertexBuffer
   if next.indexBuffer.data != nil:
     command.indexBuffer = next.indexBuffer
+
+  if command.textures.len != next.textures.len:
+    redrawNeeded = true
+  else:
+    for i in 0 ..< command.textures.len:
+      if command.textures[i].id != next.textures[i].id or command.textures[i].revision != next.textures[i].revision:
+        redrawNeeded = true
+        break
   command.textures = next.textures
-  command.shader = next.shader
-  command.camera = next.camera
-  command.indexCount = next.indexCount
-  command.renderSettings = next.renderSettings
-  command.drawOrder = next.drawOrder
+
+  compareAndSet(command.requiredUpdateFrequency, next.requiredUpdateFrequency)
+
+  compareAndSet(command.shader[], next.shader[])
+  if not effectivelyEquivalent(command.camera, next.camera):
+    command.camera = next.camera
+    redrawNeeded = true
+    # info "Redraw needed due to camera"
+  compareAndSet(command.indexCount, next.indexCount)
+  compareAndSet(command.renderSettings, next.renderSettings)
+  compareAndSet(command.drawOrder, next.drawOrder)
+
+  if command.vaoRevision != next.vaoRevision:
+    command.vaoRevision = next.vaoRevision
+    redrawNeeded = true
+    # info "Redraw needed due to vao"
+  redrawNeeded
 
 
 var glVaoIDs = @[0.VertexArrayID]
+var glVaoRevisions = @[0]
 var glVertexPointersInitialized = @[true]
 var glVboIDs = @[0.BufferID]
 var glTextureIDs = @[0.TextureIDType]
@@ -544,19 +627,15 @@ proc render*(command: var DrawCommand; cameras: seq[Camera], framebufferSize: Ve
   command.camera.lastUpdated = time
   command.camera.update(deltaTime / 0.01666666666667)
 
-  command.shader.uniformMat4["ModelViewMatrix"] = command.camera.modelviewMatrix()
-  command.shader.uniformMat4["ProjectionMatrix"] = command.camera.projectionMatrix(framebufferSize)
-  command.shader.uniformFloats["CurrentTime"] = time
-
   bindVertexArray(glVaoIDs[command.vao])
   checkGLError()
 
   if addIfNeeded(glVboIDs, command.vertexBuffer.id, () => genBuffer()):
     setAt(glVertexPointersInitialized, command.vertexBuffer.id, false)
   discard addIfNeeded(glVboIDs, command.indexBuffer.id, () => genBuffer())
+  discard addIfNeeded(glVaoRevisions, command.vao.int, () => -1)
 
-  if command.vertexBuffer.data != nil:
-    fine &"Buffering vertex data : {command.vertexBuffer.len}"
+  if command.vertexBuffer.data != nil and command.vaoRevision > glVaoRevisions[command.vao.int]:
     bindBuffer(GL_ARRAY_BUFFER, glVboIDs[command.vertexBuffer.id])
     bufferData(GL_ARRAY_BUFFER, command.vertexBuffer.len, command.vertexBuffer.data, command.vertexBuffer.usage)
     checkGLError()
@@ -568,7 +647,7 @@ proc render*(command: var DrawCommand; cameras: seq[Camera], framebufferSize: Ve
         let varr = command.vertexArrayDefinitions[index]
         enableVertexAttribArray(index.uint32)
         vertexAttribPointer(index.uint32, varr.num, varr.dataType, varr.normalize, varr.stride, varr.offset)
-        checkGLError()
+        # checkGLError()
 
         # echo "Binding shader ", $shader.int, " index ", $index, " to ", varr.name.capitalizeAscii
         # glBindAttribLocation(shader.GLuint, index.GLuint, varr.name.capitalizeAscii)
@@ -577,12 +656,14 @@ proc render*(command: var DrawCommand; cameras: seq[Camera], framebufferSize: Ve
 
     command.vertexBuffer.data = nil
 
-  if command.indexBuffer.data != nil:
+  if command.indexBuffer.data != nil and command.vaoRevision > glVaoRevisions[command.vao.int]:
     fine "Buffering element data"
     bindBuffer(GL_ELEMENT_ARRAY_BUFFER, glVboIDs[command.indexBuffer.id])
     bufferData(GL_ELEMENT_ARRAY_BUFFER, command.indexBuffer.len, command.indexBuffer.data, command.indexBuffer.usage)
     command.indexBuffer.data = nil
-    checkGLError()
+    # checkGLError()
+
+  glVaoRevisions[command.vao.int] = command.vaoRevision
 
   for index, tex in command.textures:
     if addIfNeeded(glTextureIDs, tex.id, () => genTexture()):
@@ -603,6 +684,21 @@ proc render*(command: var DrawCommand; cameras: seq[Camera], framebufferSize: Ve
       glTexImage2D(GL_TEXTURE_2D, 0.GLint, tex.internalFormat.GLint, tex.width.GLint, tex.height.GLint, 0.GLint, tex.dataFormat, GL_UNSIGNED_BYTE, tex.data)
       glTextureRevisions[tex.id] = tex.revision
       checkGLError()
+
+
+  let modelviewMatrixLoc = lookupUniformLocation(command.shader.id, shader, "ModelViewMatrix").GLint
+  let projectionMatrixLoc = lookupUniformLocation(command.shader.id, shader, "ProjectionMatrix").GLint
+  let currentTimeLoc = lookupUniformLocation(command.shader.id, shader, "CurrentTime").GLint
+  if modelviewMatrixLoc != -1:
+    var tmp = command.camera.modelviewMatrix()
+    glUniformMatrix4fv(modelviewMatrixLoc, 1, false, tmp.caddr)
+  if projectionMatrixLoc != -1:
+    var tmp = command.camera.projectionMatrix(framebufferSize)
+    glUniformMatrix4fv(projectionMatrixLoc, 1, false, tmp.caddr)
+  if currentTimeLoc != -1:
+    if command.requiredUpdateFrequency.isNone:
+      warn &"Shader with CurrentTime uniform variable does not define a requiredUpdateFrequency: {command.shader.vertexSource}"
+    glUniform1f(currentTimeLoc, time)
 
   # TODO: cache and do not set these if they remain constant
   for k, v in command.shader.uniformMat4:
@@ -653,6 +749,7 @@ proc render*(command: var DrawCommand; cameras: seq[Camera], framebufferSize: Ve
 
   drawElements(GL_TRIANGLES, command.indexCount, command.indexBufferType, 0)
   checkGLError()
+
 
 
 

@@ -1,5 +1,5 @@
 import glm
-import metric
+# import metric
 import sugar
 import times
 import options
@@ -11,7 +11,7 @@ import strformat
 import tables
 import sets
 
-export metric
+# export metric
 export sugar
 export worlds
 export strformat
@@ -19,7 +19,10 @@ export tables
 export options
 
 type
-  UnitOfTime* = Metric[metric.Time, float]
+  # UnitOfTime* = Metric[metric.Time, float]
+
+  UnitOfTime* = object
+    seconds*: float
 
   Axis* = enum
     X
@@ -75,23 +78,37 @@ let programStartTime* = now()
 
 
 proc `<`*(a: UnitOfTime, b: UnitOftime): bool =
-  a.val < b.val
+  a.seconds < b.seconds
 
 proc microseconds*(f: float): UnitOfTime =
-  (f / 1000000.0) * metric.second
+  UnitOfTime(seconds: (f / 1000000.0))
 
 proc seconds*(f: float): UnitOfTime =
-  (f) * metric.second
+  UnitOfTime(seconds: f)
 
 proc relTime*(): UnitOfTime =
   let dur = now() - programStartTime
   return inMicroseconds(dur).float.microseconds
 
 proc inSeconds*(u: UnitOfTime): float =
-  u.as(metric.second)
+  u.seconds
 
 proc `$`*(t: UnitOfTime): string =
-  fmt"{t.as(metric.second)}s"
+  let seconds = t.seconds
+  if seconds < 0.1:
+    let millis = seconds * 1000.0f
+    fmt"{millis:.2f}ms"
+  else:
+    fmt"{t.seconds:.2f}s"
+
+proc `+`*(a,b : UnitOfTime): UnitOfTime =
+  UnitOfTime(seconds: a.seconds + b.seconds)
+
+proc `-`*(a,b : UnitOfTime): UnitOfTime =
+  UnitOfTime(seconds: a.seconds - b.seconds)
+
+proc `/`*(a : UnitOfTime, b : float): UnitOfTime =
+  UnitOfTime(seconds: a.seconds / b)
 
 # proc vec3f*(v : Vec3i) : Vec3f =
 #   vec3f(v.x.float, v.y.float, v.z.float)
@@ -505,3 +522,15 @@ template anyMatchIt*[T](s : seq[T], stmts) : bool =
 
   result
 
+
+iterator upOrDownIter*[T](s : Slice[T]) : T =
+  if s.a > s.b:
+    var i = s.a
+    while i >= s.b:
+      yield i
+      i.dec
+  else:
+    var i = s.a
+    while i <= s.b:
+      yield i
+      i.inc

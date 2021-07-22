@@ -22,7 +22,7 @@ type
   QuadBuilder* = object
     position* : Vec3f
     dimensions* : Vec2f
-    texture* : ImageRef
+    texture* : Image
     color* : RGBA
     origin* : Vec2f
     textureSubRect*: Rectf

@@ -36,7 +36,7 @@ Item {
     },
     {
       condition: "%(itemIconAndText)"
-      text: "%(item.icon) %(item.name)%(item.countStr)"
+      text: "%(item.icon) %(item.name) %(item.countStr)"
     }
   ]
 

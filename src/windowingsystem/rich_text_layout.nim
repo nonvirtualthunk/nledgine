@@ -140,7 +140,7 @@ proc layout*(richText: RichText, size: int, bounds: Recti, pixelScale: int, rend
               forward = vec2f(1.0f, 0.0f)
             ),
             texCoords: simpleTexCoords(false, true),
-            image: imageRef(img),
+            image: img,
             color: subColor,
             beforeChildren: true), not isWhitespace, runeIndex)
           cursor.x = (pos.x.int + img.width).int32 + 1

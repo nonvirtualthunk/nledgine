@@ -46,14 +46,14 @@ method render*(ws: DividerComponent, widget: Widget): seq[WQuad] =
       let rightShape = rectShape(position = vec3f(pos.x.float + dim.x.float - sideDim.float, pos.y.float, 0.0f), dimensions = vec2i(sideDim, dim.y))
       let mainShape = rectShape(position = vec3f(pos.x.float + sideDim.float, pos.y.float, 0.0f), dimensions = vec2i(dim.x - sideDim * 2 + 1, dim.y))
       @[
-        WQuad(shape: leftShape, texCoords: leftSR, color: DD.color, beforeChildren: true, image: DD.image),
-        WQuad(shape: rightShape, texCoords: rightSR, color: DD.color, beforeChildren: true, image: DD.image),
-        WQuad(shape: mainShape, texCoords: mainSR, color: DD.color, beforeChildren: true, image: DD.image)
+        WQuad(shape: leftShape, texCoords: leftSR, color: DD.color, beforeChildren: true, image: DD.image.asImage),
+        WQuad(shape: rightShape, texCoords: rightSR, color: DD.color, beforeChildren: true, image: DD.image.asImage),
+        WQuad(shape: mainShape, texCoords: mainSR, color: DD.color, beforeChildren: true, image: DD.image.asImage)
       ]
     else:
       let shape = rectShape(position = vec3f(pos.x.float, pos.y.float, 0.0f), dimensions = vec2i(dim.x, dim.y))
       @[
-        WQuad(shape: shape, texCoords: mainSR, color: DD.color, beforeChildren: true, image: DD.image)
+        WQuad(shape: shape, texCoords: mainSR, color: DD.color, beforeChildren: true, image: DD.image.asImage)
       ]
   else:
     @[]

@@ -32,6 +32,7 @@ type
   ConditionalImage = object
     condition: Bindable[bool]
     image: Bindable[ImageRef]
+    color: Bindable[RGBA]
 
   ImageDisplay* = object
     widget*: Widget
@@ -69,6 +70,7 @@ proc readFromConfig*(cv: ConfigValue, v: var ConditionalImage) =
   if cv.isObj:
     cv["condition"].readIntoOrElse(v.condition, bindable(true))
     cv["image"].readInto(v.image)
+    cv["color"].readIntoOrElse(v.color, bindable(rgba(1.0,1.0,1.0,1.0)))
   else:
     warn &"Unsupported config format for conditional image section: {cv}"
 
@@ -88,6 +90,13 @@ proc effectiveImage*(ID: ref ImageDisplay) : ImageRef =
   for ci in ID.conditionalImage:
     if ci.condition.value:
       result = ci.image.value
+      break
+
+proc effectiveColor*(ID: ref ImageDisplay) : RGBA =
+  result = ID.color.value
+  for ci in ID.conditionalImage:
+    if ci.condition.value:
+      result = result * ci.color.value
       break
 
 
@@ -126,8 +135,10 @@ method render*(ws: ImageDisplayComponent, widget: Widget): seq[WQuad] =
     let x = calcPos(ID, widget, Axis.X, width)
     let y = calcPos(ID, widget, Axis.Y, height)
 
-    @[WQuad(shape: rectShape(position = vec3f(x.float, y.float, 0.0f), dimensions = vec2i(width, height), forward = vec2f(1.0f, 0.0f)), texCoords: simpleTexCoords(), color: ID.color, beforeChildren: not ID.drawAfterChildren,
-        image: ID.effectiveImage)]
+    let color = ID.effectiveColor
+
+    @[WQuad(shape: rectShape(position = vec3f(x.float, y.float, 0.0f), dimensions = vec2i(width, height), forward = vec2f(1.0f, 0.0f)), texCoords: simpleTexCoords(), color: color, beforeChildren: not ID.drawAfterChildren,
+        image: ID.effectiveImage.asImage)]
   else:
     @[]
 

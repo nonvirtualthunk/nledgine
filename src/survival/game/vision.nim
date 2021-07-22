@@ -11,10 +11,12 @@ import glm
 import tiles
 import game/grids
 import graphics/color
+import arxmath
 
 import graphics/images
 
 const VisionResolution* = 2
+const ShadowResolution* = 2
 
 type
   VisionComponent* = ref object of LiveGameComponent
@@ -22,6 +24,9 @@ type
     precomputed*: array[4,ref ShadowGrid[64]]
     precomputedPositions*: array[4, Vec2i]
     needsRecompute: bool
+
+  LightingComponent* = ref object of LiveGameComponent
+    lastComputedRegion*: Entity
 
 
 
@@ -49,14 +54,18 @@ proc computeVision(g: VisionComponent, world: LiveWorld, entity: Entity, offset:
       1.0
 
   proc obstruction(x: int, y : int) : float32 =
-    if reg.tile(x,y,z).wallLayers.nonEmpty:
-      return 1.0
-
-    for ent in reg.tile(x,y,z).entities:
-      if ent[Physical].occupiesTile:
-        return 1.0
-
-    return 0.0
+    if x > -RegionHalfSize and x < RegionHalfSize and y > -RegionHalfSize and y < RegionHalfSize:
+      opacity(reg, x,y,z).float32 / 255.0f32
+    else:
+      1.0f32
+    # if reg.tile(x,y,z).wallLayers.nonEmpty:
+    #   return 1.0
+    #
+    # for ent in reg.tile(x,y,z).entities:
+    #   if ent[Physical].occupiesTile:
+    #     return 1.0
+    #
+    # return 0.0
 
   shadowcast(g.shadowGrid, vision[], phys.position.xy + offset, VisionResolution, attenuation, obstruction)
 
@@ -115,6 +124,8 @@ proc inVisionRange(world: LiveWorld, entity: Entity) : bool =
 
 
 method onEvent(g: VisionComponent, world: LiveWorld, event: Event) =
+  if player(world).isSentinel: return
+
   var triggerUpdate = false
   var clearPrecomputations = true
 
@@ -123,19 +134,71 @@ method onEvent(g: VisionComponent, world: LiveWorld, event: Event) =
       if entity == player(world):
         triggerUpdate = true
         clearPrecomputations = false
-    extract(RegionInitializedEvent, region):
+    extract(OpacityUpdatedEvent):
       triggerUpdate = true
-    extract(EntityDestroyedEvent, entity):
-      triggerUpdate = inVisionRange(world, entity)
-    extract(TileLayerDestroyedEvent, tilePosition):
-      triggerUpdate = inVisionRange(world, tilePosition)
-    extract(ItemPlacedEvent, placedEntity):
-      triggerUpdate = inVisionRange(world, placedEntity)
-    extract(ItemMovedToInventoryEvent, entity):
-      triggerUpdate = inVisionRange(world, entity)
+    extract(OpacityInitializedEvent):
+      triggerUpdate = true
+    # extract(RegionInitializedEvent, region):
+    #   triggerUpdate = true
+    # extract(EntityDestroyedEvent, entity):
+    #   triggerUpdate = inVisionRange(world, entity)
+    # extract(TileLayerDestroyedEvent, tilePosition):
+    #   triggerUpdate = inVisionRange(world, tilePosition)
+    # extract(ItemPlacedEvent, placedEntity):
+    #   triggerUpdate = inVisionRange(world, placedEntity)
+    # extract(ItemMovedToInventoryEvent, entity):
+    #   triggerUpdate = inVisionRange(world, entity)
 
   if triggerUpdate:
     if clearPrecomputations:
       for i in 0 ..< 4:
         g.precomputedPositions[i] = vec2i(-1000,-1000)
     updateVision(g, world, player(world))
+
+
+
+
+
+
+
+proc updateGlobalIllumination(g: LightingComponent, world: LiveWorld, regionEnt: Entity, area: Option[Recti] = none(Recti), layer: Option[int] = none(int)) =
+  let region = regionEnt[Region]
+  let z = MainLayer
+  proc obstruction(x: int, y : int) : float32 =
+    if x > -RegionHalfSize and x < RegionHalfSize and y > -RegionHalfSize and y < RegionHalfSize:
+      opacity(region, x,y,z).float32 / 255.0f32
+    else:
+      1.0f32
+
+  if area.isSome:
+    warn "Need to implement partial illumination update"
+  else:
+    if area.isSome and area.get.width <= 3 and area.get.height <= 3:
+      let a = area.get
+      for x in a.x ..< a.x + a.width:
+        for y in a.y ..< a.y + a.height:
+          suncast(region.globalIllumination, vec2i(0,0), some(vec2i(x,y)), ShadowResolution, region.globalShadowLength.int32, obstruction)
+    else:
+      suncast(region.globalIllumination, vec2i(0,0), none(Vec2i), ShadowResolution, region.globalShadowLength.int32, obstruction)
+
+method update(g: LightingComponent, world: LiveWorld) =
+  discard
+
+
+method initialize(g: LightingComponent, world: LiveWorld) =
+  g.name = "LightingComponent"
+
+
+method onEvent(g: LightingComponent, world: LiveWorld, event: Event) =
+  if player(world).isSentinel: return
+
+  var triggerUpdate = false
+  var clearPrecomputations = true
+
+  postMatcher(event):
+    extract(OpacityUpdatedEvent, region, area, layer):
+      if region[Region].initialized:
+        updateGlobalIllumination(g, world, region, some(area), some(layer))
+    extract(OpacityInitializedEvent, region):
+      if region[Region].initialized:
+        updateGlobalIllumination(g, world, region, none(Recti), none(int))

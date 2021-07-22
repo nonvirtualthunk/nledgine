@@ -23,6 +23,13 @@ type
     noOpCount*: int
     maxMetadata*: string
 
+  TimerDuration* = object
+    startTime: float
+    timer: Timer
+
+proc timer*(nomen: string) : Timer =
+  Timer(name: nomen)
+
 proc recordTime*(t: Timer, dt: float, metadata: string = "") =
   if t != nil:
     if t.reservoirCount == 0:
@@ -48,6 +55,15 @@ proc recordNoOp*(t: Timer) =
   if t != nil:
     t.count.inc
     t.noOpCount.inc
+
+proc start*(t: Timer) : TimerDuration =
+  TimerDuration(
+    timer: t,
+    startTime: glfwGetTime()
+  )
+
+proc finish*(t: TimerDuration) =
+  t.timer.recordTime(glfwGetTime() - t.startTime)
 
 proc average*(t: Timer): float = t.sdSum / t.sdN
 

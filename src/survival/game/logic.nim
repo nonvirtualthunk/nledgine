@@ -18,6 +18,8 @@ import worlds/identity
 import tables
 import game/flags
 
+{.experimental.}
+
 const MaxGatherTickIncrement = Ticks(100)
 const CraftingRange = 2
 
@@ -68,7 +70,7 @@ proc createResourcesFromYields*(world: LiveWorld, yields: seq[ResourceYield], so
       let gatherableRsrc = GatherableResource(
         resource: rsrcYield.resource,
         source: source,
-        quantity: reduceable(rsrcYield.amountRange.rollInt(rand).int16)
+        quantity: reduceable(rsrcYield.quantity.nextValue(rand).int16)
       )
       result.add(gatherableRsrc)
 
@@ -175,7 +177,23 @@ proc primaryDirectionFrom*(a,b : Vec2i) : Direction =
       else:
         Direction.Down
 
-proc moveEntity*(world: LiveWorld, creature: Entity, toPos: Vec3i) =
+proc passable*(world: LiveWorld, tile: ptr Tile) : bool =
+  if tile.wallLayers.nonEmpty:
+    return false
+  for ent in tile.entities:
+    if ent[Physical].occupiesTile:
+      return false
+  true
+
+
+proc passable*(world: LiveWorld, region: Entity, position: Vec3i) : bool =
+  passable(world, tilePtr(region[Region], position))
+
+
+proc moveEntity*(world: LiveWorld, creature: Entity, toPos: Vec3i) : bool {.discardable.} =
+  if not passable(world, creature[Physical].region, toPos):
+    return false
+
   withWorld(world):
     if creature.hasData(Physical):
       let phys = creature.data(Physical)
@@ -193,8 +211,9 @@ proc moveEntity*(world: LiveWorld, creature: Entity, toPos: Vec3i) =
           advanceWorld(world, moveTime)
     else:
       warn "Cannot move entity without physical data"
+  true
 
-proc moveEntityDelta*(world: LiveWorld, creature: Entity, delta: Vec3i) =
+proc moveEntityDelta*(world: LiveWorld, creature: Entity, delta: Vec3i) : bool {.discardable.} =
   if creature.hasData(Physical):
     moveEntity(world, creature, creature[Physical].position + delta)
 
@@ -460,12 +479,28 @@ type GatherResult = object
 
 # Perofrm the gathering of the target using the provided parameters, storing outputs in `resources` and recording the time taken in `ticks`
 proc gatherFrom*(world: LiveWorld, target: Target, ticks: var Ticks, resources: var seq[GatherableResource], actions: Table[Taxon, ActionUse]): GatherResult =
+  var possibleResources : seq[(int, int16)] # (index, resource count)
+  var resourcesCountSum = 0
+
   let region = regionFor(world, target)
-  for rsrc in resources.mitems:
-    if rsrc.quantity.currentValue > 0:
-      let rYield = resourceYieldFor(world, target, rsrc)
+  for idx in 0 ..< resources.len:
+    if resources[idx].quantity.currentValue > 0:
+      let rsrc = resources[idx].addr
+      let rYield = resourceYieldFor(world, target, rsrc[])
       let bestMethod = effectiveGatherLevelFor(rYield, actions)
       bestMethod.ifPresent:
+        possibleResources.add((idx, rsrc.quantity.currentValue))
+        resourcesCountSum += rsrc.quantity.currentValue
+
+  var rand = randomizer(world)
+  if possibleResources.nonEmpty:
+    var r = nextInt(rand,resourcesCountSum)
+    for (idx,count) in possibleResources:
+      r -= count
+      if r < 0:
+        let rsrc = resources[idx].addr
+        let rYield = resourceYieldFor(world, target, resources[idx])
+        let bestMethod = effectiveGatherLevelFor(rYield, actions)
         let actionToUse = bestMethod.get()[0]
         if not result.actionsUsed.contains(actionToUse):
           result.actionsUsed.add(actionToUse)
@@ -565,7 +600,7 @@ proc interact*(world: LiveWorld, entity: Entity, tools: seq[Entity], target: Tar
 
   interact(world, entity, target, actions)
 
-proc interact*(world: LiveWorld, entity: Entity, tools: seq[Entity], targetPos: Vec3i) : bool {.discardable.} =
+proc interact*(world: LiveWorld, entity: Entity, tools: seq[Entity], targetPos: Vec3i, skipFloorAndCeiling: bool = false) : bool {.discardable.} =
   for target in entitiesAt(entity[Physical].region[Region], targetPos):
     if interact(world, entity, tools, Target(kind: TargetKind.Entity, entity: target)):
       return true
@@ -577,12 +612,13 @@ proc interact*(world: LiveWorld, entity: Entity, tools: seq[Entity], targetPos: 
   if tile.wallLayers.nonEmpty:
     if interact(world, entity, tools, Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Wall, region: region, tilePos: targetPos, index: tile.wallLayers.len - 1)):
       return true
-  if tile.floorLayers.nonEmpty:
-    if interact(world, entity, tools, Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Floor, region: region, tilePos: targetPos, index: tile.floorLayers.len - 1)):
-      return true
-  if tile.ceilingLayers.nonEmpty:
-    if interact(world, entity, tools, Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Ceiling, region: region, tilePos: targetPos, index: tile.ceilingLayers.len - 1)):
-      return true
+  if not skipFloorAndCeiling:
+    if tile.floorLayers.nonEmpty:
+      if interact(world, entity, tools, Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Floor, region: region, tilePos: targetPos, index: tile.floorLayers.len - 1)):
+        return true
+    if tile.ceilingLayers.nonEmpty:
+      if interact(world, entity, tools, Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Ceiling, region: region, tilePos: targetPos, index: tile.ceilingLayers.len - 1)):
+        return true
 
 
 proc possibleActions*(world: LiveWorld, actor: Entity, target: Entity) : seq[Taxon] =
@@ -766,12 +802,18 @@ proc craftItem*(world: LiveWorld, actor: Entity, recipeTaxon: Taxon, ingredients
   else:
     SentinelEntity
 
+  var rand = if hypothetical:
+    randomizer(world, RandomizationStyle.High)
+  else:
+    randomizer(world)
+
   let recipe = recipe(recipeTaxon)
   let recipeTemplate = recipeTemplate(recipe.recipeTemplate)
   if matchesRecipe(world, actor, recipe, ingredients):
     var results : seq[Entity]
     for output in recipe.outputs:
-      for i in 0 ..< output.count:
+      let outputCount = output.amount.nextValue(rand)
+      for i in 0 ..< outputCount:
         let createdItem = createItem(world, region, output.item)
         if not createdItem.hasData(Flags):
           createdItem.attachData(Flags())
@@ -914,7 +956,16 @@ proc ignite*(world: LiveWorld, actor: Entity, tool: Entity, targetSpecified: Opt
 
 
 proc destroySurvivalEntity*(world: LiveWorld, ent: Entity, bypassDestructiveCreation: bool = false) =
-  world.eventStmts(EntityDestroyedEvent(entity: ent)):
+  let region = if ent.hasData(Physical):
+    ent[Physical].region
+  else:
+    SentinelEntity
+
+  # it doesn't make sense to destroy an entity that is not in a region
+  if region.isSentinel:
+    return
+
+  world.eventStmts(EntityDestroyedEvent(entity: ent, region: region)):
     if ent.hasData(Physical):
       let phys = ent[Physical]
       if not phys.region.isSentinel: # this indicates an entity has already been destroyed
@@ -938,6 +989,26 @@ proc destroySurvivalEntity*(world: LiveWorld, ent: Entity, bypassDestructiveCrea
         phys.region = SentinelEntity
     else:
       warn &"No current means of destroying non-physical entity {debugIdentifier(world, ent)}"
+
+## Returns how far through the current day it is, 0.0 is dawn, 0.99999... is the moment before dawn of the next day
+proc timeOfDayFraction*(world: LiveWorld, regionEnt: Entity): float =
+  let dayLength = regionEnt[Region].lengthOfDay
+  let withinDay = world[TimeData].currentTime.int mod max(dayLength.int,1)
+  withinDay.float / dayLength.float
+
+## Returns whether it is day or night, and how far through the day/night it is [0.0,1.0)
+proc timeOfDay*(world: LiveWorld, regionEnt: Entity) : (DayNight, float) =
+  let pcnt = timeOfDayFraction(world, regionEnt)
+  if pcnt < 0.5:
+    (DayNight.Day, pcnt * 2.0)
+  else:
+    (DayNight.Night, (pcnt - 0.5) * 2.0)
+
+## Returns how many full days have passed
+proc dayCount*(world: LiveWorld, regionEnt: Entity): int =
+  let dayLength = regionEnt[Region].lengthOfDay
+  world[TimeData].currentTime.int div max(dayLength.int,1)
+
 
 
 when isMainModule:

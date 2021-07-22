@@ -8,7 +8,7 @@ type
   
 
 proc reduceable*[T](v: T): Reduceable[T] =
-  Reduceable[T](max: v)
+  Reduceable[T](max: max(v,0.T))
 
 proc reduceBy*[T](r: var Reduceable[T], delta: T) =
   r.reducedBy += delta

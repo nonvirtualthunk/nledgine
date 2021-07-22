@@ -28,7 +28,8 @@ type
     eventPriority*: int
     eventCallbacks: seq[EventCallback]
     lastUpdated: UnitOfTime
-    timers*: ComponentTimer
+    componentTimers*: ComponentTimer
+    timers*: seq[Timer]
 
   GameEngine* = ref object
     components: seq[GameComponent]
@@ -41,7 +42,8 @@ type
     eventPriority*: int
     eventCallbacks: seq[LiveWorldEventCallback]
     lastUpdated: UnitOfTime
-    timers*: ComponentTimer
+    componentTimers*: ComponentTimer
+    timers*: seq[Timer]
 
   LiveGameEngine* = ref object
     components: seq[LiveGameComponent]
@@ -55,7 +57,9 @@ type
     eventPriority*: int
     displayEventCallbacks: seq[DisplayEventCallback]
     lastUpdated: UnitOfTime
-    timers*: ComponentTimer
+    componentTimers*: ComponentTimer
+    timers*: seq[Timer]
+    
 
   GraphicsEngine* = ref object
     components: seq[GraphicsComponent]
@@ -229,14 +233,14 @@ proc update*(ge: GameEngine) =
   #       callback(ge.world, evt)
 
   for comp in ge.components:
-    comp.timers.updateTimer.time(0.05):
+    comp.componentTimers.updateTimer.time(0.05):
       let t = relTime()
       let dt = t - comp.lastUpdated
       comp.update(ge.world)
 
 proc update*(ge: LiveGameEngine) =
   for comp in ge.components:
-    comp.timers.updateTimer.time(0.05):
+    comp.componentTimers.updateTimer.time(0.05):
       let t = relTime()
       let dt = t - comp.lastUpdated
       comp.update(ge.world)
@@ -244,7 +248,7 @@ proc update*(ge: LiveGameEngine) =
 proc processEvents(ge: GameEngine) =
   for evt in ge.eventBus.newEvents:
     for comp in ge.components:
-      comp.timers.eventTimer.time(0.01, evt.toString):
+      comp.componentTimers.eventTimer.time(0.01, evt.toString):
         comp.onEvent(ge.world, evt)
         for callback in comp.eventCallbacks:
           callback(ge.world, evt)
@@ -252,7 +256,7 @@ proc processEvents(ge: GameEngine) =
 proc processEvents(ge: LiveGameEngine) =
   for evt in ge.eventBus.newEvents:
     for comp in ge.components:
-      comp.timers.eventTimer.time(0.01, evt.toString):
+      comp.componentTimers.eventTimer.time(0.01, evt.toString):
         comp.onEvent(ge.world, evt)
         for callback in comp.eventCallbacks:
           callback(ge.world, evt)
@@ -261,20 +265,20 @@ proc initialize*(ge: GameEngine) =
   ge.components = ge.components.sortedByIt(it.initializePriority * -1)
   for comp in ge.components:
     comp.initialize(ge.world)
-    comp.timers.init(comp.name)
+    comp.componentTimers.init(comp.name)
   ge.components = ge.components.sortedByIt(it.eventPriority * -1)
 
 proc initialize*(ge: LiveGameEngine) =
   ge.components = ge.components.sortedByIt(it.initializePriority * -1)
   for comp in ge.components:
     comp.initialize(ge.world)
-    comp.timers.init(comp.name)
+    comp.componentTimers.init(comp.name)
   ge.components = ge.components.sortedByIt(it.eventPriority * -1)
 
 proc update*(ge: GraphicsEngine, channel: var Channel[DrawCommand], df: float) {.gcsafe.} =
   for evt in ge.gameEventBus.newEvents:
     for comp in ge.components:
-      comp.timers.eventTimer.time(0.01, evt.toString):
+      comp.componentTimers.eventTimer.time(0.01, evt.toString):
         # worldless
         comp.onEvent(ge.displayWorld, evt)
         if ge.world != nil:
@@ -288,7 +292,7 @@ proc update*(ge: GraphicsEngine, channel: var Channel[DrawCommand], df: float) {
 
   for evt in ge.displayEventBus.newEvents:
     for comp in ge.components:
-      comp.timers.eventTimer.time(0.01, evt.toString):
+      comp.componentTimers.eventTimer.time(0.01, evt.toString):
         if not evt.isConsumed:
           # worldless
           comp.onEvent(ge.displayWorld, evt)
@@ -304,7 +308,7 @@ proc update*(ge: GraphicsEngine, channel: var Channel[DrawCommand], df: float) {
 
   ge.components = ge.components.sortedByIt(it.updatePriority * -1)
   for comp in ge.components:
-    comp.timers.updateTimer.time(0.05):
+    comp.componentTimers.updateTimer.time(0.05):
       # try updating without any world supplied, if supported
       let worldlessCommands = comp.update(ge.displayWorld, df)
       let commands = if worldlessCommands.len > 0:
@@ -327,7 +331,7 @@ proc initialize*(ge: GraphicsEngine) =
     else:
       comp.initialize(ge.liveWorld, ge.displayWorld)
 
-    comp.timers.init(comp.name)
+    comp.componentTimers.init(comp.name)
   ge.components = ge.components.sortedByIt(it.eventPriority * -1)
 
 
@@ -335,7 +339,9 @@ proc initialize*(ge: GraphicsEngine) =
 proc componentTimingsReport*[T](g: T) : string =
   result = ""
   for comp in g.components:
-    for timer in comp.timers.timers:
+    for timer in comp.componentTimers.timers:
+      result.add($timer)
+    for timer in comp.timers:
       result.add($timer)
 
 
@@ -371,7 +377,7 @@ when isMainModule:
     value*: int
 
   method initialize(g: PrintComponent, someOtherWorlds: World) =
-    g.onEvent(MousePress, mpe):
+    g.onEventOfType(MousePress, mpe):
       info &"MPE received : {mpe.toString()}"
       g.value = 3
 

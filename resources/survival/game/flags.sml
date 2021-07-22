@@ -128,4 +128,16 @@ Flags {
   AxeHead {
     description: "Sturdy blade suitable for attaching to a handle to make a rough cutting tool"
   }
+  PickaxeHead {
+    description: "A sturdy spike, suitable for attaching to a handle to make a mining tool"
+  }
+  Pickaxe {
+    description: "A sturdy spike mounted on a handle, useful for mining and breaking hard substances"
+  }
+  Material {
+    description: "A raw material used to create more complex items"
+  }
+  Debris {
+    description: "Broken remains of something more useful"
+  }
 }

@@ -33,7 +33,7 @@ Recipes {
     ingredients {
       Ingredient : Items.Log
     }
-    outputs: [Items.Plank|2, Items.Bark|2, Items.Twigs]
+    outputs: [Items.Plank|2, Items.Bark|1-2, Items.Twigs|70%]
   }
 
   CarvePoleFromBranch {
@@ -52,5 +52,23 @@ Recipes {
       Ingredient : Items.Plank
     }
     outputs: [Items.WoodPole|2, Items.WoodShavings]
+  }
+
+  SmashStone {
+    name: "smash stone"
+    recipeTemplate: Smash
+    ingredients {
+      Ingredient: Items.Stone
+    }
+    outputs: [Items.StoneShards,Items.SharpStone|50%]
+  }
+
+  SmashBranch {
+    name: "smash branch"
+    recipeTemplate: Smash
+    ingredients {
+      Ingredient: Items.Branch
+    }
+    outputs: [Items.WoodPieces|1-2]
   }
 }

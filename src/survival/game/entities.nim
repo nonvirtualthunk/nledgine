@@ -50,7 +50,7 @@ type
     # what resource is there
     resource*: Taxon
     # how much of it is present
-    amountRange*: DiceExpression
+    quantity*: Distribution[int]
     # how can it be gathered
     gatherMethods*: seq[ResourceGatherMethod]
     # base amount of time it takes to gather
@@ -79,6 +79,10 @@ type
     Up
     Right
     Down
+
+  DayNight* {.pure.} = enum
+    Day
+    Night
 
   Physical* = object
     # position in three dimensional space within the region, x/y/layer
@@ -166,6 +170,10 @@ type
   LightSource* = object
     # how many tiles out the light will travel if uninterrupted
     brightness*: int
+    # shadows cast by this light source
+    shadowGrid*: ShadowGrid[32]
+    # when (in game time) the shadowcasting was last updated
+    lastUpdated*: Ticks
 
   Fuel* = object
     # how many ticks of fuel this provides to a standard fire
@@ -328,7 +336,7 @@ type
     # What item is produced
     item*: Taxon
     # How  many are produced
-    count*: int
+    amount*: Distribution[int]
 
   RecipeInputChoice* = object
     items*: seq[Entity]
@@ -436,20 +444,20 @@ proc readFromConfig*(cv: ConfigValue, r: var RecipeOutput) =
     let sections = cv.asStr.split('|')
     let kind = sections[0]
     let t = if kind.contains(".") : findTaxon(kind) else: taxon("Items", kind)
-    let count = if sections.len > 1:
-      sections[1].strip.parseInt
+    let outputDistribution = if sections.len > 1:
+      asConf(sections[1].strip).readInto(Distribution[int])
     else:
-      1
+      constantDistribution(1.int)
 
     if t != UnknownThing:
       r.item = t
-      r.count = count
+      r.amount = outputDistribution
     else:
       warn &"Recipe output did not have a valid item type: {cv.asStr}"
   else:
     readFromConfigByField(cv, RecipeOutput, r)
-    if r.count == 0:
-      r.count = 1
+    if r.amount.maxValue == 0:
+      r.amount = constantDistribution(1)
 
 
 const taxonPlusNumRe = "([a-zA-Z0-9.]+)\\s?([0-9]+)?".re
@@ -591,10 +599,14 @@ defineLibrary[Recipe]:
 
         readInto(v["recipe"], ri[])
         if ri.outputs.isEmpty:
+          let amount = if v["recipe"]["amount"].isEmpty:
+            constantDistribution(1)
+          else:
+            v["recipe"]["amount"].readInto(Distribution[int])
           ri.outputs.add(
             RecipeOutput(
               item: itemKey,
-              count: v["recipe"]["count"].asInt(1)
+              amount: amount
             )
           )
         lib[key] = ri

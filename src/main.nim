@@ -282,6 +282,9 @@ proc main*(setup: GameSetup) =
   var standardCursors : Table[int, GLFWCursor]
   var activeStandardCursor = 0
 
+  var needsRedraw = true
+  var lastDrawn = 0.0
+
   while not w.windowShouldClose:
     if lastViewport != framebufferSize:
       glViewport(0, 0, framebufferSize.x, framebufferSize.y)
@@ -319,10 +322,8 @@ proc main*(setup: GameSetup) =
                   let cursor = standardCursors.getOrCreate(cursorType):
                     glfwCreateStandardCursor(cursorType.int32)
                   setCursor(w, cursor)
-
         else:
           break
-
 
       while true:
         let drawCommandOpt = drawCommandChannel.tryRecv()
@@ -337,12 +338,17 @@ proc main*(setup: GameSetup) =
                       drawCommands.add(default(DrawCommand))
                     if drawCommands[newComm.vao].vao == 0:
                       drawCommands[newComm.vao] = newComm
+                      needsRedraw = true
                     else:
-                      drawCommands[newComm.vao].merge(newComm)
+                      if drawCommands[newComm.vao].merge(newComm):
+                        needsRedraw = true
                   of DrawCommandKind.CameraUpdate:
                     while cameras.len <= newComm.camera.id:
                       cameras.add(default(Camera))
-                    cameras[newComm.camera.id] = newComm.camera
+                      needsRedraw = true
+                    if not effectivelyEquivalent(cameras[newComm.camera.id],newComm.camera):
+                      cameras[newComm.camera.id] = newComm.camera
+                      needsRedraw = true
                   of DrawCommandKind.Finish:
                     err &"Command accumulator had a finish command? That doesn't make any sense"
               commandAccumulator.setLen(0)
@@ -351,17 +357,30 @@ proc main*(setup: GameSetup) =
         else:
           break
 
-      var drawCommandIndices = newSeq[int](drawCommands.len)
+      let time = glfwGetTime()
       for i in 0 ..< drawCommands.len:
-        drawCommandIndices[i] = i
-      let sortedDrawCommandIndices = drawCommandIndices.sortedByIt(drawCommands[it].drawOrder)
+        if drawCommands[i].kind == DrawCommandKind.DrawCommandUpdate and drawCommands[i].requiredUpdateFrequency.isSome:
+          if drawCommands[i].requiredUpdateFrequency.get.inSeconds < time - lastDrawn:
+            needsRedraw = true
+            break
 
-      for i in 0 ..< sortedDrawCommandIndices.len:
-        if drawCommands[sortedDrawCommandIndices[i]].vao != 0:
-          drawCommands[sortedDrawCommandIndices[i]].render(cameras, framebufferSize)
 
-      discard goChannel.trySend(true)
-      w.swapBuffers()
+      if needsRedraw:
+        var drawCommandIndices = newSeq[int](drawCommands.len)
+        for i in 0 ..< drawCommands.len:
+          drawCommandIndices[i] = i
+        let sortedDrawCommandIndices = drawCommandIndices.sortedByIt(drawCommands[it].drawOrder)
+
+        for i in 0 ..< sortedDrawCommandIndices.len:
+          if drawCommands[sortedDrawCommandIndices[i]].vao != 0:
+            drawCommands[sortedDrawCommandIndices[i]].render(cameras, framebufferSize)
+
+        discard goChannel.trySend(true)
+        w.swapBuffers()
+        needsRedraw = false
+      else:
+        sleep(8)
+        discard goChannel.trySend(true)
     else:
       sleep(100)
 
@@ -369,17 +388,5 @@ proc main*(setup: GameSetup) =
       info &"Time to first frame drawn: {(relTime() - windowInitTime).inSeconds}"
       first = false
 
-  w.destroyWindow()
+  # w.destroyWindow()
   glfwTerminate()
-
-# const appName {.strdefine.} : string = "None"
-
-# when appName == "Ax4":
-#   main(GameSetup(
-#     windowSize : vec2i(1024,768),
-#     resizeable : false,
-#     windowTitle : "Ax4"
-#   ))
-
-# when appName == "None":
-#   echo "Specify an appName when compiling"

@@ -12,6 +12,9 @@ type Recti* = Rect[int32]
 proc rect*[T](pos: Vec2[T], dim: Vec2[T]): Rect[T] =
    Rect[T](position: pos, dimensions: dim)
 
+proc recti*[X,Y,W,H](x: X,y: Y,w: W,h : H): Recti =
+   Recti(position: vec2i(x.int32, y.int32), dimensions: vec2i(w.int32, h.int32))
+
 proc rect*[T](x: T, y: T, width: T, height: T): Rect[T] =
    result.position[0] = x
    result.position[1] = y
@@ -82,3 +85,53 @@ proc quadraticSolver*(a: float, b: float, c: float): Option[(float, float)] =
    else:
       none((float, float))
 
+
+iterator bresenhamHigh(x0,y0,x1,y1: int) : (int,int) =
+  var dx = x1 - x0
+  var dy = y1 - y0
+  var xi = 1
+  if dx < 0:
+    xi = -1
+    dx = -dx
+  var D = (2 * dx) - dy
+  var x = x0
+
+  for y in y0 .. y1:
+    yield (x,y)
+    if D > 0:
+      x = x + xi
+      D = D + (2 * (dx - dy))
+    else:
+      D = D + 2*dx
+      
+iterator bresenhamLow(x0,y0,x1,y1: int): (int,int) =
+  var dx = x1 - x0
+  var dy = y1 - y0
+  var yi = 1
+  if dy < 0:
+    yi = -1
+    dy = -dy
+
+  var D = (2 * dy) - dx
+  var y = y0
+
+  for x in x0 .. x1:
+    yield (x,y)
+    if D > 0:
+      y = y + yi
+      D = D + (2 * (dy - dx))
+    else:
+      D = D + 2*dy
+
+iterator bresenham*(x0,y0,x1,y1: int): (int,int) =
+  if abs(y1 - y0) < abs(x1 - x0):
+    if x0 > x1:
+      for x,y in bresenhamLow(x1,y1,x0,y0): yield (x,y)
+    else:
+      for x,y in bresenhamLow(x0,y0,x1,y1): yield (x,y)
+  else:
+    if y0 > y1:
+      for x,y in bresenhamHigh(x1,y1,x0,y0): yield (x,y)
+    else:
+      for x,y in bresenhamHigh(x0,y0,x1,y1): yield (x,y)
+  

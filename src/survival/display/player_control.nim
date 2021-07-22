@@ -49,6 +49,9 @@ type
     actionMenu*: Widget
     craftingMenu*: CraftingMenu
     lastRepeat*: UnitOfTime
+    inventoryWidget*: Widget
+    choosingQuickSlot*: int
+    choosingQuickSlotWidget*: Widget
 
   ActionInfo = object
     kind: Taxon
@@ -83,7 +86,7 @@ method initialize(g: PlayerControlComponent, world: LiveWorld, display: DisplayW
   ws.desktop.background.image = bindable(imageRef("ui/woodBorderTransparent.png"))
 
   ws.desktop.createChild("hud", "VitalsWidget")
-  let inventoryWidget = ws.desktop.createChild("Inventory", "InventoryWidget")
+  g.inventoryWidget = createInventoryDisplay(ws.desktop, "MainInventory")
   ws.desktop.createChild("hud", "MessageLog")
   ws.desktop.createChild("hud", "QuickSlots")
   g.actionMenu = ws.desktop.createChild("ActionMenu", "ActionMenu")
@@ -91,26 +94,18 @@ method initialize(g: PlayerControlComponent, world: LiveWorld, display: DisplayW
   g.craftingMenu = newCraftingMenu(ws, world, player)
 
 
-  inventoryWidget.onEvent(ListItemSelect, lis):
-    let item = g.inventoryItems[lis.index].itemEntities[^1]
-    g.actionTarget = some(item)
-    g.actionItems = constructActionInfo(world, player(world), item)
-    g.actionMenu.bindValue("ActionMenu.showing", true)
-    g.actionMenu.bindValue("ActionMenu.actions", g.actionItems)
-    g.actionMenu.x = absolutePos(lis.originatingWidget.resolvedPosition.x, WidgetOrientation.TopRight)
-    g.actionMenu.y = absolutePos(lis.originatingWidget.resolvedPosition.y, WidgetOrientation.TopRight)
 
 
 
-
-
-proc performAction(world: LiveWorld, display: DisplayWorld, player: Entity, target: Entity, action: Taxon) =
+proc performAction(world: LiveWorld, display: DisplayWorld, player: Entity, tool: Entity, action: Taxon) =
   if action == † Actions.Place:
-    placeItem(world, some(player), target, facedPosition(world, player), true)
+    placeItem(world, some(player), tool, facedPosition(world, player), true)
   elif action == † Actions.Eat:
-    eat(world, player, target)
+    eat(world, player, tool)
   elif action == † Actions.Ignite:
-    ignite(world, player, target, none(Target))
+    ignite(world, player, tool, none(Target))
+  else:
+    interact(world, player, @[tool], facedPosition(world, player))
 
 
 proc naturalLanguageList*[T](s : seq[T], f : (T) -> string) : string =
@@ -141,7 +136,7 @@ proc message*(world: LiveWorld, evt: Event): Option[RichText] =
           spacer = ", "
 
         var actionStr = naturalLanguageList(actions, (a) => actionKind(a.kind).presentVerb)
-        let toolsUsed = actions.mapIt(it.source).filterIt(it != player)
+        let toolsUsed = actions.mapIt(it.source).filterIt(it != player).deduplicate
         let toolStr = if toolsUsed.isEmpty:
           ""
         else:
@@ -191,6 +186,8 @@ proc message*(world: LiveWorld, evt: Event): Option[RichText] =
 proc closeMenus(g: PlayerControlComponent) =
   g.actionMenu.bindValue("ActionMenu.showing", false)
   g.actionTarget = none(Entity)
+  if g.choosingQuickSlotWidget != nil:
+    g.choosingQuickSlotWidget.destroyWidget()
 
 
 method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
@@ -200,7 +197,7 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
       if not repeat:
         g.lastRepeat = relTime()
       else:
-        if (relTime() - g.lastRepeat).inSeconds < 0.1:
+        if (relTime() - g.lastRepeat).inSeconds < 0.05:
           return
         g.lastRepeat = relTime()
 
@@ -224,22 +221,8 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
               let toPos = phys.position + vec3i(delta.x, delta.y, 0)
               let toTile = tile(phys.region, toPos.x, toPos.y, toPos.z)
 
-              var interactingWithBlockingEntity = false
-              var interactedSuccessfully = false
-              var interactedWithEntity : Entity
-              for ent in toTile.entities:
-                ifHasData(ent, Physical, phys):
-                  if phys.occupiesTile:
-                    interactedWithEntity = ent
-                    interactingWithBlockingEntity = true
-                    if interact(world, player, player[Creature].allEquippedItems, Target(kind: TargetKind.Entity, entity: ent)):
-                      interactedSuccessfully = true
-                      break
+              if not interact(world, player, player[Creature].allEquippedItems, toPos, skipFloorAndCeiling=true):
 
-              if interactingWithBlockingEntity and not interactedSuccessfully:
-                world.addFullEvent(CouldNotGatherEvent(entity: player, fromEntity: some(interactedWithEntity)))
-
-              if not interactingWithBlockingEntity:
                 moveEntityDelta(world, player, vec3i(delta.x, delta.y, 0))
                 for ent in toTile.entities:
                   ifHasData(ent, Physical, phys):
@@ -280,9 +263,34 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
         let action = g.actionItems[index]
         if g.actionTarget.isSome:
           performAction(world, display, player(world), g.actionTarget.get, action.kind)
+          g.closeMenus()
         else:
           warn &"Cannot perform action {action.kind} without a target"
-      g.closeMenus()
+      # g.closeMenus()
+      elif originatingWidget.isDescendantOf("QuickSlots"):
+        g.closeMenus()
+
+        g.choosingQuickSlot = index
+        g.choosingQuickSlotWidget = createInventoryDisplay(ws.desktop, "QuickSlotSelect")
+        g.choosingQuickSlotWidget.x = absolutePos(originatingWidget.resolvedPosition.x, WidgetOrientation.Center)
+        g.choosingQuickSlotWidget.y = absolutePos(originatingWidget.resolvedPosition.y, WidgetOrientation.BottomLeft)
+        g.choosingQuickSlotWidget.setInventoryDisplayItems(world, toSeq(player(world)[Inventory].items.items))
+        g.choosingQuickSlotWidget.onEvent:
+          extract(InventoryItemSelectedEvent, itemInfo):
+            player(world)[Player].quickSlots[index] = itemInfo.itemEntities[^1]
+            g.quickSlotLatch.flipOn()
+            g.closeMenus()
+
+
+    extract(InventoryItemSelectedEvent, itemInfo, originatingPosition, originatingWidget):
+      if originatingWidget.identifier == "MainInventory":
+        let item = itemInfo.itemEntities[^1]
+        g.actionTarget = some(item)
+        g.actionItems = constructActionInfo(world, player(world), item)
+        g.actionMenu.bindValue("ActionMenu.showing", true)
+        g.actionMenu.bindValue("ActionMenu.actions", g.actionItems)
+        g.actionMenu.x = absolutePos(originatingPosition.x, WidgetOrientation.TopRight)
+        g.actionMenu.y = absolutePos(originatingPosition.y, WidgetOrientation.TopRight)
 
 
   postMatcher(event):
@@ -364,10 +372,7 @@ method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld
 
       if g.inventoryLatch.flipOff():
         ws.desktop.bindValue("itemIconAndText", true)
-        g.inventoryItems = constructItemInfo(world, player)
-        ws.desktop.bindValue("inventory", {
-          "items" : g.inventoryItems
-        }.toTable())
+        g.inventoryWidget.setInventoryDisplayItems(world, toSeq(player[Inventory].items.items))
 
       if g.messageLatch.flipOff():
         ws.desktop.bindValue("messages", g.messageText)

@@ -169,7 +169,7 @@ QuickSlots {
   listItemBinding: "quickslots.items -> item"
   gapSize: 0
 
-  selectable: false
+  selectable: true
 }
 
 QuickSlotItem {

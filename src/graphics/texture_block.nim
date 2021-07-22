@@ -24,11 +24,13 @@ type
     texDimensions*: Vec2f
     revision: int
     texCoords*: ref array[4, Vec2f]
+
   TextureBlock* = ref object of Texture
     id: TextureID
     image: Image
     openRects: seq[Recti]
     imageData: Table[Image, ImageData]
+    imageDataSeq: seq[ImageData]
     borderWidth: int
     magFilter: GLenum
     minFilter: GLenum
@@ -115,6 +117,7 @@ proc addNewImage(tb: TextureBlock, img: Image) =
     tb.image.copyFrom(img, chosenRect.position + vec2i(tb.borderWidth, tb.borderWidth))
     tb.image.revision += 1
     let tc = tb.toTexCoords(Recti(position: chosenRect.position + vec2i(tb.borderWidth, tb.borderWidth), dimensions: img.dimensions))
+
     tb.imageData[img] = ImageData(location: chosenRect.position, dimensions: img.dimensions, revision: img.revision, texPosition: tc[0], texDimensions: tc[2] - tc[0], texCoords: tc)
   else:
     warn &"Failed to find space for image in texture block"
@@ -147,6 +150,7 @@ proc imageData*(tb: TextureBlock, img: Image): ImageData =
   if result == nil:
     tb.addNewImage(img)
     result = tb.imageData[img]
+
 
 proc blankTexCoords*(tb: TextureBlock): ref array[4, Vec2f] =
   if tb.blankImage.isNil:

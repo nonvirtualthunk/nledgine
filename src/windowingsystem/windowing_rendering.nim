@@ -55,7 +55,7 @@ type
 
    WQuad* = object
       shape*: WShape
-      image* : ImageRef
+      image* : Image
       texCoords* : WTexCoords
       color* : RGBA
       beforeChildren* : bool

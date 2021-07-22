@@ -15,9 +15,12 @@ type
 
   ImageRef* = object
     case kind: ImageRefKinds
-    of ImageObj: img: Image
-    of Path: path: string
-    of Sentinel: discard
+    of ImageObj:
+      img: Image
+    of Path:
+      path: string
+    of Sentinel:
+      discard
 
   Animation* = object
     image*: ImageRef
@@ -77,9 +80,30 @@ proc asImage*(il: ImageRef): Image =
       sentinelImage.sentinel = true
     sentinelImage
 
+proc resolve*(il: var ImageRef): Image =
+  case il.kind:
+  of ImageRefKinds.ImageObj:
+    il.img
+  of ImageRefKinds.Path:
+    il = imageRef(image(il.path))
+    il.asImage
+  of ImageRefKinds.Sentinel:
+    if sentinelImage == nil:
+      sentinelImage = createImage(vec2i(1, 1))
+      sentinelImage.sentinel = true
+    sentinelImage
+
+proc asImage*(il: var ImageRef): Image =
+  il.resolve()
+
+
 proc readFromConfig*(cv: ConfigValue, img: var ImageRef) =
   if cv.nonEmpty:
     img = imageRef(cv.asStr)
+
+proc readFromConfig*(cv: ConfigValue, img: var Image) =
+  if cv.nonEmpty:
+    img = image(cv.asStr)
 
 
 const timeRegex = "([0-9.]+)\\s?([a-z]+)".re
@@ -112,7 +136,7 @@ proc readFromConfig*(cv: ConfigValue, img: var ImageLike) =
       img = ImageLike(kind: ImageLikeKind.Image, image: readInto(cv, ImageRef))
 
 
-converter toImage*(il: ImageRef): Image =
+converter toImage*(il: var ImageRef): Image =
   asImage(il)
 
 converter toImageRef*(img: Image): ImageRef = ImageRef(kind: ImageObj, img: img)

@@ -31,6 +31,9 @@ type
     lastUpdatedTick*: Ticks
 
 
+# /+============================================+\
+# ||               Fire Component               ||
+# \+============================================+/
 
 method initialize(g: FireComponent, world: LiveWorld) =
   g.name = "FireComponent"
@@ -88,7 +91,9 @@ method onEvent(g: CreatureComponent, world: LiveWorld, event: Event) =
 
 
 
-
+# /+============================================+\
+# ||               Physical Component           ||
+# \+============================================+/
 method initialize(g: PhysicalComponent, world: LiveWorld) =
   g.name = "PhysicalComponent"
 
@@ -105,3 +110,6 @@ method onEvent(g: PhysicalComponent, world: LiveWorld, event: Event) =
           for ent in world.entitiesWithData(Physical):
             let phys = ent[Physical]
             g.requiredInterval = min(updateRecoveryAndLoss(phys.health, tick), g.requiredInterval)
+
+
+

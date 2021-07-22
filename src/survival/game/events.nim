@@ -6,6 +6,7 @@ import entities
 import survival_core
 import options
 import tiles
+import arxmath
 
 
 type
@@ -23,6 +24,17 @@ type
 
   TileFlagsUpdatedEvent* = ref object of GameEvent
 
+  OpacityUpdatedEvent* = ref object of GameEvent
+    region*: Entity
+    area*: Recti
+    layer*: int
+    oldOpacity*: uint8
+    newOpacity*: uint8
+
+  OpacityInitializedEvent* = ref object of GameEvent
+    region*: Entity
+
+
   CreatureMovedEvent* = ref object of GameEvent
     entity*: Entity
     region*: Entity
@@ -34,6 +46,7 @@ type
     facing*: Direction
 
   EntityDestroyedEvent* = ref object of GameEvent
+    region*: Entity
     entity*: Entity
 
   TileLayerDestroyedEvent* = ref object of GameEvent
@@ -121,6 +134,8 @@ type
 
 eventToStr(PlantCreatedEvent)
 eventToStr(RegionInitializedEvent)
+eventToStr(OpacityUpdatedEvent)
+eventToStr(OpacityInitializedEvent)
 eventToStr(TileChangedEvent)
 eventToStr(TileFlagsUpdatedEvent)
 eventToStr(CreatureMovedEvent)

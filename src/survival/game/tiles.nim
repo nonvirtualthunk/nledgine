@@ -12,6 +12,8 @@ import glm
 import entities
 import core
 import noto
+import tables
+import game/shadowcasting
 
 const RegionSize* {.intdefine.} = 512
 const RegionHalfSize* = RegionSize div 2
@@ -27,6 +29,8 @@ type
     moveCost* : Ticks
     # resources that this tile may have
     resources* : seq[ResourceYield]
+    # resources that are potentially present just lying on the ground
+    looseResources*: Table[Taxon, Distribution[int]]
     # images to display the tile
     images*: seq[ImageRef]
     # images to display the tile as a wall
@@ -34,7 +38,7 @@ type
 
   TileLayer* = object
     # what kind of tile layer is this
-    tileKind*: Taxon
+    tileKind*: LibraryTaxon
     # what resources are currently available
     resources*: seq[GatherableResource]
 
@@ -59,6 +63,16 @@ type
     tiles : FiniteGrid3D[RegionSize, RegionSize, RegionLayers, Tile]
     # flags for tiles (occupied, opaque, fluid impermeable, etc)
 #    tileFlags: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, int8]
+    opacity*: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, uint8]
+    opacityInitialized*: bool
+    # whether this region has finished initializing (i.e. placing terrain, starting entities, etc)
+    initialized*: bool
+    # representation of the global shadows from the sun in the center of the region
+    globalIllumination*: ShadowGrid[RegionSize]
+    # maximum length of shadows cast by the sun in this region
+    globalShadowLength*: int
+    # Length of a day in this region, in ticks
+    lengthOfDay*: Ticks
 
   RegionLayerView* = object
     region*: ref Region
@@ -77,6 +91,8 @@ proc readFromConfig*(cv: ConfigValue, tk: var TileKind) =
   cv["resources"].readInto(tk.resources)
   cv["images"].readInto(tk.images)
   cv["wallImages"].readInto(tk.wallImages)
+  for k,v in cv["looseResources"].fieldsOpt:
+    tk.looseResources[taxon("Items", k)] = v.readInto(Distribution[int])
 
 
 
@@ -85,6 +101,10 @@ defineReflection(Region)
 
 defineSimpleLibrary[TileKind]("survival/game/tile_kinds.sml", "TileKinds")
 proc tileKind*(t : Taxon): ref TileKind = library(TileKind)[t]
+proc tileKind*(t : LibraryID): ref TileKind = library(TileKind)[t]
+
+proc opacity*(r: ref Region, x: int, y: int, z: int): uint8 = r.opacity[x + RegionHalfSize,y + RegionHalfSize, z]
+proc setOpacity*(r: ref Region, x: int, y: int, z: int, o : uint8) = r.opacity[x + RegionHalfSize, y + RegionHalfSize, z] = o
 
 proc layer*(r: Entity, view: LiveWorld, z: int): RegionLayerView = RegionLayerView(region: view.data(r, Region), layer: z)
 proc tile*(r: RegionLayerView, x: int, y: int): var Tile = r.region.tiles[x + RegionHalfSize,y + RegionHalfSize,r.layer]
@@ -92,6 +112,7 @@ proc tile*(r: ref Region, x: int, y: int, z : int): var Tile = r.tiles[x + Regio
 proc tilePtr*(r: ref Region, x: int, y: int, z : int): ptr Tile = r.tiles.getPtr(x + RegionHalfSize,y + RegionHalfSize,z)
 proc tilePtr*(r: RegionLayerView, x: int, y: int): ptr Tile = r.region.tiles.getPtr(x + RegionHalfSize,y + RegionHalfSize,r.layer)
 proc tilePtr*(r: ref Region, v: Vec3i): ptr Tile = tilePtr(r, v.x, v.y, v.z)
+
 template tile*(r: Entity, x: int, y: int, z : int): var Tile =
   when declared(injectedWorld):
     tile(injectedWorld.data(r, Region), x,y,z)

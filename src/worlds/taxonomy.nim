@@ -109,6 +109,15 @@ proc normalizeTaxonStr(s: string): string =
     result.add(c.toLowerAscii)
     prevPunctOrSpace = (c == '.' or c == ' ')
 
+proc normalizeTaxonStrCompileTime(s: string): string {.compiletime.} =
+  var prevPunctOrSpace = false
+  for i in 0 ..< s.len:
+    let c = s[i]
+    if not prevPunctOrSpace and i != 0 and c.isUpperAscii:
+      result.add(' ')
+    result.add(c.toLowerAscii)
+    prevPunctOrSpace = (c == '.' or c == ' ')
+
 proc displayName*(t: Taxon): string =
   if t.isNil:
     result = "Unknown"
@@ -152,6 +161,10 @@ proc taxon*(namespace: string, name: string): Taxon =
 
 proc taxon*(name: string): Taxon =
   getGlobalTaxonomy().taxon(name)
+
+# Higher performance function that can assume the name and namespace are fully qualified and well formed
+proc taxonAlreadyNormalized(namespace: string, name: string): Taxon =
+  getGlobalTaxonomy().taxonsByNameAndNamespace.getOrDefault((namespace, name), UnknownThing)
 
 proc qualifiedTaxon*(nameExpr: string): Taxon =
   let sections = nameExpr.rsplit('.', 1)
@@ -268,10 +281,10 @@ proc load(taxonomy: ref Taxonomy) {.gcsafe.} =
 import macros
 macro `†`*(stmt: untyped) : Taxon =
   if stmt.kind == nnkDotExpr:
-    let namespace = $stmt[0]
-    let taxonStr = $stmt[1]
+    let namespace = normalizeTaxonStrCompileTime($stmt[0])
+    let taxonStr = normalizeTaxonStrCompileTime($stmt[1])
     quote do:
-      taxon(`namespace`, `taxonStr`)
+      taxonAlreadyNormalized(`namespace`, `taxonStr`)
   else:
     let str = $stmt
     quote do:
