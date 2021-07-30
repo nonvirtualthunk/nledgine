@@ -49,7 +49,8 @@ proc reset*[D: static[int]](g : var ShadowGrid[D]) =
   #   g.grid[i] = 0.uint8
 
 proc reset*[D: static[int]](g : ref ShadowGrid[D]) =
-  zeroMem(g.grid[0].addr, (D*2+1) * (D*2+1))
+  if g != nil:
+    zeroMem(g.grid[0].addr, (D*2+1) * (D*2+1))
 
 func radius*[D: static[int]](g : var ShadowGrid[D]) : int = D
 
@@ -312,12 +313,11 @@ proc suncast*[D: static[int]](shadowGrid : var ShadowGrid[D], origin: Vec2i, pat
         let sy = sgn(n.y)
 
         let (wx,wy) = toWorld(n, origin, shadowResolution)
+        let (wxdx,wydy) = toWorld(n - vec2i(sx, sy), origin, shadowResolution)
 
-        let obstruction = obstructionFunction(wx, wy)
-
-        let xobs = obstructionFunction(wx - sx, wy)
-        let yobs = obstructionFunction(wx, wy - sy)
-        let dobs = obstructionFunction(wx - sx, wy - sy)
+        let xobs = obstructionFunction(wxdx, wy)
+        let yobs = obstructionFunction(wx, wydy)
+        let dobs = obstructionFunction(wxdx, wydy)
 
         let pxp = min(shadowGrid[n.x.int - sx, n.y.int].float32 / 255.0f32, 1.0f - xobs)
         let pdp = min(shadowGrid[n.x.int - sx, n.y.int - sy].float32 / 255.0f32, 1.0f - dobs)

@@ -22,4 +22,8 @@ GrowthStages {
   Senescence {
 
   }
+
+  Sprout {
+
+  }
 }

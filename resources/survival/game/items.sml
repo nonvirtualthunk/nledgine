@@ -212,18 +212,7 @@ Items {
     description: "A piece of wood cut into a more readily usable shape"
     weight: 700-800
     fuel: 1000
-    durability: 20
-    transforms: [
-      {
-        recipeTemplate: Cut
-        difficulty: 3
-        output: [
-          WoodPole
-          WoodPole
-          WoodShavings
-        ]
-      }
-    ]
+    durability: "+2"
 
     flags {
       Wood: 1
@@ -240,26 +229,7 @@ Items {
     description: "A sturdy wooden pole useful for construction and toolmaking"
     weight: 300-400
     fuel: 450
-    durability: 15
-    transforms: [
-      {
-        recipeTemplate: Cut
-        difficulty: 1
-        output: [
-          WoodStake
-          WoodShavings
-        ]
-      },
-      {
-        recipeTemplate: Cut
-        difficulty: 2
-        output: [
-          Dowels,
-          Dowels,
-          WoodShavings
-        ]
-      }
-    ]
+    durability: "+2"
 
     flags {
       Wood: 1
@@ -359,6 +329,21 @@ Items {
     stackable: true
   }
 
+  FreshWater {
+    flags {
+      Liquid: 1
+    }
+
+    food {
+      hunger: 0
+      stamina: 1
+      hydration: 6
+      sanity: 0
+    }
+
+    stackable: true
+  }
+
   CarrotRoot {
     weight: 100
     durability: 10
@@ -380,6 +365,27 @@ Items {
     decay: 7 days
     decaysInto: RottingVegetation
     image: "survival/graphics/items/plants/carrot_root.png"
+    stackable: true
+  }
+
+  Fiddleheads {
+    weight: 20
+    durability: 4
+
+    flags {
+      Vegetable: 1
+      Edible: 1
+    }
+
+    food {
+      hunger: 1
+      sanity: -2
+    }
+
+    durability : 4
+    decay: 2 days
+    decaysInto: RottingVegetation
+    image: "survival/graphics/items/plants/fiddlehead_2.png"
     stackable: true
   }
 
@@ -414,6 +420,27 @@ Items {
     }
   }
 
+  RoastedFiddleheads: ${Items.RoastedVegetable} {
+    image: "survival/graphics/items/plants/roasted_fiddleheads.png"
+    weight: 20
+    durability: 4
+
+    food {
+      hunger: "+1"
+      sanity: "+3"
+      stamina: "+0"
+      hydration: "+0"
+    }
+
+    recipe {
+      name: "roast fiddleheads"
+      specializationOf: Recipes.RoastedVegetable
+      recipeTemplate: Roast
+      ingredients.Ingredient: Items.Fiddleheads
+      outputs: Items.RoastedFiddleheads
+    }
+  }
+
 
 
   CarrotSeed {
@@ -439,6 +466,41 @@ Items {
     }
 
     image: "survival/graphics/items/plants/leaf.png"
+    stackable: true
+  }
+
+  Vines {
+    weight: 50
+    fuel: 200
+    durability: 15
+    flags: {
+      Binding: 1
+    }
+
+    image: "survival/graphics/items/plants/vine.png"
+    stackable: true
+  }
+
+  RedBerries {
+    weight: 40
+    durability: 5
+
+    flags {
+      Fruit: 1
+      Edible: 3
+    }
+
+    food {
+      hunger: 2
+      stamina: 1
+      hydration: 2
+      sanity: 1
+    }
+
+    durability : 4
+    decay: 3 days
+    decaysInto: RottingVegetation
+    image: "survival/graphics/items/plants/red_berries.png"
     stackable: true
   }
 
@@ -618,5 +680,75 @@ Items {
 
     image: "survival/graphics/items/material/ash.png"
     stackable: true
+  }
+
+  CrudeTorch {
+    durability: "-5" // less durable than the sum of its parts
+
+    image: "survival/graphics/items/lights/torch.png"
+
+    light {
+      brightness: 8
+      lightColor: [255,180,100,255]
+      fireLightSource: true
+    }
+
+    fire {
+      fuelRemaining: 1500
+      durabilityLossTime: 100
+      consumedWhenFuelExhausted: true
+      activeImages: "survival/graphics/items/lights/torch_lit.png"
+    }
+
+    recipe {
+      name: "craft crude torch"
+      recipeTemplate: Assemble
+      ingredients {
+        Base: {
+          specifiers: [Flags.Pole, Flags.Inflammable]
+          operator: AND
+        }
+        Attachment: Flags.Tinder
+        Binding : Flags.Binding
+      }
+    }
+  }
+
+  StoneBowl {
+    durability: "6"
+
+    image: "survival/graphics/items/tool/bowl.png"
+
+    flags {
+      Bowl: 1
+      Stone: 1
+    }
+
+    recipe {
+      name: "carve bowl"
+      recipeTemplate: Carve
+      ingredients.Ingredient: Items.Stone
+    }
+  }
+
+  MortarAndPestle {
+    durability: "+5"
+
+    image: "survival/graphics/items/tool/mortar_and_pestle_mine.png"
+
+    recipe {
+      name: "assemble mortar and pestle"
+      recipeTemplate: Assemble
+      ingredients {
+        Base: Flags.Bowl
+        Attachment {
+          specifiers: [Flags.Hard, Flags.Sturdy]
+        }
+      }
+    }
+
+    actions {
+      Grind: 1
+    }
   }
 }

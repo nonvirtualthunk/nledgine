@@ -8,11 +8,12 @@ TileKinds {
         quantity: 2-3
         gatherMethod: Mine
         gatherTime: 2 long actions
+        destructive: true
       }
     ]
     looseResources {
-      Stone: 6%
-      SharpStone: 2%
+      Stone: 2%
+      SharpStone: 0.5%
     }
 
     images: ["survival/graphics/tiles/rough_stone.png"]
@@ -38,7 +39,7 @@ TileKinds {
       },
     ]
     looseResources {
-      Stone: 3%
+      Stone: 0.5%
     }
 
     images: ["survival/graphics/tiles/dirt.png"]
@@ -57,7 +58,7 @@ TileKinds {
       }
     ]
     looseResources {
-      Stone: 1%
+      Stone: "0.2%"
     }
 
     images: ["survival/graphics/tiles/grass.png"]
@@ -75,6 +76,9 @@ TileKinds {
         regenerateTime: 10 days
       }
     ]
+    looseResources {
+      Sand: "0.6%"
+    }
 
     images: ["survival/graphics/tiles/sand.png"]
   }
@@ -91,11 +95,43 @@ TileKinds {
     ]
 
     images: ["survival/graphics/tiles/water.png"]
+    dropImages: ["survival/graphics/tiles/waterfall.png"]
+  }
+
+  Freshwater {
+    moveCost: 10
+    resources: [
+      {
+        resource: Items.FreshWater
+        quantity: 10
+        gatherMethods: [ [Scoop, 1] ]
+        gatherTime: 1 short action
+      }
+    ]
+
+    images: ["survival/graphics/tiles/water.png"]
+    dropImages: ["survival/graphics/tiles/waterfall.png"]
+  }
+
+  # Self replenishing fresh water
+  FreshwaterSource {
+    moveCost: 10
+    resources: [
+      {
+        resource: Items.FreshWater
+        quantity: 10000
+        gatherMethods: [ [Scoop, 1] ]
+        gatherTime: 1 short action
+      }
+    ]
+
+    images: ["survival/graphics/tiles/water.png"]
+    dropImages: ["survival/graphics/tiles/waterfall.png"]
   }
 
   Void {
     moveCost: 1000
 
-    images: [survival/icons/blank.png]
+    images: [survival/graphics/tiles/void.png]
   }
 }

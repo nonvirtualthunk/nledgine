@@ -15,6 +15,12 @@ import arxregex
 import prelude
 import strutils
 import game/shadowcasting
+import graphics/color
+
+const VisionResolution* = 2
+const ShadowResolution* = 2
+const LocalLightRadius* = 64
+const LocalLightRadiusWorldResolution* = 64 div ShadowResolution
 
 type
   TileLayerKind* {.pure.} = enum
@@ -96,6 +102,8 @@ type
     occupiesTile*: bool
     # whether or not this entity moves of its own accord
     dynamic*: bool
+    # whether this entity has been destroyed
+    destroyed*: bool
     # general size/weight, how much space it takes up in an inventory and how hard it is to move
     weight*: int32
     # images to display this entity on the map
@@ -171,9 +179,11 @@ type
     # how many tiles out the light will travel if uninterrupted
     brightness*: int
     # shadows cast by this light source
-    shadowGrid*: ShadowGrid[32]
-    # when (in game time) the shadowcasting was last updated
-    lastUpdated*: Ticks
+    lightGrid*: ref ShadowGrid[LocalLightRadius]
+    # color of the light (purely cosmetic)
+    lightColor*: RGBA
+    # whether this light source is only active when on fire (i.e. a torch)
+    fireLightSource*: bool
 
   Fuel* = object
     # how many ticks of fuel this provides to a standard fire
@@ -202,6 +212,8 @@ type
   PlantGrowthStageInfo* = object
     # images for this stage of growth
     images*: seq[ImageRef]
+    # images to use when resources are available
+    withResourceImages*: Table[Taxon, ImageRef]
     # the age in ticks at which the plant enters this stage
     startAge*: Ticks
     # the resources the plant yields at this stage
@@ -213,7 +225,7 @@ type
     health*: DiceExpression
     healthRecoveryTime*: Option[Ticks]
     # stages of growth this plant goes through
-    growthStages*: Table[Taxon, PlantGrowthStageInfo]
+    growthStages*: OrderedTable[Taxon, PlantGrowthStageInfo]
     # total lifespan in ticks after which the plant will die of natural causes
     lifespan*: Ticks
 
@@ -337,6 +349,7 @@ type
     item*: Taxon
     # How  many are produced
     amount*: Distribution[int]
+    # TODO: should be able to set food/durability/decay/etc contributions on a per-output basis (i.e. carving a log into planks, bark, and twigs)
 
   RecipeInputChoice* = object
     items*: seq[Entity]
@@ -359,6 +372,8 @@ type
     difficulty*: int
     # how long the recipe takes to make, assuming no modifications
     duration*: Ticks
+    # TODO: split the concept of durability of an object from durability when crafting something (i.e. a platonic torch created from thin air
+    # has 20 durability, one crafted from components has -3 durability relative to the sum of its parts, they represent different things)
 
     # Note: all contributions below override the recipe template if provided
     # What proportion of the food content of ingredients is incorporated into the new output
@@ -400,6 +415,8 @@ type
     activeImages*: seq[ImageLike]
     # what this entity becomes when consumed by fire. If not specified the default will just be ash
     burnsInto*: Option[Taxon]
+    # whether this entity is destroyed when its fuel is exhausted (i.e. a torch), treated the same as if it was destroyed by fire
+    consumedWhenFuelExhausted*: bool
 
 
 
@@ -527,6 +544,11 @@ defineSimpleReadFromConfig(ActionKind)
 defineSimpleReadFromConfig(CreatureKind)
 defineSimpleReadFromConfig(Recipe)
 
+proc readFromConfig*(cv: ConfigValue, ik: var LightSource) =
+  cv["brightness"].readInto(ik.brightness)
+  cv["lightColor"].readInto(ik.lightColor)
+  cv["fireLightSource"].readInto(ik.fireLightSource)
+
 proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["durability"].readInto(ik.durability)
   cv["decay"].readInto(ik.decay)
@@ -538,6 +560,7 @@ proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["fuel"].readInto(ik.fuel)
   cv["food"].readInto(ik.food)
   cv["fire"].readInto(ik.fire)
+  cv["light"].readInto(ik.light)
   cv["stackable"].readInto(ik.stackable)
   let flags = cv["flags"]
   if flags.isObj:
@@ -668,35 +691,7 @@ proc reduceBy*(v: var Vital, i : int32) =
   v.value.reduceBy(i.int)
 proc currentlyReducedBy*(v: Vital): int =
   v.value.currentlyReducedBy
-# Updates the vital stat based on the recovery/loss frequency and returns the minimum resolution required to update accurately
-proc updateRecoveryAndLoss*(v: var Vital, tick: Ticks) : Ticks =
-  var delta = 0
-  var interval = 0
-  if v.lossTime.isSome and v.recoveryTime.isSome:
-    let lt = v.lossTime.get
-    let rt = v.recoveryTime.get
-    if lt > rt:
-      delta = 1
-      interval = (rt.float * (1.0 + (rt.float / (lt.float - rt.float)))).int
-    elif rt > lt:
-      delta = -1
-      interval = (lt.float * (1.0 + (lt.float / (rt.float - lt.float)))).int
-  elif v.lossTime.isSome:
-    delta = -1
-    interval = v.lossTime.get.int
-  elif v.recoveryTime.isSome:
-    delta = 1
-    interval = v.recoveryTime.get.int
 
-  if delta != 0 and interval != 0:
-    if tick >= v.lastRecoveryOrLoss + interval:
-      v.lastRecoveryOrLoss = tick
-      if delta > 0:
-        v.value.recoverBy(delta)
-      else:
-        v.value.reduceBy(-delta)
-
-  Ticks(interval)
 
 proc applyContribution*(con: Contribution, cur: int, arg: int) : int =
   case con.kind:
@@ -728,6 +723,15 @@ proc applyContribution*[T](con: Contribution, cur: Reduceable[T], arg: Reduceabl
     of ContributionKind.Max: reduceable(max(cur.maxValue, arg.currentValue))
     of ContributionKind.Min: reduceable(min(cur.maxValue, arg.currentValue))
 
+proc `==`*(a,b: Target): bool =
+  if a.kind == b.kind:
+    case a.kind:
+      of TargetKind.Entity: a.entity == b.entity
+      of TargetKind.TileLayer: a.tilePos == b.tilePos and a.region == b.region and a.layer == b.layer and a.index == b.index
+      of TargetKind.Tile: a.tilePos == b.tilePos and a.region == b.region
+  else:
+    false
+
 proc isEntityTarget*(target: Target) : bool =
   target.kind == TargetKind.Entity
 
@@ -738,11 +742,12 @@ proc isTileTarget*(target: Target) : bool =
     else:
       false
 
-proc targetEntity*(entity: Entity): Target =
+proc entityTarget*(entity: Entity): Target =
   Target(kind: TargetKind.Entity, entity: entity)
 
-proc targetTile*(region: Entity, tilePos: Vec3i): Target =
+proc tileTarget*(region: Entity, tilePos: Vec3i): Target =
   Target(kind: TargetKind.Tile, region: region, tilePos: tilePos)
+
 
 proc positionOf*(world: LiveWorld, target: Target): Option[Vec3i] =
   case target.kind:

@@ -80,6 +80,20 @@ proc asImage*(il: ImageRef): Image =
       sentinelImage.sentinel = true
     sentinelImage
 
+
+proc asImage*(il: ImageLike): Image =
+  case il.kind:
+  of ImageLikeKind.Image:
+    il.image.asImage
+  of ImageLikeKind.Animation:
+    warn "We need to actually make asImage(...) work for animations in a reasonable way"
+    il.animation.image.asImage
+  of ImageLikeKind.Sentinel:
+    if sentinelImage == nil:
+      sentinelImage = createImage(vec2i(1, 1))
+      sentinelImage.sentinel = true
+    sentinelImage
+
 proc resolve*(il: var ImageRef): Image =
   case il.kind:
   of ImageRefKinds.ImageObj:

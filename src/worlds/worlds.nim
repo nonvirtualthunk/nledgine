@@ -100,7 +100,7 @@ proc `<=`*(a, b: WorldModifierClock): bool {.borrow.}
 proc `+=`*(a: var WorldEventClock, d: int) = a = (a.int + d).WorldEventClock
 
 proc `$`*(e: Entity): string =
-  return $e.id
+  return "@(" & $e.id & ")"
 proc `$`*(e: DisplayEntity): string =
   return $e.id
 
@@ -548,6 +548,15 @@ iterator entitiesWithData*[C](view: LiveWorld, t: typedesc[C]): Entity =
   for ent in dc.dataStore.keys:
     yield Entity(id: ent)
 
+iterator entitiesWithEitherData*[C1, C2](view: LiveWorld, t1: typedesc[C1], t2: typedesc[C2]): Entity =
+  var seen: HashSet[Entity]
+  for e in entitiesWithData(view, t1):
+    seen.incl(e)
+    yield e
+  for e in entitiesWithData(view, t2):
+    if not seen.contains(e):
+      yield e
+
 
 proc addModification*(world: World, modification: EntityModification) =
   world.modificationContainer.modifications.add(modification)
@@ -673,6 +682,23 @@ macro `[]`*(entity: Entity, t: typedesc): untyped =
         {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
     else:
       {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
+
+
+
+macro dataOpt*(entity: Entity, t: typedesc): untyped =
+  let dataTypeIdent = newIdentNode($t & "Type")
+  result = quote do:
+    when declared(injectedView):
+      injectedView.dataOpt(`entity`, `dataTypeIdent`)
+    elif declared(injectedWorld):
+      injectedWorld.dataOpt(`entity`, `dataTypeIdent`)
+    elif declared(world):
+      when world is LiveWorld:
+        world.dataOpt(`entity`, `dataTypeIdent`)
+      else:
+        {.error: ("implicit access of dataOpt must be in a withView(...) or withWorld(...) block").}
+    else:
+      {.error: ("implicit access of dataOpt must be in a withView(...) or withWorld(...) block").}
       # when compiles(view.data(`entity`, `dataTypeIdent`)):
       #   view.data(`entity`, `dataTypeIdent`)
       # else:
@@ -823,13 +849,13 @@ proc data*[C] (world: LiveWorld, entity: Entity, dataType: DataType[C]): ref C =
 proc data*[C] (world: LiveWorld, entity: Entity, dataType: typedesc[C]): ref C =
   data(world, entity, dataType.getDatatype())
 
-# proc dataOpt*[C] (world: LiveWorld, entity: Entity, dataType: typedesc[C]): Option[ref C] =
-#   var dc = (DataContainer[C])world.dataContainers[dataType.getDataType().index]
-#   let tmp = dc.dataStore.getOrDefault(entity.id, nil)
-#   if tmp == nil:
-#     none(ref C)
-#   else:
-#     some(tmp)
+proc dataOpt*[C] (world: LiveWorld, entity: Entity, dataType: DataType[C]): Option[ref C] =
+  var dc = (DataContainer[C])world.dataContainers[dataType.index]
+  let tmp = dc.dataStore.getOrDefault(entity.id, nil)
+  if tmp == nil:
+    none(ref C)
+  else:
+    some(tmp)
 
 proc hasData*[C] (world: LiveWorld, entity: Entity, dataType: DataType[C]): bool =
   var dc = (DataContainer[C])world.dataContainers[dataType.index]

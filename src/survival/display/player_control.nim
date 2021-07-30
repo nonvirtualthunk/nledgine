@@ -32,6 +32,7 @@ import strutils
 import crafting_display
 import inventory_display
 import survival_display_core
+import game/flags
 
 type Latch* = object
   notValue: bool
@@ -54,7 +55,7 @@ type
     choosingQuickSlotWidget*: Widget
 
   ActionInfo = object
-    kind: Taxon
+    action: ActionChoice
     icon: ImageRef
     text: string
     shortcut: string
@@ -66,7 +67,9 @@ type
     index: int
 
 
-proc constructActionInfo(world: LiveWorld, player: Entity, target: Entity): seq[ActionInfo] {.gcsafe.}
+proc constructActionInfo(world: LiveWorld, player: Entity, considering: Entity): seq[ActionInfo] {.gcsafe.}
+proc bindValue*(f: ActionInfo): BoundValue =
+  bindValue({"icon": bindValue(f.icon), "text": bindValue(f.text), "shortcut": bindValue(f.shortcut)}.toTable)
 
 proc flipOn*(latch: var Latch) : bool {.discardable.} =
   result = latch.notValue
@@ -96,16 +99,42 @@ method initialize(g: PlayerControlComponent, world: LiveWorld, display: DisplayW
 
 
 
+proc performAction(g: PlayerControlComponent, world: LiveWorld, player: Entity, action: ActionChoice) =
+  let actionKind = action.action
+  if actionKind == † Actions.Place:
+    if isEntityTarget(action.target):
+      placeItem(world, some(player), action.target.entity, facedPosition(world, player), true)
+    else: warn &"Cannot place a tile, what would that mean?: {action.target}"
+  elif actionKind == † Actions.Eat:
+    if isEntityTarget(action.target):
+      eat(world, player, action.target.entity)
+    else: warn &"Cannot eat a tile, what would that mean?: {action.target}"
+  elif actionKind == † Actions.Ignite:
+    var valid = true
+    case action.target.kind:
+      of TargetKind.Entity:
+        if isHeld(world, action.target.entity) and not isEquipped(world, action.target.entity):
+          g.messageText.add(richTextVerticalBreak(7))
+          g.messageText.add(richText("Cannot ignite an item in inventory, must be equipped", color=some(rgba(120,20,20,255))))
+          g.messageLatch.flipOn()
+          valid = false
+      else:
+        discard
 
-proc performAction(world: LiveWorld, display: DisplayWorld, player: Entity, tool: Entity, action: Taxon) =
-  if action == † Actions.Place:
-    placeItem(world, some(player), tool, facedPosition(world, player), true)
-  elif action == † Actions.Eat:
-    eat(world, player, tool)
-  elif action == † Actions.Ignite:
-    ignite(world, player, tool, none(Target))
+    if action.tool.isSentinel:
+      warn &"Somehow got an ignite action choice with no tool"
+      valid = false
+
+    if valid:
+      ignite(world, player, action.tool, some(action.target))
+  elif actionKind == † Actions.Equip:
+    if isEntityTarget(action.target):
+      player[Creature].equipment[† BodyParts.RightHand] = action.target.entity
+    else: warn &"Cannot equip a tile, what would that mean?: {action.target}"
   else:
-    interact(world, player, @[tool], facedPosition(world, player))
+    if not action.tool.isSentinel:
+      interact(world, player, @[action.tool], action.target)
+    else: warn &"Freeform interact(...) case of performAction, but with no tool?"
 
 
 proc naturalLanguageList*[T](s : seq[T], f : (T) -> string) : string =
@@ -165,7 +194,9 @@ proc message*(world: LiveWorld, evt: Event): Option[RichText] =
     extract(FoodEatenEvent, entity, eaten, hungerRecovered, staminaRecovered, hydrationRecovered, sanityRecovered, healthRecovered):
       if entity == player:
         let kindStr = eaten[Identity].kind.displayName
-        var text = textSection(&"You eat a {kindStr} and recover ")
+        let verb = if flagValue(world, eaten, † Flags.Liquid) > 0: "drink some"
+          else: "eat a"
+        var text = textSection(&"You {verb} {kindStr} and recover ")
         var first = true
 
         proc addVital(amount: int, vital: Taxon, color: RGBA, last: bool) =
@@ -181,13 +212,19 @@ proc message*(world: LiveWorld, evt: Event): Option[RichText] =
         addVital(sanityRecovered, † GameConcepts.Sanity, rgba(0.75, 0.35, 0.4, 1.0), true)
 
         result = some(richText(text))
+    extract(DamageTakenEvent, entity, damageTaken, source, reason):
+      if entity == player:
+        result = some(richText(&"You take {damageTaken} damage from {reason}"))
 
 
 proc closeMenus(g: PlayerControlComponent) =
   g.actionMenu.bindValue("ActionMenu.showing", false)
   g.actionTarget = none(Entity)
+  g.craftingMenu.hide()
   if g.choosingQuickSlotWidget != nil:
     g.choosingQuickSlotWidget.destroyWidget()
+    g.choosingQuickSlotWidget = nil
+    g.choosingQuickSlot = 0
 
 
 method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
@@ -221,7 +258,7 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
               let toPos = phys.position + vec3i(delta.x, delta.y, 0)
               let toTile = tile(phys.region, toPos.x, toPos.y, toPos.z)
 
-              if not interact(world, player, player[Creature].allEquippedItems, toPos, skipFloorAndCeiling=true):
+              if not interact(world, player, player[Creature].allEquippedItems, toPos, skipNonBlocking=true):
 
                 moveEntityDelta(world, player, vec3i(delta.x, delta.y, 0))
                 for ent in toTile.entities:
@@ -250,22 +287,26 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
       elif key == KeyCode.X:
         display[CameraData].camera.changeScale(-1)
       elif key == KeyCode.C:
-        g.craftingMenu.toggle(world)
+        if g.craftingMenu.showing:
+          g.closeMenus()
+        else:
+          g.closeMenus()
+          g.craftingMenu.toggle(world)
       elif key == KeyCode.Escape:
         display.addEvent(CancelContext())
     extract(WidgetMouseRelease, originatingWidget):
       if originatingWidget == ws.desktop:
         display.addEvent(CancelContext())
     extract(CancelContext):
-      g.actionMenu.bindValue("ActionMenu.showing", false)
+      g.closeMenus()
     extract(ListItemSelect, originatingWidget, index):
       if originatingWidget.isDescendantOf(g.actionMenu):
         let action = g.actionItems[index]
         if g.actionTarget.isSome:
-          performAction(world, display, player(world), g.actionTarget.get, action.kind)
+          performAction(g, world, player(world), action.action)
           g.closeMenus()
         else:
-          warn &"Cannot perform action {action.kind} without a target"
+          warn &"Cannot perform action {action.action} without a target"
       # g.closeMenus()
       elif originatingWidget.isDescendantOf("QuickSlots"):
         g.closeMenus()
@@ -284,6 +325,8 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
 
     extract(InventoryItemSelectedEvent, itemInfo, originatingPosition, originatingWidget):
       if originatingWidget.identifier == "MainInventory":
+        g.closeMenus()
+
         let item = itemInfo.itemEntities[^1]
         g.actionTarget = some(item)
         g.actionItems = constructActionInfo(world, player(world), item)
@@ -302,6 +345,14 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
         g.inventoryLatch.flipOn()
     extract(GameEvent):
       g.anyLatch.flipOn()
+    extract(IgnitedEvent):
+      g.inventoryLatch.flipOn()
+    extract(ExtinguishedEvent):
+      g.inventoryLatch.flipOn()
+    extract(EntityDestroyedEvent, entity):
+      if entity.hasData(Player):
+        info "You lose!"
+        ws.desktop.createChild("Notifications", "YouLoseWidget")
 
   g.craftingMenu.onEvent(world, display, event)
 
@@ -341,12 +392,24 @@ proc constructQuickSlotItemsInfo(world: LiveWorld, player: Entity): seq[QuickSlo
     for i in 0 ..< result.len:
       result[i].index = (i+1) mod 10
 
-proc constructActionInfo(world: LiveWorld, player: Entity, target: Entity): seq[ActionInfo] =
-  for action in possibleActions(world, player, target):
-    let ak = actionKind(action)
+proc constructActionInfo(world: LiveWorld, player: Entity, considering: Entity): seq[ActionInfo] =
+  for action in possibleActions(world, player, considering):
+    let ak = actionKind(action.action)
+
+    # If the target is what we're considering then it is implied and doesn't need to be written out
+    let targetText = if action.target == entityTarget(considering):
+      ""
+    else:
+      &" {displayName(world, action.target).toLowerAscii}"
+
+    let text = if not action.tool.isSentinel:
+      &"{ak.presentVerb}{targetText} with {displayName(world,action.tool).toLowerAscii}"
+    else:
+      &"{ak.presentVerb}{targetText}"
+
     result.add(ActionInfo(
-      kind: action,
-      text: ak.presentVerb,
+      action: action,
+      text: text,
     ))
 
 method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =

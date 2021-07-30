@@ -29,7 +29,7 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
     let noise = newNoise()
     var rand = randomizer(world)
 
-    region.lengthOfDay = 12000.Ticks
+    region.lengthOfDay = 20000.Ticks
     region.globalShadowLength = 16
 
     let tileLib = library(TileKind)
@@ -38,13 +38,13 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
     let dirt = tileLib.libTaxon(† TileKinds.Dirt)
     let sand = tileLib.libTaxon(† TileKinds.Sand)
     let stone = tileLib.libTaxon(† TileKinds.RoughStone)
-    let seawater = tileLib.libTaxon(† TileKinds.Seawater)
+    let freshwater = tileLib.libTaxon(† TileKinds.FreshwaterSource)
     let voidTile = tileLib.libTaxon(† TileKinds.Void)
 
     let underLayers = {
       grass : dirt,
       dirt : stone,
-      sand : seawater
+      sand : freshwater
     }.toTable()
 
 
@@ -64,7 +64,7 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
           let ground = h < 1.75 - d * 2.0
 
           if not ground:
-            (seawater, false)
+            (freshwater, false)
           else:
             if h >= 1.65 - d * 2.0:
               (sand, false)
@@ -84,7 +84,7 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
             # renormalize to [0.0,1.0]
             let d = (d - voidFract) / (1.0 - voidFract)
             if h + d * 5.0 < 1.25:
-              (seawater, false)
+              (freshwater, false)
             elif h + d * 5.0 < 1.5:
               (sand, false)
             elif d + h * 0.25 > 0.9:
@@ -114,18 +114,25 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
             t.floorLayers.add(TileLayer(tileKind: layerKind, resources: createResourcesFromYields(world, tileLib[layerKind].resources, layerKind)))
 
           if wall:
-            t.wallLayers.add(TileLayer(tileKind: tileKind))
+            t.wallLayers.add(TileLayer(tileKind: tileKind, resources: createResourcesFromYields(world, tileLib[tileKind].resources, tileKind)))
 
+          var plantKind = none(Taxon)
           if tileKind == grass or tileKind == dirt:
             let forestNoise = noise.pureSimplex(x.float * 0.015f + 137.0f, y.float * 0.015f - 137.0f) * 0.5f +
-                                noise.pureSimplex(x.float * 0.075f - 333.0f, y.float * 0.075f - 333.0f) * 0.5f -
-                                (d * d)
+                                noise.pureSimplex(x.float * 0.075f - 333.0f, y.float * 0.075f - 333.0f) * 0.5f
 
-            if forestNoise > 0.4f:
-              createPlant(world, regionEnt, † Plants.OakTree, vec3i(x.int32,y.int32,MainLayer.int32))
+            if forestNoise > 0.6f:
+              plantKind = some(† Plants.OakTree)
             else:
-              if rand.nextInt(100) == 0:
-                createPlant(world, regionEnt, † Plants.Carrot, vec3i(x.int32, y.int32, MainLayer.int32))
+              if rand.nextInt(200) == 0:
+                plantKind = some(† Plants.Carrot)
+              elif rand.nextInt(100) == 0:
+                plantKind = some(† Plants.Fern)
+              elif rand.nextInt(200) == 0:
+                plantKind = some(† Plants.RedBerryBush)
+
+          if plantKind.isSome:
+            createPlant(world, regionEnt, plantKind.get, vec3i(x.int32,y.int32,MainLayer.int32))
 
           if t.wallLayers.isEmpty:
             for resource, dist in mainLayerInfo.looseResources:

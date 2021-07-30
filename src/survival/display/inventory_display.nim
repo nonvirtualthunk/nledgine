@@ -67,12 +67,7 @@ proc constructItemInfo*(world: LiveWorld, items: seq[Entity], filter: (LiveWorld
   let lib = library(ItemKind)
 
   proc itemInfo(t: Taxon, item: Entity, k: ref ItemKind): ItemInfo =
-    let img = if item.hasData(Fire) and item[Fire].active:
-      image("survival/graphics/effects/fire_c_24.png")
-    elif k.images.nonEmpty:
-      k.images[0]
-    else:
-      image("images/unknown.png")
+    let img = iconFor(world, item)
     ItemInfo(kind: t, icon: img, name: t.displayName, count: 0, countStr: "")
 
   withWorld(world):

@@ -53,17 +53,32 @@ type
 
 
 
+
+
+
 proc globalIlluminationSettings*(world: LiveWorld, activeRegion : Entity) : GlobalIlluminationSettings =
   result.region = activeRegion[Region]
+
   let (timeOfDay,dayNightFract) = timeOfDay(world, activeRegion)
+  # let sigmoided = if dayNightFract < 0.5:
+  #   let x = dayNightFract * 2.0f
+  #   1.0f/(1.0f+pow(2.0f,((-x*12.0f+6.0f))))
+  # else:
+  #   let x = (dayNightFract - 0.5f)*2.0f
+  #   1.0f - (1.0f/(1.0f+pow(2.0f,((-x*12.0f+6.0f)))))
+  let sigmoided = if dayNightFract < 0.5f:
+    dayNightFract * 2.0f
+  else:
+    1.0f - (dayNightFract - 0.5f) * 2.0f
+
   result.ambientLight = case timeOfDay:
-    of DayNight.Day: sin(dayNightFract * PI) * 0.85 + 0.1d
+    of DayNight.Day: sigmoided * 0.9 + 0.1d
     of DayNight.Night: 0.1
 
   result.maxShadowLength = result.region.globalShadowLength
   case timeOfDay:
     of DayNight.Day:
-      let daySin = sin(dayNightFract * PI) # [0,1)
+      let daySin = sigmoided # [0,1)
       result.shadowFract = daySin
       result.ambientLightColor = mix(rgba(255,210,180,255), rgba(255,255,255,255), result.shadowFract)
     of DayNight.Night:
@@ -83,6 +98,17 @@ proc globalIlluminationAt*(gis: GlobalIlluminationSettings, wx: int, wy: int, sx
     gis.ambientLight * illum
   else:
     gis.ambientLight
+
+# proc globalIlluminationNormAt*(gis: GlobalIlluminationSettings, wx: int, wy: int, sx: int, sy: int) : float32 =
+#   if gis.shadowFract > 0.0:
+#     let raw = gis.region.globalIllumination.atWorldCoord(wx, wy, 0, 0, sx, sy, ShadowResolution).float32 / 255.0f32
+#     # Adjust by time of day making shadows longer or shorter
+#     let adjusted = raw / (1.0 - gis.shadowFract)
+#     let illum = gis.minGlobalIlluminationInShadow + clamp(adjusted, 0.0f32, 1.0f32) * (1.0f32 - gis.minGlobalIlluminationInShadow)
+#     gis.ambientLight * illum
+#   else:
+#     gis.ambientLight
+
 
 method initialize(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) =
   g.name = "WorldGraphicsComponent"
@@ -111,6 +137,8 @@ method onEvent*(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWor
       g.needsUpdate = true
     extract(ExtinguishedEvent):
       g.needsUpdate = true
+    extract(LocalLightingChangedEvent):
+      g.needsUpdate = true
 
 
 proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) =
@@ -137,6 +165,12 @@ proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) 
     let visionRange = player[Player].visionRange
 
     let gis = globalIlluminationSettings(world, activeRegion)
+    let lis = localIlluminationSources(world, activeRegion, playerPos, player[Player].visionRange)
+
+    var localLightColor : RGBA
+    var localLightStrength: float32
+
+    let voidTile = tileLib.id(† TileKinds.Void)
 
     var qb = QuadBuilder()
     let rlayer = layer(activeRegion, world, MainLayer)
@@ -162,20 +196,20 @@ proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) 
 
         let subDim = 24.0f32 / VisionResolution.float32
 
-        var maxNormGI = 0.0
-        var maxGI = 0.0
+        var maxGlobalLight = 0.0
+        var maxLocalLight = 0.0
         var maxVision = 0.0
         for sy in 0 ..< VisionResolution:
           for sx in 0 ..< VisionResolution:
             let sxp = sx.float32 / VisionResolution.float32
             let syp = sy.float32 / VisionResolution.float32
             let v = pow(vision.atWorldCoord(x, y, playerPos.x, playerPos.y, sx, sy, VisionResolution).float / 255.0, 2.0)
-            let normGI = gis.globalIlluminationAt(x + normal.x, y + normal.y, sx, sy)
-            let gi = gis.globalIlluminationAt(x,y,sx,sy)
-
-            maxNormGI = max(maxNormGI, normGI)
-            maxGI = max(maxGI, gi)
             maxVision = max(maxVision, v)
+            let gi = gis.globalIlluminationAt(x,y,sx,sy)
+            maxGlobalLight = max(maxGlobalLight, gi)
+            localIlluminationAt(lis, x, y, sx, sy, localLightStrength, localLightColor)
+            maxLocalLight = max(maxLocalLight, localLightStrength)
+
 
             if v > 0.0:
               let p = vec2f(x.float * 24.0f + sx.float * subDim, y.float * 24.0f + sy.float * subDim)
@@ -184,37 +218,62 @@ proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) 
               qb.dimensions = vec2f(subDim, subDim)
               qb.position = vec3f(p.x, p.y, 0.0f)
               if t.floorLayers.nonEmpty:
-                let tileInfo = tileLib[t.floorLayers[^1].tileKind]
+                let kind = t.floorLayers[^1].tileKind
+                let tileInfo = tileLib[kind]
                 qb.texture = tileInfo.images[0]
-                qb.color = gis.ambientLightColor * gi
+                qb.color = mix(gis.ambientLightColor, localLightColor, gi, localLightStrength) * max(gi, localLightStrength)
+                qb.color.a = v
+                qb.drawTo(g.canvas)
+              else:
+                let tileInfo = tileLib[voidTile]
+                qb.texture = tileInfo.images[0]
+                qb.color = mix(gis.ambientLightColor, localLightColor, gi, localLightStrength) * max(gi, localLightStrength)
                 qb.color.a = v
                 qb.drawTo(g.canvas)
 
               if t.wallLayers.nonEmpty:
+                let normGI = gis.globalIlluminationAt(x, y, sx  + normal.x, sy + normal.y)
+                localIlluminationAt(lis, x + normal.x, y + normal.y, sx, sy, localLightStrength, localLightColor)
                 let wallInfo = tileLib[t.wallLayers[^1].tileKind]
                 qb.texture = wallInfo.wallImages[0]
-                qb.color = gis.ambientLightColor * normGI
+                qb.color = mix(gis.ambientLightColor, localLightColor, normGI, localLightStrength) * max(normGI, localLightStrength)
                 qb.color.a = v
                 qb.drawTo(g.canvas)
 
-        var offset = 0
-        for ent in t.entities:
-          if ent.hasData(Physical):
+        let maxLight = max(maxGlobalLight, maxLocalLight)
+        let premixedColor = mix(gis.ambientLightColor, localLightColor, maxGlobalLight, maxLocalLight)
+        if t.floorLayers.isEmpty and y < RegionHalfSize:
+          let upT = tilePtr(rlayer, x, y + 1)
+          if upT.floorLayers.nonEmpty:
+            let upLayerKind = tileLib[upT.floorLayers[^1].tileKind]
+            if upLayerKind.dropImages.nonEmpty:
+              qb.position = vec3f(x.float * 24.0f, y.float * 24.0f, 0.0f)
+              qb.texture = upLayerKind.dropImages[0]
+              qb.textureSubRect = rect(0.0f32,0.0f32,0.0f32,0.0f32)
+              qb.dimensions = vec2f(24.0f,24.0f)
+              qb.color = premixedColor * maxLight
+              qb.color.a = maxVision
+              qb.drawTo(g.canvas)
+
+
+        if maxVision > 0.01:
+          var offset = 0
+          for ent in t.entities:
             let phys = ent.data(Physical)
             if not phys.dynamic:
-
+              let img = phys.images[0].asImage
               var gi = 0.0
-              if phys.capsuled:
+              if phys.capsuled or not phys.occupiesTile:
                 qb.dimensions = vec2f(16.0f,16.0f)
                 qb.position = vec3f(phys.position.x.float * 24.0f + 4.0f, phys.position.y.float * 24.0f + 6.0f - offset.float, 0.0f)
-                gi = maxGI
+                gi = maxLight
               else:
-                qb.dimensions = vec2f(24.0f, 24.0f)
+                qb.dimensions = vec2f(img.width, img.height)
                 qb.position = vec3f(x.float * 24.0f, y.float * 24.0f, 0.0f)
-                gi = gis.ambientLight
+                gi = max(gis.ambientLight, maxLight)
 
-              qb.texture = phys.images[0]
-              qb.color = gis.ambientLightcolor * gi
+              qb.texture = img
+              qb.color = premixedColor * gi
               qb.color.a = maxVision
               qb.textureSubRect = rect(0.0f32,0.0f32,0.0f32,0.0f32)
               qb.drawTo(g.canvas)
@@ -270,18 +329,24 @@ proc render(g: DynamicEntityGraphicsComponent, world: LiveWorld, display: Displa
     err "Sentinel entity for region in world display?"
 
   let gis = globalIlluminationSettings(world, activeRegion)
+  let lis = allLocalIlluminationSources(world, activeRegion)
 
+  var localLightStrength : float32
+  var localLightColor: RGBA
   var qb = QuadBuilder()
   for ent in activeRegion[Region].dynamicEntities:
     if ent.hasData(Physical):
       let phys = ent[Physical]
       let gi = gis.globalIlluminationAt(phys.position.x, phys.position.y, 0, 0)
+      localIlluminationAt(lis, phys.position.x, phys.position.y, 0, 0, localLightStrength, localLightColor)
       qb.dimensions = vec2f(24.0f,24.0f)
       qb.position = vec3f(phys.position.x.float * 24.0f, phys.position.y.float * 24.0f, 0.0f)
       qb.texture = phys.images[0]
       if ent.hasData(Player):
         # Player is always closer to fully lit than the environment
-        qb.color = gis.ambientLightColor * ((1.0 + gi)/2.0)
+        # let effGi = ((1.0 + gi)/2.0)
+        let effGi = gi
+        qb.color = mix(gis.ambientLightColor, localLightColor, effGi, localLightStrength) * max(localLightStrength, effGi)
         qb.color.a = 1.0
       else:
         qb.color = gis.ambientLightColor * gi

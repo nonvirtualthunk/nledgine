@@ -1,3 +1,3 @@
 Creatures {
-
+  Human {}
 }

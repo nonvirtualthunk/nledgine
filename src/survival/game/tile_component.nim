@@ -72,9 +72,9 @@ method onEvent(g: TileComponent, world: LiveWorld, event: Event) =
       initializeFlags(world, region)
     extract(TileChangedEvent, region, tilePosition):
       updateFlags(world, region, tilePosition)
-    extract(EntityDestroyedEvent, region, entity):
+    extract(EntityDestroyedEvent, entity):
       if entity.hasData(Physical):
-        updateFlags(world, region, entity[Physical].position)
+        updateFlags(world, entity[Physical].region, entity[Physical].position)
     extract(TileLayerDestroyedEvent, region, tilePosition):
       updateFlags(world, region, tilePosition)
     extract(ItemPlacedEvent, placedEntity):

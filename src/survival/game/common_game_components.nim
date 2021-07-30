@@ -9,24 +9,14 @@ import options
 import survival_core
 import logic
 import game/flags
-
+import sets
 
 type
   CreatureComponent* = ref object of LiveGameComponent
-    # how frequently this component has to update to get the necessary vital statistic updates
-    requiredInterval*: Ticks
-    # last updated
-    lastUpdatedTick*: Ticks
-
-  PhysicalComponent* = ref object of LiveGameComponent
-    # how frequently this component has to update to get the necessary vital statistic updates
-    requiredInterval*: Ticks
     # last updated
     lastUpdatedTick*: Ticks
 
   FireComponent* = ref object of LiveGameComponent
-    # how frequently this component has to update
-    requiredInterval*: Ticks
     # last updated
     lastUpdatedTick*: Ticks
 
@@ -37,14 +27,14 @@ type
 
 method initialize(g: FireComponent, world: LiveWorld) =
   g.name = "FireComponent"
-  g.requiredInterval = 20.Ticks
 
 method onEvent(g: FireComponent, world: LiveWorld, event: Event) =
   matcher(event):
     extract(WorldAdvancedEvent, tick):
-      if tick > g.lastUpdatedTick + g.requiredInterval:
-        let dt = (tick - g.lastUpdatedTick).int
-        for ent in world.entitiesWithData(Fire):
+      let startTime = g.lastUpdatedTick
+      let dt = (tick - g.lastUpdatedTick).int
+      for ent in world.entitiesWithData(Fire):
+        if not isSurvivalEntityDestroyed(world, ent):
           let fire = ent[Fire]
           if fire.active:
             if not ent.hasData(Flags):
@@ -55,19 +45,35 @@ method onEvent(g: FireComponent, world: LiveWorld, event: Event) =
               ent[Flags].flags[† Flags.Fire] = 0
 
           if fire.active:
-            if fire.durabilityLossTime.isSome or fire.healthLossTime.isSome:
-              for i in g.lastUpdatedTick.int ..< tick.int:
-                if fire.durabilityLossTime.isSome and i mod fire.durabilityLossTime.get.int == 0:
-                  reduceDurability(world, ent, 1)
-                if fire.healthLossTime.isSome and i mod fire.healthLossTime.get.int == 0:
-                  discard damageEntity(world, ent, 1, "fire")
-            fire.fuelRemaining = (fire.fuelRemaining.float - dt.float * fire.fuelConsumptionRate.get(1.0)).int.Ticks
-            if fire.fuelRemaining <= 0.Ticks:
+            let region = ent[Physical].region
+
+            if fire.durabilityLossTime.isSome:
+              reduceDurability(world, ent, intervalsIn(startTime, tick, fire.durabilityLossTime.get))
+            if fire.healthLossTime.isSome:
+              discard damageEntity(world, ent, intervalsIn(startTime, tick, fire.healthLossTime.get, "fire"))
+
+            let fuelConsumed = dt.float * fire.fuelConsumptionRate.get(1.0)
+            fire.fuelRemaining = (fire.fuelRemaining.float - fuelConsumed).int.Ticks
+            ifHasData(ent, Fuel, fuel):
+              fuel.fuel = (fuel.fuel.int - fuelConsumed.int).Ticks
+
+            if fire.fuelRemaining <= 0.Ticks and not isSurvivalEntityDestroyed(world, ent):
               world.eventStmts(ExtinguishedEvent(extinguishedEntity: ent)):
                 fire.fuelRemaining = 0.Ticks
                 fire.active = false
                 ent[Flags].flags[† Flags.Fire] = 0
+                if fire.consumedWhenFuelExhausted:
+                  destroySurvivalEntity(world, ent)
         g.lastUpdatedTick = tick
+
+
+
+# /+============================================+\
+# ||               Creature Component           ||
+# \+============================================+/
+
+const HungerDamageInterval = Ticks(200)
+const ThirstDamageInterval = Ticks(100)
 
 method initialize(g: CreatureComponent, world: LiveWorld) =
   g.name = "CreatureComponent"
@@ -78,15 +84,25 @@ method update(g: CreatureComponent, world: LiveWorld) =
 method onEvent(g: CreatureComponent, world: LiveWorld, event: Event) =
   withWorld(world):
     matcher(event):
-      extract(WorldAdvancedEvent, tick):
-        if tick > g.lastUpdatedTick + g.requiredInterval:
-          g.lastUpdatedTick = tick
-          g.requiredInterval = Ticks(1000)
-          for ent in world.entitiesWithData(Creature):
+      extract(WorldAdvancedEvent, currentTime):
+        let startTime = g.lastUpdatedTick
+
+        for ent in world.entitiesWithData(Creature):
+          if not isSurvivalEntityDestroyed(world, ent):
             let creature = ent[Creature]
-            g.requiredInterval = min(updateRecoveryAndLoss(creature.hunger, tick), g.requiredInterval)
-            g.requiredInterval = min(updateRecoveryAndLoss(creature.hydration, tick), g.requiredInterval)
-            g.requiredInterval = min(updateRecoveryAndLoss(creature.stamina, tick), g.requiredInterval)
+            updateRecoveryAndLoss(creature.hunger, g.lastUpdatedTick, currentTime)
+            updateRecoveryAndLoss(creature.hydration, g.lastUpdatedTick, currentTime)
+            updateRecoveryAndLoss(creature.stamina, g.lastUpdatedTick, currentTime)
+
+            if creature.hunger.currentValue == 0:
+              damageEntity(world, ent, intervalsIn(startTime, currentTime, HungerDamageInterval), "hunger")
+            if creature.hydration.currentValue == 0:
+              damageEntity(world, ent, intervalsIn(startTime, currentTime, ThirstDamageInterval), "thirst")
+
+            if ent[Physical].health.currentValue == 0:
+              destroySurvivalEntity(world, ent)
+
+        g.lastUpdatedTick = currentTime
 
 
 
@@ -94,22 +110,49 @@ method onEvent(g: CreatureComponent, world: LiveWorld, event: Event) =
 # /+============================================+\
 # ||               Physical Component           ||
 # \+============================================+/
+type
+  PhysicalComponent* = ref object of LiveGameComponent
+    # last updated
+    lastUpdatedTick*: Ticks
+    # entities that may need to be updated
+    toUpdate*: HashSet[Entity]
+    updateAll*: bool
+
+
 method initialize(g: PhysicalComponent, world: LiveWorld) =
   g.name = "PhysicalComponent"
+  g.updateAll = true
 
 method update(g: PhysicalComponent, world: LiveWorld) =
   discard
+
+
+proc updateEntity(g: PhysicalComponent, world: LiveWorld, entity: Entity, currentTime: Ticks) : bool =
+  let phys = entity[Physical]
+  updateRecoveryAndLoss(phys.health, g.lastUpdatedTick, currentTime)
+
+  # continue updating this entity as long as its health might recover or be counted down
+  (phys.health.lossTime.isSome and phys.health.value.currentValue > 0) or
+      (phys.health.recoveryTime.isSome and phys.health.value.currentlyReducedBy > 0)
+
 
 method onEvent(g: PhysicalComponent, world: LiveWorld, event: Event) =
   withWorld(world):
     postMatcher(event):
       extract(WorldAdvancedEvent, tick):
-        if tick > g.lastUpdatedTick + g.requiredInterval:
-          g.lastUpdatedTick = tick
-          g.requiredInterval = Ticks(1000)
+        if g.updateAll:
+          g.updateAll = false
           for ent in world.entitiesWithData(Physical):
-            let phys = ent[Physical]
-            g.requiredInterval = min(updateRecoveryAndLoss(phys.health, tick), g.requiredInterval)
+            if updateEntity(g, world, ent, tick):
+              g.toUpdate.incl(ent)
+        else:
+          for ent in g.toUpdate:
+            if not updateEntity(g, world, ent, tick):
+              g.toUpdate.excl(ent)
+
+        g.lastUpdatedTick = tick
+      extract(DamageTakenEvent, entity):
+        g.toUpdate.incl(entity)
 
 
 

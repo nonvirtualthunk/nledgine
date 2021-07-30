@@ -39,4 +39,8 @@ Actions {
   Ignite {
     presentVerb: "ignite"
   }
+
+  Equip {
+    presentVerb: "equip"
+  }
 }

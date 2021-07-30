@@ -209,7 +209,7 @@ proc updateRecipeSlotSelections*(cm: CraftingMenu, world: LiveWorld) =
       selectedName = slotName
 
     if slot.selectedItem.itemEntities.nonEmpty:
-      if slot.selectedItem.itemEntities.anyMatchIt(regionForOpt(world, it).isNone):
+      if slot.selectedItem.itemEntities.anyMatchIt(isSurvivalEntityDestroyed(world, it)):
         selectCandidate(cm, world, slot, ItemInfo(icon: image("survival/icons/blank.png")))
 
     if slot.selectedItem.itemEntities.isEmpty:
@@ -270,6 +270,11 @@ proc toggle*(cm: CraftingMenu, world: LiveWorld) =
   cm.widget.showing = bindable(not cm.widget.showing.value)
   cm.needsUpdate = true
 
+proc showing*(cm: CraftingMenu): bool =
+  cm.widget.showing.value
+
+proc hide*(cm: CraftingMenu) =
+  cm.widget.showing = bindable(false)
 
 proc newCraftingMenu*(ws: ref WindowingSystem, world: LiveWorld, player: Entity) : CraftingMenu =
   let cm = CraftingMenu(

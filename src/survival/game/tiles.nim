@@ -33,6 +33,8 @@ type
     looseResources*: Table[Taxon, Distribution[int]]
     # images to display the tile
     images*: seq[ImageRef]
+    # images when dropping into a void
+    dropImages*: seq[ImageRef]
     # images to display the tile as a wall
     wallImages*: seq[ImageRef]
 
@@ -91,6 +93,7 @@ proc readFromConfig*(cv: ConfigValue, tk: var TileKind) =
   cv["resources"].readInto(tk.resources)
   cv["images"].readInto(tk.images)
   cv["wallImages"].readInto(tk.wallImages)
+  cv["dropImages"].readInto(tk.dropImages)
   for k,v in cv["looseResources"].fieldsOpt:
     tk.looseResources[taxon("Items", k)] = v.readInto(Distribution[int])
 
@@ -149,6 +152,15 @@ proc layers*(t: var Tile, kind: TileLayerKind): var seq[TileLayer] =
       return t.floorLayers
     of TileLayerKind.Ceiling:
       return t.ceilingLayers
+
+proc layersAt*(world: LiveWorld, region: Entity, tpos: Vec3i, kind: TileLayerKind): var seq[TileLayer] =
+  case kind:
+    of TileLayerKind.Wall:
+      return tilePtr(region[Region], tpos).wallLayers
+    of TileLayerKind.Floor:
+      return tilePtr(region[Region], tpos).floorLayers
+    of TileLayerKind.Ceiling:
+      return tilePtr(region[Region], tpos).ceilingLayers
 
 
 iterator tilesInRange*(world: LiveWorld, reg: Entity, center: Vec3i, range: int): ptr Tile =

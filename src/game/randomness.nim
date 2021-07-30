@@ -112,7 +112,7 @@ proc nextFloat*(r: var Randomizer): float =
   of RandomizationStyle.Median:
     0.5f
   of RandomizationStyle.High:
-    0.9999f
+    0.9999999f
   of RandomizationStyle.Low:
     0.0f
 
@@ -359,8 +359,8 @@ proc maxRoll*(de: DiceExpression): int =
   result += de.bonus
 
 proc nextValue*[T](d: Distribution[T], r: var Randomizer) : T =
-  if d.chanceOf.isSome and r.style != RandomizationStyle.High:
-    if r.nextFloat > d.chanceOf.get or r.style == RandomizationStyle.Low:
+  if d.chanceOf.isSome and (r.style != RandomizationStyle.High or d.chanceOf.get <= 0.0):
+    if r.nextFloat > d.chanceOf.get or (r.style == RandomizationStyle.Low and d.chanceOf.get < 1.0):
       return 0.T
   case d.kind:
     of DistributionKind.Constant:

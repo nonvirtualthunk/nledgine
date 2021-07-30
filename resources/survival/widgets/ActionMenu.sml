@@ -8,8 +8,8 @@ ActionMenu {
     ActionList {
       type: ListWidget
 
-      width: 200
-      height: 300
+      width: 300
+      height: WrapContent
 
       y: 0
       background.pixelScale: 2
@@ -38,12 +38,16 @@ ActionItem {
 
   children {
     ActionText {
+      width: 100%
+      horizontalAlignment: Center
+
       y: centered
+
       type: TextDisplay
       text: "%(action.text)"
 
       font: "ChevyRayThicket.ttf"
-      fontSize: 16
+      fontSize: 14
     }
   }
 }

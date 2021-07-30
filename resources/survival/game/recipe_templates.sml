@@ -1,6 +1,19 @@
+
+BaseTemplate {
+  flagContribution: {
+    "Flags.Wood": max
+    "Flags.Stone": max
+    "Flags.Vegetable": max
+    "Flags.Meat": max
+  }
+
+  durabilityContribution: 0.75
+  decayContribution: 1.0
+}
+
 RecipeTemplates {
 
-  Carve {
+  Carve: ${BaseTemplate} {
     description : Cut or carve into smaller pieces or different shapes
     icon: "survival/graphics/recipes/carve.png"
     selectedIcon: "survival/graphics/recipes/carve_selected.png"
@@ -22,12 +35,10 @@ RecipeTemplates {
     flagContribution: {
       Wood: max
     }
-    durabilityContribution: 0.75
-    decayContribution: 0.75
     weightContribution: 0.75
   }
 
-  Roast {
+  Roast: ${BaseTemplate} {
     description : Heat or cook with an open flame
     icon: "survival/graphics/recipes/roast.png"
     selectedIcon: "survival/graphics/recipes/roast_selected.png"
@@ -67,7 +78,7 @@ RecipeTemplates {
     }
   }
 
-  Assemble {
+  Assemble: ${BaseTemplate} {
     description: Assemble multiple pieces into a more useful whole
     icon: "survival/graphics/recipes/assemble.png"
     selectedIcon: "survival/graphics/recipes/assemble_selected.png"
@@ -76,18 +87,22 @@ RecipeTemplates {
       Base {
         description: "Base piece to attach to"
       }
+      Attachment {
+        description: "What to attach to the base"
+      }
       Binding {
         description: "Something to attach the two pieces together"
         requirement: Flags.Binding
         optional: true
       }
-      Attachment {
-        description: "What to attach to the base"
-      }
     }
+
+    durabilityContribution: 0.75
+    decayContribution: 1.0
+    weightContribution: 0.9
   }
 
-  Combine {
+  Combine: ${BaseTemplate} {
     # Braid stripped bark into string
     # Braid string into rope
     # Weave string into cloth
@@ -105,7 +120,7 @@ RecipeTemplates {
     }
   }
 
-  Smash {
+  Smash: ${BaseTemplate} {
     description: Use force and a heavy tool to break something apart
     icon: "survival/graphics/recipes/smash_selected.png"
     selectedIcon: "survival/graphics/recipes/smash_selected.png"
@@ -125,5 +140,7 @@ RecipeTemplates {
         }
       }
     }
+
+    durabilityContribution: 0.5
   }
 }

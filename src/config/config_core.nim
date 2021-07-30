@@ -39,6 +39,7 @@ template noAutoLoad* {.pragma.}
 let fieldStartCharacters = {':', '{', '['}
 let fieldValueEndCharactersInArr = {'\n', ',', ']'}
 let fieldValueEndCharactersInObj = {'\n'}
+let quoteSet = {'"'}
 
 macro hoconAssert(ctx: ParseContext, b: typed) =
   result = quote do:
@@ -440,13 +441,13 @@ proc next(ctx: var ParseContext): char =
   result = ctx.str[ctx.cursor]
   ctx.cursor += 1
   # skip comments
-  if result == '/' and ctx.peek() == '/':
+  if result == '#' or (result == '/' and ctx.peek() == '/'):
     while ctx.peek() != '\n': ctx.advance()
     result = ctx.next()
 
 
 proc parseUntil(ctx: var ParseContext, chars: set[char]): string =
-  if ctx.peek() == '/' and ctx.peek(1) == '/':
+  if ctx.peek() == '#' or (ctx.peek() == '/' and ctx.peek(1) == '/'):
     while ctx.next() != '\n': discard
   ctx.cursor += parseUntil(ctx.str, ctx.buffer, chars, ctx.cursor)
   return ctx.buffer
@@ -519,7 +520,15 @@ proc parseObj(ctx: var ParseContext, skipEnclosingBraces: bool = false): ConfigV
   ctx.skipWhitespace()
 
   while not ctx.finished and ctx.peek() != '}':
-    let fieldName = ctx.parseUntil(fieldStartCharacters).strip()
+    let (fieldName, literal) = if ctx.peek() == '"':
+      ctx.advance()
+      let mainFieldName = ctx.parseUntil(quoteSet)
+      ctx.advance()
+      let fieldName = mainFieldName & ctx.parseUntil(fieldStartCharacters).strip()
+      (fieldName, true)
+    else:
+      (ctx.parseUntil(fieldStartCharacters).strip(), false)
+
     if ctx.peek() == ':':
       ctx.advance()
 
@@ -528,7 +537,7 @@ proc parseObj(ctx: var ParseContext, skipEnclosingBraces: bool = false): ConfigV
     let fieldValue = parseValue(ctx, false)
     unindentLogs(ConfigParsingDebug)
 
-    if fieldName.contains("."):
+    if fieldName.contains(".") and not literal:
       let fieldNameSections = fieldName.split(".")
       fillField(result.fields, fieldNameSections, 0, fieldValue)
     else:

@@ -37,7 +37,7 @@ proc readFromConfig*(cv: ConfigValue, v: var VerticalAlignment) =
 
 proc readFromConfig*(cv: ConfigValue, v: var Taxon) =
    if not cv.isEmpty:
-      v = findTaxon(cv.asStr)
+      v = findTaxon(cv.asStr.replace('-','.'))
       if v == UnknownThing:
          writeStackTrace()
          warn &"Could not identify taxon, but expected to do so: {cv.asStr}"

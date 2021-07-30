@@ -57,7 +57,8 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     generateRegion(world, regionEnt)
 
 
-    let water = taxon("TileKinds", "Seawater")
+    let water = † TileKinds.Seawater
+    let voidTile = † TileKinds.Void
 
     var pos = vec3i(0,0,MainLayer)
 
@@ -68,11 +69,11 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
 
     for y in upOrDownIter(countSlice):
       let tile = region.tile(0,y,MainLayer)
-      if tile.floorLayers.len > 0 and tile.floorLayers[^1].tileKind != water and tile.wallLayers.isEmpty:
+      if tile.floorLayers.len > 0 and tile.floorLayers[^1].tileKind != water and tile.floorLayers[^1].tileKind != voidTile and tile.wallLayers.isEmpty:
         pos = vec3i(0.int32,y.int32,MainLayer.int32)
         break
 
-    let axe = createItem(world, regionEnt, † Items.StoneAxe)
+    let axe = createItem(world, regionEnt, † Items.StonePickaxe)
 
     let player = world.createEntity()
     player.attachData(Player(
@@ -96,6 +97,10 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
       region: regionEnt,
     ))
     player.attachData(Inventory(maximumWeight: 500))
+    player.attachData(Identity(
+      name: some("Tobold"),
+      kind: † Creatures.Human
+    ))
 
     let fireDrill = createItem(world, regionEnt, † Items.FireDrill)
 
@@ -110,9 +115,11 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
 
     tilePtr(regionEnt[Region], player[Physical].position + vec3i(5,-5,0)).wallLayers = @[TileLayer(tileKind: † TileKinds.RoughStone, resources : @[GatherableResource(resource: † Items.Stone, quantity: reduceable(3.int16), source: † TileKinds.RoughStone)])]
 
+    # tilePtr(regionEnt[Region], vec3i(-7,-7,MainLayer)).wallLayers = @[TileLayer(tileKind: † TileKinds.RoughStone, resources : @[GatherableResource(resource: † Items.Stone, quantity: reduceable(3.int16), source: † TileKinds.RoughStone)])]
+
     let fireLog = createItem(world, regionEnt, † Items.Log)
     placeItem(world, none(Entity), fireLog, player[Physical].position + vec3i(1,0,0), true)
-    ignite(world, player, fireDrill, some(targetEntity(fireLog)))
+    ignite(world, player, fireDrill, some(entityTarget(fireLog)))
 
     regionEnt[Region].entities.incl(player)
     regionEnt[Region].dynamicEntities.incl(player)
@@ -127,7 +134,7 @@ proc initializationGraphicsComponent() : InitializationGraphicsComponent =
   result.initializePriority = 10000
 
 method initialize(g: InitializationGraphicsComponent, display: DisplayWorld) =
-  let cam = createPixelCamera(3).withMoveSpeed(0.0f).withEye(vec3f(0.0f,10000.0f,0.0f))
+  let cam = createPixelCamera(4).withMoveSpeed(0.0f).withEye(vec3f(0.0f,10000.0f,0.0f))
   display.attachData(CameraData(camera: cam))
 
 

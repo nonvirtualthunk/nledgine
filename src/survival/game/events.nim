@@ -46,7 +46,6 @@ type
     facing*: Direction
 
   EntityDestroyedEvent* = ref object of GameEvent
-    region*: Entity
     entity*: Entity
 
   TileLayerDestroyedEvent* = ref object of GameEvent
@@ -131,8 +130,25 @@ type
     tool*: Entity
     reason*: string
 
+  LocalLightingChangedEvent* = ref object of GameEvent
+    lightEntity*: Entity
+
+  ItemEquippedEvent* = ref object of GameEvent
+    equippedBy*: Entity
+    item*: Entity
+    slot*: Taxon
+
+  ItemUnequippedEvent* = ref object of GameEvent
+    unequippedBy*: Entity
+    item*: Entity
+    slot*: Taxon
+
+
+
+
 
 eventToStr(PlantCreatedEvent)
+eventToStr(LocalLightingChangedEvent)
 eventToStr(RegionInitializedEvent)
 eventToStr(OpacityUpdatedEvent)
 eventToStr(OpacityInitializedEvent)
@@ -156,6 +172,12 @@ eventToStr(DurabilityReducedEvent)
 eventToStr(IgnitedEvent)
 eventToStr(FailedToIgniteEvent)
 eventToStr(ExtinguishedEvent)
+eventToStr(ItemEquippedEvent)
+eventToStr(ItemUnequippedEvent)
+eventToStr(DamageTakenEvent)
+
+
+proc currentTime*(w: WorldAdvancedEvent): Ticks = w.tick
 
 method toString*(evt: WorldInitializedEvent): string =
    return &"WorldInitializedEvent{$evt[]}"

@@ -21,7 +21,13 @@ type
     id: LibraryID
 
 proc `==`*(a, b: LibraryID): bool {.borrow.}
-proc id*[T](lib: Library[T], key: Taxon) : LibraryID = LibraryID(lib.seqIndexes[key])
+proc id*[T](lib: Library[T], key: Taxon) : LibraryID =
+  let idx = lib.seqIndexes.getOrDefault(key, -1)
+  if idx == -1:
+    warn &"Attempted to look up id for {key} but not present in library, valid values were:"
+    for k,v  in lib.seqIndexes:
+      warn &"\t{k}"
+  LibraryID(idx)
 proc libTaxon*[T](lib: Library[T], key: Taxon): LibraryTaxon = LibraryTaxon(taxon: key, id: lib.id(key))
 proc `$`*(id: LibraryID): string = "LibraryID(" & $id.uint32 & ")"
 
@@ -39,6 +45,9 @@ proc get*[T](lib: Library[T], key: Taxon): Option[ref T] =
     some(lib.values[key])
   else:
     none(ref T)
+
+proc `==`*(a: LibraryTaxon, b: Taxon): bool =
+  a.taxon == b
 
 
 converter toTaxon*(k: LibraryTaxon): Taxon = k.taxon

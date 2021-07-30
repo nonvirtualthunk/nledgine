@@ -4,6 +4,8 @@ import noto
 import reflect
 import engines/event_types
 import strutils
+import worlds/identity
+import regex
 
 type
   BasicDebugComponent* = ref object of GameComponent
@@ -53,7 +55,7 @@ method onEvent(g: BasicDebugComponent, world: World, event: Event) =
 
 
 
-
+const entityRegex = "@\\((\\d+)\\)".re
 
 method initialize(g: BasicLiveWorldDebugComponent, world: LiveWorld) =
   g.name = "BasicLiveWorldDebugComponent"
@@ -79,7 +81,16 @@ method onEvent(g: BasicLiveWorldDebugComponent, world: LiveWorld, event: Event) 
       for filter in g.eventPrintFilters:
         if not filter(event):
           return
-      let eventStr = toString(event)
+      var eventStr = toString(event)
+      var entityReplacements : seq[string]
+      var entities : seq[Entity]
+      for m in findAll(eventStr, entityRegex):
+        entityReplacements.add(eventStr[m.boundaries])
+        entities.add(Entity(id: parseInt(m.group(0, eventStr)[0])))
+
+      for i in 0 ..< entityReplacements.len:
+        eventStr = eventStr.replace(entityReplacements[i], debugIdentifier(world, entities[i]))
+
       if event.state == GameEventState.PreEvent:
         info("> " & eventStr)
         indentLogs()

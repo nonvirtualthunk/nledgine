@@ -157,5 +157,94 @@ Plants {
     }
     lifespan: 2 seasons
   }
+
+  Fern {
+    health : 1-3
+    healthRecoveryTime: 1 day
+    growthStages: {
+      Sprout: {
+        startAge: 0
+        images: "survival/graphics/plants/fern/sprout.png"
+        resources: [
+          {
+            resource: Fiddleheads
+            quantity: 1
+            gatherMethods: [ [Gather, 2], [Cut, 1] ]
+            gatherTime: 1 short action
+            destructive: true
+          }
+        ]
+      }
+      Mature: {
+        startAge: 5 day
+        images: "survival/graphics/plants/fern/mature.png"
+        resources: [
+          {
+            resource: Leaves
+            quantity: 1
+            gatherMethods: [ [Cut,1], [Gather,2] ]
+            gatherTime: 1 short action
+            destructive: true
+          }
+        ]
+      }
+    }
+    lifespan: 1 years
+  }
+
+
+  RedBerryBush {
+    health : 2-5
+    healthRecoveryTime: 1 day
+    growthStages: {
+      Seedling: {
+        startAge: 0
+        images: "survival/graphics/plants/berry_bush/bushling_3.png"
+      }
+      VegetativeGrowth: {
+        startAge: 0.5 seasons
+        images: "survival/graphics/plants/berry_bush/bush_3.png"
+        resources: [
+          {
+            resource: Vines
+            quantity: 1
+            gatherMethods: [ [Cut,1], [Chop,1], [Gather,3] ]
+            gatherTime: 1 short action
+            destructive: true
+          },
+          {
+            resource: Leaves
+            quantity: 1
+            gatheredOnDestruction: true
+          },
+        ]
+      }
+      Flowering: {
+        startAge: 1 season
+        images: "survival/graphics/plants/berry_bush/bush_3_red_berries.png"
+        resources: [
+          {
+            resource: RedBerries
+            quantity: 2
+            gatherMethods: [ [Gather,1] ]
+            gatherTime: 1 short action
+            regenerateTime: 3 days
+          },
+          {
+            resource: Vines
+            quantity: 1
+            destructive: true
+            gatherMethods: [ [Cut, 1], [Chop, 1] ]
+          },
+          {
+            resource: Leaves
+            quantity: 2
+            gatheredOnDestruction: true
+          },
+        ]
+      }
+    }
+    lifespan: 6 years
+  }
 }
 

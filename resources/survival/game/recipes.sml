@@ -34,6 +34,8 @@ Recipes {
       Ingredient : Items.Log
     }
     outputs: [Items.Plank|2, Items.Bark|1-2, Items.Twigs|70%]
+    durabilityContribution: 0.5
+    weightContribution: 0.5
   }
 
   CarvePoleFromBranch {
@@ -52,6 +54,7 @@ Recipes {
       Ingredient : Items.Plank
     }
     outputs: [Items.WoodPole|2, Items.WoodShavings]
+    durabilityContribution: 0.5
   }
 
   SmashStone {

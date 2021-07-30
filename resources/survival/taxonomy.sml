@@ -24,4 +24,5 @@ TaxonomySources : [
   survival/game/body_parts.sml
   survival/game/recipe_templates.sml
   survival/game/recipes.sml
+  survival/game/creatures.sml
 ]

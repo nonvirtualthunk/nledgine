@@ -86,6 +86,18 @@ proc centered*(qb : var SurvivalQuadBuilder) : var SurvivalQuadBuilder {.discard
   qb
 
 
+proc iconFor*(world: LiveWorld, e: Entity): Image =
+  if e.hasData(Fire) and e[Fire].active:
+    let activeImages = e[Fire].activeImages
+    if activeImages.nonEmpty:
+      e[Fire].activeImages[0].asImage
+    else:
+      image("survival/graphics/effects/fire_c_24.png")
+  elif e.hasData(Physical):
+    e[Physical].images[0]
+  else:
+    warn &"iconFor(...) does not support entity {debugIdentifier(world, e)}"
+    image("images/unknown.png")
 
 proc iconFor*(t: Taxon): ImageRef =
   if t.isA(† Item):

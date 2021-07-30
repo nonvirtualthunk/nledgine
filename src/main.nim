@@ -20,6 +20,7 @@ import prelude
 import algorithm
 import options
 import times
+import bitops
 
 const GammaCorrection = false
 
@@ -285,14 +286,15 @@ proc main*(setup: GameSetup) =
   var needsRedraw = true
   var lastDrawn = 0.0
 
+  glClearColor(setup.clearColor.r, setup.clearColor.g, setup.clearColor.b, setup.clearColor.a)
+  glClear(GLbitfield(uint32(GL_COLOR_BUFFER_BIT).bitor(uint32(GL_DEPTH_BUFFER_BIT))))
+
   while not w.windowShouldClose:
     if lastViewport != framebufferSize:
       glViewport(0, 0, framebufferSize.x, framebufferSize.y)
       lastViewport = framebufferSize
 
     glfwPollEvents()
-    glClearColor(setup.clearColor.r, setup.clearColor.g, setup.clearColor.b, setup.clearColor.a)
-    glClear(GL_COLOR_BUFFER_BIT)
 
     if hasFocus:
       while true:
@@ -377,10 +379,12 @@ proc main*(setup: GameSetup) =
 
         discard goChannel.trySend(true)
         w.swapBuffers()
+        glClearColor(setup.clearColor.r, setup.clearColor.g, setup.clearColor.b, setup.clearColor.a)
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
         needsRedraw = false
       else:
-        sleep(8)
         discard goChannel.trySend(true)
+        sleep(16)
     else:
       sleep(100)
 

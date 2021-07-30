@@ -1,7 +1,7 @@
 InventoryWidget {
   type: ListWidget
   width: 250
-  height: 400
+  height: 600
 
   y: 0
   x: 0 from right
@@ -14,7 +14,7 @@ InventoryWidget {
 
   listItemArchetype: Inventory.Item
   listItemBinding: "inventory.items -> item"
-  gapSize: -4
+  gapSize: -2
 
 
   selectable : true

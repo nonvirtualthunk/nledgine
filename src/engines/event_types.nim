@@ -94,6 +94,7 @@ proc addEvent*(buffer: EventBuffer, evt: Event) =
   buffer.events.addLast(evt)
   while buffer.events.len > buffer.maximumSize:
     buffer.events.popFirst()
+    buffer.discardedEvents.inc
 
 method toString*(evt: Event): string {.base.} =
   return repr(evt)

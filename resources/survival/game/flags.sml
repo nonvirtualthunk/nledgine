@@ -48,6 +48,10 @@ Flags {
     description: "The body of a plant"
     boolean: true
   }
+  Fruit {
+    description: "The tasty container for the seeds of a plant"
+    boolean: true
+  }
   Meat {
     description: "The body of an animal"
     boolean: true
@@ -139,5 +143,8 @@ Flags {
   }
   Debris {
     description: "Broken remains of something more useful"
+  }
+  Bowl {
+    description: "A concave container for holding objects or liquids"
   }
 }
