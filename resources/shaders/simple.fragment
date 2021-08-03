@@ -11,9 +11,9 @@ out vec4 o_FragColor;
 
 void main (){
     vec4 effColor = texture(tex0,texCoordV) * colorV;
-//    if (effColor.a <= 0.01) {
-//       discard;
-//    }
+    if (effColor.a <= 0.01) {
+       discard;
+    }
     o_FragColor = effColor;
     // o_FragColor = vec4(pow(effColor.r, 1.0/2.2), pow(effColor.g, 1.0/2.2), pow(effColor.b, 1.0/2.2), effColor.a);
     // o_FragColor = texture(tex0,texCoordV);

@@ -15,6 +15,9 @@ proc rect*[T](pos: Vec2[T], dim: Vec2[T]): Rect[T] =
 proc recti*[X,Y,W,H](x: X,y: Y,w: W,h : H): Recti =
    Recti(position: vec2i(x.int32, y.int32), dimensions: vec2i(w.int32, h.int32))
 
+proc rectf*[X,Y,W,H](x: X,y: Y,w: W,h : H): Rectf =
+   Rectf(position: vec2f(x.float32, y.float32), dimensions: vec2f(w.float32, h.float32))
+
 proc rect*[T](x: T, y: T, width: T, height: T): Rect[T] =
    result.position[0] = x
    result.position[1] = y

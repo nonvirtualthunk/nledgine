@@ -109,6 +109,7 @@ type
   RenderSettings* = object
     depthTestEnabled*: bool
     depthFunc*: GLenum
+    alphaTestEnabled*: bool
 
   DrawCommandKind* {.pure.} = enum
     DrawCommandUpdate
@@ -321,6 +322,14 @@ proc addIQuad*[VT, IT, OT](vao: Vao[VT, IT]; ii: var int; vi: var OT) =
 
   ii += 6
   vi += 4
+
+proc addITri*[VT, IT, OT](vao: Vao[VT, IT]; ii: var int; vi: var OT) =
+  vao.indices[ii+0] = (vi+0).IT
+  vao.indices[ii+1] = (vi+1).IT
+  vao.indices[ii+2] = (vi+2).IT
+
+  ii += 3
+  vi += 3
 
 proc swap*[T](buffer: var GLBuffer[T]) =
   var tmp = buffer.frontBuffer

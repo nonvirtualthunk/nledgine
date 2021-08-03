@@ -437,17 +437,17 @@ proc finished(ctx: ParseContext): bool =
 proc advance(ctx: var ParseContext) =
   ctx.cursor += 1
 
-proc next(ctx: var ParseContext): char =
+proc next(ctx: var ParseContext, enquoted: bool = false): char =
   result = ctx.str[ctx.cursor]
   ctx.cursor += 1
   # skip comments
-  if result == '#' or (result == '/' and ctx.peek() == '/'):
+  if not enquoted and (result == '#' or (result == '/' and ctx.peek() == '/')):
     while ctx.peek() != '\n': ctx.advance()
     result = ctx.next()
 
 
-proc parseUntil(ctx: var ParseContext, chars: set[char]): string =
-  if ctx.peek() == '#' or (ctx.peek() == '/' and ctx.peek(1) == '/'):
+proc parseUntil(ctx: var ParseContext, chars: set[char], enquoted: bool = false): string =
+  if not enquoted and (ctx.peek() == '#' or (ctx.peek() == '/' and ctx.peek(1) == '/')):
     while ctx.next() != '\n': discard
   ctx.cursor += parseUntil(ctx.str, ctx.buffer, chars, ctx.cursor)
   return ctx.buffer
@@ -462,7 +462,7 @@ proc parseString(ctx: var ParseContext): ConfigValue =
   var str = ""
   var escaped = false
   while true:
-    let c = ctx.next()
+    let c = ctx.next(enquoted = true)
     var shouldEscape = false
     case c:
     of '\\':
@@ -522,7 +522,7 @@ proc parseObj(ctx: var ParseContext, skipEnclosingBraces: bool = false): ConfigV
   while not ctx.finished and ctx.peek() != '}':
     let (fieldName, literal) = if ctx.peek() == '"':
       ctx.advance()
-      let mainFieldName = ctx.parseUntil(quoteSet)
+      let mainFieldName = ctx.parseUntil(quoteSet, enquoted=true)
       ctx.advance()
       let fieldName = mainFieldName & ctx.parseUntil(fieldStartCharacters).strip()
       (fieldName, true)

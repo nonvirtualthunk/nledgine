@@ -534,3 +534,8 @@ iterator upOrDownIter*[T](s : Slice[T]) : T =
     while i <= s.b:
       yield i
       i.inc
+
+converter axisToInt*(a: Axis): int = a.ord
+
+proc `[]`*[I, T](arr: var array[I,T], a: Axis): var T = arr[a.ord]
+proc `[]`*[I, T](arr: array[I,T], a: Axis): T = arr[a.ord]

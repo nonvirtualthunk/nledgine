@@ -164,3 +164,9 @@ proc addImage*(tb: TextureBlock, img: Image) =
   discard tb[img]
 
 proc dimensions*(tb: TextureBlock): Vec2i = tb.image.dimensions
+
+
+proc subRect*(imgData: ImageData, subRect: Rectf) : array[4, Vec2f] =
+  let origin = imgData.texPosition + imgData.texDimensions * subRect.position
+  let dim = imgData.texDimensions * subRect.dimensions
+  [origin, origin + vec2f(dim.x, 0.0f32), origin + dim, origin + vec2f(0.0f32, dim.y)]

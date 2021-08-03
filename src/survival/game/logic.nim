@@ -564,6 +564,7 @@ proc damageEntity*(world: LiveWorld, ent: Entity, damageAmount: int, reason: str
       phys.health.reduceBy(damageAmount)
       if phys.health.currentValue <= 0:
         destroySurvivalEntity(world, ent)
+    true
   else:
     info &"damageEntity() called on non-physical entity: {debugIdentifier(world, ent)}"
     false

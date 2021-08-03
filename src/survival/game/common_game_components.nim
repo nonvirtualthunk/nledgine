@@ -50,7 +50,7 @@ method onEvent(g: FireComponent, world: LiveWorld, event: Event) =
             if fire.durabilityLossTime.isSome:
               reduceDurability(world, ent, intervalsIn(startTime, tick, fire.durabilityLossTime.get))
             if fire.healthLossTime.isSome:
-              discard damageEntity(world, ent, intervalsIn(startTime, tick, fire.healthLossTime.get, "fire"))
+              discard damageEntity(world, ent, intervalsIn(startTime, tick, fire.healthLossTime.get), "fire")
 
             let fuelConsumed = dt.float * fire.fuelConsumptionRate.get(1.0)
             fire.fuelRemaining = (fire.fuelRemaining.float - fuelConsumed).int.Ticks

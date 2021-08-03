@@ -27,6 +27,11 @@ type
     origin* : Vec2f
     textureSubRect*: Rectf
 
+  TriBuilder* = object
+    points*: array[3, Vec3f]
+    color*: RGBA
+    texCoords*: array[3, Vec2f]
+
 proc createCanvas*[T,I](shaderName : string, textureDimensions : int = 1024, name: string = "unnamed canvas") : Canvas[T, I] =
   Canvas[T, I](
     name: name,
@@ -38,6 +43,10 @@ proc createCanvas*[T,I](shaderName : string, textureDimensions : int = 1024, nam
 
 proc createSimpleCanvas*(shaderName : string, textureDimensions : int = 1024, name: string = "unnamed canvas") : SimpleCanvas =
   createCanvas[SimpleVertex,uint16](shaderName,textureDimensions, name)
+
+
+# proc toTri*(qb: QuadBuilder, splitAlong: Vec2f, ): TriBuilder =
+
 
 proc drawTo*[I](qb : QuadBuilder, cv : var Canvas[SimpleVertex,I]) =
   let tc = cv.texture[qb.texture]
@@ -58,6 +67,18 @@ proc drawTo*[I](qb : QuadBuilder, cv : var Canvas[SimpleVertex,I]) =
       cv.vao[vi+q].texCoords = imgData.texPosition + (qb.textureSubRect.position + qb.textureSubRect.dimensions * UnitSquareVertices2d[q]) * imgData.texDimensions
 
   cv.vao.addIQuad(ii,vi)
+
+proc drawTo*[I](qb : TriBuilder, cv : var Canvas[SimpleVertex,I]) =
+  var vi = cv.vao.vi
+  var ii = cv.vao.ii
+
+  for i in 0 ..< 3:
+    let vt = cv.vao[vi+i]
+    vt.vertex = qb.points[i]
+    vt.color = qb.color
+    vt.texCoords = qb.texCoords[i]
+
+  cv.vao.addITri(ii,vi)
 
 proc drawCommand*(canvas : Canvas, display : DisplayWorld) : DrawCommand =
   let cam = if not canvas.syncCamera:

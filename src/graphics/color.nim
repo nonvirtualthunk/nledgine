@@ -7,6 +7,12 @@ import chroma
 type
   RGBA* = distinct Vec4u8
 
+  ColorRamp* = object
+    colors*: seq[RGBA]
+
+  Palette* = object
+    ramps*: seq[ColorRamp]
+
 
 proc `==`*(a, b: RGBA): bool =
   a.Vec4u8 == b.Vec4u8
@@ -71,6 +77,8 @@ proc `bi`*(c: RGBA): uint8 =
 proc `ai`*(c: RGBA): uint8 =
   c.Vec4u8[3]
 
+proc luminance(c: RGBA): float32 = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b
+
 proc rgba*(r: float, g: float, b: float, a: float): RGBA =
   result.Vec4u8[0] = (clamp(r, 0.0f, 1.0f) * 255.0f).uint8
   result.Vec4u8[1] = (clamp(g, 0.0f, 1.0f) * 255.0f).uint8
@@ -106,11 +114,14 @@ proc mix*(a, b: RGBA, fa,fb: float): RGBA =
   let fbp = 1.0 - fap
   rgba(b.r * fbp + a.r * fap, b.g * fbp + a.g * fap, b.b * fbp + a.b * fap, b.a * fbp + a.a * fap)
 
+proc asUint32s*(r: ColorRamp): seq[uint32] =
+  for c in r.colors:
+    result.add(cast[ptr uint32](c.unsafeAddr)[])
+
 proc readFromConfig*(v: ConfigValue, color: var RGBA) =
   if v.isStr:
     let str = v.asStr
     if str.startsWith("#") or str.startsWith("rgb"):
-      echo "Parsing: ", str
       let parsed = chroma.parseHtmlColor(str)
       color = rgba(parsed.r, parsed.g, parsed.b, 1.0f)
     else:
@@ -124,3 +135,9 @@ proc readFromConfig*(v: ConfigValue, color: var RGBA) =
         color = rgba(elems[0].asFloat, elems[1].asFloat, elems[2].asFloat, elems[3].asFloat)
       else:
         color = rgba(elems[0].asInt.uint8, elems[1].asInt.uint8, elems[2].asInt.uint8, elems[3].asInt.uint8)
+
+proc readFromConfig*(v: ConfigValue, ramp: var ColorRamp) =
+  if v.isArr:
+    v.readInto(ramp.colors)
+  else:
+    warn &"Color ramp could not be parsed from {v}"

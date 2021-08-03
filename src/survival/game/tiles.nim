@@ -14,6 +14,7 @@ import core
 import noto
 import tables
 import game/shadowcasting
+import graphics/tileset
 
 const RegionSize* {.intdefine.} = 512
 const RegionHalfSize* = RegionSize div 2
@@ -37,6 +38,8 @@ type
     dropImages*: seq[ImageRef]
     # images to display the tile as a wall
     wallImages*: seq[ImageRef]
+    # tileset images to use when doing tileset based rendering
+    tileset*: TilesetTile
 
   TileLayer* = object
     # what kind of tile layer is this

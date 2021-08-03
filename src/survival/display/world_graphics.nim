@@ -204,14 +204,13 @@ proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) 
             let sxp = sx.float32 / VisionResolution.float32
             let syp = sy.float32 / VisionResolution.float32
             let v = pow(vision.atWorldCoord(x, y, playerPos.x, playerPos.y, sx, sy, VisionResolution).float / 255.0, 2.0)
-            maxVision = max(maxVision, v)
-            let gi = gis.globalIlluminationAt(x,y,sx,sy)
-            maxGlobalLight = max(maxGlobalLight, gi)
-            localIlluminationAt(lis, x, y, sx, sy, localLightStrength, localLightColor)
-            maxLocalLight = max(maxLocalLight, localLightStrength)
-
-
             if v > 0.0:
+              maxVision = max(maxVision, v)
+              let gi = gis.globalIlluminationAt(x,y,sx,sy)
+              maxGlobalLight = max(maxGlobalLight, gi)
+              localIlluminationAt(lis, x, y, sx, sy, localLightStrength, localLightColor)
+              maxLocalLight = max(maxLocalLight, localLightStrength)
+
               let p = vec2f(x.float * 24.0f + sx.float * subDim, y.float * 24.0f + sy.float * subDim)
 
               qb.textureSubRect = rect(sxp, syp, 1.0f32 / VisionResolution.float32, 1.0f32 / VisionResolution.float32)

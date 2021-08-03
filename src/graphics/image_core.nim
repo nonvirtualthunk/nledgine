@@ -75,6 +75,9 @@ proc createImage*(data: ptr uint8, dimensions: Vec2i, flipY: bool = false): Imag
 proc createImage*(data: seq[uint8], dimensions: Vec2i, flipY: bool = false): Image =
   createImage(data[0].unsafeAddr, dimensions, flipY)
 
+proc copy*(src: Image) : Image =
+  result = createImage(src.dimensions)
+  copyMem(cast[pointer](result.data), cast[pointer](src.data), src.dimensions.x * src.dimensions.y * 4)
 
 proc hash*(e: Image): int =
   # if e.resourcePath.isSome:
@@ -110,6 +113,45 @@ proc `[]`*(img: Image, x: int, y: int, q: int): float =
   cast[ptr uint8]((cast[uint](img.data) + offset.uint))[].float / 255.0f
 
 
+proc recolor*(img: Image, fromRamp: ColorRamp, toRampIn: ColorRamp) =
+  if fromRamp.colors.len == 0 or toRampIn.colors.len == 0:
+    return
+
+  let toRamp = if toRampIn.colors.len >= fromRamp.colors.len:
+    toRampIn
+  else:
+    var extendedRamp = toRampIn
+    extendedRamp.colors.setLen(fromRamp.colors.len)
+    for i in toRampIn.colors.len ..< fromRamp.colors.len:
+      extendedRamp.colors[i] = extendedRamp.colors[i - 1]
+    extendedRamp
+
+  var i = 0
+  let limit = img.width * img.height * 4
+
+  let dataAddr = cast[int](img.data)
+  let fromRampU = fromRamp.asUint32s()
+  let toRampU = toRamp.asUint32s()
+
+  while i < limit:
+    let srcPtr = cast[ptr uint32](dataAddr + i)
+    let srcColor = srcPtr[]
+    for ci in 0 ..< fromRampU.len:
+      if srcColor == fromRampU[ci]:
+        srcPtr[] = toRampU[ci]
+        break
+    i += 4
+
+proc extractRamp*(img: Image, sx: int, sy: int) : ColorRamp =
+  var x = sx
+  while x < img.dimensions.x:
+    let color = img[x, sy]
+    if color[].ai > 0:
+      result.colors.add(color[])
+    else:
+      break
+    x.inc
+
 proc copyFrom*(target: Image, src: Image, position: Vec2i) =
   if target.channels != src.channels:
     raise newException(ValueError, "copyFrom(...) on images with differing channel counts")
@@ -124,6 +166,7 @@ proc copyFrom*(target: Image, src: Image, position: Vec2i) =
       let srcPointer = src[0, y]
       let targetPointer = target[position.x, position.y + y]
       copyMem(targetPointer, srcPointer, src.dimensions.x * 4)
+
 
 
 proc writeToFile*(img: Image, path: string) =
