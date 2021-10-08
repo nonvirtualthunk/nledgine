@@ -123,6 +123,28 @@ VitalsWidget {
       }
     }
 
+    SanityDisplay {
+      type: Div
+      height: 32
+      y : 0 below HydrationDisplay
+
+      children {
+        SanityLabel : ${VitalsLabel} {
+          text: "†GameConcepts.Sanity"
+        }
+
+        SanityBar : ${VitalsBar} {
+          x: 3 right of SanityLabel
+
+          fill.color: [136, 61, 194, 255]
+          fill.edgeColor: [136, 61, 194, 255]
+
+          currentValue: "%(player.sanity)"
+          maxValue: "%(player.maxSanity)"
+        }
+      }
+    }
+
   }
 
 }

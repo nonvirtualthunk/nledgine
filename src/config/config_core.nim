@@ -180,6 +180,13 @@ proc asFloat*(v: ConfigValue): float =
   else:
     warn fmt"Cannot get float value for config value : {v}"
 
+proc asFloat*(v: ConfigValue, orElse: float): float =
+  case v.kind:
+  of ConfigValueKind.Number:
+    return float(v.num)
+  else:
+    return orElse
+
 # proc fields*(v : ConfigValue) : Table[string, ConfigValue] =
 #   case v.kind:
 #   of ConfigValueKind.Object:
@@ -222,6 +229,10 @@ template nonEmpty*(v: ConfigValue): bool =
 proc readFromConfig*(v: ConfigValue, x: var int) =
   if v.nonEmpty:
     x = v.asInt
+
+proc readFromConfig*(v: ConfigValue, x: var int8) =
+  if v.nonEmpty:
+    x = v.asInt.int8
 
 proc readFromConfig*(v: ConfigValue, x: var int16) =
   if v.nonEmpty:
@@ -303,6 +314,9 @@ proc readFromConfig*[T](v: ConfigValue, x: var set[T]) =
       
       
 proc writeToConfig*(x: int) : ConfigValue =
+  ConfigValue(kind: ConfigValueKind.Number, num : x.float64)
+
+proc writeToConfig*(x: int8) : ConfigValue  =
   ConfigValue(kind: ConfigValueKind.Number, num : x.float64)
 
 proc writeToConfig*(x: int16) : ConfigValue  =

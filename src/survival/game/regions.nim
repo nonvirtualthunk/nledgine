@@ -14,6 +14,8 @@ import options
 import noto
 import survival_core
 import prelude
+import core/quadtree
+import arxmath
 
 const GenerateIslandRegion* = false
 const GenerateAbyssRegion* = true
@@ -31,6 +33,7 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
 
     region.lengthOfDay = 20000.Ticks
     region.globalShadowLength = 16
+    region.entityQuadTree = newQuadTree[Entity](recti(-RegionHalfSize, -RegionHalfSize, RegionSize, RegionSize), 4)
 
     let tileLib = library(TileKind)
 
@@ -138,7 +141,7 @@ proc generateRegion*(world: LiveWorld, regionEnt: Entity) =
             for resource, dist in mainLayerInfo.looseResources:
               for i in 0 ..< dist.nextValue(rand):
                 let item = createItem(world, regionEnt, resource)
-                placeItem(world, none(Entity), item, vec3i(x.int32, y.int32, MainLayer.int32), true)
+                placeEntity(world, item, vec3i(x.int32, y.int32, MainLayer.int32), true)
 
 
 

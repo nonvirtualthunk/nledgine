@@ -52,6 +52,11 @@ proc reset*[D: static[int]](g : ref ShadowGrid[D]) =
   if g != nil:
     zeroMem(g.grid[0].addr, (D*2+1) * (D*2+1))
 
+proc fill*[D: static[int]](g: ref ShadowGrid[D], v: uint8) =
+  if g != nil:
+    for i in 0 ..< (D*2+1) * (D*2+1):
+      g.grid[i] = v
+
 func radius*[D: static[int]](g : var ShadowGrid[D]) : int = D
 
 func shift*[D: static[int]](baseGrid: ShadowGrid[D], targetGrid: var ShadowGrid[D], dx: int, dy: int) =

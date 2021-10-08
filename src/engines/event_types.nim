@@ -72,6 +72,8 @@ type
   DebugCommandEvent* = ref object of InputEvent
     command*: string
 
+  CameraChangedEvent* = ref object of Event
+
 
 template eventToStr*(eventName: untyped) =
   method toString*(evt: `eventName`): string =
@@ -113,6 +115,7 @@ eventToStr(WindowFocusGained)
 eventToStr(WindowFocusLost)
 eventToStr(WorldInitializedEvent)
 eventToStr(DebugCommandEvent)
+eventToStr(CameraChangedEvent)
 
 proc consume*(evt: UIEvent) =
   evt.consumed = true

@@ -26,7 +26,7 @@ proc pointIndexAt*(p: PoissonDiskSampling, x: int, y: int): Option[int] =
   if x >= 0 and y >= 0 and x < p.dimensions.x and y < p.dimensions.y:
     let i = p.grid[x * p.dimensions.y + y]
     if i > 0:
-      some(i-1)
+      some((i-1).int)
     else:
       none(int)
   else:

@@ -6,6 +6,9 @@ import tables
 import config
 import graphics/color
 import prelude
+import graphics/canvas
+import glm
+import arxmath
 
 type
   TilesetTile* = object
@@ -14,9 +17,9 @@ type
     equalEdges*: ImageRef
     # Edges to draw when transitioning upward to a "higher" tile, i.e. water to grass
     upEdges*: Option[ImageRef]
-    upEdgeVariants*: Table[string, ImageRef]
+    upEdgeVariants*: Table[int, ImageRef]
     upCorners*: Option[ImageRef]
-    upCornerVariants*: Table[string, ImageRef]
+    upCornerVariants*: Table[int, ImageRef]
     upRamp*: Option[ColorRamp]
     # Edges to draw when transitioning to a slightly "lower" tile, i.e. water to dirt
     downEdges*: Option[ImageRef]
@@ -30,14 +33,157 @@ type
     # -1 Void, 0 Water, 1 Ground, 2 Vegetation
     layer*: int
 
+  Tileset* = object
+    tiles*: seq[ref TilesetTile]
+
+  TilesetRenderer*[V,I] = object
+    tileSize: float32
+    tileset: Tileset
+    canvas: Canvas[V,I]
+
 
 
 defineSimpleReadFromConfig(TilesetTile)
 
 
+proc createTilesetRenderer*[V,I](tileSize: float32, tileset: Tileset, canvas: Canvas[V,I]) : TilesetRenderer[V,I] =
+  TilesetRenderer[V,I](
+    tileSize: tileSize,
+    tileset: tileset,
+    canvas: canvas
+  )
+
+
+proc createTileset*(tiles: seq[ref TilesetTile]) : Tileset =
+  result = Tileset(tiles: tiles)
+  for i in 0 ..< tiles.len:
+    if tiles[i] == nil:
+      continue
+    let tilesetTile = tiles[i]
+    if tilesetTile.upEdges.isSome:
+      if tilesetTile.upRamp.isSome:
+        let fromRamp = tilesetTile.upRamp.get
+        let upImg = tilesetTile.upEdges.get.asImage
+
+        for j in 0 ..< tiles.len:
+          let otherTilesetTile = tiles[j]
+          if otherTilesetTile == nil: continue
+          if i != j:
+            let variant = tilesetTile.upEdges.get.copy()
+            variant.recolor(fromRamp, otherTilesetTile.ramp)
+            tilesetTile.upEdgeVariants[j] = imageRef(variant)
+
+            let cornerVariant = tilesetTile.upCorners.get.copy()
+            cornerVariant.recolor(fromRamp, otherTilesetTile.ramp)
+            tilesetTile.upCornerVariants[j] = imageRef(cornerVariant)
+      else:
+        for j in 0 ..< tiles.len:
+          let otherTilesetTile = tiles[j]
+          if otherTilesetTile == nil: continue
+          if i != j:
+            tilesetTile.upEdgeVariants[j] = imageRef(tilesetTile.upEdges.get)
+            tilesetTile.upCornerVariants[j] = imageRef(tilesetTile.upCorners.get)
+
+
+const XTK = 0 # aligns with Axis.X.ord
+const YTK = 1 # aligns with Axis.Y.ord
+const CenterI = 2
+const DTK = 3
+# [x-adjacent, y-adjacent, center, diagonal] for tks and ts
+proc renderTileEdges*[V,I](r: var TilesetRenderer[V,I], qb: var QuadBuilder, tb: var TriBuilder, tks: array[4, int], x: int, y: int, sx: int, sy: int) =
+  let halfSize = r.tileSize * 0.5f32
+  qb.dimensions = vec2f(halfSize, halfSize)
+
+  # if these are all the same there is nothing to do
+  if tks[0] == tks[1] and tks[0] == tks[2] and tks[0] == tks[3]:
+    return
+
+  let centerT = r.tileset.tiles[tks[CenterI]]
+  let centerTK = tks[CenterI]
+  let subTilePos = vec3f(x.float32 * r.tileSize + sx.float32 * halfSize,
+                        y.float32 * r.tileSize + sy.float32 * halfSize,
+                        centerT.layer.float32 + 0.1f32)
+  # Exterior corner case (only deal with exterior corners for up edges at the moment)
+  if tks[XTK] == centerTK and tks[YTK] == centerTK and r.tileset.tiles[tks[DTK]].layer > centerT.layer:
+    if centerT.upCorners.isSome:
+      qb.texture = centerT.upCornerVariants[tks[DTK]].asImage
+      qb.position = subTilePos
+      qb.textureSubRect = rectf(sx.float32 * 0.5f,sy.float32 * 0.5f, 0.5f, 0.5f)
+      qb.drawTo(r.canvas)
+  else:
+    # Interior corner case (only deal with interior corners for up edges at the moment)
+    if tks[XTK] != centerTK and tks[YTK] != centerTK and (r.tileset.tiles[tks[XTK]].layer > centerT.layer and r.tileset.tiles[tks[YTK]].layer > centerT.layer):
+      if centerT.upEdges.isSome:
+        if tks[XTK] != tks[YTK]:
+          let imgDataX = r.canvas.texture.imageData(centerT.upEdgeVariants[tks[XTK]].asImage)
+          let tcX = imgDataX.subRect(rectf(0.66666f32 * sx.float32, 0.666666f32 * sy.float32, 0.333333f32, 0.333333f32))
+          let imgDataY = r.canvas.texture.imageData(centerT.upEdgeVariants[tks[YTK]].asImage)
+          let tcY = imgDataY.subRect(rectf(0.66666f32 * sx.float32, 0.666666f32 * sy.float32, 0.333333f32, 0.333333f32))
+
+          if sy == 1:
+            if sx == 1:
+              tb.points = [subTilePos, subTilePos + vec3f(halfSize, 0.0f32, 0.0f32), subTilePos + vec3f(halfSize, halfSize, 0.0f32)]
+              tb.texCoords = [tcX[0], tcX[1], tcX[2]]
+              tb.drawTo(r.canvas)
+
+              tb.points = [subTilePos, subTilePos + vec3f(halfSize, halfSize, 0.0f32), subTilePos + vec3f(0.0f32, halfSize, 0.0f32)]
+              tb.texCoords = [tcY[0], tcY[2], tcY[3]]
+              tb.drawTo(r.canvas)
+            else:
+              tb.points = [subTilePos, subTilePos + vec3f(halfSize, 0.0f32, 0.0f32), subTilePos + vec3f(0.0f32, halfSize, 0.0f32)]
+              tb.texCoords = [tcX[0], tcX[1], tcX[3]]
+              tb.drawTo(r.canvas)
+
+              tb.points = [subTilePos + vec3f(halfSize, 0.0f32, 0.0f32), subTilePos + vec3f(halfSize, halfSize, 0.0f32), subTilePos + vec3f(0.0f32, halfSize, 0.0f32)]
+              tb.texCoords = [tcY[1], tcY[2], tcY[3]]
+              tb.drawTo(r.canvas)
+          else:
+            if sx == 0:
+              tb.points = [subTilePos, subTilePos + vec3f(halfSize, 0.0f32, 0.0f32), subTilePos + vec3f(halfSize, halfSize, 0.0f32)]
+              tb.texCoords = [tcY[0], tcY[1], tcY[2]]
+              tb.drawTo(r.canvas)
+
+              tb.points = [subTilePos, subTilePos + vec3f(halfSize, halfSize, 0.0f32), subTilePos + vec3f(0.0f32, halfSize, 0.0f32)]
+              tb.texCoords = [tcX[0], tcX[2], tcX[3]]
+              tb.drawTo(r.canvas)
+            else:
+              tb.points = [subTilePos, subTilePos + vec3f(halfSize, 0.0f32, 0.0f32), subTilePos + vec3f(0.0f32, halfSize, 0.0f32)]
+              tb.texCoords = [tcY[0], tcY[1], tcY[3]]
+              tb.drawTo(r.canvas)
+
+              tb.points = [subTilePos + vec3f(halfSize, 0.0f32, 0.0f32), subTilePos + vec3f(halfSize, halfSize, 0.0f32), subTilePos + vec3f(0.0f32, halfSize, 0.0f32)]
+              tb.texCoords = [tcX[1], tcX[2], tcX[3]]
+              tb.drawTo(r.canvas)
+        else:
+          qb.texture = centerT.upEdgeVariants[tks[YTK]].asImage
+          qb.position = subTilePos
+          qb.textureSubRect = rectf(0.66666f32 * sx.float32, 0.666666f32 * sy.float32, 0.333333f32, 0.333333f32)
+          qb.drawTo(r.canvas)
+    else:
+      let n = vec2i(sx * 2 - 1, sy * 2 - 1)
+      for axis in axes2d():
+        if tks[axis.ord] != centerTK:
+          # Currently up edges take priority
+          let (img, offset) = if r.tileset.tiles[tks[axis.ord]].layer <= centerT.layer and r.tileset.tiles[tks[axis.ord]].upEdges.isNone:
+                                (centerT.downEdges, 0.5f32)
+                              elif r.tileset.tiles[tks[axis.ord]].layer > centerT.layer and centerT.upEdges.isSome:
+                                (some(centerT.upEdgeVariants[tks[axis.ord]]), 0.0f32)
+                              else:
+                                (none(ImageRef), 0.0f32)
+          if img.isSome:
+            qb.texture = img.get.asImage
+            qb.position = subTilePos
+            qb.position[axis] = qb.position[axis] + n[axis].float32 * halfSize * offset
+            if axis == Axis.X:
+              qb.textureSubRect = rectf(sx.float * 0.6666f, 0.333333f, 0.33333f, 0.333333f)
+            else:
+              qb.textureSubRect = rectf(0.3333333f,sy.float * 0.6666f, 0.33333f, 0.333333f)
+            qb.drawTo(r.canvas)
+
+
+
 when isMainModule:
   import game/grids
-  import graphics/canvas
   import resources
   import glm
   import graphics/camera_component
@@ -68,27 +214,6 @@ when isMainModule:
     g.canvas = createSimpleCanvas("shaders/simple")
     g.canvas.renderSettings.depthTestEnabled = true
     g.canvas.renderSettings.depthFunc = GL_LEQUAL
-
-    for k,tilesetTile in g.tiles.mpairs:
-      if tilesetTile.upEdges.isSome:
-        if tilesetTile.upRamp.isSome:
-          let fromRamp = tilesetTile.upRamp.get
-          let upImg = tilesetTile.upEdges.get.asImage
-
-          for otherK, otherTilesetTile in g.tiles.pairs:
-            if otherK != k:
-              let variant = tilesetTile.upEdges.get.copy()
-              variant.recolor(fromRamp, otherTilesetTile.ramp)
-              tilesetTile.upEdgeVariants[otherK] = imageRef(variant)
-
-              let cornerVariant = tilesetTile.upCorners.get.copy()
-              cornerVariant.recolor(fromRamp, otherTilesetTile.ramp)
-              tilesetTile.upCornerVariants[otherK] = imageRef(cornerVariant)
-        else:
-          for otherK, otherTilesetTile in g.tiles.pairs:
-            if otherK != k:
-              tilesetTile.upEdgeVariants[otherK] = imageRef(tilesetTile.upEdges.get)
-              tilesetTile.upCornerVariants[otherK] = imageRef(tilesetTile.upCorners.get)
 
 
 
@@ -124,115 +249,54 @@ when isMainModule:
         vec3f(TileSize * (x-W div 2).float32 - TileHalfSize, TileSize * (y-H div 2).float32 - TileHalfSize, z)
 
       var qb : QuadBuilder
+      var tb : TriBuilder = TriBuilder(color: rgba(255,255,255,255))
 
-      proc imageAndOffset(cT: TilesetTile, aTK: string, aT: TilesetTile) : (Option[ImageRef], float32) =
-        if aT.layer <= cT.layer and aT.upEdges.isNone:
-          (cT.downEdges, 0.5f32)
-        elif aT.layer > cT.layer and cT.upEdges.isSome:
-          (some(cT.upEdgeVariants[aTK]), 0.0f32)
-        else:
-          (none(ImageRef), 0.0f32)
+      # proc imageAndOffset(cT: TilesetTile, aTK: string, aT: TilesetTile) : (Option[ImageRef], float32) =
+      #   if aT.layer <= cT.layer and aT.upEdges.isNone:
+      #     (cT.downEdges, 0.5f32)
+      #   elif aT.layer > cT.layer and cT.upEdges.isSome:
+      #     (some(cT.upEdgeVariants[aTK]), 0.0f32)
+      #   else:
+      #     (none(ImageRef), 0.0f32)
 
       qb.color = rgba(255,255,255,255)
       qb.origin = vec2f(0.0f,0.0f)
 
-      let axes = [Axis.X, Axis.Y]
+      var tilesetSeq : seq[ref TilesetTile]
+      var tilesetKeys: Table[string, int]
+      for k,v in g.tiles:
+        tilesetKeys[k] = tilesetSeq.len
+        tilesetSeq.add(new TilesetTile)
+        tilesetSeq[^1][] = v
+
+
+      let tileset = createTileset(tilesetSeq)
+
+      var tks : array[4, int]
+
+      var tilesetRenderer = TilesetRenderer(tileSize: TileSize, tileset: tileset, canvas: g.canvas)
+
       for x in 0 ..< W:
         for y in countdown(H-1,0):
           let centerTK = g.map[x,y]
           let centerT = g.tiles[centerTK]
-          let originPoint = positionFor(x,y,centerT.layer.float32 + 0.1f32)
 
           qb.dimensions = vec2f(TileSize,TileSize)
-          qb.position = positionFor(x,y, centerT.layer.float32)
+          qb.position = vec3f(x.float32 * TileSize, y.float32 * TileSize, centerT.layer.float32)
           qb.texture = centerT.center.asImage
           qb.drawTo(g.canvas)
 
-          qb.dimensions = vec2f(TileHalfSize,TileHalfSize)
           for sx in 0 .. 1:
             for sy in 0 .. 1:
               let n = vec2i(sx * 2 - 1, sy * 2 - 1)
-              let subTilePos = vec3f(originPoint.x + sx.float32 * TileHalfSize, originPoint.y + sy.float32 * TileHalfSize, originPoint.z)
               if x + n.x < 0 or x + n.x >= W or y + n.y < 0 or y + n.y >= H: continue
 
-              let aTK = [ g.map[x + n.x ,y], g.map[x, y + n.y] ]
-              let aT = [ g.tiles[aTK[Axis.X]], g.tiles[aTK[Axis.Y]] ]
+              tks[0] = tilesetKeys[g.map[x + n.x, y]]
+              tks[1] = tilesetKeys[g.map[x, y + n.y]]
+              tks[2] = tilesetKeys[g.map[x, y]]
+              tks[3] = tilesetKeys[g.map[x + n.x, y + n.y]]
 
-              let adTK = g.map[x + n.x, y + n.y]
-              let adT = g.tiles[adTK]
-
-              # Exterior corner case (only deal with exterior corners for up edges at the moment)
-              if aTK[Axis.X] == centerTK and aTK[Axis.Y] == centerTK and adT.layer > centerT.layer:
-                if centerT.upCorners.isSome:
-                  qb.texture = centerT.upCornerVariants[adTK].asImage
-                  qb.position = subTilePos
-                  qb.textureSubRect = rectf(sx.float32 * 0.5f,sy.float32 * 0.5f, 0.5f, 0.5f)
-                  qb.drawTo(g.canvas)
-              else:
-                # Interior corner case (only deal with interior corners for up edges at the moment)
-                if aTK[Axis.X] != centerTK and aTK[Axis.Y] != centerTK and (aT[Axis.X].layer > centerT.layer and aT[Axis.Y].layer > centerT.layer):
-                  if centerT.upEdges.isSome:
-                    if aTK[Axis.X] != aTK[Axis.Y]:
-                      let imgDataX = g.canvas.texture.imageData(centerT.upEdgeVariants[aTK[Axis.X]].asImage)
-                      let tcX = imgDataX.subRect(rectf(0.66666f32 * sx.float32, 0.666666f32 * sy.float32, 0.333333f32, 0.333333f32))
-                      let imgDataY = g.canvas.texture.imageData(centerT.upEdgeVariants[aTK[Axis.Y]].asImage)
-                      let tcY = imgDataY.subRect(rectf(0.66666f32 * sx.float32, 0.666666f32 * sy.float32, 0.333333f32, 0.333333f32))
-
-                      var tb: TriBuilder = TriBuilder(color: rgba(255,255,255,255))
-                      if sy == 1:
-                        if sx == 1:
-                          tb.points = [subTilePos, subTilePos + vec3f(TileHalfSize, 0.0f32, 0.0f32), subTilePos + vec3f(TileHalfSize, TileHalfSize, 0.0f32)]
-                          tb.texCoords = [tcX[0], tcX[1], tcX[2]]
-                          tb.drawTo(g.canvas)
-
-                          tb.points = [subTilePos, subTilePos + vec3f(TileHalfSize, TileHalfSize, 0.0f32), subTilePos + vec3f(0.0f32, TileHalfSize, 0.0f32)]
-                          tb.texCoords = [tcY[0], tcY[2], tcY[3]]
-                          tb.drawTo(g.canvas)
-                        else:
-                          tb.points = [subTilePos, subTilePos + vec3f(TileHalfSize, 0.0f32, 0.0f32), subTilePos + vec3f(0.0f32, TileHalfSize, 0.0f32)]
-                          tb.texCoords = [tcX[0], tcX[1], tcX[3]]
-                          tb.drawTo(g.canvas)
-
-                          tb.points = [subTilePos + vec3f(TileHalfSize, 0.0f32, 0.0f32), subTilePos + vec3f(TileHalfSize, TileHalfSize, 0.0f32), subTilePos + vec3f(0.0f32, TileHalfSize, 0.0f32)]
-                          tb.texCoords = [tcY[1], tcY[2], tcY[3]]
-                          tb.drawTo(g.canvas)
-                      else:
-                        if sx == 0:
-                          tb.points = [subTilePos, subTilePos + vec3f(TileHalfSize, 0.0f32, 0.0f32), subTilePos + vec3f(TileHalfSize, TileHalfSize, 0.0f32)]
-                          tb.texCoords = [tcY[0], tcY[1], tcY[2]]
-                          tb.drawTo(g.canvas)
-
-                          tb.points = [subTilePos, subTilePos + vec3f(TileHalfSize, TileHalfSize, 0.0f32), subTilePos + vec3f(0.0f32, TileHalfSize, 0.0f32)]
-                          tb.texCoords = [tcX[0], tcX[2], tcX[3]]
-                          tb.drawTo(g.canvas)
-                        else:
-                          tb.points = [subTilePos, subTilePos + vec3f(TileHalfSize, 0.0f32, 0.0f32), subTilePos + vec3f(0.0f32, TileHalfSize, 0.0f32)]
-                          tb.texCoords = [tcY[0], tcY[1], tcY[3]]
-                          tb.drawTo(g.canvas)
-
-                          tb.points = [subTilePos + vec3f(TileHalfSize, 0.0f32, 0.0f32), subTilePos + vec3f(TileHalfSize, TileHalfSize, 0.0f32), subTilePos + vec3f(0.0f32, TileHalfSize, 0.0f32)]
-                          tb.texCoords = [tcX[1], tcX[2], tcX[3]]
-                          tb.drawTo(g.canvas)
-                    else:
-                      qb.texture = centerT.upEdgeVariants[aTK[Axis.Y]].asImage
-                      qb.position = subTilePos
-                      qb.textureSubRect = rectf(0.66666f32 * sx.float32, 0.666666f32 * sy.float32, 0.333333f32, 0.333333f32)
-                      qb.drawTo(g.canvas)
-                else:
-                  for axis in axes:
-                    if aTK[axis] != centerTK:
-                      # Currently up edges take priority
-                      let (img, offset) = imageAndOffset(centerT, aTK[axis], aT[axis])
-
-                      if img.isSome:
-                        qb.texture = img.get.asImage
-                        qb.position = subTilePos
-                        qb.position[axis] = qb.position[axis] + n[axis].float32 * TileHalfSize * offset
-                        if axis == Axis.X:
-                          qb.textureSubRect = rectf(sx.float * 0.6666f, 0.333333f, 0.33333f, 0.333333f)
-                        else:
-                          qb.textureSubRect = rectf(0.3333333f,sy.float * 0.6666f, 0.33333f, 0.333333f)
-                        qb.drawTo(g.canvas)
+              renderTileEdges(tilesetRenderer, qb, tb, tks, x, y, sx, sy)
 
       for i in countup(0, poisson.points.len-1, 3):
         let p = poisson.points[i]
@@ -250,7 +314,7 @@ when isMainModule:
         if allSame:
           let pt = g.tiles[ptk]
           let decor = pt.decor[(i div 3) mod pt.decor.len]
-          qb.position = vec3f((p.x - (W div 2).float32) * TileSize.float32 - TileHalfSize, (p.y - (H div 2).float32) * TileSize.float32 - TileHalfSize, pt.layer.float32 + 0.2f32)
+          qb.position = vec3f((p.x) * TileSize.float32, (p.y) * TileSize.float32, pt.layer.float32 + 0.2f32)
           qb.texture = decor.asImage
           qb.textureSubRect = rectf(0.0f32,0.0f32,0.0f32,0.0f32)
           qb.color = rgba(255,255,255,255)
@@ -357,7 +421,7 @@ when isMainModule:
     ],
     graphicsComponents: @[
       TilesetGraphicsComponent(),
-      createCameraComponent(createPixelCamera(3, vec2f(0.0f, 0.0f)).withMoveSpeed(300.0f)),
+      createCameraComponent(createPixelCamera(3, vec2f(-(W/2) * 32.0f32, -(H/2) * 32.0f32)).withMoveSpeed(300.0f)),
     ],
     clearColor: rgba(0.4f,0.4f,0.4f,1.0f),
   ))

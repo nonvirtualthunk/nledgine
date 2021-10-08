@@ -43,4 +43,12 @@ Actions {
   Equip {
     presentVerb: "equip"
   }
+
+  Move {
+    presentVerb: "move"
+  }
+
+  Examine {
+    presentVerb: "examine"
+  }
 }

@@ -2,6 +2,13 @@ import glm
 
 import engines/engine
 import graphics/color
+import options
+import sugar
+import worlds
+
+
+type WorldInitFunc* = proc (w: World) {.gcsafe.}
+type LiveWorldInitFunc* = proc (world: LiveWorld) {.gcsafe.}
 
 type GameSetup* = object
     windowSize* : Vec2i
@@ -13,3 +20,5 @@ type GameSetup* = object
     graphicsComponents*: seq[GraphicsComponent]
     clearColor*: RGBA
     useLiveWorld*: bool
+    worldInitFunc*: Option[WorldInitFunc]
+    liveWorldInitFunc*: Option[LiveWorldInitFunc]

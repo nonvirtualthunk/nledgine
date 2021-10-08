@@ -1,0 +1,8 @@
+Flags {
+
+  Aetherscoop: {}
+
+  Compressor: {}
+
+  Fabricator: {}
+}

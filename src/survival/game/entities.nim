@@ -16,11 +16,14 @@ import prelude
 import strutils
 import game/shadowcasting
 import graphics/color
+import game/flags
+import strutils
 
 const VisionResolution* = 2
 const ShadowResolution* = 2
 const LocalLightRadius* = 64
 const LocalLightRadiusWorldResolution* = 64 div ShadowResolution
+
 
 type
   TileLayerKind* {.pure.} = enum
@@ -68,6 +71,8 @@ type
     gatheredOnDestruction*: bool
     # how long it takes to regenerate 1 of this resource (in ticks)
     regenerateTime*: Option[Ticks]
+    # image to display to indicate the presence of this resource, if any
+    image*: Option[ImageRef]
 
   Vital* = object
     # The maximum value and how much it has been reduced by currently
@@ -76,8 +81,6 @@ type
     recoveryTime*: Option[Ticks]
     # The number of ticks between losing a point of this stat
     lossTime*: Option[Ticks]
-    # The last point at which this stat recovered/lost
-    lastRecoveryOrLoss*: Ticks
 
   Direction* = enum
     Center
@@ -94,12 +97,14 @@ type
     # position in three dimensional space within the region, x/y/layer
     position*: Vec3i
     # what region this entity is in
-    region*: Entity
+    region* {.noAutoLoad.} : Entity
     # indicates an object that is lying on the ground in a non-constructed just-sort-of-sitting-around state
     # need to think of a better term
     capsuled*: bool
     # whether or not this entity fully occupies the tile it is on, preventing movement (assuming it is not capsuled)
     occupiesTile*: bool
+    # whether or not this entity blocks the passage of light
+    blocksLight*: bool
     # whether or not this entity moves of its own accord
     dynamic*: bool
     # whether this entity has been destroyed
@@ -116,6 +121,8 @@ type
     createdAt*: Ticks
     # what cardinal direction this entity is facing
     facing*: Direction
+    # what other entity is holding this one in its inventory, if any
+    heldBy* {.noAutoLoad.} : Option[Entity]
 
   Creature* = object
     # how much energy the creature has for performing difficult actons
@@ -138,15 +145,17 @@ type
     constitution*: int8
     # baseline movement time required to traverse a single tile with no obstacles
     baseMoveTime*: Ticks
-    # what kind of creature this is, its archetype/species/what have you
-    creatureKind*: Taxon
     # what items are equipped to what body parts
-    equipment*: Table[Taxon, Entity]
+    equipment* {.noAutoLoad.} : Table[Taxon, Entity]
+    # distance the creature can see, in tiles
+    visionRange*: int
+    # Remaining time for actions before the next player turn
+    remainingTime*: Ticks
+
 
   Player* = object
     quickSlots*: array[10, Entity]
     vision*: ref ShadowGrid[64]
-    visionRange*: int
 
   Plant* = object
     # current stage of growth (budding, vegetative growth, flowering, etc)
@@ -162,6 +171,8 @@ type
     quantity*: Reduceable[int16]
     # How many ticks worth of progress have been made on gathering one unit of this resource
     progress*: Ticks16
+    # image to display to indicate the presence of this resource
+    image*: Option[ImageRef]
 
   Gatherable* = object
     # resources that can be gathered from this entity
@@ -191,23 +202,51 @@ type
     # the maximum ticks of fuel this provides in the event that it is possible to partially consume
     maxFuel*: Ticks
 
+  # Goals that a creature might have in its life
+  CreatureGoals* = enum
+    Think # Decide what to do next
+    Eat # Find/hunt/steal food
+    Flee # Avoid danger by moving away from it by whatever means available
+    Defend # Defend self by force or attempting to disable an enemy
+    Attack # Proactively seek to destroy enemies
+    Explore # Discover new locations or wander
+    Examine # Examine surroundings, look for threats
+    Home # Return home when not at its active time of day
+
+  CreatureSchedule* = enum
+    Nocturnal
+    Diurnal
+    Crepuscular
+
   CreatureKind* = object
-    health*: DiceExpression
-    healthRecoveryTime*: Option[Ticks]
-    stamina*: DiceExpression
-    staminaRecoveryTime*: Option[Ticks]
-    hydration*: DiceExpression
-    hydrationLossTime*: Option[Ticks]
-    strength*: DiceExpression
-    dexterity*: DiceExpression
-    constitution*: DiceExpression
-    baseMoveTime*: Ticks
-    weight*: DiceExpression
-    images*: seq[ImageRef]
+    physical*: Physical
+    creature*: Creature
+    flags*: Flags
+    combatAbility*: CombatAbility
+
+    actionImages*: Table[Taxon, ImageLike]
+
+    # flags that indicate something might be edible to this kind of creature (i.e. vegetable)
+    canEat*: seq[Taxon]
+    # flags that indicate something cannot be edible to this kind of creature (i.e. Flags.Meat for herbivores)
+    cannotEat*: seq[Taxon]
+    # what sections of the day this kind of creature is active for, [0.0,1.0) with 0.0 being dawn
+    activeTimesOfDay*: seq[(float, float)]
     # resources that can be gathered from the creature while it is alive
     liveResources*: seq[ResourceYield]
     # resources that can only be gathered from the creature's corpse
     deadResources*: seq[ResourceYield]
+    # when the creature is active throughout the day/night
+    schedule*: CreatureSchedule
+    # what priority this kind of creature gives various goals, the weights are only interpreted relative to each other
+    # if a goal does not have an entry it is presumed to not be something the creature does
+    priorities*: Table[CreatureGoals, float]
+    # actions creatures of this kind have access to without any tools or equipment (i.e. pretty much everyone can gather,
+    # animals with claws might be able to cut, rabbits can dig, etc)
+    innateActions*: Table[Taxon, int]
+    # attacks that the creature can perform inherently, without any equipment
+    innateAttacks*: Table[Taxon, AttackType]
+
 
   PlantGrowthStageInfo* = object
     # images for this stage of growth
@@ -220,6 +259,8 @@ type
     resources*: seq[ResourceYield]
     # whether or not the plant at this stage fully occupies its tile
     occupiesTile*: bool
+    # whether or not the plant at this stage fully blocks light
+    blocksLight*: bool
 
   PlantKind* = object
     health*: DiceExpression
@@ -240,8 +281,6 @@ type
     # what this item decays into, if anything
     decaysInto*: Option[Taxon]
 
-    # what other entity is holding this one in its inventory, if any
-    heldBy*: Option[Entity]
     # actions that this item can be used for
     actions*: Table[Taxon, int]
 
@@ -268,7 +307,8 @@ type
     health*: DiceExpression
     images*: seq[ImageRef]
     occupiesTile*: bool
-    flags*: Table[Taxon, int]
+    blocksLight*: bool
+    flags*: ref Flags
     fuel*: Ticks
     light*: Option[LightSource]
     food*: Option[FoodKind]
@@ -418,9 +458,127 @@ type
     # whether this entity is destroyed when its fuel is exhausted (i.e. a torch), treated the same as if it was destroyed by fire
     consumedWhenFuelExhausted*: bool
 
+  Burrow* = object
+    # what kind of creature lives in this burrow
+    creatureKind*: Taxon
+    # how many creatures can be spawned and alive from this burrow at one time
+    maxPopulation*: int
+    # how long between spawning new creatures
+    spawnInterval*: Ticks
+    # how close to spawning a new creature this burrow is
+    spawnProgress*: Ticks
+    # how much food has been acquired by animals from this burrow. More food equates to faster spawn times
+    # measured in hunger points
+    nutrientsGathered*: int
+    # what creatures are currently active from this burrow (dead ones should be pruned periodically, but may be in the list at some times)
+    # The inventory of the burrow is what is used to show what animals are actually literally inside the burrow at any point
+    creatures* {.noAutoLoad.} : seq[Entity]
+    # what can be used to destroy this burrow (i.e. dig up a rabbit burrow, chop up a beaver den)
+    canDestroyWith*: seq[Taxon]
+
+  CreatureTaskKind* {.pure.} = enum
+    MoveTo
+    EatFrom
+    Attack
+    Wait
+
+  CreatureTask* = object
+    target*: Target
+    case kind*: CreatureTaskKind
+    of CreatureTaskKind.MoveTo:
+      moveAdjacentTo*: bool
+      activePath*: Option[Path]
+    of CreatureTaskKind.EatFrom, CreatureTaskKind.Attack:
+      discard
+    of CreatureTaskKind.Wait:
+      waitTime*: Ticks
+
+  CreatureTaskResultKind* {.pure.} = enum
+    Succeeded
+    Invalid
+    Failed
+    Continues
+
+  CreatureTaskResult* = object
+    kind*: CreatureTaskResultKind
+
+
+  CreatureAI* = object
+    activeGoal*: CreatureGoals
+    tasks*: seq[CreatureTask]
+    burrow*: Entity
+    # The last time at which the given goal was a failure, used to deprioritize
+    # goals that have not been able to be completed successfully
+    failedGoals*: Table[CreatureGoals, Ticks]
+    # The last time at which the given goal was successfully completed, used
+    # to deprioritize goals when doing them repeatedly is unhelpful (i.e. checking for threats)
+    completedGoals*: Table[CreatureGoals, Ticks]
+
+  BurrowKind* = object
+    burrow*: Burrow
+    physical*: Physical
+    flags*: Flags
+
+  CombatAbility* = object
+    # the amount to reduce incoming damage by, organized by damage type
+    armor*: Table[Taxon, int]
+
+
+  AttackType* = object
+    # what type of damage is done by this attack (bludgeoning, slashing, fire, etc)
+    damageType*: Taxon
+    # the base amount of damage done
+    damageAmount*: int
+    # the fraction of the time that this attack will hit, absent other factors
+    accuracy*: float32
+    # how long it takes to perform this attack
+    duration*: Ticks
+
 
 
 defineSimpleReadFromConfig(Fire)
+defineSimpleReadFromConfig(Burrow)
+
+
+proc `$`*(t: Target) : string =
+  case t.kind:
+    of TargetKind.Entity:
+      &"Target(entity,{t.entity})"
+    of TargetKind.TileLayer:
+      &"Target(tile,{t.tilePos},{t.layer},{t.index})"
+    of TargetKind.Tile:
+      &"Target(tile,{t.tilePos})"
+
+
+proc readFromConfig*(cv: ConfigValue, v: var Direction) =
+  case cv.asStr.toLowerAscii:
+    of "center": v = Direction.Center
+    of "left": v = Direction.Left
+    of "right": v = Direction.Right
+    of "up": v = Direction.Up
+    of "down": v = Direction.Down
+    else: err &"Invalid direction: {cv}"
+
+
+proc readFromConfig*(cv: ConfigValue, v: var Vital) =
+  if cv.isNumber:
+    v.value = reduceable(cv.asFloat.int)
+  elif cv.isObj:
+    if cv["value"].isNumber:
+      v.value = reduceable(cv["value"].asInt)
+    cv["recoveryTime"].readInto(v.recoveryTime)
+    cv["lossTime"].readInto(v.lossTime)
+  else:
+    err &"unknown representation of Vital value: {cv}"
+
+proc readFromConfig*(cv: ConfigValue, v: var CreatureSchedule) =
+  if cv.isStr:
+    case cv.asStr.toLowerAscii:
+      of "diurnal": v = CreatureSchedule.Diurnal
+      of "nocturnal": v = CreatureSchedule.Nocturnal
+      of "crepuscular": v = CreatureSchedule.Crepuscular
+      else: err &"Invalid creature schedule: {cv.asStr}"
+  else: err &"unknown representation of CreatureSchedule: {cv}"
 
 proc readFromConfig*(cv: ConfigValue, gm: var Contribution) =
   if cv.isStr:
@@ -454,6 +612,7 @@ proc readFromConfig*(cv: ConfigValue, ry: var ResourceYield) =
     ry.gatherMethods = @[cv["gatherMethod"].readInto(ResourceGatherMethod)]
   if ry.gatherTime == Ticks(0):
     ry.gatherTime = Ticks(TicksPerShortAction)
+  cv["image"].readInto(ry.image)
 
 
 proc readFromConfig*(cv: ConfigValue, r: var RecipeOutput) =
@@ -541,8 +700,36 @@ defineSimpleReadFromConfig(PlantGrowthStageInfo)
 defineSimpleReadFromConfig(PlantKind)
 defineSimpleReadFromConfig(FoodKind)
 defineSimpleReadFromConfig(ActionKind)
-defineSimpleReadFromConfig(CreatureKind)
 defineSimpleReadFromConfig(Recipe)
+defineSimpleReadFromConfig(Physical)
+defineSimpleReadFromConfig(Creature)
+defineSimpleReadFromConfig(AttackType)
+
+proc readFromConfig*(cv: ConfigValue, v: var BurrowKind) =
+  cv.readInto(v.burrow)
+  cv.readInto(v.physical)
+  cv["flags"].readInto(v.flags)
+
+proc readFromConfig*(cv: ConfigValue, v: var CreatureGoals) =
+  try:
+    v = parseEnum[CreatureGoals](cv.asStr)
+  except ValueError:
+    warn &"Unsupported config for creature goal: {cv}"
+
+proc readFromConfig*(cv: ConfigValue, ck: var CreatureKind) =
+  cv.readInto(ck.creature)
+  cv.readInto(ck.physical)
+
+  cv["canEat"].readInto(ck.canEat)
+  cv["cannotEat"].readInto(ck.cannotEat)
+  cv["schedule"].readInto(ck.schedule)
+  cv["liveResources"].readInto(ck.liveResources)
+  cv["deadResources"].readInto(ck.deadResources)
+  cv["priorities"].readInto(ck.priorities)
+
+  readIntoTaxonTable(cv["innateActions"], ck.innateActions, "Actions")
+  readIntoTaxonTable(cv["innateAttacks"], ck.innateAttacks, "Attacks")
+  readIntoTaxonTable(cv["actionImages"], ck.actionImages, "Actions")
 
 proc readFromConfig*(cv: ConfigValue, ik: var LightSource) =
   cv["brightness"].readInto(ik.brightness)
@@ -557,20 +744,16 @@ proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["image"].readInto(ik.images)
   cv["images"].readInto(ik.images)
   cv["occupiesTile"].readInto(ik.occupiesTile)
+  cv["blocksLight"].readInto(ik.blocksLight)
   cv["fuel"].readInto(ik.fuel)
   cv["food"].readInto(ik.food)
   cv["fire"].readInto(ik.fire)
   cv["light"].readInto(ik.light)
   cv["stackable"].readInto(ik.stackable)
-  let flags = cv["flags"]
-  if flags.isObj:
-    for k,v in flags.fields:
-      ik.flags[taxon("Flags", k)] = v.asInt
+  ik.flags = new Flags
+  cv["flags"].readInto(ik.flags[])
 
-  let actions = cv["actions"]
-  if actions.isObj:
-    for k,v in actions.fields:
-      ik.actions[taxon("Actions", k)] = v.asInt
+  readIntoTaxonTable(cv["actions"], ik.actions, "Actions")
 
 defineReflection(Player)
 defineReflection(Creature)
@@ -583,7 +766,9 @@ defineReflection(Inventory)
 defineReflection(Food)
 defineReflection(Fuel)
 defineReflection(Fire)
-
+defineReflection(Burrow)
+defineReflection(CreatureAI)
+defineReflection(CombatAbility)
 
 const DirectionVectors* = [vec2i(0,0), vec2i(-1,0), vec2i(0,1), vec2i(1,0), vec2i(0,-1)]
 const DirectionVectors3f* = [vec3f(0,0,0), vec3f(-1,0,0), vec3f(0,1,0), vec3f(1,0,0), vec3f(0,-1,0)]
@@ -597,6 +782,7 @@ defineSimpleLibrary[PlantKind]("survival/game/plant_kinds.sml", "Plants")
 defineSimpleLibrary[ItemKind]("survival/game/items.sml", "Items")
 defineSimpleLibrary[ActionKind]("survival/game/actions.sml", "Actions")
 defineSimpleLibrary[CreatureKind]("survival/game/creatures.sml", "Creatures")
+defineSimpleLibrary[BurrowKind]("survival/game/burrows.sml", "Burrows")
 defineSimpleLibrary[RecipeTemplate]("survival/game/recipe_templates.sml", "RecipeTemplates")
 # defineSimpleLibrary[Recipe]("survival/game/recipes.sml", "Recipes")
 defineLibrary[Recipe]:
@@ -761,6 +947,27 @@ proc positionOf*(world: LiveWorld, target: Target): Option[Vec3i] =
 
 proc regionEnt*(world: LiveWorld, entity: Entity) : Entity =
   entity[Physical].region
+
+
+proc moveTask*(world: LiveWorld, region: Entity, to: Vec3i) : CreatureTask =
+  CreatureTask(kind: CreatureTaskKind.MoveTo, target: tileTarget(region, to))
+
+proc waitTask*(waitTicks: Ticks) : CreatureTask =
+  CreatureTask(kind: CreatureTaskKind.Wait, waitTime: waitTicks)
+
+proc moveTask*(target: Entity, moveAdjacentTo: bool) : CreatureTask =
+  CreatureTask(kind: CreatureTaskKind.MoveTo, target: entityTarget(target), moveAdjacentTo: moveAdjacentTo)
+
+proc eatTask*(entity: Entity): CreatureTask =
+  CreatureTask(kind: CreatureTaskKind.EatFrom, target: entityTarget(entity))
+
+proc attackTask*(entity: Entity): CreatureTask =
+  CreatureTask(kind: CreatureTaskKind.Attack, target: entityTarget(entity))
+
+proc taskSucceeded*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Succeeded)
+proc taskFailed*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Failed)
+proc taskInvalid*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Invalid)
+proc taskContinues*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Continues)
 
 when isMainModule:
   let lib = library(ItemKind)

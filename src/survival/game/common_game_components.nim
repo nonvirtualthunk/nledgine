@@ -50,7 +50,7 @@ method onEvent(g: FireComponent, world: LiveWorld, event: Event) =
             if fire.durabilityLossTime.isSome:
               reduceDurability(world, ent, intervalsIn(startTime, tick, fire.durabilityLossTime.get))
             if fire.healthLossTime.isSome:
-              discard damageEntity(world, ent, intervalsIn(startTime, tick, fire.healthLossTime.get), "fire")
+              discard damageEntity(world, ent, intervalsIn(startTime, tick, fire.healthLossTime.get), † DamageTypes.Fire, "fire")
 
             let fuelConsumed = dt.float * fire.fuelConsumptionRate.get(1.0)
             fire.fuelRemaining = (fire.fuelRemaining.float - fuelConsumed).int.Ticks
@@ -95,9 +95,9 @@ method onEvent(g: CreatureComponent, world: LiveWorld, event: Event) =
             updateRecoveryAndLoss(creature.stamina, g.lastUpdatedTick, currentTime)
 
             if creature.hunger.currentValue == 0:
-              damageEntity(world, ent, intervalsIn(startTime, currentTime, HungerDamageInterval), "hunger")
+              damageEntity(world, ent, intervalsIn(startTime, currentTime, HungerDamageInterval), † DamageTypes.Hunger, "hunger")
             if creature.hydration.currentValue == 0:
-              damageEntity(world, ent, intervalsIn(startTime, currentTime, ThirstDamageInterval), "thirst")
+              damageEntity(world, ent, intervalsIn(startTime, currentTime, ThirstDamageInterval), † DamageTypes.Thirst, "thirst")
 
             if ent[Physical].health.currentValue == 0:
               destroySurvivalEntity(world, ent)
@@ -156,3 +156,37 @@ method onEvent(g: PhysicalComponent, world: LiveWorld, event: Event) =
 
 
 
+
+# /+============================================+\
+# ||                 Burrow Component           ||
+# \+============================================+/
+type
+  BurrowComponent* = ref object of LiveGameComponent
+    # last updated
+    lastUpdatedTick*: Ticks
+
+
+method initialize(g: BurrowComponent, world: LiveWorld) =
+  g.name = "BurrowComponent"
+
+method update(g: BurrowComponent, world: LiveWorld) =
+  discard
+
+proc updateEntity(g: BurrowComponent, world: LiveWorld, burrow: Entity, currentTime: Ticks) =
+  let burrowData = burrow[Burrow]
+  # If we haven't reached max population for this burrow yet, check to see if more creatures spawn
+  if burrowData.creatures.len < burrowData.maxPopulation:
+    burrowData.spawnProgress += currentTime - g.lastUpdatedTick
+    let nutrientBonus = (burrowData.nutrientsGathered * TicksPerLongAction).Ticks
+    if burrowData.spawnProgress + nutrientBonus > burrowData.spawnInterval:
+      spawnCreatureFromBurrow(world, burrow)
+
+
+method onEvent(g: BurrowComponent, world: LiveWorld, event: Event) =
+  withWorld(world):
+    postMatcher(event):
+      extract(WorldAdvancedEvent, tick):
+        if tick - g.lastUpdatedTick > TicksPerLongAction.Ticks:
+          for ent in world.entitiesWithData(Burrow):
+            updateEntity(g, world, ent, tick)
+          g.lastUpdatedTick = tick

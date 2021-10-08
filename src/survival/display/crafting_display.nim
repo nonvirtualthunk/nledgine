@@ -261,7 +261,7 @@ proc craft(cm: CraftingMenu, world: LiveWorld) =
 
   let items = itemsOpt.get
   for item in items:
-    moveItemToInventory(world, item, cm.player)
+    moveEntityToInventory(world, item, cm.player)
 
   updateRecipeSlotSelections(cm, world)
 

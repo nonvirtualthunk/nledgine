@@ -11,6 +11,26 @@ Taxonomy {
     Hunger: Vital
     Sanity: Vital
   }
+
+  Building: []
+  Burrow: [Building]
+
+  DamageType: []
+  DamageTypes {
+    BiologicalNecessity: DamageType
+    Hunger: BiologicalNecessity
+    Thirst: BiologicalNecessity
+
+    Physical: DamageType
+    Bludgeoning: Physical
+    Piercing: Physical
+    Slashing: Physical
+
+    Elemental: DamageType
+    Fire: Elemental
+    Cold: Elemental
+    Acid: Elemental
+  }
 }
 
 TaxonomySources : [
@@ -25,4 +45,6 @@ TaxonomySources : [
   survival/game/recipe_templates.sml
   survival/game/recipes.sml
   survival/game/creatures.sml
+  survival/game/burrows.sml
+  survival/game/attacks.sml
 ]

@@ -632,9 +632,10 @@ proc render*(command: var DrawCommand; cameras: seq[Camera], framebufferSize: Ve
   let time = glfwGetTime()
   if command.camera.id != 0 and command.camera.id < cameras.len:
     command.camera = cameras[command.camera.id]
-  let deltaTime = time - command.camera.lastUpdated
-  command.camera.lastUpdated = time
-  command.camera.update(deltaTime / 0.01666666666667)
+
+# let deltaTime = time - command.camera.lastUpdated
+#   command.camera.lastUpdated = time
+#   command.camera.update(deltaTime / 0.01666666666667)
 
   bindVertexArray(glVaoIDs[command.vao])
   checkGLError()

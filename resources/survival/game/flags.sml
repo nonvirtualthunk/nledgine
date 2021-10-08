@@ -147,4 +147,10 @@ Flags {
   Bowl {
     description: "A concave container for holding objects or liquids"
   }
+  Grass {
+    description: "Grass"
+  }
+  Water {
+    description: "Water, the foundation of life"
+  }
 }

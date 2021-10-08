@@ -35,6 +35,7 @@ import survival/game/tile_component
 import survival/game/vision
 import survival/game/survival_core
 import survival/game/logic
+import survival/game/ai_component
 import game/shadowcasting
 import worlds/taxonomy
 import graphics/color
@@ -73,59 +74,53 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
         pos = vec3i(0.int32,y.int32,MainLayer.int32)
         break
 
-    let axe = createItem(world, regionEnt, † Items.StonePickaxe)
+    let axe = createItem(world, regionEnt, † Items.StoneAxe)
 
-    let player = world.createEntity()
+    let player = createCreature(world, regionEnt, † Creatures.Human)
     player.attachData(Player(
       quickSlots: [player, axe, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity, SentinelEntity],
-      visionRange: 18,
       vision: new ShadowGrid[64]
     ))
-    player.attachData(Creature(
-      stamina: vital(14),
-      hydration: vital(22).withLossTime(Ticks(400)),
-      hunger: vital(19).withLossTime(Ticks(600)),
-      sanity: vital(25),
-      baseMoveTime: Ticks(20),
-      equipment: { † BodyParts.RightHand : axe }.toTable
-    ))
-    player.attachData(Physical(
-      position : pos,
-      images: @[imageRef("survival/graphics/creatures/player.png")],
-      dynamic: true,
-      health: vital(24),
-      region: regionEnt,
-    ))
-    player.attachData(Inventory(maximumWeight: 500))
-    player.attachData(Identity(
-      name: some("Tobold"),
-      kind: † Creatures.Human
-    ))
+    equipItemTo(world, player, axe, † BodyParts.RightHand)
+    player[Inventory].maximumWeight = 500
+    player[Identity].name = some("Tobold")
 
     let fireDrill = createItem(world, regionEnt, † Items.FireDrill)
 
-    moveItemToInventory(world, axe, player)
-    moveItemToInventory(world, createItem(world, regionEnt, † Items.Log), player)
-    moveItemToInventory(world, createItem(world, regionEnt, † Items.CarrotRoot), player)
-    moveItemToInventory(world, createItem(world, regionEnt, † Items.WoodPole), player)
-    moveItemToInventory(world, createItem(world, regionEnt, † Items.StrippedBark), player)
-    moveItemToInventory(world, createItem(world, regionEnt, † Items.StrippedBark), player)
-    moveItemToInventory(world, createItem(world, regionEnt, † Items.Stone), player)
-    moveItemToInventory(world, fireDrill, player)
+    moveEntityToInventory(world, axe, player)
+    moveEntityToInventory(world, createItem(world, regionEnt, † Items.Log), player)
+    moveEntityToInventory(world, createItem(world, regionEnt, † Items.CarrotRoot), player)
+    moveEntityToInventory(world, createItem(world, regionEnt, † Items.WoodPole), player)
+    moveEntityToInventory(world, createItem(world, regionEnt, † Items.StrippedBark), player)
+    moveEntityToInventory(world, createItem(world, regionEnt, † Items.StrippedBark), player)
+    moveEntityToInventory(world, createItem(world, regionEnt, † Items.Stone), player)
+    moveEntityToInventory(world, fireDrill, player)
 
-    tilePtr(regionEnt[Region], player[Physical].position + vec3i(5,-5,0)).wallLayers = @[TileLayer(tileKind: † TileKinds.RoughStone, resources : @[GatherableResource(resource: † Items.Stone, quantity: reduceable(3.int16), source: † TileKinds.RoughStone)])]
+    placeEntity(world, player, pos)
+
+    tilePtr(regionEnt[Region], player[Physical].position + vec3i(5,-5,0)).wallLayers = @[TileLayer(tileKind: library(TileKind).libTaxon(† TileKinds.RoughStone), resources : @[GatherableResource(resource: † Items.Stone, quantity: reduceable(3.int16), source: † TileKinds.RoughStone)])]
 
     # tilePtr(regionEnt[Region], vec3i(-7,-7,MainLayer)).wallLayers = @[TileLayer(tileKind: † TileKinds.RoughStone, resources : @[GatherableResource(resource: † Items.Stone, quantity: reduceable(3.int16), source: † TileKinds.RoughStone)])]
 
+    let playerPos = player[Physical].position
+
     let fireLog = createItem(world, regionEnt, † Items.Log)
-    placeItem(world, none(Entity), fireLog, player[Physical].position + vec3i(1,0,0), true)
+    placeEntity(world, fireLog, playerPos + vec3i(1,0,0), true)
     ignite(world, player, fireDrill, some(entityTarget(fireLog)))
 
     regionEnt[Region].entities.incl(player)
-    regionEnt[Region].dynamicEntities.incl(player)
 
     regionEnt[Region].initialized = true
     world.addFullEvent(RegionInitializedEvent(region: regionEnt))
+
+    let burrow = createBurrow(world, regionEnt, † Burrows.RabbitHole)
+    for dy in 4 ..< 10:
+      if passable(world, regionEnt, playerPos + vec3i(0,dy,0)):
+        placeEntity(world, burrow, playerPos + vec3i(0,dy,0))
+        break
+    spawnCreatureFromBurrow(world, burrow)
+
+    createPlant(world, regionEnt, † Plants.Carrot, burrow[Physical].position + vec3i(3,0,0), PlantCreationParameters(growthStage: some(† GrowthStages.Flowering)))
 
 
 
@@ -149,10 +144,12 @@ main(GameSetup(
     initializationComponent(),
     CreatureComponent(),
     PhysicalComponent(),
+    BurrowComponent(),
     FireComponent(),
     VisionComponent(),
     LightingComponent(),
-    tileComponent()
+    tileComponent(),
+    AIComponent(),
   ],
   graphicsComponents: @[
     createWindowingSystemComponent("survival/widgets/"),

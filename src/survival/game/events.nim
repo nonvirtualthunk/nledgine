@@ -59,7 +59,19 @@ type
     entity*: Entity
     itemKind*: Taxon
 
-  ItemMovedToInventoryEvent* = ref object of GameEvent
+  CreatureCreatedEvent* = ref object of GameEvent
+    entity*: Entity
+    creatureKind*: Taxon
+
+  BuildingCreatedEvent* = ref object of GameEvent
+    entity*: Entity
+    buildingKind*: Taxon
+
+  BurrowSpawnEvent* = ref object of GameEvent
+    burrow*: Entity
+
+
+  EntityMovedToInventoryEvent* = ref object of GameEvent
     entity*: Entity
     fromInventory*: Option[Entity]
     toInventory*: Entity
@@ -79,15 +91,37 @@ type
     entity*: Entity
     fromEntity*: Option[Entity]
 
-  ItemPlacedEvent* = ref object of GameEvent
-    entity*: Option[Entity]
-    placedEntity*: Entity
+  EntityPlacedEvent* = ref object of GameEvent
+    entity*: Entity
     position*: Vec3i
-    capsuled*: bool
+
+
+  AttackEvent* = ref object of GameEvent
+    attacker*: Entity
+    target*: Target
+    attackKind*: Taxon
+
+  AttackHitEvent* = ref object of GameEvent
+    attacker*: Entity
+    target*: Target
+    attackKind*: Taxon
+    damage*: int
+    damageType*: Taxon
+    armorReduction*: int
+
+  AttackMissedEvent* = ref object of GameEvent
+    attacker*: Entity
+    target*: Target
+
+
 
   CouldNotPlaceItemEvent* = ref object of GameEvent
     entity*: Entity
     placedEntity*: Entity
+    position*: Vec3i
+
+  CouldNotPlaceEntityEvent* = ref object of GameEvent
+    entity*: Entity
     position*: Vec3i
 
   FoodEatenEvent* = ref object of GameEvent
@@ -107,6 +141,7 @@ type
   DamageTakenEvent* = ref object of GameEvent
     entity*: Entity
     damageTaken*: int
+    damageType*: Taxon
     source*: Entity
     reason*: string
 
@@ -158,8 +193,9 @@ eventToStr(CreatureMovedEvent)
 eventToStr(WorldAdvancedEvent)
 eventToStr(EntityDestroyedEvent)
 eventToStr(ItemCreatedEvent)
-eventToStr(ItemPlacedEvent)
-eventToStr(ItemMovedToInventoryEvent)
+eventToStr(CreatureCreatedEvent)
+eventToStr(BuildingCreatedEvent)
+eventToStr(EntityMovedToInventoryEvent)
 eventToStr(ItemRemovedFromInventoryEvent)
 eventToStr(GatheredEvent)
 eventToStr(CouldNotGatherEvent)
@@ -175,6 +211,12 @@ eventToStr(ExtinguishedEvent)
 eventToStr(ItemEquippedEvent)
 eventToStr(ItemUnequippedEvent)
 eventToStr(DamageTakenEvent)
+eventToStr(EntityPlacedEvent)
+eventToStr(CouldNotPlaceEntityEvent)
+eventToStr(BurrowSpawnEvent)
+eventToStr(AttackEvent)
+eventToStr(AttackHitEvent)
+eventToStr(AttackMissedEvent)
 
 
 proc currentTime*(w: WorldAdvancedEvent): Ticks = w.tick

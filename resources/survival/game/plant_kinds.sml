@@ -43,8 +43,9 @@ Plants {
       },
       Mature: {
         startAge: 1 year
-        images: "survival/graphics/plants/tree.png"
+        images: "survival/graphics/plants/tree_2.png"
         occupiesTile: true
+        blocksLight: true
         resources: [
           {
             resource: Leaves
@@ -221,7 +222,7 @@ Plants {
       }
       Flowering: {
         startAge: 1 season
-        images: "survival/graphics/plants/berry_bush/bush_3_red_berries.png"
+        images: "survival/graphics/plants/berry_bush/bush_3.png"
         resources: [
           {
             resource: RedBerries
@@ -229,12 +230,13 @@ Plants {
             gatherMethods: [ [Gather,1] ]
             gatherTime: 1 short action
             regenerateTime: 3 days
+            image: "survival/graphics/plants/berry_bush/bush_3_red_berries.png"
           },
           {
             resource: Vines
             quantity: 1
             destructive: true
-            gatherMethods: [ [Cut, 1], [Chop, 1] ]
+            gatherMethods: [ [Cut, 1], [Chop, 1], [Gather,3] ]
           },
           {
             resource: Leaves

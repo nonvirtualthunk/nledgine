@@ -4,6 +4,7 @@ import engines
 import survival/game/logic
 import noto
 import windowingsystem/windowingsystem
+import survival/display/world_graphics
 
 
 type
@@ -36,6 +37,12 @@ proc enableDisable(g: SurvivalDebugComponent, feature: string, truth: bool) =
   else:
     info &"Disabled {feature}"
 
+proc follow(g: SurvivalDebugComponent, display: DisplayWorld, arg: string) =
+  let entId = parseIntOpt(arg)
+  if entId.isSome:
+    display[SurvivalCameraData].povEntity = Entity(id: entId.get)
+  else:
+    warn &"follow(...) expects an integer entity id, not {arg}"
 
 method onEvent*(g: SurvivalDebugComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
   matcher(event):
@@ -51,6 +58,8 @@ method onEvent*(g: SurvivalDebugComponent, world: LiveWorld, display: DisplayWor
               enableDisable(g, arg0, true)
             of "disable":
               enableDisable(g, arg0, false)
+            of "follow":
+              follow(g, display, arg0)
             else:
               warn &"Unknown function: {funcName}"
         warn &"Unknown command: {command}"

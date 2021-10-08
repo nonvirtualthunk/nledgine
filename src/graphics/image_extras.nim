@@ -55,6 +55,8 @@ proc imageRef*(img: string): ImageRef =
   else:
     ImageRef(kind: Sentinel)
 
+proc imageLike*(img: ImageRef): ImageLike = ImageLike(kind: ImageLikeKind.Image, image: img)
+
 proc preload*(img: ImageRef) =
   case img.kind:
   of ImageRefKinds.Path: preloadImage(img.path)

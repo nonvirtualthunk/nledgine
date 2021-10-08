@@ -612,6 +612,9 @@ proc hasData*[C] (world: DisplayWorld, entity: DisplayEntity, t: DataType[C]): b
 proc hasData*[C] (world: DisplayWorld, entity: DisplayEntity, t: typedesc[C]): bool =
   hasData(world, entity, t.getDataType())
 
+proc hasData*[C] (world: DisplayWorld, t: typedesc[C]): bool =
+  hasData(world, WorldDisplayEntity, t.getDataType())
+
 proc data*[C] (world: DisplayWorld, t: typedesc[C]): ref C =
   data[C](world, WorldDisplayEntity, t)
 

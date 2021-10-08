@@ -18,7 +18,7 @@ type
 
   LibraryTaxon* = object
     taxon*: Taxon
-    id: LibraryID
+    id*: LibraryID
 
 proc `==`*(a, b: LibraryID): bool {.borrow.}
 proc id*[T](lib: Library[T], key: Taxon) : LibraryID =
@@ -29,6 +29,7 @@ proc id*[T](lib: Library[T], key: Taxon) : LibraryID =
       warn &"\t{k}"
   LibraryID(idx)
 proc libTaxon*[T](lib: Library[T], key: Taxon): LibraryTaxon = LibraryTaxon(taxon: key, id: lib.id(key))
+proc libraryTaxon*[T](lib: Library[T], key: Taxon): LibraryTaxon = LibraryTaxon(taxon: key, id: lib.id(key))
 proc `$`*(id: LibraryID): string = "LibraryID(" & $id.uint32 & ")"
 
 proc `[]`*[T](lib: Library[T], key: Taxon): ref T = lib.values[key]
@@ -51,13 +52,24 @@ proc `==`*(a: LibraryTaxon, b: Taxon): bool =
 
 
 converter toTaxon*(k: LibraryTaxon): Taxon = k.taxon
-converter fromTaxon*(t: Taxon): LibraryTaxon = LibraryTaxon(taxon: t)
+# converter fromTaxon*(t: Taxon): LibraryTaxon = LibraryTaxon(taxon: t)
 
 
 
 iterator pairs*[T](lib: Library[T]) : (Taxon, ref T) =
   for k,v in lib.values:
     yield (k,v)
+
+iterator pairsById*[T](lib: Library[T]) : (LibraryID, ref T) =
+  var i = 0
+  for v in lib.seqValues:
+    if i != 0:
+      yield (LibraryID(i), v)
+    i.inc
+
+# length of the id space of the library (including the 0 -> nil mapping)
+proc maxID*[T](lib: Library[T]) : LibraryID =
+  LibraryID(lib.seqValues.len-1)
 
 var libraryLoadChannel: Channel[proc() {.gcSafe.}]
 libraryLoadChannel.open()
@@ -68,6 +80,9 @@ createThread(libraryLoadThread, proc() {.gcSafe.} =
     let task = libraryLoadChannel.recv
     task()
 )
+
+proc `[]`*[T](s : seq[T], l : LibraryTaxon): T = s[l.id.uint32]
+proc `[]`*[T](s : var seq[T], l : LibraryTaxon): var T = s[l.id.uint32]
 
 template defineLibrary*[T](loadFn: untyped) =
   # quote do:

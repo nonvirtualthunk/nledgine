@@ -115,13 +115,6 @@ proc heuristic*(grid: Pathfinder, node, goal: Vec2i): int =
   (goal.x - node.x).abs + (goal.y - node.y).abs
 
 
-proc hash*(v : Vec2i) : Hash =
-  var h : Hash
-  h = h !& v.x
-  h = h !& v.y
-  !$h
-
-
 proc findPath*(pf: Pathfinder, request : PathRequest) : Option[Path] =
   var paths: seq[Path]
   for toTile in request.targetTiles:

@@ -17,6 +17,8 @@ import worlds/taxonomy
 import worlds/identity
 import tables
 import game/flags
+import core/quadtree
+import arxmath
 
 {.experimental.}
 
@@ -40,9 +42,16 @@ type ActionChoice* = object
 # \+===================================================+/
 proc destroySurvivalEntity*(world: LiveWorld, ent: Entity, bypassDestructiveCreation: bool = false)
 proc eat*(world: LiveWorld, actor: Entity, target: Entity) : bool {.discardable.}
+proc placeEntity*(world: LiveWorld, entity: Entity, atPosition: Vec3i, capsuled: bool = false) : bool {.discardable.}
+proc canEat*(world: LiveWorld, actor: Entity, target: Entity): bool {.gcsafe.}
 
 
 
+## Shifts a [0.0,1.0] fractional range such that values <= minFract resolve to 0.0 and value >= maxFract resolve to 1.0
+## with values between the two interpolating smoothly between. i.e. shifting 0.3 to [0.2,0.4] would result in a value of
+## 0.5, since it is half way between the shifted start and end points
+proc shiftFraction*(fract: float, minFract: float, maxFract: float) : float =
+  clamp((fract - minFract) / (maxFract - minFract), 0.0, 1.0)
 
 ## How many times the given interval has been hit between startTime (inclusive) and endTime (exclusive)
 ## i.e. if the interval is every 10 ticks, then there will be 2 between 13 and 40 (landing on 20 and 30)
@@ -92,29 +101,32 @@ proc distance(world: LiveWorld, a,b: Entity): float =
 
 
 proc effectivePosition*(world: LiveWorld, e: Entity): Vec3i =
-  let itemOpt = e.dataOpt(Item)
-  if itemOpt.isSome and itemOpt.get.heldBy.isSome:
-    effectivePosition(world, itemOpt.get.heldBy.get)
-  else:
-    let physOpt = e.dataOpt(Physical)
-    if physOpt.isSome:
-      physOpt.get.position
+  let physOpt = e.dataOpt(Physical)
+  if physOpt.isSome:
+    if physOpt.get.heldBy.isSome:
+      effectivePosition(world, physOpt.get.heldBy.get)
     else:
-      warn &"effectivePosition(...) called for non-physical entity"
-      vec3i(10000,10000,10000)
+      physOpt.get.position
+  else:
+    warn &"effectivePosition(...) called for non-physical entity"
+    vec3i(10000,10000,10000)
+
+proc addToRegion*(world: LiveWorld, e: Entity, region: Entity) =
+  e[Physical].region = region
+  region[Region].entities.incl(e)
 
 proc isEquipped*(world: LiveWorld, e: Entity): bool =
-  let itemOpt = e.dataOpt(Item)
-  if itemOpt.isSome and itemOpt.get.heldBy.isSome:
-    let holder = itemOpt.get.heldBy.get
+  let physOpt = e.dataOpt(Physical)
+  if physOpt.isSome and physOpt.get.heldBy.isSome:
+    let holder = physOpt.get.heldBy.get
     let creatureOpt = holder.dataOpt(Creature)
     if creatureOpt.isSome:
       return allEquippedItems(creatureOpt.get).contains(e)
   false
 
 proc isHeld*(world: LiveWorld, e: Entity): bool =
-  let itemOpt = e.dataOpt(Item)
-  ifPresent(itemOpt):
+  let physOpt = e.dataOpt(Physical)
+  ifPresent(physOpt):
     return it.heldBy.isSome
   false
 
@@ -128,6 +140,27 @@ proc isEquippable*(world: LiveWorld, e: Entity): bool =
   false
 
 
+proc isVisibleTo*(region: ref Region, start: Vec3i, dest: Vec3i) : bool =
+  var obstructed = false
+  for px,py in bresenham(start.x, start.y, dest.x, dest.y):
+    if (start.x == px and start.y == py) or (dest.x == px and dest.y == py):
+      continue
+    else:
+      if opacity(region, px, py, start.z) > 200:
+        obstructed = true
+        break
+  not obstructed
+
+
+# check whether the entity is visible or not to the active entity. Uses a var Option[bool] so that it can
+# cache the results. Used so that we only check visibility if an entity is actually of interest, but only
+# do so once if it is interesting for multiple reasons
+proc isVisibleTo*(region: ref Region, start: Vec3i, dest: Vec3i, v: var Option[bool]) : bool =
+  if v.isNone:
+    v = some(isVisibleTo(region, start, dest))
+  v.get()
+
+
 proc createResourcesFromYields*(world: LiveWorld, yields: seq[ResourceYield], source: Taxon) : seq[GatherableResource] =
   withWorld(world):
     var rand = randomizer(world, 19)
@@ -135,7 +168,8 @@ proc createResourcesFromYields*(world: LiveWorld, yields: seq[ResourceYield], so
       let gatherableRsrc = GatherableResource(
         resource: rsrcYield.resource,
         source: source,
-        quantity: reduceable(rsrcYield.quantity.nextValue(rand).int16)
+        quantity: reduceable(rsrcYield.quantity.nextValue(rand).int16),
+        image: rsrcYield.image
       )
       result.add(gatherableRsrc)
 
@@ -198,24 +232,27 @@ proc createPlant*(world: LiveWorld, region: Entity, kind: Taxon, position: Vec3i
       position: position,
       createdAt: world[TimeData].currentTime - age,
       health: vital(plantInfo.health.rollInt(rand)).withRecoveryTime(plantInfo.healthRecoveryTime),
-      region: region,
-      occupiesTile: growthStageInfo.occupiesTile
+      occupiesTile: growthStageInfo.occupiesTile,
+      blocksLight: growthStageInfo.blocksLight
     ))
     result.attachData(Identity(kind: kind))
     createGatherableDataFromYields(world, result, growthStageInfo.resources, kind)
 
-    region[Region].entities.incl(result)
-    region.tile(position.x,position.y,MainLayer).entities.add(result)
+    addToRegion(world, result, region)
+    placeEntity(world, result, vec3i(position.x, position.y, MainLayer))
 
 
-proc advanceWorld*(world: LiveWorld, byTicks: Ticks) =
-  let time = world[TimeData]
-  let startTime = time.currentTime
-  # for i in 0 ..< byTicks.int:
-  #   world.eventStmts(WorldAdvancedEvent(tick: startTime + i)):
-  #     time.currentTime = startTime + i
-  world.eventStmts(WorldAdvancedEvent(tick: startTime + byTicks)):
-    time.currentTime = startTime + byTicks
+proc advanceCreatureTime*(world: LiveWorld, creature: Entity, byTicks: Ticks) =
+  if creature.hasData(Player):
+    let time = world[TimeData]
+    let startTime = time.currentTime
+    # for i in 0 ..< byTicks.int:
+    #   world.eventStmts(WorldAdvancedEvent(tick: startTime + i)):
+    #     time.currentTime = startTime + i
+    world.eventStmts(WorldAdvancedEvent(tick: startTime + byTicks)):
+      time.currentTime = startTime + byTicks
+  else:
+    creature[Creature].remainingTime -= byTicks
 
 
 proc tileOn*(world: LiveWorld, entity: Entity): var Tile =
@@ -229,9 +266,20 @@ proc tileOn*(world: LiveWorld, entity: Entity): var Tile =
 
 proc tileMoveTime*(tile: Tile) : Ticks =
   let tileLib = library(TileKind)
-  for floorLayer in tile.floorLayers:
-    let tileInfo = tileLib[floorLayer.tileKind]
-    result += tileInfo.moveCost
+  if tile.floorLayers.nonEmpty:
+    let tileInfo = tileLib[tile.floorLayers[^1].tileKind]
+    tileInfo.moveCost
+  else:
+    1.Ticks
+  # for floorLayer in tile.floorLayers:
+  #   let tileInfo = tileLib[floorLayer.tileKind]
+  #   result += tileInfo.moveCost
+
+proc moveTime*(world: LiveWorld, entity: Entity, region: ref Region, pos: Vec3i): Ticks =
+  entity[Creature].baseMoveTime + tileMoveTime(tile(region, pos.x, pos.y, pos.z))
+
+proc moveTime*(creature: ref Creature, region: ref Region, pos: Vec3i): Ticks =
+  creature.baseMoveTime + tileMoveTime(tile(region, pos.x, pos.y, pos.z))
 
 proc removeItemFromGroundInternal*(world: LiveWorld, item: Entity) =
   if item.hasData(Physical):
@@ -254,6 +302,14 @@ proc primaryDirectionFrom*(a,b : Vec2i) : Direction =
       else:
         Direction.Down
 
+iterator entitiesNear*(world: LiveWorld, entity: Entity, range: int): Entity =
+  if entity.hasData(Physical):
+    let phys = entity[Physical]
+    let reg = phys.region[Region]
+    for v in reg.entityQuadTree.getNear(phys.position.x, phys.position.y, range):
+      if distance(v[Physical].position, phys.position) <= range.float:
+        yield v
+
 proc passable*(world: LiveWorld, tile: ptr Tile) : bool =
   if tile.wallLayers.nonEmpty:
     return false
@@ -266,6 +322,9 @@ proc passable*(world: LiveWorld, tile: ptr Tile) : bool =
 proc passable*(world: LiveWorld, region: Entity, position: Vec3i) : bool =
   passable(world, tilePtr(region[Region], position))
 
+proc passable*(world: LiveWorld, region: ref Region, position: Vec3i) : bool =
+  passable(world, tilePtr(region, position))
+
 
 proc moveEntity*(world: LiveWorld, creature: Entity, toPos: Vec3i) : bool {.discardable.} =
   if not passable(world, creature[Physical].region, toPos):
@@ -275,17 +334,22 @@ proc moveEntity*(world: LiveWorld, creature: Entity, toPos: Vec3i) : bool {.disc
     if creature.hasData(Physical):
       let phys = creature.data(Physical)
       let fromPos = phys.position
-      let toTile = phys.region.tile(toPos.x, toPos.y, toPos.z)
+      let region = phys.region[Region]
+
+      let toTile = region.tileRef(toPos)
+      let fromTile = region.tileRef(phys.position)
 
       if creature.hasData(Creature):
-        let moveTime =
-          creature[Creature].baseMoveTime +
-          tileMoveTime(toTile)
+        let mt = moveTime(world, creature, region, toPos)
 
         world.eventStmts(CreatureMovedEvent(entity: creature, region: phys.region, fromPosition: fromPos, toPosition: toPos)):
+          fromTile.entities = fromTile.entities.withoutValue(creature)
+          toTile.entities.add(creature)
           creature[Physical].position = toPos
           creature[Physical].facing = primaryDirectionFrom(fromPos.xy, toPos.xy)
-          advanceWorld(world, moveTime)
+          region.entityQuadTree.move(fromPos.x, fromPos.y, toPos.x, toPos.y, creature)
+
+          advanceCreatureTime(world, creature, mt)
     else:
       warn "Cannot move entity without physical data"
   true
@@ -335,21 +399,74 @@ proc createItem*(world: LiveWorld, region: Entity, itemKind: Taxon) : Entity =
     ent.attachData(Physical(
       region: region,
       occupiesTile: ik.occupiesTile,
+      blocksLight: ik.blocksLight,
       weight: ik.weight.rollInt(rand).int32,
       images: ik.images,
       health: vital(ik.health.rollInt(rand)),
       createdAt: world[TimeData].currentTime
     ))
 
-    ent.attachData(Flags(
-      flags: ik.flags
-    ))
+    ent.attachData(ik.flags[])
 
 
     ent.attachData(Identity(kind: itemKind))
 
   ent
 
+
+proc createCreature*(world: LiveWorld, region: Entity, creatureKind: Taxon) : Entity =
+  let lib = library(CreatureKind)
+  let ck = lib[creatureKind]
+
+  var rand = randomizer(world)
+
+  let ent = world.createEntity()
+  world.eventStmts(CreatureCreatedEvent(entity: ent, creatureKind: creatureKind)):
+    ent.attachData(ck.creature)
+    ent.attachData(ck.physical)
+    ent.attachData(ck.flags)
+    ent.attachData(ck.combatAbility)
+    ent.attachData(Identity(kind: creatureKind))
+    ent.attachData(CreatureAI)
+    ent.attachData(Inventory)
+
+    addToRegion(world, ent, region)
+
+  ent
+
+proc createBurrow*(world: LiveWorld, region: Entity, burrowKind: Taxon): Entity =
+  let lib = library(BurrowKind)
+  let arch = lib[burrowKind]
+
+  let ent = world.createEntity()
+  world.eventStmts(BuildingCreatedEvent(entity: ent, buildingKind: burrowKind)):
+    ent.attachData(arch.burrow)
+    ent.attachData(arch.physical)
+    ent.attachData(arch.flags)
+    ent.attachData(Identity(kind: burrowKind))
+    ent.attachData(Inventory())
+
+    addToRegion(world, ent, region)
+
+  ent
+
+proc spawnCreatureFromBurrow*(world: LiveWorld, burrow: Entity) : Entity {.discardable.} =
+  let burrowData = burrow[Burrow]
+  world.eventStmts(BurrowSpawnEvent(burrow: burrow)):
+    # Reset progress since a spawn is now occurring
+    burrowData.spawnProgress = 0.Ticks
+    burrowData.nutrientsGathered = 0
+
+    let phys = burrow[Physical]
+    let creature = createCreature(world, phys.region, burrowData.creatureKind)
+
+    # moveEntityToInventory(world, creature, burrow)
+    placeEntity(world, creature, phys.position)
+
+    creature[CreatureAI].burrow = burrow
+
+    burrowData.creatures.add(creature)
+    result = creature
 
 proc unequipItemFrom*(world: LiveWorld, entity: Entity, item: Entity) =
   let creature = entity[Creature]
@@ -370,66 +487,64 @@ proc equipItemTo*(world: LiveWorld, entity: Entity, item: Entity, slot: Taxon) =
     creature.equipment[slot] = item
 
 proc removeItemFromInventoryInternal(world: LiveWorld, item: Entity) =
-  if item.hasData(Item):
-    let itemData = item[Item]
-    ifPresent(itemData.heldBy):
+  if item.hasData(Physical):
+    let phys = item[Physical]
+    ifPresent(phys.heldBy):
       world.eventStmts(ItemRemovedFromInventoryEvent(entity: item, fromInventory: it)):
         it[Inventory].items.excl(item)
-        itemData.heldBy = none(Entity)
+        phys.heldBy = none(Entity)
         if it.hasData(Creature):
           unequipItemFrom(world, it, item)
 
-proc placeItem*(world: LiveWorld, entity: Option[Entity], item: Entity, atPosition: Vec3i, capsuled: bool) : bool {.discardable.} =
-  let region = regionFor(world, item)
+
+proc placeEntity*(world: LiveWorld, entity: Entity, atPosition: Vec3i, capsuled: bool = false) : bool {.discardable.} =
+  let region = regionFor(world, entity)
 
   let curEnts = entitiesAt(region[Region], atPosition)
   for ent in curEnts:
     if ent[Physical].occupiesTile and not ent[Physical].capsuled:
-      if entity.isSome:
-        world.addFullEvent(CouldNotPlaceItemEvent(entity: entity.get, placedEntity: item, position: atPosition))
+      world.addFullEvent(CouldNotPlaceEntityEvent(entity: entity, position: atPosition))
       return false
 
-  world.eventStmts(ItemPlacedEvent(entity: entity, placedEntity: item, position: atPosition, capsuled: capsuled)):
-    let phys = item[Physical]
+  world.eventStmts(EntityPlacedEvent(entity: entity, position: atPosition)):
+    removeItemFromInventoryInternal(world, entity)
+    let phys = entity[Physical]
     phys.position = atPosition
     phys.capsuled = capsuled
-    tileOn(world, item).entities.add(item)
-
-    removeItemFromInventoryInternal(world, item)
+    tileOn(world, entity).entities.add(entity)
+    region[Region].entityQuadTree.insert(phys.position.x, phys.position.y, entity)
 
   true
 
 
-
-proc moveItemToInventory*(world: LiveWorld, item: Entity, toInventory: Entity) =
+proc moveEntityToInventory*(world: LiveWorld, item: Entity, toInventory: Entity) =
   let phys = item[Physical]
-  let itemData = item[Item]
 
-  var fromInventory: Option[Entity] = itemData.heldBy
+  let fromInventory = phys.heldBy
 
-  world.eventStmts(ItemMovedToInventoryEvent(entity: item, fromInventory: fromInventory, toInventory: toInventory)):
-    ifPresent(fromInventory):
-      world.eventStmts(ItemRemovedFromInventoryEvent(entity: item, fromInventory: it)):
-        it[Inventory].items.excl(item)
+  world.eventStmts(EntityMovedToInventoryEvent(entity: item, fromInventory: fromInventory, toInventory: toInventory)):
     if fromInventory.isNone:
       removeItemFromGroundInternal(world, item)
+    else:
+      removeItemFromInventoryInternal(world, item)
     # note, check weight limits beforehand
     toInventory[Inventory].items.incl(item)
-    itemData.heldBy = some(toInventory)
+    phys.heldBy = some(toInventory)
+    # entities that are in an inventory shouldn't be tracked in the quadtree
+    phys.region[Region].entityQuadTree.remove(phys.position.x, phys.position.y, item)
 
 ## Returns true if the entity given can access the item given for the purposes of crafting
 proc canAccessForCrafting*(world: LiveWorld, entity: Entity, item: Entity) : bool =
   # if we're holding the item, we can definitely access it
-  if item.hasData(Item):
-    if item[Item].heldBy.isSome:
-      let heldBy = item[Item].heldBy.get
+  if item.hasData(Physical):
+    if item[Physical].heldBy.isSome:
+      let heldBy = item[Physical].heldBy.get
       if heldBy == entity:
         return true
       else:
         # if we can access its container we can access it
         return canAccessForCrafting(world, entity, heldBy)
 
-  if item.hasData(Physical):
     if distance(world, entity, item) <= CraftingRange:
       return true
 
@@ -454,7 +569,12 @@ proc entitiesAccessibleForCrafting*(world: LiveWorld, actor: Entity): seq[Entity
 proc entitiesHeldBy*(world: LiveWorld, entity: Entity): seq[Entity] =
   recursivelyExpandInventoryIncludingSelf(world, entity, result)
 
-
+proc heldBy*(world: LiveWorld, entity: Entity): Option[Entity] =
+  let physOpt = entity.dataOpt(Physical)
+  if physOpt.isSome:
+    physOpt.get.heldBy
+  else:
+    none(Entity)
 
 
 
@@ -538,13 +658,11 @@ proc destroyTarget*(world: LiveWorld, target: Target) =
 # Place an entity in the same location as an existing entity, either inside an inventory
 # or on the ground, as appropriate
 proc placeEntityWith*(world: LiveWorld, ent: Entity, with: Entity) =
-  if with.hasData(Item) and with[Item].heldBy.isSome:
-    if ent.hasData(Item):
-      moveItemToInventory(world, ent, with[Item].heldBy.get)
+  if with.hasData(Physical):
+    if with[Physical].heldBy.isSome:
+      moveEntityToInventory(world, ent, with[Physical].heldBy.get)
     else:
-      placeItem(world, none(Entity), ent, with[Item].heldBy.get[Physical].position, true)
-  elif with.hasData(Physical):
-    placeItem(world, none(Entity), ent, with[Physical].position, with[Physical].capsuled)
+      placeEntity(world, ent, with[Physical].position, with[Physical].capsuled)
   else:
     warn &"Placing entity with another makes no sense if the other is non-physical: {debugIdentifier(world, ent)}, {debugIdentifier(world, with)}"
 
@@ -554,12 +672,12 @@ proc placeEntityWith*(world: LiveWorld, ent: Entity, with: Entity) =
 # Do damage to the health of the given entity, returns true if that entity was destroyed in the process
 # Note that entities are not permanently removed, since that would prevent cleanup from accessing them (i.e. creating a corpse)
 # rather the `destroyed` flag is set on the entity
-proc damageEntity*(world: LiveWorld, ent: Entity, damageAmount: int, reason: string) : bool {.discardable.} =
+proc damageEntity*(world: LiveWorld, ent: Entity, damageAmount: int, damageType: Taxon, reason: string) : bool {.discardable.} =
   if damageAmount <= 0:
     return true
 
   if ent.hasData(Physical) and not isSurvivalEntityDestroyed(world, ent):
-    world.eventStmts(DamageTakenEvent(entity: ent, damageTaken: damageAmount, reason: reason)):
+    world.eventStmts(DamageTakenEvent(entity: ent, damageTaken: damageAmount, reason: reason, damageType: damageType)):
       let phys = ent[Physical]
       phys.health.reduceBy(damageAmount)
       if phys.health.currentValue <= 0:
@@ -570,16 +688,107 @@ proc damageEntity*(world: LiveWorld, ent: Entity, damageAmount: int, reason: str
     false
 
 
+proc possibleAttacks*(world: LiveWorld, actor: Entity): Table[Taxon, AttackType] =
+  let kind = actor[Identity].kind
+  if kind.isA(† Creature):
+    let ck = creatureKind(kind)
+    for k,v in ck.innateAttacks:
+      result[k] = v
+
+
+proc attack*(world: LiveWorld, actor: Entity, target: Target, attackKindToUse: Option[Taxon] = none(Taxon)) =
+  let attacks = possibleAttacks(world, actor)
+
+  var attackKind : Taxon = UnknownThing
+  var attackType: AttackType
+
+  if attackKindToUse.isSome:
+    let ao = attacks.get(attackKindToUse.get)
+    if ao.isSome:
+      attackKind = attackKindToUse.get
+      attackType = ao.get
+  else:
+    for k,v in attacks:
+      attackKind = k
+      attackType = v
+      break
+
+  if attackKind != UnknownThing:
+    var rand = randomizer(world)
+    if isTileTarget(target):
+      warn &"Attacks on a general tile are not yet supported: {target}"
+    else:
+      world.eventStmts(AttackEvent(attacker: actor, target: target, attackKind: attackKind)):
+        let defaultCombatAbility = new CombatAbility
+        let targetEnt = target.entity
+        let attackerCA = actor.dataOpt(CombatAbility).get(defaultCombatAbility)
+        let targetCA = targetEnt.dataOpt(CombatAbility).get(defaultCombatAbility)
+
+        let isHit = nextFloat(rand) < attackType.accuracy
+
+        if isHit:
+          let armor = targetCA.armor.getOrDefault(attackType.damageType, 0)
+          # each point of armor gives a 50% chance to negate a point of damage, so roll `armor`d2 - `armor` to simulate dice with faces [0,1]
+          let damageReducedBy = roll(dicePool(armor,2), rand).total - armor
+          let damage = attackType.damageAmount - damageReducedBy
+          world.eventStmts(AttackHitEvent(attacker: actor, target: target, damage: damage, armorReduction: damageReducedBy, attackKind: attackKind, damageType: attackType.damageType)):
+            damageEntity(world, targetEnt, damage, attackType.damageType, "attack")
+        else:
+          world.addEvent(AttackMissedEvent(attacker: actor, target: target))
+
+        advanceCreatureTime(world, actor, attackType.duration)
+  else:
+    warn &"Could not find appropriate attack to use. Available: {attacks}, requested: {attackKindToUse}"
+
+
 
 type GatherResult = object
-  gatheredItems : seq[Entity]
-  gatherRemaining : bool
-  actionsUsed: seq[ActionUse]
+  gatheredItems* : seq[Entity]
+  gatherRemaining* : bool
+  actionsUsed*: seq[ActionUse]
 
 
-# Perofrm the gathering of the target using the provided parameters, storing outputs in `resources` and recording the time taken in `ticks`
-proc gatherFrom*(world: LiveWorld, target: Target, ticks: var Ticks, resources: ptr seq[GatherableResource], actions: Table[Taxon, ActionUse]): GatherResult =
-  if resources == nil: return GatherResult()
+proc gatherableResourcesFor*(world: LiveWorld, target: Target) : seq[GatherableResource] =
+  case target.kind:
+    of TargetKind.Entity:
+      if target.entity.hasData(Gatherable):
+        let gatherable = target.entity[Gatherable]
+        gatherable.resources
+      else:
+        @[]
+    of TargetKind.TileLayer:
+      let tp = tilePtr(target.region[Region], target.tilePos)
+      tp[].layers(target.layer)[target.index].resources
+    of TargetKind.Tile:
+      err &"Cannot simply gather resources from a tile as a whole, must pick individual layer: {target}"
+      @[]
+
+
+proc reduceGatherableResource*(world : LiveWorld, target: Target, resource : Taxon, amount: int, remainingProgress: Ticks16) =
+  case target.kind:
+    of TargetKind.Entity:
+      if target.entity.hasData(Gatherable):
+        let gatherable = target.entity[Gatherable]
+        for rsrc in gatherable.resources.mitems:
+          if rsrc.resource == resource:
+            rsrc.quantity.reduceBy(amount.int16)
+            rsrc.progress = remainingProgress
+    of TargetKind.TileLayer:
+      let tp = tilePtr(target.region[Region], target.tilePos)
+      for rsrc in tp[].layers(target.layer)[target.index].resources.mitems:
+        if rsrc.resource == resource:
+          rsrc.quantity.reduceBy(amount.int16)
+          rsrc.progress = remainingProgress
+    of TargetKind.Tile:
+      err &"Cannot simply reduce resources from a tile as a whole, must pick individual layer: {target}"
+
+
+
+
+# Perofrm the gathering of the target using the provided parameters, storing outputs in `resources`
+proc gatherFrom*(world: LiveWorld, actor: Entity, target: Target, resources: seq[GatherableResource], actions: Table[Taxon, ActionUse]): GatherResult {.discardable.} =
+  if resources.isEmpty: return GatherResult()
+  var ticks = 0.Ticks
 
   var possibleResources : seq[(int, int16)] # (index, resource count)
   var resourcesCountSum = 0
@@ -587,8 +796,8 @@ proc gatherFrom*(world: LiveWorld, target: Target, ticks: var Ticks, resources: 
   let region = regionFor(world, target)
   for idx in 0 ..< resources.len:
     if resources[idx].quantity.currentValue > 0:
-      let rsrc = resources[idx].addr
-      let rYield = resourceYieldFor(world, target, rsrc[])
+      let rsrc = resources[idx]
+      let rYield = resourceYieldFor(world, target, rsrc)
       let bestMethod = effectiveGatherLevelFor(rYield, actions)
       bestMethod.ifPresent:
         possibleResources.add((idx, rsrc.quantity.currentValue))
@@ -596,12 +805,18 @@ proc gatherFrom*(world: LiveWorld, target: Target, ticks: var Ticks, resources: 
 
   var rand = randomizer(world)
   if possibleResources.nonEmpty:
-    var r = nextInt(rand,resourcesCountSum)
+    # For tile targets the resource grabbed next is random. For entities it is in order so that i.e. the bark of a
+    # tree is gathered before its wood, and berries before the bush itself
+    var r = if isTileTarget(target):
+      nextInt(rand,resourcesCountSum)
+    else:
+      0
+
     for (idx,count) in possibleResources:
       r -= count
       if r < 0:
-        let rsrc = resources[idx].addr
-        let rYield = resourceYieldFor(world, target, resources[idx])
+        let rsrc = resources[idx]
+        let rYield = resourceYieldFor(world, target, rsrc)
         let bestMethod = effectiveGatherLevelFor(rYield, actions)
         let actionToUse = bestMethod.get()[0]
         if not result.actionsUsed.contains(actionToUse):
@@ -616,14 +831,19 @@ proc gatherFrom*(world: LiveWorld, target: Target, ticks: var Ticks, resources: 
           (1, progressPerTick.int)
 
         if ticksPerDelta >= 1 and delta >= 1:
-          while ticks < MaxGatherTickIncrement and rsrc.quantity.currentValue() > 0:
+          var gatherCount = 0
+          var progress = rsrc.progress
+          while ticks < MaxGatherTickIncrement and gatherCount < rsrc.quantity.currentValue():
             ticks += ticksPerDelta
-            rsrc.progress += delta
-            if rsrc.progress > rYield.gatherTime:
-              rsrc.quantity.reduceBy(1)
-              rsrc.progress = Ticks16(0)
+            progress += delta
+            if progress > rYield.gatherTime:
+              gatherCount.inc
+              progress = Ticks16(0)
               result.gatheredItems.add(createItem(world, region, rsrc.resource))
-          result.gatherRemaining = rsrc.quantity.currentValue() > 0
+
+          result.gatherRemaining = gatherCount < rsrc.quantity.currentValue()
+          reduceGatherableResource(world, target, rsrc.resource, gatherCount, progress)
+
           if not result.gatherRemaining and rYield.destructive:
             for remainingRsrc in resources:
               let remainingYield = resourceYieldFor(world, target, remainingRsrc)
@@ -636,54 +856,45 @@ proc gatherFrom*(world: LiveWorld, target: Target, ticks: var Ticks, resources: 
         else:
           warn &"No ticks per delta or no delta: {ticksPerDelta}, {delta}"
 
-
-proc gatherableResourcesFor*(world: LiveWorld, target: Target) : ptr seq[GatherableResource] =
-  case target.kind:
-    of TargetKind.Entity:
-      if target.entity.hasData(Gatherable):
-        let gatherable = target.entity[Gatherable]
-        result = gatherable.resources.addr
-    of TargetKind.TileLayer:
-      let tp = tilePtr(target.region[Region], target.tilePos)
-      result = tp[].layers(target.layer)[target.index].resources.addr
-    of TargetKind.Tile:
-      err &"Cannot simply gather resources from a tile as a whole, must pick individual layer: {target}"
-
-
-proc interact*(world: LiveWorld, entity: Entity, target: Target, actions: Table[Taxon, ActionUse]) : bool {.discardable.} =
-  var ticks = Ticks(0)
-
-  let region = regionEnt(world, entity)
-
-  let gatherableResources = gatherableResourcesFor(world, target)
-  # Check for the drinkable liquid case
-  for rsrc in gatherableResources:
-    let kind = itemKind(rsrc.resource)
-    # is a liquid, is drinkable, and we don't have something to scoop with, and we can do a general gather
-    if kind.flags.getOrDefault(† Flags.Liquid) > 0 and actions.getOrDefault(† Actions.Scoop).value == 0 and actions.getOrDefault(† Actions.Gather).value > 0:
-      let liquid = createItem(world, region, rsrc.resource)
-      eat(world, entity, liquid)
-      return true
-
-  let gr = gatherFrom(world, target, ticks, gatherableResources, actions)
-
-  if gr.actionsUsed.nonEmpty:
-    result = true
+  if result.actionsUsed.nonEmpty:
     let fromEntity = case target.kind:
       of TargetKind.Entity: some(target.entity)
       else: none(Entity)
-    world.eventStmts(GatheredEvent(entity: entity, items: gr.gatheredItems, actions: gr.actionsUsed, fromEntity: fromEntity, gatherRemaining: gr.gatherRemaining)):
-      for item in gr.gatheredItems:
-        moveItemToInventory(world, item, entity)
-      for action in gr.actionsUsed:
-        if action.source != entity:
+    world.eventStmts(GatheredEvent(entity: actor, items: result.gatheredItems, actions: result.actionsUsed, fromEntity: fromEntity, gatherRemaining: result.gatherRemaining)):
+      for item in result.gatheredItems:
+        moveEntityToInventory(world, item, actor)
+      for action in result.actionsUsed:
+        if action.source != actor:
           reduceDurability(world, action.source, 1)
+      advanceCreatureTime(world, actor, ticks)
+
+
+proc interact*(world: LiveWorld, entity: Entity, target: Target, actions: Table[Taxon, ActionUse]) : bool {.discardable.} =
+  info &"Interacting with {target}"
+  let region = regionEnt(world, entity)
+
+  let gatherableResources = gatherableResourcesFor(world, target)
+  if gatherableResources.nonEmpty:
+    # Check for the drinkable liquid case
+    for rsrc in gatherableResources:
+      let kind = itemKind(rsrc.resource)
+      # is a liquid, is drinkable, and we don't have something to scoop with, and we can do a general gather
+      if kind.flags.flagValue(† Flags.Liquid) > 0 and actions.getOrDefault(† Actions.Scoop).value == 0 and actions.getOrDefault(† Actions.Gather).value > 0:
+        let liquid = createItem(world, region, rsrc.resource)
+        eat(world, entity, liquid)
+        return true
+
+    let gr = gatherFrom(world, entity, target, gatherableResources, actions)
+    if gr.actionsUsed.nonEmpty:
+      result = true
 
   # if we're interacting with something pyhsical then turn to face it
   let targetPos = positionOf(world, target)
+  info &"Target Pos: {targetPos}"
   if entity.hasData(Physical) and targetPos.isSome:
-    entity[Physical].facing = primaryDirectionFrom(entity[Physical].position.xy, targetPos.get().xy)
-  advanceWorld(world, ticks)
+    let facing = primaryDirectionFrom(entity[Physical].position.xy, targetPos.get().xy)
+    world.eventStmts(FacingChangedEvent(entity: entity, facing: facing)):
+      entity[Physical].facing = facing
 
 
 
@@ -696,6 +907,7 @@ proc facedPosition*(world: LiveWorld, entity: Entity) : Vec3i =
   else:
     warn &"facedPosition has no meaning for a non-physical entity"
     vec3i(0,0,0)
+
 
 proc interact*(world: LiveWorld, entity: Entity, tools: seq[Entity], target: Target) : bool {.discardable.} =
   var actions: Table[Taxon, ActionUse]
@@ -755,14 +967,14 @@ proc possibleActions*(world: LiveWorld, actor: Entity, considering: Entity) : se
 
   let consideringTarget = entityTarget(considering)
   result.add(ActionChoice(target: consideringTarget, action: † Actions.Place))
-  if considering.hasData(Food):
+  if canEat(world, actor, considering):
     result.add(ActionChoice(target: consideringTarget, action: † Actions.Eat))
   if considering.hasData(Item) and considering[Item].actions.nonEmpty:
     let item = considering[Item]
     var yieldsByTarget : seq[(Target, seq[ResourceYield])]
     for target in interactionTargetsAt(world, actor[Physical].region, tpos):
       let gatherable = gatherableResourcesFor(world, target)
-      if gatherable != nil:
+      if gatherable.nonEmpty:
         let yields : seq[ResourceYield] = gatherable.mapIt(resourceYieldFor(world, target, it))
         yieldsByTarget.add((target, yields))
       else:
@@ -1024,16 +1236,50 @@ proc craftItem*(world: LiveWorld, actor: Entity, recipeTaxon: Taxon, ingredients
 
     if not hypothetical:
       # Todo: modify by skill
-      advanceWorld(world, recipe.duration)
+      advanceCreatureTime(world, actor, recipe.duration)
     some(results)
   else:
     warn &"Generally, should not try to craft an item out of ingredients that cannot make that recipe: {recipeTaxon}"
     none(seq[Entity])
 
 
+proc canEat*(creatureKind: ref CreatureKind, foodFlags: ref Flags): bool =
+  for cannotEatFlag in creatureKind.cannotEat:
+    if flagValue(foodFlags, cannotEatFlag) > 0:
+      # if any cannotEat flag is set, this cannot be eaten regardless of other considerations
+      return false
+
+  # if we've gotten past exclusions, we just need one canEat flag to match for this to be a pass
+  for canEatFlag in creatureKind.canEat:
+    if flagValue(foodFlags, canEatFlag) > 0:
+      return true
+
+  false
+
+proc canEat*(creatureKind: ref CreatureKind, targetKind: Taxon): bool =
+  if targetKind.isA(† Item):
+    let ik = itemKind(targetKind)
+    # only edible if it is, in fact, food and also has appropriate flags
+    ik.food.isSome and canEat(creatureKind, ik.flags)
+  else:
+    false
+
+proc canEat*(world: LiveWorld, creatureKind: ref CreatureKind, target: Entity): bool =
+  target.hasData(Food) and target.hasData(Flags) and canEat(creatureKind, target[Flags])
+
+
+proc canEat*(world: LiveWorld, actor: Entity, target: Entity): bool {.gcsafe.} =
+  let actorKind = actor[Identity].kind
+  if actorKind.isA(† Creature):
+    let ck = creatureKind(actorKind)
+    canEat(world, ck, target)
+  else:
+    warn &"Non-creatures cannot eat: {actorKind}"
+    false
+
 
 proc eat*(world: LiveWorld, actor: Entity, target: Entity) : bool {.discardable.} =
-  if target.hasData(Food) and actor.hasData(Creature):
+  if target.hasData(Food) and actor.hasData(Creature) and canEat(world, actor, target):
     let fd = target[Food]
     let cd = actor[Creature]
     let pd = actor[Physical]
@@ -1052,7 +1298,7 @@ proc eat*(world: LiveWorld, actor: Entity, target: Entity) : bool {.discardable.
 
       destroySurvivalEntity(world, target)
 
-      advanceWorld(world, TicksPerShortAction.Ticks)
+      advanceCreatureTime(world, actor, TicksPerShortAction.Ticks)
     true
   else:
     false
@@ -1105,7 +1351,7 @@ proc ignite*(world: LiveWorld, actor: Entity, tool: Entity, targetSpecified: Opt
     else:
       world.addFullEvent(FailedToIgniteEvent(actor: actor, target: target, tool: tool, reason: "is not implemented yet"))
 
-  advanceWorld(world, TicksPerMediumAction.Ticks)
+  advanceCreatureTime(world, actor, TicksPerMediumAction.Ticks)
 
 
 
@@ -1134,6 +1380,7 @@ proc destroySurvivalEntity*(world: LiveWorld, ent: Entity, bypassDestructiveCrea
 
       removeItemFromGroundInternal(world, ent)
       removeItemFromInventoryInternal(world, ent)
+      phys.region[Region].entityQuadTree.remove(phys.position.x, phys.position.y, ent)
       phys.region[Region].entities.excl(ent)
       phys.destroyed = true
     else:

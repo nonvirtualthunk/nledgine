@@ -15,6 +15,7 @@ import noto
 import tables
 import game/shadowcasting
 import graphics/tileset
+import core/quadtree
 
 const RegionSize* {.intdefine.} = 512
 const RegionHalfSize* = RegionSize div 2
@@ -62,14 +63,20 @@ type
   Region* = object
     # all entities in the region
     entities*: HashSet[Entity]
-    # entities in the region that move of their own accord and may take actions
-    dynamicEntities*: HashSet[Entity]
+    # entities organized by their physical position
+    entityQuadTree*: FixedResolutionQuadTree[Entity]
     # all tiles in the region
     tiles : FiniteGrid3D[RegionSize, RegionSize, RegionLayers, Tile]
     # flags for tiles (occupied, opaque, fluid impermeable, etc)
 #    tileFlags: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, int8]
     opacity*: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, uint8]
     opacityInitialized*: bool
+
+    # Todo: implement
+    # precomputed standard move cost for each tile (255 indicates obstruction)
+    ## moveCost*: FiniteGrid3D[RegionSize, RegionSize, RegionLayers, uint8]
+    ## moveCostInitialized*: bool
+
     # whether this region has finished initializing (i.e. placing terrain, starting entities, etc)
     initialized*: bool
     # representation of the global shadows from the sun in the center of the region
@@ -82,6 +89,10 @@ type
   RegionLayerView* = object
     region*: ref Region
     layer*: int
+
+  TileRef* = object
+    region: ref Region
+    position: Vec3i
 
 
 const Occupied          = TileFlag(0b1000000) # an entity / wall is physically occupying this tile
@@ -97,6 +108,7 @@ proc readFromConfig*(cv: ConfigValue, tk: var TileKind) =
   cv["images"].readInto(tk.images)
   cv["wallImages"].readInto(tk.wallImages)
   cv["dropImages"].readInto(tk.dropImages)
+  cv["tileset"].readInto(tk.tileset)
   for k,v in cv["looseResources"].fieldsOpt:
     tk.looseResources[taxon("Items", k)] = v.readInto(Distribution[int])
 
@@ -119,6 +131,8 @@ proc tilePtr*(r: ref Region, x: int, y: int, z : int): ptr Tile = r.tiles.getPtr
 proc tilePtr*(r: RegionLayerView, x: int, y: int): ptr Tile = r.region.tiles.getPtr(x + RegionHalfSize,y + RegionHalfSize,r.layer)
 proc tilePtr*(r: ref Region, v: Vec3i): ptr Tile = tilePtr(r, v.x, v.y, v.z)
 
+proc tileRef*(r: ref Region, v: Vec3i): TileRef = TileRef(region: r, position: v)
+
 template tile*(r: Entity, x: int, y: int, z : int): var Tile =
   when declared(injectedWorld):
     tile(injectedWorld.data(r, Region), x,y,z)
@@ -130,6 +144,9 @@ template tile*(r: Entity, v: Vec3i): var Tile =
     tile(injectedWorld.data(r, Region), v.x,v.y,v.z)
   else:
     tile(world.data(r, Region), v.x,v.y,v.z)
+
+
+
 
 template tile*(t: Target): var Tile =
   case target.kind:
@@ -199,6 +216,21 @@ proc regionFor*(world: LiveWorld, t: Target): Entity =
   case t.kind:
     of TargetKind.Entity: regionFor(world, t.entity)
     of TargetKind.Tile, TargetKind.TileLayer: t.region
+
+
+#    # individual layers of the floor on this tile, in z-order
+ #     floorLayers*: seq[TileLayer]
+ #     # individual layers of the wall on this tile, in z-order
+ #     wallLayers*: seq[TileLayer]
+ #     # individual layers of the ceiling on this tile, in z-order
+ #     ceilingLayers*: seq[TileLayer]
+ #     # entities currently in or on this tile
+ #     entities*: seq[Entity]
+
+
+proc resolve*(tr: TileRef): var Tile = tr.region.tile(tr.position.x, tr.position.y, tr.position.z)
+proc entities*(tr: TileRef): var seq[Entity] = tr.resolve().entities
+proc `entities=`*(tr: TileRef, s: seq[Entity]) = tr.resolve().entities = s
 
 when isMainModule:
 

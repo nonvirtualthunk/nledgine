@@ -22,7 +22,7 @@ proc computeOpacity(world: LiveWorld, tile: ptr Tile, tileLib: Library[TileKind]
     255.uint8
   else:
     for ent in tile.entities:
-      if ent[Physical].occupiesTile:
+      if ent[Physical].blocksLight:
         return 255.uint8
     0.uint8
 
@@ -77,9 +77,9 @@ method onEvent(g: TileComponent, world: LiveWorld, event: Event) =
         updateFlags(world, entity[Physical].region, entity[Physical].position)
     extract(TileLayerDestroyedEvent, region, tilePosition):
       updateFlags(world, region, tilePosition)
-    extract(ItemPlacedEvent, placedEntity):
-      updateFlagsAtEntity(world, placedEntity)
-    extract(ItemMovedToInventoryEvent, entity):
+    extract(EntityPlacedEvent, entity):
+      updateFlagsAtEntity(world, entity)
+    extract(EntityMovedToInventoryEvent, entity):
       updateFlagsAtEntity(world, entity)
 
 

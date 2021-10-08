@@ -103,7 +103,7 @@ proc performAction(g: PlayerControlComponent, world: LiveWorld, player: Entity, 
   let actionKind = action.action
   if actionKind == † Actions.Place:
     if isEntityTarget(action.target):
-      placeItem(world, some(player), action.target.entity, facedPosition(world, player), true)
+      placeEntity(world, action.target.entity, facedPosition(world, player), true)
     else: warn &"Cannot place a tile, what would that mean?: {action.target}"
   elif actionKind == † Actions.Eat:
     if isEntityTarget(action.target):
@@ -256,7 +256,7 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
                 phys.facing = facing
             else:
               let toPos = phys.position + vec3i(delta.x, delta.y, 0)
-              let toTile = tile(phys.region, toPos.x, toPos.y, toPos.z)
+              let toTile = tileRef(phys.region[Region], toPos)
 
               if not interact(world, player, player[Creature].allEquippedItems, toPos, skipNonBlocking=true):
 
@@ -265,7 +265,7 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
                   ifHasData(ent, Physical, phys):
                     if phys.capsuled:
                       if ent.hasData(Item):
-                        moveItemToInventory(world, ent, player)
+                        moveEntityToInventory(world, ent, player)
                       else:
                         warn &"Entity on the ground but not an item: {ent[Identity].kind}"
 
@@ -284,8 +284,10 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
                 world.addFullEvent(CouldNotGatherEvent(entity: player, fromEntity: none(Entity)))
       elif key == KeyCode.Z:
         display[CameraData].camera.changeScale(+1)
+        display.addEvent(CameraChangedEvent())
       elif key == KeyCode.X:
         display[CameraData].camera.changeScale(-1)
+        display.addEvent(CameraChangedEvent())
       elif key == KeyCode.C:
         if g.craftingMenu.showing:
           g.closeMenus()
@@ -294,6 +296,8 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
           g.craftingMenu.toggle(world)
       elif key == KeyCode.Escape:
         display.addEvent(CancelContext())
+      elif key == KeyCode.Period:
+        advanceCreatureTime(world, player(world), ShortActionTime)
     extract(WidgetMouseRelease, originatingWidget):
       if originatingWidget == ws.desktop:
         display.addEvent(CancelContext())
@@ -337,14 +341,12 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
 
 
   postMatcher(event):
-    extract(ItemMovedToInventoryEvent, toInventory):
+    extract(EntityMovedToInventoryEvent, toInventory):
       if toInventory.hasData(Player):
         g.inventoryLatch.flipOn()
     extract(ItemRemovedFromInventoryEvent,fromInventory):
       if fromInventory.hasData(Player):
         g.inventoryLatch.flipOn()
-    extract(GameEvent):
-      g.anyLatch.flipOn()
     extract(IgnitedEvent):
       g.inventoryLatch.flipOn()
     extract(ExtinguishedEvent):
@@ -353,6 +355,9 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
       if entity.hasData(Player):
         info "You lose!"
         ws.desktop.createChild("Notifications", "YouLoseWidget")
+    # fallthrough case, this must remain last
+    extract(GameEvent):
+      g.anyLatch.flipOn()
 
   g.craftingMenu.onEvent(world, display, event)
 
@@ -431,6 +436,8 @@ method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld
           "maxHydration" : creature.hydration.maxValue,
           "hunger" : creature.hunger.currentValue,
           "maxHunger" : creature.hunger.maxValue,
+          "sanity" : creature.sanity.currentValue,
+          "maxSanity" : creature.sanity.maxValue,
         }.toTable())
 
       if g.inventoryLatch.flipOff():

@@ -3,6 +3,10 @@ Items {
     durability: 2
     stackable: true
 
+    flags {
+      Grass: 1
+    }
+
     image: "survival/graphics/items/plants/blades_of_grass.png"
   }
   Stone {
@@ -332,6 +336,7 @@ Items {
   FreshWater {
     flags {
       Liquid: 1
+      Water: 1
     }
 
     food {

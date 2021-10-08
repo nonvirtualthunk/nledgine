@@ -10,6 +10,7 @@ import bitops
 import strformat
 import tables
 import sets
+import math
 
 # export metric
 export sugar
@@ -17,6 +18,7 @@ export worlds
 export strformat
 export tables
 export options
+import hashes
 
 type
   # UnitOfTime* = Metric[metric.Time, float]
@@ -71,8 +73,19 @@ type
 
 
 let CardinalVectors2D* = [vec2i(-1,0), vec2i(0,1), vec2i(1,0), vec2i(0,-1)]
+let CardinalVectors3D* = [vec3i(-1,0,0), vec3i(0,1,0), vec3i(1,0,0), vec3i(0,-1,0)]
+let CardinalVectors3Df* = [vec3f(-1,0,0), vec3f(0,1,0), vec3f(1,0,0), vec3f(0,-1,0)]
 
 proc cardinalVector*(c : Cardinals2D) : Vec2i = CardinalVectors2D[c.ord]
+proc cardinalVector3D*(c : Cardinals2D) : Vec3i = CardinalVectors3D[c.ord]
+proc cardinalVector3Df*(c : Cardinals2D) : Vec3f = CardinalVectors3Df[c.ord]
+
+proc opposite*(c: Cardinals2D): Cardinals2D =
+  case c:
+    of Cardinals2D.Left: Cardinals2D.Right
+    of Cardinals2D.Right: Cardinals2D.Left
+    of Cardinals2D.Up: Cardinals2D.Down
+    of Cardinals2D.Down: Cardinals2D.Up
 
 let programStartTime* = now()
 
@@ -115,6 +128,12 @@ proc `/`*(a : UnitOfTime, b : float): UnitOfTime =
 
 proc vec2i*(x: int, y: int): Vec2i =
   vec2i(x.int32, y.int32)
+
+proc vec3i*(x: int, y: int, z: int): Vec3i =
+  vec3i(x.int32, y.int32, z.int32)
+
+proc vec3i*(v: Vec2i, z: int): Vec3i =
+  vec3i(v.x, v.y, z.int32)
 
 proc vec2f*(x: int, y: int): Vec2f =
   vec2f(x.float, y.float)
@@ -268,6 +287,19 @@ proc nonEmpty*[K, V](t: Table[K, V]): bool = t.len != 0
 proc nonEmpty*[K](t: HashSet[K]): bool = t.len != 0
 proc isEmpty*[K](t: HashSet[K]): bool = t.len == 0
 
+proc hash*(v : Vec2i) : Hash =
+  var h : Hash
+  h = h !& v.x
+  h = h !& v.y
+  !$h
+
+proc hash*(v : Vec3i) : Hash =
+  var h : Hash
+  h = h !& v.x
+  h = h !& v.y
+  h = h !& v.z
+  !$h
+
 proc incl*[K](t: var HashSet[K], s: seq[K]) =
   for v in s:
     t.incl(v)
@@ -335,6 +367,17 @@ proc maxWith*[T](v: var T, other: T) =
 proc minWith*[T](v: var T, other: T) =
   v = min(v, other)
 
+proc max*(v: Vec3i, i: int): Vec3i =
+  vec3i(max(v.x, i), max(v.y, i), max(v.y, i))
+
+proc min*(v: Vec3i, i: int): Vec3i =
+  vec3i(min(v.x, i), min(v.y, i), min(v.y, i))
+
+proc get*[K,V](t: Table[K,V], k: K) : Option[V] =
+  if t.hasKey(k):
+    some(t[k])
+  else:
+    none(V)
 
 template matcher*(value: typed, stmts: untyped) =
   block:
@@ -520,6 +563,17 @@ template anyMatchIt*[T](s : seq[T], stmts) : bool =
       result = true
       break
 
+  result
+
+template maxByIt*[T](s: seq[T], stmts) : Option[T] =
+  var result: Option[T] = none(T)
+  var maxF = MinFloatNormal
+  for v in s:
+    let it {.inject.} = v
+    let f = stmts
+    if maxF < f.float:
+      maxF = f.float
+      result = some(v)
   result
 
 

@@ -60,6 +60,17 @@ proc runEngine(full: FullGameSetup) {.thread.} =
   var gameEngine = newGameEngine()
   var liveGameEngine = newLiveGameEngine()
 
+  if full.setup.useLiveWorld:
+    if full.setup.liveWorldInitFunc.isSome:
+      full.setup.liveWorldInitFunc.get()(liveGameEngine.world)
+    elif full.setup.worldInitFunc.isSome:
+      err &"init function provided for non-live world when using live world based engine"
+  else:
+    if full.setup.worldInitFunc.isSome:
+      full.setup.worldInitFunc.get()(gameEngine.world)
+    elif full.setup.liveWorldInitFunc.isSome:
+      err &"init function provided for live world when using non-live world based engine"
+
   var graphicsEngine = if full.setup.useLiveWorld or full.setup.liveGameComponents.len > 0:
     newGraphicsEngine(liveGameEngine)
   else:

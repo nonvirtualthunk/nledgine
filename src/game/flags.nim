@@ -42,6 +42,14 @@ defineReflection(Flags)
 const flagEquivPattern = re"(?x)([a-zA-Z0-9]+)(?:\[(.+)\])?\(([0-9]+)\)"
 const countsAsNPattern = re"(?ix)counts\s?as(\d+)"
 
+
+proc readFromConfig*(cv: ConfigValue, f: var Flags) =
+  if cv.isObj:
+    for k,v in cv.fields:
+      f.flags[taxon("Flags", k)] = v.asInt
+  else:
+    err &"Unknown representation of Flags: {cv}"
+
 proc readFromConfig*(cv: ConfigValue, v: var FlagInfo) =
   cv["mechanicalDescriptor"].readInto(v.mechanicalDescription)
   cv["description"].readInto(v.description)
@@ -124,7 +132,6 @@ proc flagValue*(flags: ref Flags, flag: Taxon, arg: Option[Taxon] = none(Taxon))
     for equiv in meta.equivalences:
       let v = flagValue(flags, equiv.flag)
       cur += v * equiv.multiplier + sgn(v) * equiv.adder
-
   cur
 
 proc flagValue*(flags: ref Flags, flag: string, arg: Option[Taxon] = none(Taxon)): int =

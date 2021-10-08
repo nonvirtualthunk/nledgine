@@ -35,13 +35,14 @@ proc computeVision(g: VisionComponent, world: LiveWorld, entity: Entity, offset:
 
   let PD = entity[Player]
   let phys = entity[Physical]
+  let creature = entity[Creature]
   vision.reset()
   g.shadowGrid.reset()
 
   let reg = phys.region[Region]
   let z = phys.position.z
 
-  let attenuationRange = PD.visionRange.float32
+  let attenuationRange = creature.visionRange.float32
   proc attenuation(d : float) : float =
     let pcnt = d / attenuationRange
     if pcnt > 1.0:
@@ -110,7 +111,7 @@ method initialize(g: VisionComponent, world: LiveWorld) =
 proc inVisionRange(world: LiveWorld, otherPos: Vec3i) : bool =
   let p = player(world)
   let pos = p[Physical].position
-  pos.z == otherPos.z and otherPos.xy.distance(pos.xy) <= p[Player].visionRange.float
+  pos.z == otherPos.z and otherPos.xy.distance(pos.xy) <= p[Creature].visionRange.float
 
 proc inVisionRange(world: LiveWorld, entity: Entity) : bool =
   if entity.hasData(Physical):
@@ -144,7 +145,7 @@ method onEvent(g: VisionComponent, world: LiveWorld, event: Event) =
     #   triggerUpdate = inVisionRange(world, tilePosition)
     # extract(ItemPlacedEvent, placedEntity):
     #   triggerUpdate = inVisionRange(world, placedEntity)
-    # extract(ItemMovedToInventoryEvent, entity):
+    # extract(EntityMovedToInventoryEvent, entity):
     #   triggerUpdate = inVisionRange(world, entity)
 
   if triggerUpdate:
