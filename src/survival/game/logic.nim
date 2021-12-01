@@ -13,9 +13,7 @@ import tiles
 import core
 import sets
 import prelude
-import worlds/taxonomy
 import worlds/identity
-import tables
 import game/flags
 import core/quadtree
 import arxmath
@@ -734,7 +732,7 @@ proc attack*(world: LiveWorld, actor: Entity, target: Target, attackKindToUse: O
           world.eventStmts(AttackHitEvent(attacker: actor, target: target, damage: damage, armorReduction: damageReducedBy, attackKind: attackKind, damageType: attackType.damageType)):
             damageEntity(world, targetEnt, damage, attackType.damageType, "attack")
         else:
-          world.addEvent(AttackMissedEvent(attacker: actor, target: target))
+          world.addFullEvent(AttackMissedEvent(attacker: actor, target: target, attackKind: attackKind))
 
         advanceCreatureTime(world, actor, attackType.duration)
   else:
@@ -1400,6 +1398,14 @@ proc timeOfDay*(world: LiveWorld, regionEnt: Entity) : (DayNight, float) =
     (DayNight.Day, pcnt / dayFract)
   else:
     (DayNight.Night, (pcnt - dayFract) / (1.0 - dayFract))
+
+proc skipToTimeOfDay*(world: LiveWorld, regionEnt: Entity, dayNight: DayNight, fract: float) =
+  while timeOfDay(world, regionEnt)[0] != dayNight:
+    world[TimeData].currentTime += 100.Ticks
+
+  while timeOfDay(world, regionEnt)[1] < fract:
+    world[TimeData].currentTime += 10.Ticks
+
 
 ## Returns how many full days have passed
 proc dayCount*(world: LiveWorld, regionEnt: Entity): int =

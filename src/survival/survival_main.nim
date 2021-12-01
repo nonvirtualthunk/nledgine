@@ -120,8 +120,16 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
         break
     spawnCreatureFromBurrow(world, burrow)
 
+    let spiderDen = createBurrow(world, regionEnt, † Burrows.SpiderDen)
+    for dy in 4 ..< 10:
+      if passable(world, regionEnt, playerPos + vec3i(-4,dy,0)):
+        placeEntity(world, spiderDen, playerPos + vec3i(-4,dy,0))
+        break
+    spawnCreatureFromBurrow(world, spiderDen)
+
     createPlant(world, regionEnt, † Plants.Carrot, burrow[Physical].position + vec3i(3,0,0), PlantCreationParameters(growthStage: some(† GrowthStages.Flowering)))
 
+    skipToTimeOfDay(world, regionEnt, DayNight.Night, 0.1)
 
 
 proc initializationGraphicsComponent() : InitializationGraphicsComponent =

@@ -165,8 +165,17 @@ proc performTask(g: AIComponent, world: LiveWorld, actor: Entity, creature: ref 
       else:
         taskContinues()
     of CreatureTaskKind.Attack:
-      warn &"Attack task not yet implemented"
+      attack(world, actor, task.target)
       taskSucceeded()
+
+
+proc distanceBasedPriority(dist: float, maxPrioDist: int, minPrioDist: int) : float =
+  if dist < maxPrioDist.float:
+    1.0
+  elif dist >= minPrioDist.float:
+    0.0
+  else:
+    1.0 - ((dist - maxPrioDist.float) / (minPrioDist.float - maxPrioDist.float))
 
 proc chooseNewGoal(g: AIComponent, world: LiveWorld, actor: Entity, creature: ref Creature, phys: ref Physical, region: ref Region, ai: ref CreatureAI, currentTime: Ticks) =
   ai.activeGoal = CreatureGoals.Explore
@@ -222,9 +231,10 @@ proc chooseNewGoal(g: AIComponent, world: LiveWorld, actor: Entity, creature: re
           # TODO: Monsters
           if examineEnt.hasData(Player):
             if isVisibleTo(region, phys.position, examineEnt[Physical].position, visible):
-              let invDist = 1.0f - (distance(examineEnt[Physical].position, phys.position) / examinationRange.float)
-              situationalPriority[CreatureGoals.Flee] = 0.5 + invDist * 0.5
-              situationalPriority[CreatureGoals.Attack] = 0.5 + invDist * 0.5
+              let dist = distance(examineEnt[Physical].position, phys.position)
+
+              situationalPriority[CreatureGoals.Flee] = 0.5 + distanceBasedPriority(dist, ck.panicRange, examinationRange) * 0.5
+              situationalPriority[CreatureGoals.Attack] = 0.5 + distanceBasedPriority(dist, ck.aggressionRange, examinationRange) * 0.5
 
       if situationalPriority.len == 0:
         situationalPriority[CreatureGoals.Explore] = 1.0f
@@ -419,15 +429,27 @@ proc updateEntity(g: AIComponent, world: LiveWorld, actor: Entity, currentTime: 
         else:
           ai.tasks = @[moveTask(ai.burrow, moveAdjacentTo = false)]
       of CreatureGoals.Attack:
-        var foods: seq[Entity]
+        var targets: seq[Entity]
         for examineEnt in entitiesNear(world, actor, examinationRange):
+          # TODO: Include prey, not just player? Or does that just fall under eat at the "strategic" level?
           if examineEnt.hasData(Player):
-            discard
+            targets.add(examineEnt)
+        if targets.nonEmpty:
+          var bestTarget: Entity
+          var bestValue: float = 1000000.0
+          for target in targets:
+            let dist = distance(target[Physical].position, phys.position)
+            if dist < bestValue:
+              bestValue = dist
+              bestTarget = target
+          
+          ai.tasks = @[moveTask(bestTarget, moveAdjacentTo = true), attackTask(bestTarget)]
+        else:
+          warn &"No targets to attack"
+          ai.activeGoal = CreatureGoals.Think
+          ai.failedGoals[CreatureGoals.Attack] = currentTime
+
         # ai.tasks = @[moveTask()]
-      else:
-        warn &"Unsupported ai goal is active: {ai.activeGoal}"
-        ai.activeGoal = CreatureGoals.Think
-        return false
 
 
 

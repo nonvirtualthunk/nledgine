@@ -281,11 +281,12 @@ proc loadTexture*(path: string; gammaCorrection: bool = false): StaticTexture =
 proc newVao*[VT, IT](): Vao[VT, IT] =
   new VAO[VT, IT]
 
+
 proc `[]`*[T](buffer: var GrowableBuffer[T]; index: int): ptr T =
   if index >= buffer.capacity:
     var newCapacity = buffer.capacity
     if newCapacity == 0:
-      newCapacity += 100
+      newCapacity += 128
     while newCapacity <= index:
       newCapacity *= 2
     let newData = cast[ptr T](allocShared0(newCapacity * sizeof(T)))
@@ -299,11 +300,18 @@ proc `[]`*[T](buffer: var GrowableBuffer[T]; index: int): ptr T =
     buffer.len = index+1
   cast[ptr T](cast[uint](buffer.data) + (index * sizeof(T)).uint)
 
+proc reserve*[T](buffer: var GrowableBuffer[T], startIndex: int, len: int): ptr T =
+  let endPtr = buffer[startIndex + len - 1]
+  cast[ptr T](cast[uint](buffer.data) + (startIndex * sizeof(T)).uint)
+
 proc clear*[T](buffer: var GrowableBuffer[T]) =
   buffer.len = 0
 
 proc `[]`*[T](buffer: var GLBuffer[T]; index: int): ptr T =
   buffer.backBuffer[index]
+
+proc reserve*[T](buffer: var GLBuffer[T]; startIndex: int, len: int): ptr T =
+  buffer.backBuffer.reserve(startIndex, len)
 
 proc `[]=`*[T](buffer: var GLBuffer[T]; index: int; v: T) =
   buffer.backBuffer[index][] = v
@@ -311,14 +319,18 @@ proc `[]=`*[T](buffer: var GLBuffer[T]; index: int; v: T) =
 proc `[]`*[VT, IT](vao: Vao[VT, IT]; index: int): ptr VT =
   vao.vertices[index]
 
-proc addIQuad*[VT, IT, OT](vao: Vao[VT, IT]; ii: var int; vi: var OT) =
-  vao.indices[ii+0] = (vi+0).IT
-  vao.indices[ii+1] = (vi+1).IT
-  vao.indices[ii+2] = (vi+2).IT
+proc reserve*[VT, IT](vao: Vao[VT, IT]; startIndex: int, len: int): ptr VT =
+  vao.vertices.reserve(startIndex, len)
 
-  vao.indices[ii+3] = (vi+2).IT
-  vao.indices[ii+4] = (vi+3).IT
-  vao.indices[ii+5] = (vi+0).IT
+proc addIQuad*[VT, IT, OT](vao: Vao[VT, IT]; ii: var int; vi: var OT) =
+  let p = vao.indices.reserve(ii, 6)
+  p[0] = (vi+0).IT
+  p[1] = (vi+1).IT
+  p[2] = (vi+2).IT
+
+  p[3] = (vi+2).IT
+  p[4] = (vi+3).IT
+  p[5] = (vi+0).IT
 
   ii += 6
   vi += 4

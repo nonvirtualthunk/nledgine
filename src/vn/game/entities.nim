@@ -15,7 +15,6 @@ import prelude
 import strutils
 import graphics/color
 import game/flags
-import strutils
 import game/grids
 
 type

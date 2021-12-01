@@ -330,8 +330,8 @@ template getShaderInfoLog*(shader:ShaderId) : string =
     var logLen : GLint
     glGetShaderiv(shader.GLuint,GL_INFO_LOG_LENGTH, addr logLen)
     var logStr = cast[ptr GLchar](alloc(logLen))
-    glGetShaderInfoLog(shader.GLuint,logLen,addr logLen,logStr)
-    $logStr
+    glGetShaderInfoLog(shader.GLuint,logLen,addr logLen,logStr.cstring)
+    $logStr.cstring
 
 template deleteShader*(shader:ShaderId)  =
     glDeleteShader(shader.GLuint)
@@ -354,8 +354,8 @@ template getProgramInfoLog*(program:ShaderProgramId) : string  =
     var logLen : GLint
     glGetProgramiv(program.GLuint,GL_INFO_LOG_LENGTH, addr logLen)
     var logStr = cast[ptr GLchar](alloc(logLen))
-    glGetProgramInfoLog(program.GLuint,logLen,addr logLen,logStr)
-    $logStr
+    glGetProgramInfoLog(program.GLuint,logLen,addr logLen,logStr.cstring)
+    $logStr.cstring
 
 template use*(program:ShaderProgramId)  =
     glUseProgram(program.GLuint)

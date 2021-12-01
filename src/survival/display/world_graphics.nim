@@ -129,7 +129,7 @@ method initialize(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayW
   g.canvas.drawOrder = 10
   g.needsUpdate = true
   g.renderTimer = Timer(name: "WorldGraphicsComponent.render")
-  g.timers = @[g.renderTimer]
+  g.timers["render timer"] = g.renderTimer
   g.poisson = generatePoissonDiskSample(RegionSize, RegionSize)
 
   let tileLib = library(TileKind)

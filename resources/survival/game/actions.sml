@@ -51,4 +51,8 @@ Actions {
   Examine {
     presentVerb: "examine"
   }
+
+  Attack {
+    presentVerb: "attack"
+  }
 }

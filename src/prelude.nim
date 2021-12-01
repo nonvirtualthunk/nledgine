@@ -49,6 +49,9 @@ type
     value: T
     noChangeFlag: bool
 
+  OneShot* = object
+    fired*: bool
+
   ComparisonKind* {.pure.} = enum
     GreaterThanOrEqualTo
     GreaterThan
@@ -63,7 +66,8 @@ type
     XOR,
     NOT
 
-  Vec2d = Vec2[float64]
+  Vec2d* = Vec2[float64]
+  Vec3s* = Vec3[int16]
 
   Cardinals2D* {.pure.} = enum
     Left
@@ -73,8 +77,8 @@ type
 
 
 let CardinalVectors2D* = [vec2i(-1,0), vec2i(0,1), vec2i(1,0), vec2i(0,-1)]
-let CardinalVectors3D* = [vec3i(-1,0,0), vec3i(0,1,0), vec3i(1,0,0), vec3i(0,-1,0)]
-let CardinalVectors3Df* = [vec3f(-1,0,0), vec3f(0,1,0), vec3f(1,0,0), vec3f(0,-1,0)]
+let CardinalVectors3D* = [vec3i(-1,0,0), vec3i(0,1,0), vec3i(1,0,0), vec3i(0,-1,0), vec3i(0,0,-1), vec3i(0,0,1)]
+let CardinalVectors3Df* = [vec3f(-1,0,0), vec3f(0,1,0), vec3f(1,0,0), vec3f(0,-1,0), vec3f(0,0,-1), vec3f(0,0,1)]
 
 proc cardinalVector*(c : Cardinals2D) : Vec2i = CardinalVectors2D[c.ord]
 proc cardinalVector3D*(c : Cardinals2D) : Vec3i = CardinalVectors3D[c.ord]
@@ -86,6 +90,13 @@ proc opposite*(c: Cardinals2D): Cardinals2D =
     of Cardinals2D.Right: Cardinals2D.Left
     of Cardinals2D.Up: Cardinals2D.Down
     of Cardinals2D.Down: Cardinals2D.Up
+
+proc fire*(oneShot: var OneShot): bool =
+  if oneShot.fired:
+    false
+  else:
+    oneShot.fired = true
+    true
 
 let programStartTime* = now()
 
@@ -155,6 +166,10 @@ proc vec2i8*(v: Vec2i)  : Vec2[int8] {.inline.} = Vec2[int8](arr: [v.x.int8, v.y
 proc vec2s*(x,y: int)  : Vec2[int16] {.inline.} = Vec2[int16](arr: [x.int16, y.int16])
 proc vec2s*(x,y: int16)  : Vec2[int16] {.inline.} = Vec2[int16](arr: [x, y])
 proc vec2s*(v: Vec2i)  : Vec2[int16] {.inline.} = Vec2[int16](arr: [v.x.int16, v.y.int16])
+
+proc vec3s*(x,y,z: int)  : Vec3[int16] {.inline.} = Vec3[int16](arr: [x.int16, y.int16, y.int16])
+proc vec3s*(x,y,z: int16)  : Vec3[int16] {.inline.} = Vec3[int16](arr: [x, y, z])
+proc vec3s*(v: Vec3i)  : Vec3[int16] {.inline.} = Vec3[int16](arr: [v.x.int16, v.y.int16, v.z.int16])
 
 converter toVec2i*(v: Vec2[int]): Vec2i = vec2i(v.x.int32, v.y.int32)
 converter toVec2int*(v: Vec2i): Vec2[int] = vec2(v.x.int, v.y.int)
@@ -242,6 +257,7 @@ proc `[]=`*(v: var Vec2f, axis: Axis, value: float) =
 proc `[]`*(v: Vec2f, axis: Axis): float = v[axis.ord]
 
 proc `*`*(v: Vec2i, m: int): Vec2i = vec2i(v.x * m, v.y * m)
+proc `*`*(v: Vec3s, f: float32): Vec3s = vec3s((v.x.float32 * f).int16, (v.y.float32 * f).int16, (v.z.float32 * f).int16)
 
 proc `div`*(a: Vec2i, b: int): Vec2i =
   vec2i(a.x div b, a.y div b)
@@ -593,3 +609,12 @@ converter axisToInt*(a: Axis): int = a.ord
 
 proc `[]`*[I, T](arr: var array[I,T], a: Axis): var T = arr[a.ord]
 proc `[]`*[I, T](arr: array[I,T], a: Axis): T = arr[a.ord]
+
+template `+`*[T](p: ptr T, off: int): ptr T =
+  cast[ptr type(p[])](cast[ByteAddress](p) +% off * sizeof(p[]))
+
+template `[]`*[T](p: ptr T, off: int) : T =
+  (p + off)[]
+
+template `[]=`*[T](p: ptr T, off: int, val : T) =
+  (p + off)[] = val

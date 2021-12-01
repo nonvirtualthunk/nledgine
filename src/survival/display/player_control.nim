@@ -53,6 +53,7 @@ type
     inventoryWidget*: Widget
     choosingQuickSlot*: int
     choosingQuickSlotWidget*: Widget
+    activeEventStack*: seq[Event]
 
   ActionInfo = object
     action: ActionChoice
@@ -148,7 +149,24 @@ proc naturalLanguageList*[T](s : seq[T], f : (T) -> string) : string =
         result.add(",")
     result.add(f(s[i]))
 
-proc message*(world: LiveWorld, evt: Event): Option[RichText] =
+proc entityKind*(world: LiveWorld, e: Entity): Taxon =
+  e[Identity].kind
+
+proc targetToTaxon*(world: LiveWorld, t: Target): Taxon =
+  if isEntityTarget(t):
+    entityKind(world, t.entity)
+  else:
+    warn &"Target to taxon only works with entity targets at present"
+    UnknownThing
+
+template anyOfType*[T](s: seq[T], t: typedesc) : bool =
+  var ret = false
+  for v in s:
+    if v of t:
+      ret = true
+  ret
+
+proc message*(world: LiveWorld, evt: Event, activeEventStack: seq[Event]): Option[RichText] =
   let player = player(world)
   postMatcher(evt):
     extract(GatheredEvent, entity, items, actions, fromEntity):
@@ -212,9 +230,24 @@ proc message*(world: LiveWorld, evt: Event): Option[RichText] =
         addVital(sanityRecovered, † GameConcepts.Sanity, rgba(0.75, 0.35, 0.4, 1.0), true)
 
         result = some(richText(text))
-    extract(DamageTakenEvent, entity, damageTaken, source, reason):
-      if entity == player:
-        result = some(richText(&"You take {damageTaken} damage from {reason}"))
+    extract(DamageTakenEvent, entity, damageTaken, damageType, source, reason):
+      if entity == player and not anyOfType(activeEventStack, AttackHitEvent): # attack events handle this themselves
+        result = some(richText(&"You take {damageTaken} {damageType} damage"))
+    extract(AttackHitEvent, attacker, target, attackKind, damage, damageType):
+      if attacker == player:
+        let enemyKind = targetToTaxon(world, target)
+
+        result = some(richText(&"You {attackKind} the {enemyKind} for {damage} {damageType} damage"))
+      elif isEntityTarget(target) and target.entity == player:
+        let attackerKind = attacker[Identity].kind
+
+        result = some(richText(&"The {attackerKind} {attackKind} you for {damage} {damageType} damage"))
+    extract(AttackMissedEvent, attacker, target, attackKind):
+      if attacker == player:
+        result = some(richText(&"(You attempt to {attackKind} the {targetToTaxon(world, target)} but you miss"))
+      elif isEntityTarget(target) and target.entity == player:
+        result = some(richText(&"The {entityKind(world, attacker)} attempst to {attackKind} you but misses"))
+
 
 
 proc closeMenus(g: PlayerControlComponent) =
@@ -361,7 +394,14 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
 
   g.craftingMenu.onEvent(world, display, event)
 
-  let msg = message(world, event)
+  if event of GameEvent:
+    if event.GameEvent.state == GameEventState.PreEvent:
+      g.activeEventStack.add(event)
+    else:
+      if g.activeEventStack.nonEmpty and g.activeEventStack[^1].eventTypeString == event.eventTypeString:
+        g.activeEventStack.del(g.activeEventStack.len-1)
+
+  let msg = message(world, event, g.activeEventStack)
   if msg.isSome:
     if g.messageText.isEmpty:
       g.messageText.add(richText(msg.get))

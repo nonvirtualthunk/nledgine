@@ -37,12 +37,25 @@ type
     value*: T
 
 
-
 proc `[]`*[W: static[int], H: static[int], T](g: FiniteGrid2D[W, H, T], x: int, y: int): T =
   if x < 0 or y < 0 or x >= W or y >= H:
     g.sentinel
   else:
     g.values[x*H+y]
+
+proc `[]`*[W: static[int], H: static[int], T](g: ref FiniteGrid2D[W, H, T], x: int, y: int): T =
+  if x < 0 or y < 0 or x >= W or y >= H:
+    g.sentinel
+  else:
+    g.values[x*H+y]
+
+proc raw*[W: static[int], H: static[int], T](g: ref FiniteGrid2D[W, H, T], x: int, y: int): var T =
+  if x < 0 or y < 0 or x >= W or y >= H: raise new AccessViolationError
+  g.values[x*H+y]
+
+proc getPtr*[W: static[int], H: static[int], T](g: ref FiniteGrid2D[W, H, T], x: int, y: int): ptr T =
+  g.values[x*H+y].addr
+
 
 proc `[]`*[W: static[int], H: static[int], T](g: var FiniteGrid2D[W, H, T], x: int, y: int): var T =
    g.values[x*H+y]
@@ -50,7 +63,19 @@ proc `[]`*[W: static[int], H: static[int], T](g: var FiniteGrid2D[W, H, T], x: i
 
 proc `[]=`*[W: static[int], H: static[int], T](g: var FiniteGrid2D[W, H, T], x: int, y: int, t: T) =
   if x < 0 or y < 0 or x >= W or y >= H:
-    warn &"attempted to update finite grid out of bounds, ({x}, {y}) is not within [0,0] -> [{W-1},{H-1}]"
+    let w = W
+    let h = H
+
+    warn &"attempted to update finite grid out of bounds, ({x}, {y}) is not within [0,0] -> [{w - 1},{h - 1}]"
+  else:
+    g.values[x*H+y] = t
+
+proc `[]=`*[W: static[int], H: static[int], T](g: ref FiniteGrid2D[W, H, T], x: int, y: int, t: T) =
+  if x < 0 or y < 0 or x >= W or y >= H:
+    let w = W
+    let h = H
+
+    warn &"attempted to update finite grid out of bounds, ({x}, {y}) is not within [0,0] -> [{w - 1},{h - 1}]"
   else:
     g.values[x*H+y] = t
 
@@ -63,16 +88,39 @@ proc `[]`*[W: static[int], H: static[int], D: static[int], I: int, T](g: FiniteG
 proc `[]`*[W: static[int], H: static[int], D: static[int], I: int, T](g: var FiniteGrid3D[W, H, D, T], x: I, y: I, z: I): var T =
    g.values[x*H*D+y*D+z]
 
+proc `[]`*[W: static[int], H: static[int], D: static[int], I: int, T](g: ref FiniteGrid3D[W, H, D, T], x: I, y: I, z: I): var T =
+   g.values[x*H*D+y*D+z]
+
 proc getPtr*[W: static[int], H: static[int], D: static[int], I: int, T](g: var FiniteGrid3D[W, H, D, T], x: I, y: I, z: I): ptr T =
+   g.values[x*H*D+y*D+z].addr
+
+proc getPtr*[W: static[int], H: static[int], D: static[int], I: int, T](g: ref FiniteGrid3D[W, H, D, T], x: I, y: I, z: I): ptr T =
    g.values[x*H*D+y*D+z].addr
 
 
 proc `[]=`*[W: static[int], H: static[int], D: static[int], I: int, T](g: var FiniteGrid3D[W, H, D, T], x: I, y: I, z: I, t: T) =
-  if x < 0 or y < 0 or x >= W or y >= H:
-    warn &"attempted to update finite grid out of bounds, ({x}, {y}, {z}) is not within [0,0] -> [{W-1},{H-1},{D-1}]"
+  if x < 0 or y < 0 or x >= W or y >= H or z < 0 or z >= D:
+    let w = W
+    let h = H
+    let d = D
+    warn &"attempted to update finite grid out of bounds, ({x}, {y}, {z}) is not within [0,0] -> [{w - 1},{h - 1},{d - 1}]"
   else:
     g.values[x*H*D+y*D+z] = t
 
+proc `[]=`*[W: static[int], H: static[int], D: static[int], I: int, T](g: ref FiniteGrid3D[W, H, D, T], x: I, y: I, z: I, t: T) =
+  if x < 0 or y < 0 or x >= W or y >= H or z < 0 or z >= D:
+    let w = W
+    let h = H
+    let d = D
+    warn &"attempted to update finite grid out of bounds, ({x}, {y}, {z}) is not within [0,0] -> [{w - 1},{h - 1},{d - 1}]"
+  else:
+    g.values[x*H*D+y*D+z] = t
+
+proc clear*[W: static[int], H: static[int], D: static[int], T](g: ref FiniteGrid3D[W,H,D,T]) =
+  zeroMem(g.values[0].addr, W*H*D*sizeof(T))
+
+proc clear*[W: static[int], H: static[int], T](g: ref FiniteGrid2D[W,H,T]) =
+  zeroMem(g.values[0].addr, W*H*sizeof(T))
 
 proc `[]`*[Po2: static[int], T](sg: SparseGridChunk[Po2,T], x,y,z: int) : T =
   let i = (x shl (Po2+Po2)) + (y shl Po2) + z
@@ -83,6 +131,7 @@ proc `[]=`*[Po2: static[int], T](sg: SparseGridChunk[Po2,T], x,y,z: int, v: T) =
   # flushFile(stdout)
   let i = (x shl (Po2+Po2)) + (y shl Po2) + z
   sg.values[i] = v
+
 
 
 proc alignToChunk*[Po2: static[int], T](sg: SparseGrid3D[Po2,T], x,y,z: int): Vec3i =

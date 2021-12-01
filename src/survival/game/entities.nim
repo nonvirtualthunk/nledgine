@@ -17,7 +17,6 @@ import strutils
 import game/shadowcasting
 import graphics/color
 import game/flags
-import strutils
 
 const VisionResolution* = 2
 const ShadowResolution* = 2
@@ -241,6 +240,12 @@ type
     # what priority this kind of creature gives various goals, the weights are only interpreted relative to each other
     # if a goal does not have an entry it is presumed to not be something the creature does
     priorities*: Table[CreatureGoals, float]
+    # how close an enemy has to be to trigger the maximum priority for attacking. May still trigger an attack beyond this
+    # range, but priority falls off with distance
+    aggressionRange*: int
+    # at what distance fleeing from predators reaches maximum priority. May still trigger fleeing beyond this
+    # range, but priority falls off with distance
+    panicRange*: int
     # actions creatures of this kind have access to without any tools or equipment (i.e. pretty much everyone can gather,
     # animals with claws might be able to cut, rabbits can dig, etc)
     innateActions*: Table[Taxon, int]
@@ -726,6 +731,7 @@ proc readFromConfig*(cv: ConfigValue, ck: var CreatureKind) =
   cv["liveResources"].readInto(ck.liveResources)
   cv["deadResources"].readInto(ck.deadResources)
   cv["priorities"].readInto(ck.priorities)
+  cv["aggressionRange"].readInto(ck.aggressionRange)
 
   readIntoTaxonTable(cv["innateActions"], ck.innateActions, "Actions")
   readIntoTaxonTable(cv["innateAttacks"], ck.innateAttacks, "Attacks")

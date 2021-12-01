@@ -28,7 +28,6 @@ import windowingsystem/rich_text
 import windowingsystem/list_widget
 import strutils
 import survival_display_core
-import noto
 
 type
   ItemInfo* = object

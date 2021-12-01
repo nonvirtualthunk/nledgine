@@ -5,6 +5,23 @@ type
   Reduceable*[T] = object
     max: T
     reducedBy: T
+
+  TickTock*[T] = ref object
+    prev*: ref T
+    next*: ref T
+
+
+proc tickTock*[T]() : TickTock[T] =
+  TickTock[T](
+    prev: new T,
+    next: new T
+  )
+
+proc swap*[T](t: TickTock[T]) =
+  let tmp = t.prev
+  t.prev = t.next
+  t.next = tmp
+
   
 
 proc reduceable*[T](v: T): Reduceable[T] =

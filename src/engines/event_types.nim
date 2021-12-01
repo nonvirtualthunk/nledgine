@@ -82,6 +82,9 @@ template eventToStr*(eventName: untyped) =
     result.add($(evt[]))
     result.add(")")
 
+  method eventTypeString*(evt: `eventName`): string =
+    result = eventName.astToStr
+
 
 method isConsumed*(evt: Event): bool {.base.} = false
 method isConsumed*(evt: UIEvent): bool = evt.consumed
@@ -100,6 +103,9 @@ proc addEvent*(buffer: EventBuffer, evt: Event) =
 
 method toString*(evt: Event): string {.base.} =
   return repr(evt)
+
+method eventTypeString*(evt: Event): string {.base.} =
+  return "Unknown"
 
 method toString*(evt: GameEvent): string =
   return repr(evt)

@@ -132,6 +132,7 @@ type
 
 
 proc fromGLFW*(key : GLFWKey) : KeyCode =
+    {.warning[HoleEnumConv]: off.}
     key.int.KeyCode
 
 proc mouseButtonFromGLFW*(button : int32) : MouseButton =

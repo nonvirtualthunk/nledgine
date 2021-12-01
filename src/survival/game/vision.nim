@@ -8,7 +8,6 @@ import game/shadowcasting
 import entities
 import noto
 import glm
-import tiles
 import game/grids
 import graphics/color
 import arxmath

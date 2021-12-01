@@ -14,4 +14,8 @@ TaxonomyDisplay {
   GameConcepts.Hunger {
     icon: survival/icons/hunger.png
   }
+
+  GameConcepts.Sanity {
+    icon: survival/icons/sanity.png
+  }
 }

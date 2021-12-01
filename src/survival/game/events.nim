@@ -111,6 +111,7 @@ type
 
   AttackMissedEvent* = ref object of GameEvent
     attacker*: Entity
+    attackKind*: Taxon
     target*: Target
 
 

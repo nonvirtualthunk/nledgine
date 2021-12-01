@@ -15,12 +15,9 @@ import os
 import bitops
 import unicode
 import times
-import noto
 import prelude
 import algorithm
 import options
-import times
-import bitops
 
 const GammaCorrection = false
 
@@ -139,6 +136,7 @@ proc toKeyModifiers(mods: int32): KeyModifiers =
   let ctrl = (mods.bitand(GLFWModControl)) != 0 or (mods.bitand(GLFWModSuper)) != 0
   KeyModifiers(shift: shift, alt: alt, ctrl: ctrl)
 
+{.warning[HoleEnumConv]: off.}
 proc keyDownProc(window: GLFWWindow, key: int32, scancode: int32, action: int32, mods: int32): void {.cdecl.} =
   if key == GLFWKey.Q and action == GLFWPress and (mods.bitand(GLFWModControl) != 0 or mods.bitand(GLFWModSuper) != 0):
     eventChannel.send(QuitRequest())
@@ -236,10 +234,10 @@ proc main*(setup: GameSetup) =
   glfwWindowHint(GLFW_SRGB_CAPABLE, if GammaCorrection: GLFW_TRUE else: GLFW_FALSE)
 
   let w: GLFWWindow = if not setup.fullscreen:
-    glfwCreateWindow(setup.windowSize.x, setup.windowSize.y, setup.windowTitle)
+    glfwCreateWindow(setup.windowSize.x, setup.windowSize.y, setup.windowTitle.cstring)
   else:
     let vidMode = getVideoMode(glfwGetPrimaryMonitor())
-    glfwCreateWindow(vidMode.width, vidMode.height, setup.windowTitle, glfwGetPrimaryMonitor())
+    glfwCreateWindow(vidMode.width, vidMode.height, setup.windowTitle.cstring, glfwGetPrimaryMonitor())
 
   if w == nil:
     quit(-1)

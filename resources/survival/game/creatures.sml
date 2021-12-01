@@ -103,6 +103,8 @@ Creatures {
       Examine: 4
       Home: 20
     }
+    panicRange: 3
+
     innateActions {
       Gather: 1
       Dig: 1
@@ -160,6 +162,8 @@ Creatures {
       Examine: 4
       Home: 20
     }
+    aggressionRange: 4
+
     innateActions {
       Gather: 1
     }

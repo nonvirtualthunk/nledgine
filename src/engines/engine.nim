@@ -29,7 +29,7 @@ type
     eventCallbacks: seq[EventCallback]
     lastUpdated: UnitOfTime
     componentTimers*: ComponentTimer
-    timers*: seq[Timer]
+    timers*: Table[string, Timer]
 
   GameEngine* = ref object
     components: seq[GameComponent]
@@ -43,7 +43,7 @@ type
     eventCallbacks: seq[LiveWorldEventCallback]
     lastUpdated: UnitOfTime
     componentTimers*: ComponentTimer
-    timers*: seq[Timer]
+    timers*: Table[string, Timer]
 
   LiveGameEngine* = ref object
     components: seq[LiveGameComponent]
@@ -58,7 +58,7 @@ type
     displayEventCallbacks: seq[DisplayEventCallback]
     lastUpdated: UnitOfTime
     componentTimers*: ComponentTimer
-    timers*: seq[Timer]
+    timers*: Table[string, Timer]
     
 
   GraphicsEngine* = ref object
@@ -223,6 +223,20 @@ iterator timers*(t: ComponentTimer) : Timer =
   yield t.eventTimer
 
 
+proc timer*(t: GameComponent, name: string) : Timer =
+  if not t.timers.hasKey(name):
+    t.timers[name] = timer(name)
+  t.timers[name]
+
+proc timer*(t: LiveGameComponent, name: string) : Timer =
+  if not t.timers.hasKey(name):
+    t.timers[name] = timer(name)
+  t.timers[name]
+
+proc timer*(t: GraphicsComponent, name: string) : Timer =
+  if not t.timers.hasKey(name):
+    t.timers[name] = timer(name)
+  t.timers[name]
 
 
 proc update*(ge: GameEngine) =
@@ -341,7 +355,7 @@ proc componentTimingsReport*[T](g: T) : string =
   for comp in g.components:
     for timer in comp.componentTimers.timers:
       result.add($timer)
-    for timer in comp.timers:
+    for timer in comp.timers.values:
       result.add($timer)
 
 
