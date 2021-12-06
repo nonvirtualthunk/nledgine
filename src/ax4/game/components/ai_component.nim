@@ -14,7 +14,6 @@ import noto
 import ax4/game/effects
 import ax4/game/effect_types
 import ax4/game/pathfinder
-import hex
 import ax4/game/targeting
 import options
 import ax4/game/combat

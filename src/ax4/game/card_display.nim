@@ -9,7 +9,7 @@ import config
 import config/config_helpers
 import tables
 import targeting_types
-import modifiers
+import game/modifiers
 import strutils
 import noto
 import root_types
@@ -19,7 +19,6 @@ import prelude
 import arxregex
 import windowingsystem/rich_text
 import graphics/image_extras
-import worlds/taxonomy
 import effect_display
 import options
 import ax4/game/ax_events
@@ -32,7 +31,7 @@ export root_types
 
 
 
-proc cardInfoFor*(view: WorldView, character: Entity, arch: CardArchetype, activeEffectGroup: int): CardInfo =
+proc cardInfoFor*(view: WorldView, character: Entity, arch: ref CardArchetype, activeEffectGroup: int): CardInfo =
    let effectGroup = arch.cardData.cardEffectGroups[activeEffectGroup]
 
    proc cge(allEffects: seq[SelectableEffects], active: bool = true): CharacterGameEffects =
@@ -52,7 +51,7 @@ proc cardInfoFor*(view: WorldView, character: Entity, arch: CardArchetype, activ
    if effectGroup.name.isSome:
       result.name = effectGroup.name.get
 
-   result.image = arch.cardData.image
+   result.image = arch.cardData.image.resolve()
 
    var costs: seq[SelectableEffects] = effectGroup.costs
    for effects in effectGroup.effects:
@@ -87,7 +86,8 @@ proc cardInfoFor*(view: WorldView, character: Entity, arch: CardArchetype, activ
 
 proc cardInfoFor*(view: WorldView, character: Entity, card: Entity, activeEffectGroup: int): CardInfo =
    withView(view):
-      let arch = CardArchetype(
+      let arch = new CardArchetype
+      arch[] = CardArchetype(
          cardData: card[Card],
          identity: card[Identity],
       )

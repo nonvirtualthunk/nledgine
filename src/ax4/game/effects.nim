@@ -9,7 +9,7 @@ import patty
 import noto
 import flags as base_flags
 import ax4/game/flags
-import ax4/game/modifiers
+import game/modifiers
 import ax4/game/movement
 import ax4/game/root_types
 import ax4/game/map

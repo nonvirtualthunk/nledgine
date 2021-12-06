@@ -98,11 +98,6 @@ type
    RewardSkipEvent* = ref object of AxEvent
       choices*: CharacterRewardChoice
 
-   FlagChangedEvent* = ref object of AxEvent
-      flag*: Taxon
-      oldValue*: int
-      newValue*: int
-
    CardPlayEvent* = ref object of AxEvent
       card*: Entity
 
@@ -110,9 +105,6 @@ type
 
    RoomEnteredEvent* = ref object of AxEvent
       room*: Entity
-
-   WorldInitializedEvent* = ref object of AxEvent
-
 
 
    EventConditionKind* = enum
@@ -152,8 +144,6 @@ method toString*(evt: FactionTurnEndEvent, view: WorldView): string =
    return &"FactionTurnEnd{$evt[]}"
 method toString*(evt: FactionTurnStartEvent, view: WorldView): string =
    return &"FactionTurnStart{$evt[]}"
-method toString*(evt: FlagChangedEvent, view: WorldView): string =
-   return &"FlagChanged{$evt[]}"
 method toString*(evt: WorldInitializedEvent, view: WorldView): string =
    return &"WorldInitialized{$evt[]}"
 method toString*(evt: DamageEvent, view: WorldView): string =

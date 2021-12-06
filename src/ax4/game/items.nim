@@ -131,10 +131,9 @@ defineLibrary[ItemArchetype]:
          let itemTaxon = taxon("items", k)
          var identity = readInto(v, Identity)
          identity.kind = itemTaxon
-         let arch = ItemArchetype(
-            identity: new Identity,
-            weaponData: new Weapon
-         )
+         let arch = new ItemArchetype
+         arch.identity = new Identity
+         arch.weaponData = new Weapon
          arch.identity[] = identity
 
          if itemTaxon.isA(taxon("items", "weapon")):
@@ -157,7 +156,7 @@ proc createItem*(world: World, taxon: Taxon): Entity =
          for i in 0 ..< arch.weaponData.attackCardCount:
             let card = world.createEntity()
             var cardData: Card
-            cardData.image = imageLike("ax4/images/card_images/slash.png")
+            cardData.image = imageRef("ax4/images/card_images/slash.png")
 
             for key, attack in arch.weaponData.attacks:
                cardData.cardEffectGroups.add(EffectGroup(

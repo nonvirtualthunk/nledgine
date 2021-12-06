@@ -2,6 +2,7 @@ import glm
 import nimgl/glfw
 import deques
 import unicode
+import worlds/taxonomy
 
 import key_codes
 
@@ -14,6 +15,11 @@ type
 
   GameEvent* = ref object of Event
     state*: GameEventState
+
+  FlagChangedEvent* = ref object of GameEvent
+    flag*: Taxon
+    oldValue*: int
+    newValue*: int
 
   EventBuffer* = ref object
     listenerCursors*: seq[int]
@@ -122,6 +128,7 @@ eventToStr(WindowFocusLost)
 eventToStr(WorldInitializedEvent)
 eventToStr(DebugCommandEvent)
 eventToStr(CameraChangedEvent)
+eventToStr(FlagChangedEvent)
 
 proc consume*(evt: UIEvent) =
   evt.consumed = true

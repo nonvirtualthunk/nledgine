@@ -2,12 +2,11 @@ import worlds
 import reflect
 import patty
 import noto
-import modifiers
+import game/modifiers
 import tables
 import options
 import game/randomness
 import targeting_types
-import options
 import root_types
 import sugar
 import sequtils
@@ -16,7 +15,6 @@ import arxregex
 import strutils
 import core
 import config/config_helpers
-import arxregex
 import prelude
 import math
 

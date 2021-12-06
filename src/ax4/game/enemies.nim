@@ -7,7 +7,6 @@ import hex
 import graphics/color
 import ax4/game/effect_types
 import game/library
-import config
 import resources
 import graphics/image_extras
 import strutils
@@ -38,7 +37,7 @@ type
 
    MonsterClass* = object
       actions*: Table[string, MonsterAction]
-      images*: seq[ImageLike]
+      images*: seq[ImageRef]
       xp*: int
       health*: DiceExpression
 
@@ -64,13 +63,13 @@ proc readFromConfig*(cv: ConfigValue, m: var MonsterAction) =
 defineSimpleReadFromConfig(MonsterClass)
 defineSimpleLibrary[MonsterClass]("ax4/game/monsters.sml", "MonsterClasses")
 
-proc monsterClass*(view: WorldView, entity: Entity): MonsterClass =
+proc monsterClass*(view: WorldView, entity: Entity): ref MonsterClass =
    withView(view):
       if entity.hasData(Monster):
          library(MonsterClass)[entity[Monster].monsterClass]
       else:
          warn &"Entity {entity} tried to extract MonsterClass but that does not have appropriate data"
-         MonsterClass()
+         new MonsterClass
 
 when isMainModule:
    let lib = library(MonsterClass)

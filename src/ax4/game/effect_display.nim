@@ -6,8 +6,7 @@ import combat
 import prelude
 import options
 import graphics/color
-import modifiers
-import prelude
+import game/modifiers
 import noto
 import game/randomness
 import patty

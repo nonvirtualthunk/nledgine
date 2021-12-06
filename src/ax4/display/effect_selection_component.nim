@@ -19,13 +19,11 @@ import ax4/game/effects
 import ax4/game/root_types
 import ax4/game/targeting
 import graphics/canvas
-import ax4/game/effects
 import ax4/display/ax_display_events
 import ax4/game/pathfinder
 import ax4/display/data/mapGraphicsData
 import sugar
 import patty
-import noto
 import sequtils
 
 {.experimental.}

@@ -6,7 +6,6 @@ import ax4/game/map
 import hex
 import graphics/cameras
 import graphics/camera_component
-import tables
 import resources
 import graphics/image_extras
 import data/cullingData

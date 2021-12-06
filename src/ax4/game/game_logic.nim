@@ -20,7 +20,6 @@ import noto
 import ax4/game/rooms
 import options
 import ax4/game/turns
-import ax4/game/enemies
 
 proc createCharacter*(world: World, characterClass: Taxon, faction: Entity): Entity =
    let cardLibrary = library(CardArchetype)
@@ -67,7 +66,7 @@ proc createMonster*(world: World, faction: Entity, monsterClassTaxon: Taxon): En
       monster.attachData(Physical())
       monster.attachData(Allegiance(faction: faction))
       monster.attachData(Monster(monsterClass: monsterClassTaxon, xp: monsterClass.xp))
-      monster.attachData(Character(health: reduceable(monsterClass.health.roll(randomizer))))
+      monster.attachData(Character(health: reduceable(monsterClass.health.roll(randomizer).total)))
       monster.attachData(ResourcePools(resources: {taxon("resource pools", "action points"): reduceable(2), taxon("resource pools", "stamina points"): reduceable(3)}.toTable))
       monster.attachData(Flags())
       monster.attachData(Vision())

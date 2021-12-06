@@ -34,7 +34,7 @@ method onEvent*(g: FlagComponent, world: World, event: Event) =
 
 
 when isMainModule:
-   import ax4/game/modifiers
+   import game/modifiers
    import prelude
    import ax4/game/ax_events
 

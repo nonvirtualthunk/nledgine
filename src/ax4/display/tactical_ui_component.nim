@@ -64,9 +64,9 @@ proc render(g: TacticalUIComponent, view: WorldView, display: DisplayWorld) =
          let curAP = selC[ResourcePools].currentResourceValue(AP)
          let maxAP = selC[ResourcePools].maximumResourceValue(AP)
          let fractionalImage = if curAP == maxAP:
-            imageLike("ax4/images/ui/selection_arrow.png")
+            image("ax4/images/ui/selection_arrow.png")
          else:
-            imageLike(&"ax4/images/ui/selection_arrow_{curAP}_{maxAP}.png")
+            image(&"ax4/images/ui/selection_arrow_{curAP}_{maxAP}.png")
          let backgroundImage = image("ax4/images/ui/selection_arrow.png")
 
          qb.position = pos

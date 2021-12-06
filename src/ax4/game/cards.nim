@@ -17,7 +17,6 @@ import sequtils
 import prelude
 import arxregex
 import graphics/image_extras
-import worlds/taxonomy
 import options
 import ax4/game/ax_events
 import game/randomness
@@ -28,7 +27,7 @@ type
    Card* = object
       cardEffectGroups*: seq[EffectGroup]
       xp*: Table[Taxon, int]
-      image*: ImageLike
+      image*: ImageRef
       locked*: bool
       inDeck*: Option[Entity]
 
@@ -40,7 +39,7 @@ type
       name*: string
       mainCost*: Option[CharacterGameEffects]
       secondaryCost*: Option[CharacterGameEffects]
-      image*: ImageLike
+      image*: ImageRef
       effects*: seq[CharacterGameEffects]
 
    Deck* = object
@@ -113,7 +112,7 @@ proc activeDeckKind*(view: WorldView, deckOwner: Entity): DeckKind =
 
 
 
-proc createCard*(arch: CardArchetype, world: World): Entity =
+proc createCard*(arch: ref CardArchetype, world: World): Entity =
    withWorld(world):
       let ent = world.createEntity()
       ent.attachData(arch.cardData[])
@@ -335,10 +334,9 @@ defineLibrary[CardArchetype]:
          let cardTaxon = taxon("card types", k)
          var identity = readInto(v, Identity)
          identity.kind = cardTaxon
-         let arch = CardArchetype(
-            cardData: new Card,
-            identity: new Identity
-         )
+         let arch = new CardArchetype
+         arch.cardData = new Card
+         arch.identity = new Identity
          arch.cardData[] = readInto(v, Card)
          arch.identity[] = identity
 

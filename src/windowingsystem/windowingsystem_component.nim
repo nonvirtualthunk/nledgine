@@ -60,7 +60,7 @@ proc handleEventWrapper(ws: WindowingSystemRef, event: WidgetEvent, world: LiveW
   if not result:
     display.addEvent(event)
 
-proc handleEventWrapper(ws: WindowingSystemRef, event: WidgetEvent, world: WorldView, display: DisplayWorld) : bool =
+proc handleEventWrapper(ws: WindowingSystemRef, event: WidgetEvent, world: World, display: DisplayWorld) : bool =
   result = handleEvent(ws, event, world, display)
   if not result:
     display.addEvent(event)

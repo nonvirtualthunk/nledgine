@@ -1588,8 +1588,10 @@ proc handleEvent*[WorldType](ws: WindowingSystemRef, event: WidgetEvent, world: 
     for callback in w.liveWorldEventCallbacks:
       callback(event, world, display)
       if event.consumed: return true
+  elif world is WorldView:
+    discard
   else:
-    warn "Unsupported world type for handleEvent in windowing system core"
+    warn &"Unsupported world type for handleEvent in windowing system core: {$WorldType}"
 
 
   for comp in ws.components:

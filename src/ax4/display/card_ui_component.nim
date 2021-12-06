@@ -252,18 +252,18 @@ method update(g: CardUIComponent, world: World, curView: WorldView, display: Dis
                      let w = g.cardWidgets.getOrCreate(card):
                         let widget = ws.desktop.createChild("CardWidgets", "CardWidget")
                         widget.y = fixedPos(0, WidgetOrientation.BottomLeft)
-                        widget.onEvent(WidgetMouseMove, move):
+                        widget.onEventOfTypeW(WidgetMouseMove, move):
                            g.ignoreMouseOverCard = false
                            move.consume()
-                        widget.onEvent(WidgetMouseEnter, enter):
+                        widget.onEventOfTypeW(WidgetMouseEnter, enter):
                            updateCardWidgetDesiredPositions(g, curView, display, selC)
-                        widget.onEvent(WidgetMouseExit, exit):
+                        widget.onEventOfTypeW(WidgetMouseExit, exit):
                            updateCardWidgetDesiredPositions(g, curView, display, selC)
-                        widget.onEvent(ListItemMouseOver, listItem):
+                        widget.onEventOfTypeW(ListItemMouseOver, listItem):
                            if g.cardWidgets.hasKey(card):
                               g.cardWidgets[card].selectedGroup = listItem.index
                               g.updateCardWidgetBindings(curView, display, card, g.cardWidgets[card], selC)
-                        widget.onEvent(WidgetMousePress, press):
+                        widget.onEventOfTypeW(WidgetMousePress, press):
                            g.setHeldCard(some(card))
                            g.grabbedPosition = vec2i(press.relativePosition)
                            disableCursor()

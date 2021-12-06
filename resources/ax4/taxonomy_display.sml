@@ -21,7 +21,7 @@ TaxonomyDisplay {
       icon: ax4/images/icons/move.png
    }
    Skills.Parry {
-      icon: ax4/images/icons/parry.png"
+      icon: ax4/images/icons/parry.png
    }
 
    Items.Log {

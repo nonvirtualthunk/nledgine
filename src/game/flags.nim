@@ -9,6 +9,8 @@ import arxregex
 import noto
 import strutils
 import math
+import game/modifiers
+import engines/event_types
 
 type
   Flags* = object
@@ -104,11 +106,8 @@ proc postProcessEquivalencies(lib: Library[FlagInfo]) =
       lib[targetEq.flag].equivalences.add(newEquiv)
 
 
-when declared(ProjectName):
-  defineSimpleLibrary[FlagInfo](ProjectName & "/game/flags.sml", "Flags", postProcessEquivalencies)
-else:
-  defineSimpleLibrary[FlagInfo]("ax4/game/flags.sml", "Flags", postProcessEquivalencies)
 
+defineSimpleLibrary[FlagInfo](ProjectName & "/game/flags.sml", "Flags", postProcessEquivalencies)
 
 
 proc rawFlagValue*(flags: ref Flags, flag: Taxon, arg: Option[Taxon] = none(Taxon)): int =
@@ -156,6 +155,30 @@ proc keyedFlagValues*(flags: ref Flags, flag: string): Table[Taxon, int] =
   let flag = taxon("flags", flag)
   for key in flags.keyedFlags.getOrDefault(flag).keys:
     result[key] = flagValue(flags, flag, some(key))
+
+
+proc modifyFlag*(world: World, entity: Entity, flag: Taxon, arg: Option[Taxon], modifier: Modifier[int]) =
+  if (modifier.operation == ModifierOperation.Add or modifier.operation == ModifierOperation.Sub) and modifier.value == 0:
+    return
+
+  withWorld(world):
+    let flagInfo = library(FlagInfo).get(flag)
+    var cur = entity.data(flags.Flags).flags.getOrDefault(flag)
+    let oldV = cur
+    modifier.apply(cur)
+    if flagInfo.isSome and flagInfo.get.minValue.isSome:
+      cur = max(flagInfo.get.minValue.get, cur)
+    if flagInfo.isSome and flagInfo.get.maxValue.isSome:
+      cur = min(flagInfo.get.maxValue.get, cur)
+
+    world.eventStmts(FlagChangedEvent(flag: flag, oldValue: oldV, newValue: cur)):
+      if arg.isSome:
+        entity.modify(Flags.keyedFlags.put(flag, arg.get, cur))
+      else:
+        entity.modify(Flags.flags.put(flag, cur))
+
+proc modifyFlag*(world: World, entity: Entity, flag: Taxon, modifier: Modifier[int]) =
+  modifyFlag(world, entity, flag, none(Taxon), modifier)
 
 when isMainModule:
   for k,v in library(FlagInfo):

@@ -98,17 +98,17 @@ proc mapView*(view: WorldView): MapView =
          vegetationInfo: library(VegetationInfo)
       )
 
-proc terrainInfoAt*(map: MapView, hex: AxialVec): Option[TerrainInfo] =
+proc terrainInfoAt*(map: MapView, hex: AxialVec): Option[ref TerrainInfo] =
    withView(map.view):
       let tileOpt = map.map.tileAt(hex.q, hex.r)
       if tileOpt.isSome:
          let tile = tileOpt.get
          some(map.terrainInfo[tile[Tile].terrain])
       else:
-         none(TerrainInfo)
+         none(ref TerrainInfo)
 
 
-iterator vegetationInfoAt*(map: MapView, hex: AxialVec): VegetationInfo =
+iterator vegetationInfoAt*(map: MapView, hex: AxialVec): ref VegetationInfo =
    withView(map.view):
       let tileOpt = map.map.tileAt(hex.q, hex.r)
       if tileOpt.isSome:

@@ -2,7 +2,7 @@ import worlds
 import reflect
 import patty
 import noto
-import modifiers
+import game/modifiers
 import tables
 import options
 import game/randomness
@@ -13,7 +13,6 @@ import flags
 import ax_events
 import core
 import characters
-import items
 import sequtils
 import prelude
 import hex

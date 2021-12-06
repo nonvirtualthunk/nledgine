@@ -9,8 +9,8 @@ import prelude
 
 type
    TextureSet* = object
-      primary*: ImageLike
-      variants*: seq[ImageLike]
+      primary*: ImageRef
+      variants*: seq[ImageRef]
       variantChance*: float
 
    TilesetGraphicsInfo* = object
@@ -36,11 +36,11 @@ proc mapGraphicsSettings*() : MapGraphicsSettings =
 proc readFromConfig*(cv : ConfigValue, v : var TextureSet) =
    let basePath = cv["basePath"].asStr("")
    if cv.hasField("primary"):
-      v.primary = imageLike(basePath & cv["primary"].asStr)
+      v.primary = imageRef(basePath & cv["primary"].asStr)
    if cv.hasField("variants"):
       v.variants = @[]
       for variantC in cv["variants"].asArr:
-         v.variants.add(imageLike(basePath & variantC.asStr))
+         v.variants.add(imageRef(basePath & variantC.asStr))
    cv["variantChance"].readInto(v.variantChance)
 
 defineSimpleReadFromConfig(TilesetGraphicsInfo)
@@ -60,7 +60,7 @@ proc readFromConfig*(cv : ConfigValue, v : var TerrainGraphics) =
 defineSimpleLibrary[VegetationGraphics]("ax4/game/vegetations.sml", "Vegetations")
 defineSimpleLibrary[TerrainGraphics]("ax4/game/terrains.sml", "Terrains")
 
-proc effectiveGraphicsInfoIntern(vg : VegetationGraphics, terrain : Taxon) : Option[TilesetGraphicsInfo] =
+proc effectiveGraphicsInfoIntern(vg : ref VegetationGraphics, terrain : Taxon) : Option[TilesetGraphicsInfo] =
    if vg.byTerrainKind.contains(terrain):
       return some(vg.byTerrainKind[terrain])
    else:
@@ -70,10 +70,10 @@ proc effectiveGraphicsInfoIntern(vg : VegetationGraphics, terrain : Taxon) : Opt
             return parentResult
       return none(TilesetGraphicsInfo)
 
-proc effectiveGraphicsInfo*(vg : VegetationGraphics, terrain : Taxon) : TilesetGraphicsInfo =
+proc effectiveGraphicsInfo*(vg : ref VegetationGraphics, terrain : Taxon) : TilesetGraphicsInfo =
    effectiveGraphicsInfoIntern(vg, terrain).get(vg.default)
 
-proc pickBasedOn*(ts : TextureSet, i : int) : ImageLike =
+proc pickBasedOn*(ts : TextureSet, i : int) : ImageRef =
    if ts.variants.isEmpty:
       ts.primary
    else:

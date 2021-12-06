@@ -6,7 +6,6 @@ import config
 import strutils
 import noto
 import arxregex
-import strutils
 import sequtils
 import rich_text
 import graphics/image_extras
@@ -342,11 +341,11 @@ proc asRichText*(cond: GameCondition): RichText =
 proc asRichText*(s: SelectionShape): RichText =
    match s:
       Hex:
-         result = richText(imageLike("ax4/images/ui/vertical_hex.png"))
+         result = richText(imageRef("ax4/images/ui/vertical_hex.png"))
       Line(startDist, length):
          for i in 1 ..< startDist + length:
-            if i < startDist: result.add(richText(imageLike("ax4/images/ui/vertical_hex_dashed_outline.png")))
-            else: result.add(richText(imageLike("ax4/images/ui/vertical_hex.png")))
+            if i < startDist: result.add(richText(imageRef("ax4/images/ui/vertical_hex_dashed_outline.png")))
+            else: result.add(richText(imageRef("ax4/images/ui/vertical_hex.png")))
 
 proc containsSelfRestriction*(s: SelectionRestriction): bool =
    match s:

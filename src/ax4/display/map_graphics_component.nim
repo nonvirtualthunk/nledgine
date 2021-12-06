@@ -6,7 +6,6 @@ import ax4/game/map
 import hex
 import graphics/cameras
 import graphics/camera_component
-import tables
 import resources
 import graphics/image_extras
 import data/mapGraphicsData
@@ -90,7 +89,7 @@ proc render(g: MapGraphicsComponent, view: WorldView, display: DisplayWorld) =
             let tile = tileEnt[Tile]
 
             var drawTerrain = true
-            var imagesToDraw: seq[ImageLike]
+            var imagesToDraw: seq[ImageRef]
             for vegKind in tile.vegetation:
                if not vegInfoByComp.hasKey((vegKind, tile.terrain)):
                   vegInfoByComp[(vegKind, tile.terrain)] = vegLib[vegKind].effectiveGraphicsInfo(tile.terrain)
@@ -108,7 +107,7 @@ proc render(g: MapGraphicsComponent, view: WorldView, display: DisplayWorld) =
                imagesToDraw.add(img)
 
             for img in imagesToDraw:
-               let tc = g.texture[img]
+               let tc = g.texture[img.asImage]
 
                let cart = tile.position.asCartVec * g.hexSize
 

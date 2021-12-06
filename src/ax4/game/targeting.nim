@@ -13,9 +13,7 @@ import noto
 import sequtils
 import algorithm
 import game/randomness
-import patty
 import ax4/game/flags
-import prelude
 import core
 import sets
 import vision

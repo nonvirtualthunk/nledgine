@@ -14,7 +14,6 @@ import ax4/game/resource_pools
 import ax4/game/enemies
 import game/library
 import options
-import ax4/game/enemies
 import patty
 import ax4/game/effect_types
 import ax4/game/flags
@@ -140,7 +139,7 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
             if physEnt.hasData(Monster):
                let monster = physEnt[Monster]
                let mc = monsterLib[monster.monsterClass]
-               charImg = mc.images[permute(physEnt.id).abs mod mc.images.len]
+               charImg = mc.images[permute(physEnt.id).abs mod mc.images.len].asImage
             let scale = ((hexSize * 0.65).int div charImg.dimensions.x).float
 
             qb.texture = charImg

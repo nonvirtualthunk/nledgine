@@ -31,7 +31,6 @@ import ax4/game/ax_events
 import ax4/display/effect_selection_component
 import ax4/game/resource_pools
 import core
-import game/library
 import ax4/game/enemies
 import ax4/game/items
 import game/randomness
@@ -43,7 +42,6 @@ import ax4/display/animation_component
 import ax4/game/components/conditions_component
 import ax4/game/vision
 import worlds/gamedebug
-import ax4/game/ax_events
 import strutils
 import ax4/game/game_logic
 import ax4/display/reward_ui_component

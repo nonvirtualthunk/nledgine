@@ -16,7 +16,6 @@ import graphics/core
 import ax4/game/effects
 import ax4/game/effect_types
 import ax4/game/card_display
-import ax4/game/characters
 import game/library
 import worlds
 
@@ -38,7 +37,7 @@ method initialize(g: RewardUIComponent, world: World, curView: WorldView, displa
 
    let ws = display[WindowingSystem]
    g.rewardsWidget = ws.desktop.createChild("RewardWidgets", "RewardWidget")
-   g.rewardsWidget.childByIdentifier("SkipButton").get.onEvent(WidgetMouseRelease, release):
+   g.rewardsWidget.childByIdentifier("SkipButton").get.onEventOfTypeW(WidgetMouseRelease, release):
       g.skipReward = true
 
 
@@ -53,7 +52,7 @@ proc cardRewardChoiceWidget(g: RewardUIComponent, i: int): Widget =
    else:
       result = g.rewardsWidget.childByIdentifier("RewardOptions").get.createChild("CardWidgets", "CardWidget")
       g.cardRewardChoiceWidgets.add(result)
-      result.onEvent(WidgetMouseRelease, release):
+      result.onEventOfTypeW(WidgetMouseRelease, release):
          g.chosenReward = some(i)
 
 
