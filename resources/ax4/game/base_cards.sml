@@ -19,6 +19,84 @@ CardTypes {
       ]
    }
 
+   SpearAttack {
+      name: "Spear Attack"
+      isA: AttackCard
+      image: ax4/images/card_images/slash.png
+      rarity: starter
+
+      xp: Fighter -> 1
+      cardEffectGroups: [
+         {
+            name: "stab"
+            effects: [{
+               kind: attack
+               attackTypes: [reach attack]
+               actionCost : 2
+               staminaCost : 2
+
+               damage: 8
+               strikeCount : 1
+               minRange : 2
+               maxRange : 2
+            }]
+         },
+         {
+            name: "slam"
+            effects: [{
+              kind: attack
+               actionCost: 1
+               staminaCost: 1
+
+               damage: 4
+               strikeCount: 1
+               minRange: 0
+               maxRange: 0
+
+            }]
+         }
+      ]
+   }
+
+   SwordAttack {
+      name: "Sword Attack"
+      isA: AttackCard
+      image: ax4/images/card_images/slash.png
+      rarity: starter
+
+      xp: Fighter -> 1
+      cardEffectGroups: [
+         {
+            name: "slash"
+            effects: [{
+               kind: attack
+
+               actionCost : 1
+               staminaCost : 1
+
+               damage: 6 Slashing
+               strikeCount : 1
+               minRange : 1
+               maxRange : 1
+            }]
+         },
+         {
+            name: "stab"
+            effects: [{
+               kind: attack
+               actionCost: 1
+               staminaCost: 1
+
+               damage: 4 Piercing
+               strikeCount: 1
+               minRange: 1
+               maxRange: 1
+
+            }]
+         }
+      ]
+   }
+
    FightAnotherDay {
       name : "Fight Another Day"
       isA: MoveCard
@@ -83,47 +161,48 @@ CardTypes {
 
       xp: Fighter -> 2
 
-      effects [{
+      effects: [{
          kind: attack
 
-         attackModifier {
-            actionCost: +1
-            damage: +3
-            conditionalEffects : [{
-               kind: OnHit
-               target: target
-               effect: Vulnerable(+2)
-            }]
-         }
+
+         actionCost: 2
+         staminaCost: 2
+         target: single
+         damage: 8
+         minRange: 1
+         maxRange: 1
+         strikeCount: 1
+         conditionalEffects : [{
+            kind: OnHit
+            target: target
+            effect: Vulnerable(2)
+         }]
       }]
    }
 
    PiercingStab {
-      name : "Piercing Stab"
+      name : "Piercing Strike"
       isA: [AttackCard, FighterCard]
       image : ax4/images/card_images/piercingStab.png
       
       rarity : common
 
-      xp {
-         Fighter : 2
-      }
+      xp: Fighter -> 2
 
       effects : [{
          kind : attack
 
-         attackSelector : [AttackType(ReachAttack), DamageType(Piercing)]
-         attackModifier : {
-            accuracy : -1
-            target : "setTo line(1,2)"
-            minRange : "setTo 1"
-            maxRange : "setTo 1"
-         }
+         actionCost: 1
+         staminaCost: 2
+         target: "line(1,2)"
+         damage: 8
+         minRange: 1
+         maxRange: 1
       }]
    }
 
    PinpointStab {
-      name : "Pinpoint Stab"
+      name : "Pinpoint Strike"
       isA: [AttackCard, FighterCard]
 
       rarity : common
@@ -132,10 +211,12 @@ CardTypes {
       effects : [{
          kind : attack
 
-         attackSelector : [DamageType(Piercing)]
-         attackModifier : {
-            accuracy : +3
-         }
+         actionCost: 1
+         staminaCost: 0
+         target: single
+         damage: 5
+         strikeCount: 1
+
          conditionalEffects : [{
             kind: OnHit
             target: target
@@ -151,16 +232,20 @@ CardTypes {
       rarity : common
       xp : Fighter -> 2
 
-      effects : [{
-         kind : attack
+      effects : [
+         {
+            kind : attack
 
-         attackSelector : [DamageType(Bludgeoning)]
-         attackModifier : {
-            accuracy : -1
-            damage : +5
-            derivedModifiers : [damage +1 per Unbalanced on self, damage +1 per Rage on self]
-         }
-      },Unbalanced(-1)]
+            target: single
+            damage: 5
+            accuracy: -1
+            derivedModifiers: [
+               "damage +1 per Unbalanced on self",
+               "damage +1 per Rage on self"
+            ]
+         },
+         "Unbalanced(+1)"
+      ]
    }
 
    DoubleStrike {
@@ -169,18 +254,16 @@ CardTypes {
 
       rarity : common
 
-      xp {
-         Fighter : 2
-      }
+      xp : Fighter -> 2
 
       effects : [{
          kind : attack
 
-         attackModifier : {
-            strikeCount : "setTo 2"
-            damage : -1
-            staminaCost : +1
-         }
+         actionCost: 1
+         staminaCost: 1
+         target: single
+         damage: 5
+         strikeCount: 2
       }]
    }
 
@@ -199,9 +282,11 @@ CardTypes {
          {
             kind : attack
 
-            attackModifier {
-               staminaCost : +1
-            }
+            actionCost: 1
+            staminaCost: 2
+            target: single
+            damage: 6
+            strikeCount: 1
          }
       ]
    }
@@ -212,17 +297,15 @@ CardTypes {
       
       rarity : common
 
-      xp {
-         Fighter : 2
-      }
+      xp : Fighter -> 2
 
       effects : [{
          kind : attack
 
-         attackModifier {
-            actionCost : -1
-            staminaCost : +1
-         }
+         actionCost: 0
+         staminaCost: 2
+         damage: 7
+         strikeCount: 1
       }]
    }
 
@@ -232,12 +315,11 @@ CardTypes {
 
       rarity : uncommon
 
-      xp {
-         Fighter : 1
-      }
+      xp : Fighter -> 1
 
+      ap: 0
+      stamina: 1
       effects : [Vengeance(1)]
-      costs : [ActionPoints(0), StaminaPoints(-1)]
    }
    
    TirelessFury {
@@ -249,6 +331,7 @@ CardTypes {
       xp : Fighter -> 2
 
 
+      ap: 0
       effects : [StaminaPoints(1)]
       conditionalEffects : {
          condition : NoFlagValue(Rage)

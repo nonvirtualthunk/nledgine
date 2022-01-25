@@ -80,6 +80,11 @@ proc readIntoTaxonTable*[V](cv: ConfigValue, t: var Table[Taxon,V], namespace: s
   else:
     warn &"Cannot read a non-object config value into a taxon table: {cv}"
 
+proc readIntoTaxons*(cv: ConfigValue, namespace: string) : seq[Taxon] =
+  result = @[]
+  for v in cv.asArr:
+    result.add(taxon(namespace, v.asStr))
+
 const timeRegex = "([0-9.]+)\\s?([a-z]+)".re
 proc readFromConfig*(cv: ConfigValue, v: var UnitOfTime) =
   if cv.isStr:

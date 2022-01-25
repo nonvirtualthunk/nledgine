@@ -73,10 +73,10 @@ when isMainModule:
       brightness: int
       color: seq[int]
 
-    Item* = object
+    PItem* = object
       weight: int
 
-    DisplayItem* = object
+    DisplayPItem* = object
       weight: int
 
     Map* = object
@@ -89,29 +89,29 @@ when isMainModule:
 
 
   # type
-  #    ItemTypeDef_5025665 = ref object of DataType[Item]
-  #      weight*: Field[Item, int]
+  #    PItemTypeDef_5025665 = ref object of DataType[PItem]
+  #      weight*: Field[PItem, int]
 
-  # let ItemFieldweight_5025668 = new(Field[Item, int])
-  # ItemFieldweight_5025668.name = "weight"
-  # ItemFieldweight_5025668.index = 0
-  # ItemFieldweight_5025668.setter = proc (obj: ref Item; valuegensym5025669: int) = obj.weight = valuegensym5025669
-  # ItemFieldweight_5025668.getter = proc (obj: Item): int = result = obj.weight
-  # ItemFieldweight_5025668.varGetter = proc (obj: ref Item): var int = result = obj.weight
-  # let ItemType = new(ItemTypeDef_5025665)
-  # ItemType.name = "Item"
-  # ItemType.index = 1
-  # ItemFieldweight_5025668.dataType = ItemType
-  # ItemType.weight = ItemFieldweight_5025668
-  # proc getDataType(tgensym5025670: typedesc[Item]): DataType[Item] {.inline.} =
-  #    return ItemType
+  # let PItemFieldweight_5025668 = new(Field[PItem, int])
+  # PItemFieldweight_5025668.name = "weight"
+  # PItemFieldweight_5025668.index = 0
+  # PItemFieldweight_5025668.setter = proc (obj: ref PItem; valuegensym5025669: int) = obj.weight = valuegensym5025669
+  # PItemFieldweight_5025668.getter = proc (obj: PItem): int = result = obj.weight
+  # PItemFieldweight_5025668.varGetter = proc (obj: ref PItem): var int = result = obj.weight
+  # let PItemType = new(PItemTypeDef_5025665)
+  # PItemType.name = "PItem"
+  # PItemType.index = 1
+  # PItemFieldweight_5025668.dataType = PItemType
+  # PItemType.weight = PItemFieldweight_5025668
+  # proc getDataType(tgensym5025670: typedesc[PItem]): DataType[PItem] {.inline.} =
+  #    return PItemType
 
   # Call macros that introspect on the type given to them at compile time and define types and methods for
   # performing reflection on them, with no[1] runtime overhead.
   #  [1] terms and conditions apply
   defineReflection(LightSource)
-  defineReflection(Item)
-  defineDisplayReflection(DisplayItem)
+  defineReflection(PItem)
+  defineDisplayReflection(DisplayPItem)
   defineReflection(Map)
 
   # Create a new world to hold our entities
@@ -121,10 +121,10 @@ when isMainModule:
   let historicalView = world.createView()
 
   withWorld world:
-    # Create a lamp and attach data to it, both as a light source and an item
+    # Create a lamp and attach data to it, both as a light source and an PItem
     let lamp = world.createEntity()
     lamp.attachData(LightSource(brightness: 4))
-    lamp.attachData(Item(weight: 5))
+    lamp.attachData(PItem(weight: 5))
 
     # Create a sun and attach just light source information to it
     let sun = world.createEntity()
@@ -146,8 +146,8 @@ when isMainModule:
       if entity.hasData(LightSource):
         # for convenience we have the even more minimal syntax `entity[TypeName]` to reference data
         shineLight(entity[LightSource].brightness)
-      if entity.hasData(Item):
-        applyPhysics(entity, entity[Item].weight)
+      if entity.hasData(PItem):
+        applyPhysics(entity, entity[PItem].weight)
 
     # the historical view doesn't have anything in it yet, it's still pointing to the beginning of time
     # if we look at our entities, they won't have any data
@@ -198,13 +198,13 @@ when isMainModule:
   let displayEnt = display.createEntity()
 
   withDisplay display:
-    displayEnt.attachData(DisplayItem(weight: 1))
+    displayEnt.attachData(DisplayPItem(weight: 1))
 
-    echoAssert displayEnt[DisplayItem].weight == 1
+    echoAssert displayEnt[DisplayPItem].weight == 1
 
-    displayEnt[DisplayItem].weight = 3
+    displayEnt[DisplayPItem].weight = 3
 
-    echoAssert displayEnt[DisplayItem].weight == 3
+    echoAssert displayEnt[DisplayPItem].weight == 3
 
 
 
@@ -214,10 +214,10 @@ when isMainModule:
 
     var world = createWorld()
     withWorld world:
-      # Create a lamp and attach data to it, both as a light source and an item
+      # Create a lamp and attach data to it, both as a light source and an PItem
       let lamp = world.createEntity()
       lamp.attachData(LightSource(brightness: 4))
-      lamp.attachData(Item(weight: 5))
+      lamp.attachData(PItem(weight: 5))
 
       # Create a sun and attach just light source information to it
       let sun = world.createEntity()

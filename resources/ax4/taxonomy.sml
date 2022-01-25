@@ -203,6 +203,7 @@ Taxonomy {
       Fire : Elemental
       Ice : Elemental
 
+      WeaponDamageType: DamageType
 
       Unknown : DamageType
    }
@@ -220,6 +221,8 @@ Taxonomy {
       Leg : Appendage
       Head : Thinking
    }
+
+   Scenario : []
 
    CardType : []
    CardTypes {
@@ -316,5 +319,6 @@ TaxonomySources : [
    ax4/game/monsters.sml, 
    ax4/game/terrains.sml,
    ax4/game/weapons.sml,
-   ax4/game/armor.sml
+   ax4/game/armor.sml,
+   ax4/game/scenarios.sml,
 ]

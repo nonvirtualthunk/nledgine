@@ -56,7 +56,7 @@ CardTypes {
          {
             name : "Shield Bash"
             effects : [{
-               kind: SimpleAttack
+               kind: attack
 
                attackTypes: [shield bash]
                actionCost: 1

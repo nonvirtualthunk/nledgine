@@ -34,6 +34,12 @@ method onEvent(g : MapEventTransformer, world : World, curView : WorldView, disp
             display.addEvent(HexMouseExit(hex: g.lastMousedHex))
             g.lastMousedHex = hex
             display.addEvent(HexMouseEnter(hex: hex))
+      extract(MouseDrag, position):
+         let hex = pixelToHex(display, position)
+         if hex != g.lastMousedHex:
+            display.addEvent(HexMouseExit(hex: g.lastMousedHex, buttonDown: true))
+            g.lastMousedHex = hex
+            display.addEvent(HexMouseEnter(hex: hex, buttonDown: true))
 
 # method update(g : TacticalUIComponent, world : World, curView : WorldView, display : DisplayWorld, df : float) : seq[DrawCommand] =
 #    if g.worldWatcher.hasChanged:

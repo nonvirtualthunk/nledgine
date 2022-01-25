@@ -23,125 +23,145 @@ import ax4/game/map
 
 
 proc faction*(view: WorldView, entity: Entity): Entity =
-   view.data(entity, Allegiance).faction
+  view.data(entity, Allegiance).faction
 
 proc factionData*(view: WorldView, entity: Entity): ref Faction =
-   view.data(view.data(entity, Allegiance).faction, Faction)
+  view.data(view.data(entity, Allegiance).faction, Faction)
 
 proc isPlayerControlled*(view: WorldView, entity: Entity): bool =
-   view.data(faction(view, entity), Faction).playerControlled
+  view.data(faction(view, entity), Faction).playerControlled
 
 proc areEnemies*(view: WorldView, a, b: Entity): bool =
-   faction(view, a) != faction(view, b)
+  faction(view, a) != faction(view, b)
 
 proc areFriends*(view: WorldView, a, b: Entity): bool =
-   not areEnemies(view, a, b)
+  not areEnemies(view, a, b)
 
 proc map*(entity: Entity, view: WorldView): ref Map =
-   withView(view):
-      entity[Physical].map[Map]
+  withView(view):
+    entity[Physical].map[Map]
 
 iterator entitiesInFaction*(view: WorldView, faction: Entity): Entity =
-   for ent in view.entitiesWithData(Allegiance):
-      if view.data(ent, Allegiance).faction == faction:
-         yield ent
+  for ent in view.entitiesWithData(Allegiance):
+    if view.data(ent, Allegiance).faction == faction:
+      yield ent
 
 iterator entitiesNotInFaction*(view: WorldView, faction: Entity): Entity =
-   for ent in view.entitiesWithData(Allegiance):
-      if view.data(ent, Allegiance).faction != faction:
-         yield ent
+  for ent in view.entitiesWithData(Allegiance):
+    if view.data(ent, Allegiance).faction != faction:
+      yield ent
 
 iterator playerFactions*(view: WorldView): Entity =
-   withView(view):
-      for ent in view.entitiesWithData(Faction):
-         if ent[Faction].playerControlled:
-            yield ent
+  withView(view):
+    for ent in view.entitiesWithData(Faction):
+      if ent[Faction].playerControlled:
+        yield ent
 
 iterator enemyFactions*(view: WorldView): Entity =
-   withView(view):
-      for ent in view.entitiesWithData(Faction):
-         if not ent[Faction].playerControlled:
-            yield ent
+  withView(view):
+    for ent in view.entitiesWithData(Faction):
+      if not ent[Faction].playerControlled:
+        yield ent
 
 iterator playerCharacters*(view: WorldView): Entity =
-   withView(view):
-      for playerFaction in playerFactions(view):
-         for entity in entitiesInFaction(view, playerFaction):
-            if entity.hasData(Character):
-               yield entity
+  withView(view):
+    for playerFaction in playerFactions(view):
+      for entity in entitiesInFaction(view, playerFaction):
+        if entity.hasData(Character):
+          yield entity
 
 proc levelForXp*(xp: int): int =
-   xp div 20
+  xp div 20
 
 proc xpForLevel*(level: int): int =
-   level * 20
+  level * 20
 
 proc gainLevel*(world: World, character: Entity, class: Taxon) =
-   withWorld(world):
-      let currentLevel = character[Character].levels.getOrDefault(class)
-      world.eventStmts(ClassLevelUpEvent(entity: character, class: class, level: currentLevel+1)):
-         var r = randomizer(world)
-         character.modify(Character.levels.addToKey(class, 1))
+  withWorld(world):
+    let currentLevel = character[Character].levels.getOrDefault(class)
+    world.eventStmts(ClassLevelUpEvent(entity: character, class: class, level: currentLevel+1)):
+      var r = randomizer(world)
+      character.modify(Character.levels.addToKey(class, 1))
 
-         let classInfo = library(CharacterClass)[class]
-         var possibleCardRewards = classInfo.cardRewards
-         var chosenCardRewards: seq[CharacterReward]
-         for i in 0 ..< 3:
-            if possibleCardRewards.isEmpty:
-               break
-            let (index, cardReward) = r.pickFrom(possibleCardRewards)
-            possibleCardRewards.del(index)
-            chosenCardRewards.add(CardReward(cardReward.card))
-         let choices = CharacterRewardChoice(options: chosenCardRewards)
+      let classInfo = library(CharacterClass)[class]
+      var possibleCardRewards = classInfo.cardRewards
+      var chosenCardRewards: seq[CharacterReward]
+      for i in 0 ..< 3:
+        if possibleCardRewards.isEmpty:
+          break
+        let (index, cardReward) = r.pickFrom(possibleCardRewards)
+        possibleCardRewards.del(index)
+        chosenCardRewards.add(CardReward(cardReward.card))
+      let choices = CharacterRewardChoice(options: chosenCardRewards)
 
-         world.eventStmts(RewardGainEvent(entity: character, choices: choices)):
-            character.modify(Character.pendingRewards.append(choices))
+      world.eventStmts(RewardGainEvent(entity: character, choices: choices)):
+        character.modify(Character.pendingRewards.append(choices))
 
 
 
 
 proc gainXp*(world: World, character: Entity, amount: int) =
-   withWorld(world):
-      var amountRemaining = amount
-      var dist: seq[(Taxon, int)]
-      var totalWeight = 0
-      for class, weight in character[Character].xpDistribution:
-         dist.add((class, weight))
-         totalWeight += weight
-      dist = dist.sortedByIt(it[1])
-      if totalWeight == 0:
-         info &"No weight when gaining xp for entity {character}, splitting evenly"
-         for class in character[Character].xp.keys:
-            dist.add((class, 1))
-            totalWeight += 1
+  withWorld(world):
+    var amountRemaining = amount
+    var dist: seq[(Taxon, int)]
+    var totalWeight = 0
+    for class, weight in character[Character].xpDistribution:
+      dist.add((class, weight))
+      totalWeight += weight
+    dist = dist.sortedByIt(it[1])
+    if totalWeight == 0:
+      info &"No weight when gaining xp for entity {character}, splitting evenly"
+      for class in character[Character].xp.keys:
+        dist.add((class, 1))
+        totalWeight += 1
 
 
-      world.eventStmts(XpGainEvent(entity: character, amount: amount)):
-         for distTup in dist:
-            let (class, weight) = distTup
-            let fract = weight.float / totalWeight.float
-            let amountForClass = (amount.float * fract).ceil.int.min(amountRemaining)
-            amountRemaining -= amountForClass
-            let startingXp = character[Character].xp.getOrDefault(class)
-            let endingXp = startingXp + amountForClass
-            let currentLevel = character[Character].levels.getOrDefault(class)
-            if xpForLevel(currentLevel+1) <= endingXp:
-               gainLevel(world, character, class)
-            character.modify(Character.xp.addToKey(class, amountForClass))
+    world.eventStmts(XpGainEvent(entity: character, amount: amount)):
+      for distTup in dist:
+        let (class, weight) = distTup
+        let fract = weight.float / totalWeight.float
+        let amountForClass = (amount.float * fract).ceil.int.min(amountRemaining)
+        amountRemaining -= amountForClass
+        let startingXp = character[Character].xp.getOrDefault(class)
+        let endingXp = startingXp + amountForClass
+        let currentLevel = character[Character].levels.getOrDefault(class)
+        if xpForLevel(currentLevel+1) <= endingXp:
+          gainLevel(world, character, class)
+        character.modify(Character.xp.addToKey(class, amountForClass))
 
-         character.modify(Character.xpDistribution := initTable[Taxon, int]())
+      character.modify(Character.xpDistribution := initTable[Taxon, int]())
 
 
 proc changeXpDistribution*(world: World, character: Entity, class: Taxon, amount: int) =
-   withWorld(world):
-      world.eventStmts(XpDistributionChangeEvent(entity: character, class: class, amount: amount)):
-         character.modify(Character.xpDistribution.addToKey(class, amount))
+  withWorld(world):
+    world.eventStmts(XpDistributionChangeEvent(entity: character, class: class, amount: amount)):
+      character.modify(Character.xpDistribution.addToKey(class, amount))
+
+### Chooses a class based on the xp distribution, then reset the chosen class's value in the distribution
+proc chooseAndUpdateFromXpDistributon*(world: World, character: Entity) : Taxon =
+  withWorld(world):
+    var r = randomizer(world)
+    let char = character[Character]
+    var totalWeight = 0
+    for class, weight in char.xpDistribution:
+      totalWeight += weight
+    var w = nextInt(r, totalWeight)
+    var chosenClass: Taxon = † CharacterClasses.Movement
+    for class, weight in char.xpDistribution:
+      if w < weight:
+        chosenClass = class
+        break
+      w -= weight
+
+    character.modify(Character.xpDistribution.put(chosenClass, 0))
+    chosenClass
+  
 
 proc killCharacter*(world: World, character: Entity) =
-   world.eventStmts(DiedEvent(entity: character)):
-      character.modify(Character.dead := true)
-      character.modify(Physical.position := axialVec(1000, 1000))
-   withWorld(world):
-      if character.hasData(Monster):
-         for enemy in entitiesNotInFaction(world, character[Allegiance].faction):
-            gainXp(world, enemy, character[Monster].xp)
+  world.eventStmts(DiedEvent(entity: character)):
+    character.modify(Character.dead := true)
+    character.modify(Physical.position := axialVec(1000, 1000))
+  # withWorld(world):
+    # if character.hasData(Monster):
+      # for enemy in entitiesNotInFaction(world, character[Allegiance].faction):
+      #   gainXp(world, enemy, character[Monster].xp)

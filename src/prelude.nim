@@ -498,8 +498,8 @@ proc distance*[T](x1: T, y1: T, z1: T, x2: T, y2: T, z2: T): T =
   else:
     0
 
-proc distance*(a, b: Vec2i) : float = distance(a.x.float, a.y.float, b.x.float, b.y.float)
-proc distance*(a, b: Vec3i) : float = distance(a.x.float, a.y.float, a.z.float, b.x.float, b.y.float, b.z.float)
+proc distance*[T](a, b: Vec2[T]) : float = distance(a.x.float, a.y.float, b.x.float, b.y.float)
+proc distance*[T](a, b: Vec3[T]) : float = distance(a.x.float, a.y.float, a.z.float, b.x.float, b.y.float, b.z.float)
 
 template findIt*[T](s: seq[T], pred: untyped): untyped =
   var result: Option[T]

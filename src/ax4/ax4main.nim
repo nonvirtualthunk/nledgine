@@ -46,6 +46,9 @@ import strutils
 import ax4/game/game_logic
 import ax4/display/reward_ui_component
 import ax4/game/rooms
+import ax4/game/scenarios
+import ax4/game/components/scenario_component
+import ax4/display/ax4_debug_components
 
 type
    PrintComponent = ref object of GameComponent
@@ -147,6 +150,7 @@ main(GameSetup(
       AIComponent(),
       VisionComponent(),
       ConditionsComponent(),
+      ScenarioComponent(),
    ],
    graphicsComponents: @[
       createCameraComponent(createPixelCamera(mapGraphicsSettings().baseScale).withMoveSpeed(300.0f)),
@@ -161,6 +165,7 @@ main(GameSetup(
       RewardUIComponent(),
       createWindowingSystemComponent("ax4/widgets/"),
       RoomTransitionGraphicsComponent(),
+      Ax4DebugComponent(),
    ]
 ))
 

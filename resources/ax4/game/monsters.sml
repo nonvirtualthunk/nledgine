@@ -1,7 +1,7 @@
 MonsterClasses {
    
    GreenSlime {
-      health: 1d3+6
+      health: 10-13
       stamina: 3
       sightRange: 5
       xp: 5
@@ -19,7 +19,7 @@ MonsterClasses {
                },
                {
                   target : ClosestEnemy
-                  effect : +1 1d2 Bludgeoning (SimpleNaturalAttack)
+                  effect : +0 2 Bludgeoning (SimpleNaturalAttack)
                }
             ]
          },
@@ -43,9 +43,9 @@ MonsterClasses {
                {
                   target : ClosestEnemy
                   effect : {
-                     kind : SimpleAttack
+                     kind : attack
                      attackTypes : [MeleeAttack, NaturalAttack, PhysicalAttack]
-                     damage : 1d3+1 Bludgeoning
+                     damage : 4 Bludgeoning
                      minRange : 0
                      maxRange : 1
                      accuracy : -1
@@ -62,7 +62,7 @@ MonsterClasses {
    }
 
    PurpleSlime {
-      health: 1d4+5
+      health: 12-15
       stamina: 3
       sightRange: 5
       xp: 5
@@ -80,7 +80,7 @@ MonsterClasses {
                },
                {
                   target : ClosestEnemy
-                  effect : +1 1d2 Bludgeoning (SimpleNaturalAttack)
+                  effect : +0 3 Bludgeoning (SimpleNaturalAttack)
                }
             ]
          },
@@ -104,9 +104,9 @@ MonsterClasses {
                {
                   target : ClosestEnemy
                   effect : {
-                     kind : SimpleAttack
+                     kind : attack
                      attackTypes : [MeleeAttack, NaturalAttack, PhysicalAttack]
-                     damage : 1d3+1 Bludgeoning
+                     damage : 5 Bludgeoning
                      minRange : 0
                      maxRange : 1
                      accuracy : -1
@@ -123,7 +123,7 @@ MonsterClasses {
    }
 
    GreyRat {
-      health: 1d2+1
+      health: 3-6
       stamina: 3
       sightRange: 5
       xp: 5
@@ -141,7 +141,7 @@ MonsterClasses {
                },
                {
                   target : ClosestEnemy
-                  effect : +2 1d1 Piercing (SimpleNaturalAttack)
+                  effect : +0 1 Piercing (SimpleNaturalAttack)
                }
             ]
          },

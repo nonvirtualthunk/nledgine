@@ -361,7 +361,17 @@ proc printEntityData*(world: LiveWorld, entity: Entity) =
   info &"Entity({entity.id}) " & "{"
   indentLogs()
   for dc in world.dataContainers:
-    dc.printEntityData(entity)
+    if dc != nil:
+      dc.printEntityData(entity)
+  unindentLogs()
+  info "}"
+
+proc printEntityData*(world: WorldView, entity: Entity) =
+  info &"Entity({entity.id}) " & "{"
+  indentLogs()
+  for dc in world.dataContainers:
+    if dc != nil:
+      dc.printEntityData(entity)
   unindentLogs()
   info "}"
 
@@ -679,10 +689,9 @@ macro `[]`*(entity: Entity, t: typedesc): untyped =
     elif declared(injectedWorld):
       injectedWorld.data(`entity`, `dataTypeIdent`)
     elif declared(world):
-      when world is LiveWorld:
-        world.data(`entity`, `dataTypeIdent`)
-      else:
-        {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
+      world.data(`entity`, `dataTypeIdent`)
+    elif declared(view):
+      view.data(`entity`, `dataTypeIdent`)
     else:
       {.error: ("implicit access of data[] must be in a withView(...) or withWorld(...) block").}
 
@@ -909,9 +918,9 @@ template ifHasData*[C] (world: LiveWorld, entity: Entity, t: typedesc[C], v : un
 
 template ifHasData*[C] (entity: Entity, t: typedesc[C], v : untyped, stmts: untyped) =
   when declared(injectedWorld):
-    var dc = (DataContainer[C])injectedWorld.dataContainers[t.getDataType().index]
+    var dc = (DataContainer[C])injectedWorld.view.dataContainers[t.getDataType().index]
   else:
-    var dc = (DataContainer[C])world.dataContainers[t.getDataType().index]
+    var dc = (DataContainer[C])world.view.dataContainers[t.getDataType().index]
 
   let `v` {.inject.} = dc.dataStore.getOrDefault(entity.id, nil)
   if `v` != nil:

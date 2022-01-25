@@ -38,7 +38,7 @@ type
 
 
 variantp PreviewElement:
-   Image(image: string)
+   Image(image: ImageRef)
    Text(text: string)
    Spacing
 
@@ -118,7 +118,7 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
       let monsterLib = library(MonsterClass)
 
       var toDraw: seq[(AxialVec, Entity)]
-      for physEnt in view.entitiesWithData(Physical):
+      for physEnt in entitiesInActiveMap(view):
          let physical = physEnt[Physical]
          if vision.isVisible(physical.position):
             toDraw.add((physical.position, physEnt))
@@ -223,31 +223,34 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
                      let effect = monsterEffect.effect
                      case effect.kind:
                      of GameEffectKind.Move:
-                        previewElements.add(Image("ax4/images/icons/monster_move.png"))
                         previewElements.add(Text($effect.moveRange))
+                        previewElements.add(Image(imageRef("ax4/images/icons/monster_move.png")))
                      of GameEffectKind.SimpleAttack:
-                        previewElements.add(Text(effect.attack.accuracy.toSignedString))
-                        previewElements.add(Image("ax4/images/icons/piercing.png"))
-                        previewElements.add(Spacing())
+                        # previewElements.add(Text(effect.attack.accuracy.toSignedString))
+                        # previewElements.add(Image("ax4/images/icons/piercing.png"))
+                        # previewElements.add(Spacing())
                         let (minDmg, maxDmg) = effect.attack.damage.damageRange
-                        previewElements.add(Text(&"{minDmg}-{maxDmg}"))
+                        previewElements.add(Text(&"{minDmg}"))
+                        let damageTypeImg = library(TaxonomyDisplay)[effect.attack.damage.damageType].icon.get(image("ax4/images/icons/piercing.png"))
+                        previewElements.add(Image(damageTypeImg))
+                        # previewElements.add(Image("ax4/images/icons/piercing.png"))
                      of GameEffectKind.ChangeFlag:
                         let buffing = effect.flag.isA(taxon("flags", "positive flag"))
                         if buffing:
-                           previewElements.add(Image("ax4/images/icons/buffing_16.png"))
+                           previewElements.add(Image(imageRef("ax4/images/icons/buffing_16.png")))
                         else:
-                           previewElements.add(Image("ax4/images/icons/debuffing_16.png"))
+                           previewElements.add(Image(imageRef("ax4/images/icons/debuffing_16.png")))
                         for filter in monsterEffect.target.filters.expand:
                            match filter:
                               InRange(minRange, maxRange):
-                                 previewElements.add(Image("ax4/images/icons/range_16.png"))
+                                 previewElements.add(Image(imageRef("ax4/images/icons/range_16.png")))
                                  previewElements.add(Text($maxRange))
                               _: discard
                      else:
                         discard
                      first = false
                else:
-                  previewElements.add(Image("ax4/images/icons/question_mark_small_outlined.png"))
+                  previewElements.add(Image(imageRef("ax4/images/icons/question_mark_small_outlined.png")))
 
                var images: seq[(Image, int)]
 
@@ -255,7 +258,7 @@ proc render(g: PhysicalEntityGraphicsComponent, view: WorldView, display: Displa
                for elem in previewElements:
                   match elem:
                      Image(img):
-                        images.add((image(img), 1))
+                        images.add((img.asImage, 1))
                      Text(text):
                         for c in text:
                            images.add((image(&"ax4/images/ui/numerals/{c}_outlined.png"), 1))
@@ -332,7 +335,7 @@ proc updateFlagUI(g: PhysicalEntityGraphicsComponent, view: WorldView, display: 
 
 
 method update(g: PhysicalEntityGraphicsComponent, world: World, curView: WorldView, display: DisplayWorld, df: float): seq[DrawCommand] =
-   if world.hasData(Maps):
+   if curView.hasData(Maps):
       var worldChanged = g.worldWatcher.hasChanged
       if worldChanged or curView.hasActiveOverlay:
          g.render(curView, display)

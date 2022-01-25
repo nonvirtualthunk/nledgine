@@ -61,27 +61,31 @@ proc availableAttacks*(view: WorldView, character: Entity): seq[Attack] =
                result.add(value.attack)
 
 proc resolveAttack*(view: WorldView, character: Entity, selector: AttackSelector): Option[Attack] =
-   withView(view):
-      match selector:
-         FromWeapon(weapon, key):
-            let wd = weapon[Weapon]
-            if wd.attacks.hasKey(key):
-               return some(wd.attacks[key].attack)
-            else:
-               warn &"Attack selector failed to resolve, weapon does not have appropriate attack"
-               return none(Attack)
-         _: discard
+  warn "Resolve attack has been deprecated"
+  writeStackTrace()
+  none(Attack)
 
-      let allAttacks = availableAttacks(view, character)
-      let allSelectors = match selector:
-         CompoundAttackSelector(selectors): selectors
-         _: @[selector]
-
-      for attack in allAttacks:
-         let attackCopy = attack
-         if allSelectors.all(sel => sel.matches(view, attackCopy)):
-            return some(attack)
-      none(Attack)
+   # withView(view):
+   #    match selector:
+   #       FromWeapon(weapon, key):
+   #          let wd = weapon[Weapon]
+   #          if wd.attacks.hasKey(key):
+   #             return some(wd.attacks[key].attack)
+   #          else:
+   #             warn &"Attack selector failed to resolve, weapon does not have appropriate attack"
+   #             return none(Attack)
+   #       _: discard
+   #
+   #    let allAttacks = availableAttacks(view, character)
+   #    let allSelectors = match selector:
+   #       CompoundAttackSelector(selectors): selectors
+   #       _: @[selector]
+   #
+   #    for attack in allAttacks:
+   #       let attackCopy = attack
+   #       if allSelectors.all(sel => sel.matches(view, attackCopy)):
+   #          return some(attack)
+   #    none(Attack)
 
 proc attackModifierFromFlags*(view: WorldView, character: Entity): AttackModifier =
    result.damage = add(flags.flagValue(view, character, taxon("flags", "damage bonus")).int16)
