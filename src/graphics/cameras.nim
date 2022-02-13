@@ -24,13 +24,13 @@ type
 
   Camera* = object
     id*: int
-    case kind: CameraKind
+    case kind*: CameraKind
     of PixelCamera:
       translation: Vec2f
       delta: Vec2f
       scale: int
     of WindowingCamera:
-      windowingScale: int
+      windowingScale*: int
 
     initialized: bool
     moveSpeed: float # in pixels / second

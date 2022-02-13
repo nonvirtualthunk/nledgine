@@ -112,14 +112,23 @@ template defineLibrary*[T](loadFn: untyped) =
 func noOpLib[T](lib: Library[T]) =
   discard
 
-template defineSimpleLibrary*[T](confPaths: seq[string], namespace: string, postProcess: proc(t: Library[T])) =
+template defineSimpleLibrary*[T](baseConfPaths: seq[string], namespace: string, postProcess: proc(t: Library[T])) =
   defineLibrary[T]:
     var lib = new Library[T]
     lib.defaultNamespace = namespace
 
-    
+    var confPaths: seq[string]
+    for confPath in baseConfPaths:
+      let confs = config(confPath)
+      if confs["Module"].nonEmpty:
+        for p in confs["Module"]["files"].asArr:
+          confPaths.add(p.asStr)
+      else:
+        confPaths.add(confPath)
+
     for confPath in confPaths:
       let confs = config(confPath)
+
       if confs[namespace].isEmpty:
         err "Simple library load: config did not have top level value \"" & namespace & "\""
       for k, v in confs[namespace]:

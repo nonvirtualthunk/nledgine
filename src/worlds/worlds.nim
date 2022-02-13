@@ -4,9 +4,9 @@ import macros
 import tables
 import typetraits
 import options
-import ../reflects/reflect_types
+import reflects/reflect_types
 import hashes
-import ../engines/event_types
+import engines/core_event_types
 import resources
 import noto
 import sets

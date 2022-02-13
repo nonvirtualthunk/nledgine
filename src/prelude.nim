@@ -194,6 +194,9 @@ proc minBy*[T, U](s: seq[T], mapFn: (T) -> U): Option[T] =
       lowestMapped = some(mapped)
       result = some(v)
 
+proc subseq*[T](s: seq[T], start: int, len: int): seq[T] =
+  for i in start ..< min(start + len, s.len):
+    result.add(s[i])
 
 
 macro echoAssert*(arg: untyped): untyped =

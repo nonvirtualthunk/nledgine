@@ -44,6 +44,7 @@ type
     selectedRange*: Option[(int,int)]
     selectionRect*: Recti
     selectable*: bool
+    multiLine*: bool
 
     textLayout*: TextLayout
 
@@ -81,6 +82,8 @@ proc readFromConfig*(cv: ConfigValue, td: var TextDisplay) =
   readIntoOrElse(cv["fontSize"], td.fontSize, 12)
   readIntoOrElse(cv["font"], td.font, none(ArxTypeface))
   readIntoOrElse(cv["color"], td.color, none(Bindable[RGBA]))
+  readInto(cv["textColor"], td.color)
+  readIntoOrElse(cv["multiLine"], td.multiLine, true)
   readInto(cv["tintColor"], td.tintColor)
   readInto(cv["horizontalAlignment"], td.horizontalAlignment)
   readInto(cv["conditionalText"], td.conditionalText)
@@ -106,6 +109,15 @@ getterSetter(font)
 
 proc textData*(ti: ref TextInput): string =
   ti.textData_i
+
+
+proc effectiveText*(td: ref TextDisplay) : RichText =
+  var effectiveText = td.text.value
+  for ct in td.conditionalText:
+    if ct.condition.value:
+      effectiveText = ct.text.value
+      break
+  effectiveText
 
 proc computeLayout*(widget: Widget, inbounds: Recti = rect(vec2i(0, 0), vec2i(10000000, 1000000))): TextLayout =
   let TD = widget.data(TextDisplay)

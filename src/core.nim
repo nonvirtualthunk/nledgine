@@ -1,5 +1,6 @@
 import reflects/reflect_types
 import noto
+import options
 
 type
   Reduceable*[T] = object
@@ -10,6 +11,32 @@ type
     prev*: ref T
     next*: ref T
 
+  IntRange* = object
+    min*: Option[int]
+    max*: Option[int] #inclusive
+
+  ClosedIntRange* = object
+    min*: int
+    max*: int
+
+
+proc contains*(r: IntRange, i: int) : bool = r.min.get(i) <= i and r.max.get(i) >= i
+proc contains*(r: ClosedIntRange, i: int) : bool = r.min <= i and r.max >= i
+converter fromHSLice*(h: Slice[int]): ClosedIntRange =
+  ClosedIntRange(min: h.a, max: h.b)
+
+proc closedRange*(min: int, max: int): ClosedIntRange = ClosedIntRange(min: min, max: max)
+proc openTopRange*(min: int): IntRange = IntRange(min: some(min), max: none(int))
+proc openBottomRange*(max: int): IntRange = IntRange(min: none(int), max: some(max))
+
+converter fromClosedRange*(r: ClosedIntRange): IntRange =
+  IntRange(min: some(r.min), max: some(r.max))
+
+proc width*(r: ClosedIntRange): int = r.max - r.min + 1
+
+iterator items*(r: ClosedIntRange): int =
+  for i in r.min .. r.max:
+    yield i
 
 proc tickTock*[T]() : TickTock[T] =
   TickTock[T](

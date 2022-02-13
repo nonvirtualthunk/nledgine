@@ -3,30 +3,13 @@ import nimgl/glfw
 import deques
 import unicode
 import worlds/taxonomy
+import core_event_types
 
 import key_codes
 
+export core_event_types
+
 type
-  Event* = ref object of RootRef
-
-  GameEventState* = enum
-    PreEvent
-    PostEvent
-
-  GameEvent* = ref object of Event
-    state*: GameEventState
-
-  FlagChangedEvent* = ref object of GameEvent
-    flag*: Taxon
-    oldValue*: int
-    newValue*: int
-
-  EventBuffer* = ref object
-    listenerCursors*: seq[int]
-    discardedEvents*: int
-    events*: Deque[Event]
-    maximumSize*: int
-
   KeyModifiers* = object
     shift*: bool
     ctrl*: bool
@@ -81,40 +64,14 @@ type
   CameraChangedEvent* = ref object of Event
 
 
-template eventToStr*(eventName: untyped) =
-  method toString*(evt: `eventName`): string =
-    result = eventName.astToStr
-    result.add("(")
-    result.add($(evt[]))
-    result.add(")")
 
-  method eventTypeString*(evt: `eventName`): string =
-    result = eventName.astToStr
 
 
 method isConsumed*(evt: Event): bool {.base.} = false
 method isConsumed*(evt: UIEvent): bool = evt.consumed
 
-proc createEventBuffer*(maximumSize: int = 1000): EventBuffer =
-  EventBuffer(
-    discardedEvents: 0,
-    maximumSize: maximumSize
-  )
 
-proc addEvent*(buffer: EventBuffer, evt: Event) =
-  buffer.events.addLast(evt)
-  while buffer.events.len > buffer.maximumSize:
-    buffer.events.popFirst()
-    buffer.discardedEvents.inc
 
-method toString*(evt: Event): string {.base.} =
-  return repr(evt)
-
-method eventTypeString*(evt: Event): string {.base.} =
-  return "Unknown"
-
-method toString*(evt: GameEvent): string =
-  return repr(evt)
 
 eventToStr(KeyPress)
 eventToStr(KeyRelease)
@@ -128,7 +85,7 @@ eventToStr(WindowFocusLost)
 eventToStr(WorldInitializedEvent)
 eventToStr(DebugCommandEvent)
 eventToStr(CameraChangedEvent)
-eventToStr(FlagChangedEvent)
+
 
 proc consume*(evt: UIEvent) =
   evt.consumed = true

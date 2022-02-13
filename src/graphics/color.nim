@@ -3,6 +3,8 @@ import config/config_core
 import noto
 import strutils
 import chroma
+import hashes
+import bitops
 
 type
   RGBA* = distinct Vec4u8
@@ -13,6 +15,16 @@ type
   Palette* = object
     ramps*: seq[ColorRamp]
 
+
+proc hash*(v : RGBA) : Hash =
+  # Hash(v.Vec4u8[0].uint32 bitor (v.Vec4u8[1].uint32 shl 8) bitor (v.Vec4u8[2].uint32 shl 16) bitor (v.Vec4u8[3].uint32 shl 24))
+  Hash(cast[ptr uint32](v.unsafeAddr)[])
+  # var h : Hash
+  # h = h !& v.Vec4u8[0]
+  # h = h !& v.Vec4u8[1]
+  # h = h !& v.Vec4u8[2]
+  # h = h !& v.Vec4u8[3]
+  # !$h
 
 proc `==`*(a, b: RGBA): bool =
   a.Vec4u8 == b.Vec4u8

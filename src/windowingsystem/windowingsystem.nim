@@ -34,6 +34,11 @@ proc createWindowingSystem*(display: DisplayWorld, rootConfigPath: string): Wind
    result.components.add(DividerComponent())
 
 
+proc createWindowingSystemWithCustomRenderer*(display: DisplayWorld, rootConfigPath: string, comp: WindowingComponent, noDefaultComponents: bool = false): WindowingSystemRef =
+  result = createWindowingSystem(display, rootConfigPath)
+  if noDefaultComponents: result.components.clear()
+  result.components.add(comp)
+  result.customRenderer = true
 
 
 

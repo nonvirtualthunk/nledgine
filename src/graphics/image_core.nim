@@ -1,7 +1,7 @@
 import glm
 import options
-import ../stb_image/read as stbi
-import ../stb_image/write as stbw
+import stb_image/read as stbi
+import stb_image/write as stbw
 import os
 import times
 import color

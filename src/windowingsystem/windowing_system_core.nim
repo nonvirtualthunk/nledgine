@@ -174,6 +174,10 @@ type
     dimensions*: Vec2i
     components*: seq[WindowingComponent]
     rootConfigPath*: string
+
+    # indicates whether the windowing system is using a custom renderer (i.e. ascii)
+    customRenderer*: bool
+
     # standard tilesheet to apply as defaults
     stylesheet*: ConfigValue
 
@@ -340,8 +344,14 @@ proc takeFocus*[WorldType](w: Widget, world: WorldType) =
 method render*(ws: WindowingComponent, widget: Widget): seq[WQuad] {.base.} =
   warn "WindowingComponent must implement render"
 
+method customRender*(ws: WindowingComponent, display: DisplayWorld, widget: Widget, tb: TextureBlock, bounds: Bounds) {.base.} =
+  warn "WindowingComponent must implement customRender"
+
 method intrinsicSize*(ws: WindowingComponent, widget: Widget, axis: Axis, minimums: Vec2i, maximums: Vec2i): Option[int] {.base.} =
   none(int)
+
+method clientOffset*(ws: WindowingComponent, widget: Widget, axis: Axis): Option[Vec3i] {.base.} =
+  none(Vec3i)
 
 method readDataFromConfig*(ws: WindowingComponent, cv: ConfigValue, widget: Widget) {.base.} =
   discard
@@ -357,6 +367,7 @@ method onCreated*(ws: WindowingComponent, widget: Widget) {.base.} =
 
 
 proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock, bounds: Bounds)
+proc customRenderContents(ws: WindowingSystemRef, display: DisplayWorld, w: Widget, tb: TextureBlock, bounds: Bounds)
 
 var imageMetrics {.threadvar.}: Table[Image, ImageMetrics]
 proc imageMetricsFor*(img: Image): ImageMetrics =
@@ -511,8 +522,14 @@ proc markForUpdate*(ws: WindowingSystemRef, w: Widget, r: RecalculationFlag) =
   ws.pendingUpdates.mgetOrPut(w, {}).incl(r)
 
 proc markForUpdate*(w: Widget, r: RecalculationFlag) =
-  if w.windowingSystem != nil:
+  if not w.windowingSystem.isNil:
     w.windowingSystem.markForUpdate(w, r)
+
+proc isMarkedForUpdate*(w: Widget, r: RecalculationFlag) : bool =
+  if not w.windowingSystem.isNil:
+    w.windowingSystem.pendingUpdates.getOrDefault(w).contains(r)
+  else:
+    false
 
 proc isFarSide(axis: Axis, relativeTo: WidgetOrientation): bool =
   (axis == Axis.X and (relativeTo == TopRight or relativeTo == BottomRight)) or
@@ -822,10 +839,16 @@ proc recalculatePosition(w: Widget, axis: Axis, dirtySet: HashSet[Dependency], c
 
   let pos = w.position[axis.ord]
 
-  if w.background.draw:
-    w.clientOffset[axis] = (imageMetricsFor(w.background.image.value).borderWidth * w.background.pixelScale + w.padding[axis] * 2) * w.windowingSystem.pixelScale
+  if not w.windowingSystem.customRenderer:
+    if w.background.draw:
+      w.clientOffset[axis] = (imageMetricsFor(w.background.image.value).borderWidth * w.background.pixelScale + w.padding[axis] * 2) * w.windowingSystem.pixelScale
+    else:
+      w.clientOffset[axis] = w.padding[axis] * 2 * w.windowingSystem.pixelScale
   else:
-    w.clientOffset[axis] = w.padding[axis] * 2 * w.windowingSystem.pixelScale
+    for r in w.windowingSystem.components:
+      let co = r.clientOffset(w, axis)
+      if co.isSome:
+        w.clientOffset[axis.ord] = co.get()[axis.ord]
 
   if w.parent.isSome:
     for dep in dependentOn(pos, axis, w, w.parent.get):
@@ -847,10 +870,16 @@ proc recalculateDimensions(w: Widget, axis: Axis, dirtySet: HashSet[Dependency],
 
   let dim = w.dimensions[axis.ord]
 
-  if w.background.draw:
-    w.clientOffset[axis] = (imageMetricsFor(w.background.image.value).borderWidth * w.background.pixelScale + w.padding[axis] * 2) * w.windowingSystem.pixelScale
+  if not w.windowingSystem.customRenderer:
+    if w.background.draw:
+      w.clientOffset[axis] = (imageMetricsFor(w.background.image.value).borderWidth * w.background.pixelScale + w.padding[axis] * 2) * w.windowingSystem.pixelScale
+    else:
+      w.clientOffset[axis] = w.padding[axis] * 2 * w.windowingSystem.pixelScale
   else:
-    w.clientOffset[axis] = w.padding[axis] * 2 * w.windowingSystem.pixelScale
+    for r in w.windowingSystem.components:
+      let co = r.clientOffset(w, axis)
+      if co.isSome:
+        w.clientOffset[axis.ord] = co.get()[axis.ord]
 
   if w.parent.isSome:
     for dep in dependentOn(dim, axis, w, w.parent.get, w.children):
@@ -909,7 +938,11 @@ proc recalculateDimensions(w: Widget, axis: Axis, dirtySet: HashSet[Dependency],
         warn &"Resolving dimensions for widget {w.identifier} failed, could not expand to target, target {dim.expandToWidget} not found"
         0
   else:
-    w.resolvedDimensions[axis] = w.windowingSystem.dimensions[axis]
+    case dim.kind:
+      of WidgetDimensionKind.Fixed:
+        w.resolvedDimensions[axis] = dim.fixedSize * w.windowingSystem.pixelScale
+      else:
+        w.resolvedDimensions[axis] = w.windowingSystem.dimensions[axis]
 
 proc ensureDependency(dep: Dependency, dirtySet: HashSet[Dependency], completedSet: var HashSet[Dependency]) {.gcsafe.} =
   if not completedSet.contains(dep):
@@ -1011,7 +1044,10 @@ proc update*[WorldType](ws: WindowingSystemRef, tb: TextureBlock, world: WorldTy
       else:
         Bounds(origin: vec2f(0,0), dimensions: vec2f(100000.0,10000.0))
 
-      renderContents(ws, widget, tb, bounds)
+      if ws.customRenderer:
+        customRenderContents(ws, display, widget, tb, bounds)
+      else:
+        renderContents(ws, widget, tb, bounds)
     ws.renderRevision.inc
     fine "Re-rendered"
     ws.rerenderSet.clear()
@@ -1106,6 +1142,10 @@ proc addQuadToWidget(w: Widget, tb: TextureBlock, quad: WQuad, offset: Vec2i, bo
       w.postVertices.add(vertex)
       w.postVertices[w.postVertices.len-1].vertex.x += offset.x.float
       w.postVertices[w.postVertices.len-1].vertex.y += offset.y.float
+
+proc customRenderContents(ws: WindowingSystemRef, display: DisplayWorld, w: Widget, tb: TextureBlock, bounds: Bounds) =
+  for renderer in ws.components:
+      renderer.customRender(display, w, tb, bounds)
 
 proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock, bounds: Bounds) =
   fine &"Rendering widget {w}"
@@ -1272,8 +1312,8 @@ proc readFromConfig*(cv: ConfigValue, e: var WidgetOrientation) =
 
 const orientedConstantPattern = re"(?i)([0-9]+) from (.*)"
 const orientedProportionPattern = re"(?i)([0-9.]+) from (.*)"
-const rightLeftPattern = re"(?i)([0-9]+) (right|left) of ([a-zA-Z0-9]+)"
-const belowAbovePattern = re"(?i)([0-9]+) (below|above) ([a-zA-Z0-9]+)"
+const rightLeftPattern = re"(?i)([0-9-]+) (right|left) of ([a-zA-Z0-9]+)"
+const belowAbovePattern = re"(?i)([0-9-]+) (below|above) ([a-zA-Z0-9]+)"
 const expandToParentPattern = re"(?i)expand\s?to\s?parent(?:\(([0-9]+)\))?"
 const expandToWidgetPattern = re"(?i)expand\s?to\s?([a-zA-Z0-9]+)(?:\(([0-9]+)\))?"
 const percentagePattern = re"([0-9]+)%"

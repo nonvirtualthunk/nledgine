@@ -1,6 +1,7 @@
 import glm
 
 import engines/engine
+import engines/graphics_engine
 import graphics/color
 import options
 import sugar

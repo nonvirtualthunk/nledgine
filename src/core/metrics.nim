@@ -1,10 +1,11 @@
-import nimgl/glfw
+# import nimgl/glfw
 import math
 import strformat
 import random
 import algorithm
 import times
 
+import std/monotimes
 
 const ReservoirSize = 501
 
@@ -51,6 +52,11 @@ proc recordTime*(t: Timer, dt: float, metadata: string = "") =
       let i = t.rand.rand(ReservoirSize - 1)
       t.reservoir[i] = dt
 
+
+proc getBenchmarkTime() : float =
+  let mt = getMonoTime()
+  float(ticks(mt) div 1000000i64)
+
 proc recordNoOp*(t: Timer) =
   if t != nil:
     t.count.inc
@@ -59,11 +65,11 @@ proc recordNoOp*(t: Timer) =
 proc start*(t: Timer) : TimerDuration =
   TimerDuration(
     timer: t,
-    startTime: glfwGetTime()
+    startTime: getBenchmarkTime()
   )
 
 proc finish*(t: TimerDuration) =
-  t.timer.recordTime(glfwGetTime() - t.startTime)
+  t.timer.recordTime(getBenchmarkTime() - t.startTime)
 
 proc average*(t: Timer): float = t.sdSum / t.sdN
 
@@ -85,11 +91,11 @@ proc median*(t: Timer): float =
 
 template time*(t: Timer, stmts: untyped): untyped =
 
-  let startTime = glfwGetTime()
+  let startTime = getBenchmarkTime()
 
   stmts
 
-  let endTime = glfwGetTime()
+  let endTime = getBenchmarkTime()
   t.recordTime(endTime - startTime)
 
 # Timing convenience function that times the given statement, but only records values that are
@@ -97,11 +103,11 @@ template time*(t: Timer, stmts: untyped): untyped =
 # relevant for, say, a turn based engine, or roguelike style update
 template time*(t: Timer, minimumMsToRecord: float, metadata: string, stmts: untyped): untyped =
 
-  let startTime = glfwGetTime()
+  let startTime = getBenchmarkTime()
 
   stmts
 
-  let endTime = glfwGetTime()
+  let endTime = getBenchmarkTime()
   let dt = endTime - startTime
   if dt * 1000.0 > minimumMsToRecord:
     t.recordTime(endTime - startTime, metadata)

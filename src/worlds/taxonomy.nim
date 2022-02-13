@@ -101,13 +101,13 @@ proc `$`*(a: seq[Taxon]): string =
   result.add("]")
 
 proc normalizeTaxonStr(s: string): string =
-  var prevPunctOrSpace = false
+  var prevPunctOrSpaceOrPipe = false
   for i in 0 ..< s.len:
     let c = s[i]
-    if not prevPunctOrSpace and i != 0 and c.isUpperAscii:
+    if not prevPunctOrSpaceOrPipe and i != 0 and c.isUpperAscii:
       result.add(' ')
     result.add(c.toLowerAscii)
-    prevPunctOrSpace = (c == '.' or c == ' ')
+    prevPunctOrSpaceOrPipe = (c == '.' or c == ' ' or c == '|')
 
 proc normalizeTaxonStrCompileTime(s: string): string {.compiletime.} =
   var prevPunctOrSpace = false
@@ -175,10 +175,10 @@ proc qualifiedTaxon*(nameExpr: string): Taxon =
 
 # Attempts to find a taxon matching the given expression. Will search across namespaces if a namespace
 # is not part of the expression
-proc findTaxon*(nameExpr: string): Taxon =
+proc findTaxon*(taxonomy: ref Taxonomy, nameExpr: string): Taxon =
   let sections = nameExpr.rsplit('.', 1)
   if sections.len == 1:
-    let possibleTaxons = getGlobalTaxonomy().taxonsByName.getOrDefault(normalizeTaxonStr(sections[0]))
+    let possibleTaxons = taxonomy.taxonsByName.getOrDefault(normalizeTaxonStr(sections[0]))
     if possibleTaxons.len == 1:
       possibleTaxons[0]
     elif possibleTaxons.len == 0:
@@ -188,6 +188,8 @@ proc findTaxon*(nameExpr: string): Taxon =
       possibleTaxons[0]
   else:
     taxon(sections[0], sections[1])
+
+proc findTaxon*(nameExpr: string): Taxon = findTaxon(getGlobalTaxonomy(), nameExpr)
 
 proc isA*(t: Taxon, q: Taxon): bool =
   t != nil and (t == q or t.parents.anyIt(it.isA(q)))
@@ -245,11 +247,24 @@ proc load(taxonomy: ref Taxonomy) {.gcsafe.} =
   for k, v in conf["Taxonomy"].fields:
     taxonomy.loadParents(v, RootNamespace, k)
 
+
+  var taxonSources : seq[string]
   for v in conf["TaxonomySources"].asArr:
-    let sourcePath = v.asStr
+    let conf = resources.config(v.asStr)
+    if conf["Module"].nonEmpty:
+      for f in conf["Module"]["files"].asArr:
+        taxonSources.add(f.asStr)
+    else:
+      taxonSources.add(v.asStr)
+
+  for sourcePath in taxonSources:
     let sourceConf = resources.config(sourcePath)
     for namespace, topLevelV in sourceConf.fields:
-      let rootParentName = normalizeTaxonStr(namespace[0 .. ^2])
+
+      let rootParentName = if namespace.endsWith("ies"):
+          normalizeTaxonStr(namespace[0 .. ^4] & "y")
+        else:
+          normalizeTaxonStr(namespace[0 .. ^2])
       let rootParent = if taxonomy.taxonsByName.contains(rootParentName):
         taxonomy.taxonsByName[rootParentName][0]
       else:
@@ -259,7 +274,11 @@ proc load(taxonomy: ref Taxonomy) {.gcsafe.} =
         let name = normalizeTaxonStr(k)
         var parents: seq[Taxon] = @[rootParent]
         for parentK in v["isA"].asArr:
-          parents.add(taxonomy.taxon(namespace, parentK.asStr))
+          let parentStr = parentK.asStr
+          if parentStr.contains('.'):
+            parents.add(taxonomy.findTaxon(parentStr))
+          else:
+            parents.add(taxonomy.taxon(namespace, parentStr))
         discard taxonomy.addTaxon(namespace, name, parents)
 
   for v in conf["TaxonomySources"].asArr:

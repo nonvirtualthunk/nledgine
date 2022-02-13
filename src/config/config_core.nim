@@ -489,6 +489,11 @@ proc parseString(ctx: var ParseContext): ConfigValue =
         break
       else:
         str.add('"')
+    of 'n':
+      if escaped:
+        str.add("\n")
+      else:
+        str.add(c)
     else:
       str.add(c)
     escaped = shouldEscape

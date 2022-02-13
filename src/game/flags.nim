@@ -10,7 +10,7 @@ import noto
 import strutils
 import math
 import game/modifiers
-import engines/event_types
+import engines/core_event_types
 
 type
   Flags* = object
@@ -37,9 +37,16 @@ type
     hidden*: bool
     boolean*: bool
 
+  FlagChangedEvent* = ref object of GameEvent
+    flag*: Taxon
+    oldValue*: int
+    newValue*: int
+
 
 defineReflection(Flags)
 
+
+eventToStr(FlagChangedEvent)
 
 const flagEquivPattern = re"(?x)([a-zA-Z0-9]+)(?:\[(.+)\])?\(([0-9]+)\)"
 const countsAsNPattern = re"(?ix)counts\s?as(\d+)"
@@ -122,16 +129,20 @@ proc rawFlagValue*(view: WorldView, entity: Entity, flag: Taxon, arg: Option[Tax
 proc flagValue*(flags: ref Flags, flag: Taxon, arg: Option[Taxon] = none(Taxon)): int =
   var cur = rawFlagValue(flags, flag, arg)
   let lib = library(FlagInfo)
-  let meta = lib[flag]
-  if arg.isSome:
-    for equiv in meta.keyedEquivalences.getOrDefault(arg.get):
-      let v = flagValue(flags, equiv.flag)
-      cur += v * equiv.multiplier + sgn(v) * equiv.adder
+  let meta = lib.get(flag)
+  if not meta.isSome:
+    cur
   else:
-    for equiv in meta.equivalences:
-      let v = flagValue(flags, equiv.flag)
-      cur += v * equiv.multiplier + sgn(v) * equiv.adder
-  cur
+    let meta = meta.get
+    if arg.isSome:
+      for equiv in meta.keyedEquivalences.getOrDefault(arg.get):
+        let v = flagValue(flags, equiv.flag)
+        cur += v * equiv.multiplier + sgn(v) * equiv.adder
+    else:
+      for equiv in meta.equivalences:
+        let v = flagValue(flags, equiv.flag)
+        cur += v * equiv.multiplier + sgn(v) * equiv.adder
+    cur
 
 proc flagValue*(flags: ref Flags, flag: string, arg: Option[Taxon] = none(Taxon)): int =
   flagValue(flags, taxon("flags", flag), arg)

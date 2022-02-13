@@ -24,6 +24,7 @@ type
       listItemChildren*: seq[Widget]
       separatorChildren*: seq[Widget]
       horizontal*: bool
+      selectedIndex: Option[int]
 
    ListItemWidget* = object
       data*: BoundValue
@@ -68,6 +69,7 @@ method updateBindings*(ws: ListWidgetComponent, widget: Widget, resolver: var Bo
                      display.addEvent(ListItemMouseOver(index: i, data: newItem.data(ListItemWidget).data, widget: newItem))
                   if lw.selectable:
                      newItem.onEventOfType(WidgetMouseRelease, evt):
+                        lw.selectedIndex = some(i)
                         display.addEvent(ListItemSelect(index: i, data: newItem.data(ListItemWidget).data, widget: newItem))
 
                lw.listItemChildren.add(newItem)
@@ -110,8 +112,39 @@ method updateBindings*(ws: ListWidgetComponent, widget: Widget, resolver: var Bo
 
 
 
+proc selectListIndex*(w: Widget, index: int) =
+  if w.hasData(ListWidget):
+    let lw: ref ListWidget = w.data(ListWidget)
+    if lw.selectable:
+      if lw.listItemChildren.len <= index:
+        warn &"selectIndex(Widget, int) called on a list with an out of bounds index: {w}, {index}"
+      else:
+        lw.selectedIndex = some(index)
+        let item = lw.listItemChildren[index]
+        w.windowingSystem.display.addEvent(ListItemSelect(index: index, data: item.data(ListItemWidget).data, widget: item))
+    else:
+      warn &"selectIndex(Widget, int) called on a list that is not selectable, this serves no purpose: {w}, {index}"
+  else:
+    warn &"selectIndex(Widget, int) called on a widget that is not a list, this serves no purpose: {w}, {index}"
+
+proc selectedListIndex*(w: Widget): Option[int] =
+  if w.hasData(ListWidget):
+    let lw = w.data(ListWidget)
+    if lw.selectedIndex.isNone:
+      none(int)
+    else:
+      let si = lw.selectedIndex.get
+      if lw.listItemChildren.len <= si:
+        none(int)
+      else:
+        some(si)
+  else:
+    none(int)
 
 method render*(ws: ListWidgetComponent, widget: Widget): seq[WQuad] =
+   discard
+
+method customRender*(ws: ListWidgetComponent, display: DisplayWorld, widget: Widget, tb: TextureBlock, bounds: Bounds) =
    discard
 
 

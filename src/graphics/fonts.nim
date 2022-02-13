@@ -61,7 +61,7 @@ proc glyphImage*(f: ArxFont, r: Rune) : image_core.Image =
       path.transform(translate(vec2(0,f.font.typeface.ascent * f.scale)) * scale(vec2(f.scale,f.scale)))
       gimg.fillPath(path, Paint(kind: PaintKind.pkSolid, color: rgbx(255,255,255,255)), vec2(0,0))
       let arxImg = createImage(cast[ptr uint8](gimg.data[0].unsafeAddr),glm.vec2i(gimg.width.int32, gimg.height.int32), false)
-      arxImg.writeToFile(&"/tmp/{r}.png")
+      # arxImg.writeToFile(&"/tmp/{r}.png")
       f.arxTypeface.glyphLibrary[(r, f.font.size.int)] = arxImg
       arxImg
 

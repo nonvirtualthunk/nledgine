@@ -5,6 +5,7 @@ import noto
 import worlds/taxonomy
 import worlds/identity
 import arxregex
+import core
 
 proc readFromConfig*(cv: ConfigValue, v: var HorizontalAlignment) =
   if cv.isStr:
@@ -98,5 +99,53 @@ proc readFromConfig*(cv: ConfigValue, v: var UnitOfTime) =
   else:
    warn &"Unknown config value for unit of time: {cv}"
 
+
+const gtltRegex = "([<>]=?)\\s?([0-9]+)".re
+const rangeRegex = "([0-9]+)\\s?(?:..|-)\\s?([0-9]+)".re
+proc readFromConfig*(cv: ConfigValue, i: var IntRange) =
+  if cv.isNumber:
+    i = closedRange(cv.asInt, cv.asInt)
+  elif cv.isStr:
+    let str = cv.asStr
+    if str.nonEmpty:
+      matcher(str):
+        extractMatches(gtltRegex, op, val):
+          let valInt = val.parseInt
+          case op:
+            of ">": i = openTopRange(valInt+1)
+            of ">=": i = openTopRange(valInt)
+            of "<": i = openBottomRange(valInt-1)
+            of "<=": i = openBottomRange(valInt)
+            else: warn &"Impossible case in int range parsing for {op}, {val}"
+        extractMatches(rangeRegex, min, max):
+          i = closedRange(min.parseInt, max.parseInt)
+        warn &"Unknown format for int range string: {str}"
+    else:
+      warn &"Empty string for int range?"
+  elif cv.isArr:
+    let arr = cv.asArr
+    if arr.len == 2:
+      i = closedRange(arr[0].asInt, arr[1].asInt)
+    else:
+      warn &"Array representation of int range must have 2 values: {cv}"
+
+proc readFromConfig*(cv: ConfigValue, i: var ClosedIntRange) =
+  if cv.isNumber:
+    i = closedRange(cv.asInt, cv.asInt)
+  elif cv.isStr:
+    let str = cv.asStr
+    if str.nonEmpty:
+      matcher(str):
+        extractMatches(rangeRegex, min, max):
+          i = closedRange(min.parseInt, max.parseInt)
+        warn &"Unknown format for int range string: {str}"
+    else:
+      warn &"Empty string for int range?"
+  elif cv.isArr:
+    let arr = cv.asArr
+    if arr.len == 2:
+      i = closedRange(arr[0].asInt, arr[1].asInt)
+    else:
+      warn &"Array representation of int range must have 2 values: {cv}"
 
 defineSimpleReadFromConfig(Identity)
