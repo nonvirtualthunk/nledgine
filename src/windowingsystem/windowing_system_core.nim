@@ -333,6 +333,7 @@ proc isSelfOrDescendantOf*(w: Widget, target: string): bool =
 proc isEmpty*(w: WidgetArchetypeIdentifier): bool =
   w.location.isEmpty or w.identifier.isEmpty
 
+proc children*(w: Widget): seq[Widget] = w.children
 
 proc giveWidgetFocus*[WorldType](ws: WindowingSystemRef, world: WorldType, widget: Widget)
 

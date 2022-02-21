@@ -35,6 +35,7 @@ goChannel.open()
 type FullGameSetup = object
   setup: GameSetup
   reflectInitializers: ReflectInitializers
+  initialFramebufferSize: Vec2i
 
 var engineThread: Thread[FullGameSetup]
 var stdinDebugThread: Thread[void]
@@ -73,7 +74,10 @@ proc runEngine(full: FullGameSetup) {.thread.} =
   else:
     newGraphicsEngine(gameEngine)
 
-  graphicsEngine.displayWorld.attachData(GraphicsContextData)
+  graphicsEngine.displayWorld.attachData(GraphicsContextData(
+    windowSize: full.setup.windowSize,
+    framebufferSize: full.initialFramebufferSize
+  ))
 
   for gc in full.setup.gameComponents:
     gameEngine.addComponent(gc)
@@ -270,7 +274,7 @@ proc main*(setup: GameSetup) =
 
   var commandAccumulator: seq[DrawCommand]
 
-  createThread(engineThread, runEngine, FullGameSetup(setup: setup, reflectInitializers: reflectInitializers))
+  createThread(engineThread, runEngine, FullGameSetup(setup: setup, reflectInitializers: reflectInitializers, initialFramebufferSize: framebufferSize))
   createThread(stdinDebugThread, runStdinDebugging)
 
   var lastViewport = vec2i(0, 0)

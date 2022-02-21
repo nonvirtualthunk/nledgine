@@ -164,7 +164,7 @@ method readDataFromConfig*(ws: ImageDisplayComponent, cv: ConfigValue, widget: W
     else:
       readFromConfig(cv, widget.data(ImageDisplay)[])
 
-proc updateAllBindings(id: var ImageDisplay, resolver : var BoundValueResolver) : bool =
+proc updateAllBindings*(id: var ImageDisplay, resolver : var BoundValueResolver) : bool =
   result = updateBindings(id, resolver)
   for ct in id.conditionalImage.mitems:
     result = updateBindings(ct.condition, resolver) or result

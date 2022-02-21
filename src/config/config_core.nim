@@ -461,6 +461,13 @@ proc next(ctx: var ParseContext, enquoted: bool = false): char =
 
 
 proc parseUntil(ctx: var ParseContext, chars: set[char], enquoted: bool = false): string =
+  # ctx.buffer.setLen(0)
+  # while ctx.cursor < ctx.str.len:
+  #   if chars.contains(ctx.peek()):
+  #     break
+  #   else:
+  #     ctx.buffer.add(ctx.next())
+  # ctx.buffer
   if not enquoted and (ctx.peek() == '#' or (ctx.peek() == '/' and ctx.peek(1) == '/')):
     while ctx.next() != '\n': discard
   ctx.cursor += parseUntil(ctx.str, ctx.buffer, chars, ctx.cursor)

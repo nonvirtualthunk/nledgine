@@ -30,28 +30,34 @@ proc `$`*(img: Image): string =
   else:
     "Image(" & $cast[uint](img.data) & ")"
 
+proc reloadImage*(img: Image) =
+  if img.resourcePath.isSome:
+    let path = img.resourcePath.get
+    stbi.setFlipVerticallyOnLoad(true)
+    var width, height, channels: int
+
+    try:
+      img.data = stbi.load(path, width, height, channels, stbi.Default)
+      img.sentinel = false
+      img.lastModified = getLastModificationTime(path)
+    except:
+      img.data = stbi.load("resources/images/unknown.png", width, height, channels, stbi.Default)
+      img.sentinel = true
+
+    if channels != 4:
+      raise newException(ValueError, "Only 4 channel images are currently supported [" & path & "] : " & $channels)
+
+    img.channels = channels
+    img.dimensions = vec2i(width.int32, height.int32)
+
 proc loadImage*(path: string): Image =
-  stbi.setFlipVerticallyOnLoad(true)
-  var width, height, channels: int
   result = new Image
   result.id = imageID.fetchAdd(1)+1
-  try:
-    result.data = stbi.load(path, width, height, channels, stbi.Default)
-    result.sentinel = false
-    result.lastModified = getLastModificationTime(path)
-  except:
-    result.data = stbi.load("resources/images/unknown.png", width, height, channels, stbi.Default)
-    result.sentinel = true
-
-  if channels != 4:
-    raise newException(ValueError, "Only 4 channel images are currently supported [" & path & "]")
-
-  result.channels = channels
-  result.dimensions = vec2i(width.int32, height.int32)
   result.resourcePath = some(path)
   result.resourcePathHash = path.hash
-
   result.revision = 1
+  reloadImage(result)
+
 
 proc createImage*(dimensions: Vec2i): Image =
   result = new Image
@@ -102,6 +108,10 @@ proc height*(a: Image): int = a.dimensions.y
 
 proc `[]`*(img: Image, x: int, y: int): ptr RGBA =
   let offset = y * img.dimensions.x * 4 + x * 4
+  cast[ptr RGBA]((cast[uint](img.data) + offset.uint))
+
+proc `[]`*(img: Image, i: int): ptr RGBA =
+  let offset = i * 4
   cast[ptr RGBA]((cast[uint](img.data) + offset.uint))
 
 proc `[]=`*(img: Image, x: int, y: int, v: RGBA) =
@@ -167,6 +177,13 @@ proc copyFrom*(target: Image, src: Image, position: Vec2i) =
       let targetPointer = target[position.x, position.y + y]
       copyMem(targetPointer, srcPointer, src.dimensions.x * 4)
 
+
+## Returns true if the image on disk has been modified more recently than the image in memory
+proc modifiedOnDisk*(img: Image): bool =
+  if img.resourcePath.isSome:
+    if getLastModificationTime(img.resourcePath.get) > img.lastModified:
+      return true
+  false
 
 
 proc writeToFile*(img: Image, path: string) =

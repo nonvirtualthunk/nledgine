@@ -59,6 +59,8 @@ proc loadResources() {.thread.} =
       if cur == nil:
         cur = loadImage("resources/" & request.path)
         r.images[request.path] = cur
+      elif cur.modifiedOnDisk:
+        reloadImage(cur)
       if request.imageChannel != nil:
         discard request.imageChannel.trySend(cur)
     of ConfigRequest:

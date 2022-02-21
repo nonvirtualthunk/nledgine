@@ -23,6 +23,7 @@ TestList {
   listItemArchetype: TestWidgets.ListItem
   listItemBinding: "testData.items -> item"
   gapSize: 0
+  selectable: true
 }
 
 ListItem {
@@ -50,7 +51,19 @@ ListItem {
       textColor: "%(item.color)"
       horizontalAlignment: centered
       width: expandToParent
-
     }
   }
+}
+
+TestImage {
+  type: ImageDisplay
+
+  x: 5
+  y: 50
+
+  width: 45
+  height: 45
+
+  image: "%(testData.image)"
+  samples: "%(testData.samples)"
 }
