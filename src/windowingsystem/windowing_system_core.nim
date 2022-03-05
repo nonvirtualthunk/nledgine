@@ -18,6 +18,7 @@ import engines/key_codes
 import unicode
 import algorithm
 import nimclipboard/libclipboard
+import config/config_binding
 
 export windowing_rendering
 export config
@@ -53,6 +54,7 @@ type
     Proportional
     Centered
     Relative
+    Match
 
   WidgetPosition* = object
     case kind: WidgetPositionKind
@@ -72,6 +74,8 @@ type
       relativeToWidget: string
       relativeOffset: int32
       relativeToWidgetAnchorPoint: WidgetOrientation
+    of Match:
+      matchWidget: string
 
   WidgetDimensionKind {.pure.} = enum
     Intrinsic
@@ -130,7 +134,7 @@ type
     padding*: Vec3i # padding contributes to the client offset
     dimensions: array[2, WidgetDimension]
     resolvedDimensions*: Vec2i
-    showing_f: Bindable[bool]
+    showing_f: seq[Bindable[bool]]
     cursor*: Option[int]
     # drawing caches
     preVertices: seq[WVertex]
@@ -141,6 +145,7 @@ type
     eventCallbacks: seq[(UIEvent, World, DisplayWorld) -> void]
     liveWorldEventCallbacks: seq[(UIEvent, LiveWorld, DisplayWorld) -> void]
     acceptsFocus*: bool
+    destroyed*: bool
 
   WidgetArchetype* = object
     widgetData: Widget
@@ -476,6 +481,8 @@ proc relativePos*(relativeTo: string, offset: int32, anchorPoint: WidgetOrientat
   WidgetPosition(kind: WidgetPositionKind.Relative, relativeToWidget: relativeTo, relativeOffset: offset, relativeToWidgetAnchorPoint: anchorPoint)
 proc relativePos*(relativeTo: string, offset: int, anchorPoint: WidgetOrientation = WidgetOrientation.TopLeft): WidgetPosition =
   WidgetPosition(kind: WidgetPositionKind.Relative, relativeToWidget: relativeTo, relativeOffset: offset.int32, relativeToWidgetAnchorPoint: anchorPoint)
+proc matchPos*(matchTo: string): WidgetPosition =
+  WidgetPosition(kind: WidgetPositionKind.Match, matchWidget: matchTo)
 
 proc hash*(w: Widget): Hash = w.entity.hash
 proc `==`*(a, b: Widget): bool =
@@ -498,6 +505,8 @@ proc `==`*(a, b: WidgetPosition): bool =
     true
   of WidgetPositionKind.Relative:
     a.relativeToWidget == b.relativeToWidget and a.relativeOffset == b.relativeOffset and a.relativeToWidgetAnchorPoint == b.relativeToWidgetAnchorPoint
+  of WidgetPositionKind.Match:
+    a.matchWidget == b.matchWidget
 
 proc `==`*(a, b: WidgetDimension): bool =
   if a.kind != b.kind: return false
@@ -563,6 +572,12 @@ iterator dependentOn(p: WidgetPosition, axis: Axis, widget: Widget, parent: Widg
 
     if not isFarSide(axis, p.relativeToWidgetAnchorPoint):
       yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
+  of WidgetPositionKind.Match:
+    let matchWidget = parent.childByIdentifier(p.matchWidget)
+    if matchWidget.isSome:
+      yield (widget: matchWidget.get, kind: DependencyKind.Position, axis: axis)
+    else:
+      warn &"Matched position did not find correspondng widget {p.matchWidget} to match to"
   of WidgetPositionKind.Absolute:
     if isFarSide(axis, p.absoluteAnchorTo) or p.absoluteAnchorTo == WidgetOrientation.Center:
       yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
@@ -689,11 +704,15 @@ proc `height=`*(w: Widget, p: WidgetDimension) =
   # w.markForUpdate(Axis.Y)
 
 proc `showing=`*(w: Widget, b: Bindable[bool]) =
-  if w.showing_f != b:
-    w.showing_f = b
+  if w.showing_f != @[b]:
+    w.showing_f = @[b]
     for e in enumValues(RecalculationFlag): w.markForUpdate(e)
 
-proc showing*(w: Widget): Bindable[bool] = w.showing_f
+proc showing*(w: Widget): bool =
+  for b in w.showing_f:
+    if not b:
+      return false
+  true
 
 proc width*(w: Widget): WidgetDimension = w.dimensions[0]
 proc height*(w: Widget): WidgetDimension = w.dimensions[1]
@@ -768,6 +787,14 @@ proc recalculatePartialPosition(w: Widget, axis: Axis, dirtySet: HashSet[Depende
       else:
         warn &"Partial position resolution looked for relative widget {pos.relativeToWidget} on widget {w.identifier} but no relative widget found"
         0
+    of WidgetPositionKind.Match:
+      let matchWidget = w.parent.get.childByIdentifier(pos.matchWidget)
+      if matchWidget.isSome:
+        ensureDependency((widget: matchWidget.get, kind: DependencyKind.PartialPosition, axis: axis), dirtySet, completedSet)
+        matchWidget.get.resolvedPartialPosition[axis]
+      else:
+        warn &"Partial position resolution looked for match widget {pos.matchWidget} on widget {w.identifier} but no match widget found"
+        0
     of WidgetPositionKind.Absolute:
       pos.absoluteOffset
 
@@ -806,6 +833,13 @@ proc resolvePositionValue(w: Widget, axis: Axis, pos: WidgetPosition): int =
     else:
       warn &"resolvePositionValue(...) looking for relative widget {pos.relativeToWidget} on widget {w.identifier} but none found"
       0
+  of WidgetPositionKind.Match:
+    let matchWidget = w.parent.get.childByIdentifier(pos.matchWidget)
+    if matchWidget.isSome:
+      matchWidget.get.resolvedPosition[axis]
+    else:
+      warn &"resolvePositionValue(...) looking for match widget {pos.matchWidget} on widget {w.identifier} but none found"
+      0
   of WidgetPositionKind.Absolute:
     if pos.absoluteAnchorTo == WidgetOrientation.Center:
       pos.absoluteOffset - w.resolvedDimensions[axis] div 2
@@ -815,7 +849,7 @@ proc resolvePositionValue(w: Widget, axis: Axis, pos: WidgetPosition): int =
       pos.absoluteOffset
 
 
-proc updateGeometry(ws: WindowingSystemRef) {.gcsafe.}
+proc updateGeometry*(ws: WindowingSystemRef) {.gcsafe.}
 
 proc resolvePosition*(w: Widget, axis: Axis, pos: WidgetPosition): int {.gcsafe.} =
   if w.parent.isNone:
@@ -925,8 +959,9 @@ proc recalculateDimensions(w: Widget, axis: Axis, dirtySet: HashSet[Dependency],
       var min: int = 0
       var max: int = 0
       for c in w.children:
-        min = min.min(c.resolvedPartialPosition[axis])
-        max = max.max(c.resolvedPartialPosition[axis] + c.resolvedDimensions[axis])
+        if c.showing:
+          min = min.min(c.resolvedPartialPosition[axis])
+          max = max.max(c.resolvedPartialPosition[axis] + c.resolvedDimensions[axis])
       if max > min:
         max - min + w.clientOffset[axis] * 2
       else:
@@ -965,18 +1000,24 @@ proc ensureDependency(dep: Dependency, dirtySet: HashSet[Dependency], completedS
 #   of DependencyKind.Dimensions: dep.dependentWidget.recalculateDimensions(dep.sourceAxis, dirtySet, completedSet)
 
 proc collectDirty(dep: Dependency, dirty: var HashSet[Dependency]) =
+  var toRemove: seq[Dependent]
   for dependent in dep.widget.dependents:
-    if dependent.dependsOnAxis == dep.axis and dependent.dependsOnKind == dep.kind:
-      let newDep = (widget: dependent.dependentWidget, kind: dependent.sourceKind, axis: dependent.sourceAxis)
-      if not dirty.containsOrIncl(newDep):
-        collectDirty(newDep, dirty)
+    if dependent.dependentWidget.destroyed:
+      toRemove.add(dependent)
+    else:
+      if dependent.dependsOnAxis == dep.axis and dependent.dependsOnKind == dep.kind:
+        let newDep = (widget: dependent.dependentWidget, kind: dependent.sourceKind, axis: dependent.sourceAxis)
+        if not dirty.containsOrIncl(newDep):
+          collectDirty(newDep, dirty)
+  for r in toRemove:
+    dep.widget.dependents.excl(r)
 
 
 # proc recursivelyCollectDependents(w : )
 
 proc updateLastWidgetUnderMouse[WorldType](ws: WindowingSystemRef, widget: Widget, world: WorldType, display: DisplayWorld)
 
-proc updateGeometry(ws: WindowingSystemRef) {.gcsafe.} =
+proc updateGeometry*(ws: WindowingSystemRef) {.gcsafe.} =
   fine &"Pending updates: {ws.pendingUpdates}"
   for w, v in ws.pendingUpdates:
     for axis in axes():
@@ -988,6 +1029,8 @@ proc updateGeometry(ws: WindowingSystemRef) {.gcsafe.} =
   var completedSet: HashSet[Dependency]
   for w, v in ws.pendingUpdates:
     if v.contains(RecalculationFlag.Contents):
+      if w.destroyed:
+        info &"Adding destroyed widget to rerender set due to pending content updates {w.identifier}"
       ws.rerenderSet.incl(w)
     for axis in axes2d():
       if v.contains(dimFlag(axis)) or v.contains(depFlag(axis)):
@@ -1005,6 +1048,8 @@ proc updateGeometry(ws: WindowingSystemRef) {.gcsafe.} =
     ensureDependency(dsDep, dirtySet, completedSet)
 
   for completed in completedSet:
+    if completed.widget.destroyed:
+      info &"Adding destroyed widget to rerender set due to completed set {completed.widget.identifier}"
     ws.rerenderSet.incl(completed.widget)
 
   ws.pendingUpdates.clear()
@@ -1038,6 +1083,8 @@ proc update*[WorldType](ws: WindowingSystemRef, tb: TextureBlock, world: WorldTy
 
   if ws.rerenderSet.len != 0:
     for widget in ws.rerenderSet:
+      if widget.destroyed: continue
+
       ws.renderContentsCount.inc
       let bounds = if widget.parent.isSome:
         let pClientOffset = widget.parent.get.clientOffset.xy
@@ -1145,8 +1192,12 @@ proc addQuadToWidget(w: Widget, tb: TextureBlock, quad: WQuad, offset: Vec2i, bo
       w.postVertices[w.postVertices.len-1].vertex.y += offset.y.float
 
 proc customRenderContents(ws: WindowingSystemRef, display: DisplayWorld, w: Widget, tb: TextureBlock, bounds: Bounds) =
-  for renderer in ws.components:
-      renderer.customRender(display, w, tb, bounds)
+  if w.destroyed:
+    info &"Rendering destroyed widget {w.identifier}"
+    writeStackTrace()
+  else:
+    for renderer in ws.components:
+        renderer.customRender(display, w, tb, bounds)
 
 proc renderContents(ws: WindowingSystemRef, w: Widget, tb: TextureBlock, bounds: Bounds) =
   fine &"Rendering widget {w}"
@@ -1430,7 +1481,7 @@ proc readFromConfig*(cv: ConfigValue, e: var Widget) =
   readInto(cv["width"], e.dimensions[0])
   readInto(cv["height"], e.dimensions[1])
   readInto(cv["padding"], e.padding)
-  readIntoOrElse(cv["showing"], e.showing_f, bindable(true))
+  readIntoOrElse(cv["showing"], e.showing_f, @[bindable(true)])
 
   if e.dimensions[0].kind == WidgetDimensionKind.Intrinsic:
     readInto(cv["minWidth"], e.dimensions[0].intrinsicMin)
@@ -1484,7 +1535,15 @@ proc createWidget*(ws: WindowingSystemRef, confPath: string, identifier: string,
       confPath
     else:
       confPath & ".sml"
-  createWidgetFromConfig(ws, identifier, resources.config(ws.rootConfigPath & effConfPath)[identifier], parent)
+
+  var conf = resources.configOpt(ws.rootConfigPath & effConfPath)
+  if conf.isNone:
+    conf = resources.configOpt("ui/widgets/" & effConfPath)
+  if conf.isNone:
+    warn &"Trying to create widget from config {confPath}, {identifier}, but no appropriate config found"
+    createWidget(ws, parent)
+  else:
+    createWidgetFromConfig(ws, identifier, (conf.get)[identifier], parent)
 
 proc createChild*(w: Widget, confPath: string, identifier: string): Widget {.discardable.} =
   createWidget(w.windowingSystem, confPath, identifier, w)
@@ -1517,6 +1576,9 @@ proc initializeWidgetBindings(widget: Widget) =
 proc updateWidgetBindings(widget: Widget, resolver: var BoundValueResolver) =
   if not widget.bindings.isNil:
     resolver.boundValues.add(widget.bindings)
+  for b in widget.showing_f.mitems:
+    if updateBindings(b, resolver):
+      for e in enumValues(RecalculationFlag): widget.markForUpdate(e)
   if updateBindings(widget[], resolver):
     widget.markForUpdate(RecalculationFlag.Contents)
   if updateBindings(widget.background, resolver):
@@ -1553,6 +1615,7 @@ proc hasBinding*(widget: Widget, key: string) : bool =
 proc pixelScale*(widget: Widget): int = widget.windowingSystem.pixelScale
 
 proc destroyWidget*(w: Widget) =
+  w.destroyed = true
   let ws = w.windowingSystem
   w.parent = none(Widget)
   ws.display.destroyEntity(w.entity)

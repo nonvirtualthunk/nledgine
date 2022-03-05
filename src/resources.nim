@@ -135,13 +135,13 @@ proc config*(path: string) : ConfigValue =
 proc configOpt*(path: string) : Option[ConfigValue] =
   let r = getGlobalResources()
   # todo: is this doing a bunch of copying behind the scenes?
-  var cur = r.config.getOrDefault(path)
-  if cur.isEmpty:
-    requestChannel.send(ResourceRequest(kind: ConfigRequest, path: path, configChannel: r.configChannel))
+  var cur = r.config.getOrDefault(path, nil)
+  if cur.isNil:
+    requestChannel.send(ResourceRequest(kind: ConfigRequest, path: path, configChannel: r.configChannel, acceptAbsence: true))
     assert r.configChannel != nil
     cur = r.configChannel.recv()
     r.config[path] = cur
-  if cur.isEmpty:
+  if cur.isNil or cur.isEmpty:
     none(ConfigValue)
   else:
     some(cur)

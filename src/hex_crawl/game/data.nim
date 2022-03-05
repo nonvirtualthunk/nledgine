@@ -2,6 +2,7 @@ import tables
 import game_prelude
 import strutils
 import noto
+import windowingsystem/rich_text
 
 type
   EffectKind* {.pure.} = enum
@@ -48,12 +49,12 @@ type
       amount*: int
 
   EncounterNode* = object
-    text*: string
+    text*: RichText
     options*: seq[EncounterOption]
 
   EncounterOption* = object
-    prompt*: string
-    text*: string
+    prompt*: RichText
+    text*: RichText
     hidden*: bool
     kind*: OptionKind
     requirements*: seq[Condition]
@@ -64,7 +65,7 @@ type
     onCriticalSuccess*: seq[EncounterOutcome]
 
   EncounterOutcome* = object
-    text*: string
+    text*: RichText
     effects*: seq[Effect]
     conditions*: seq[Condition]
     weight*: int

@@ -24,6 +24,7 @@ import windowingsystem/image_widget
 import graphics/image_extras
 import strutils
 import bitops
+import arxmath
 
 
 type
@@ -49,6 +50,7 @@ type
     drawPriority*: int
     runeInfo: seq[RuneInfo]
     colorTable*: AsciiColorTable
+    boundsStack*: seq[Recti]
 
   AsciiGraphics* = object
     baseCharDimensions*: Vec2i
@@ -99,21 +101,27 @@ type
     fill*: bool
 
   AsciiDrawCommandKind* {.pure.} = enum
-    Buffer
+    Chars
     Box
+    Buffer
 
   AsciiDrawCommand* = object
     zTest*: bool
     position*: Vec3i
     dimensions*: Vec2i
+    beforeChildren*: bool
 
     case kind: AsciiDrawCommandKind
+    of AsciiDrawCommandKind.Chars:
+      chars*: seq[Char]
     of AsciiDrawCommandKind.Buffer:
       buffer*: ref AsciiBuffer
     of AsciiDrawCommandKind.Box:
-      color*: RGBA
+      foreground*: RGBA
+      background*: RGBA
       style*: BoxStyle
       fill*: bool
+      join*: bool
 
   AsciiWidget* = object
     border*: AsciiWidgetBorder
@@ -121,6 +129,7 @@ type
 
   AsciiImageWidget* = object
     samples*: Option[Bindable[int]]
+    buffer* {.noAutoLoad.}: ref AsciiBuffer
 
   AsciiTextWidgetPlugin* = ref object of TextDisplayRenderer
     charsCache: Table[Widget, seq[Char]]
@@ -151,7 +160,7 @@ const spaceRune = Rune 0x00020
 const zeroRune = Rune 0x00000
 
 
-const allRuneInts : array[174, int] = [948,9524,49,9563,9554,178,99,125,931,52,246,68,9561,51,9532,9835,116,176,9787,232,108,98,50,101,9484,35,251,9574,118,238,105,64,120,9580,224,34,44,97,106,9492,122,191,241,9568,65,9578,163,39,9516,103,8993,9572,46,233,9616,162,96,63,243,92,9619,119,9660,112,8729,9786,249,60,69,235,9488,37,33,9569,234,9573,8616,9559,66,121,9560,40,42,9579,9824,94,9600,9834,87,45,9571,228,9556,8319,54,9474,123,9612,47,56,9557,9555,8801,110,91,161,9553,183,239,237,55,9788,107,36,244,9567,9650,9575,8593,9658,8597,104,9566,93,197,90,9496,57,165,53,8226,9608,100,9675,8594,102,9564,8595,111,38,114,9617,117,115,32,9552,9472,9570,8730,9558,8359,8992,48,8592,83,41,9604,9500,113,9827,199,9830,9508,9668,62,252,9829,9577,9576,226,9565,9562,9618,109]
+const allRuneInts : array[225, int] = [948,945,9524,171,9632,49,9563,9554,178,99,125,931,167,52,246,68,9561,966,51,9532,61,116,9835,176,9787,232,9644,108,98,182,181,50,101,9484,35,251,9574,118,238,255,105,64,120,9580,198,224,34,44,97,220,964,106,9492,122,191,241,9568,242,65,9578,163,8735,39,250,9516,103,8993,8734,9572,8976,46,233,9616,162,96,8252,63,243,92,9619,119,223,9660,112,8729,9786,249,60,69,235,236,9488,920,37,33,9569,234,186,9573,915,8616,9559,66,8962,121,209,9560,40,42,9579,9824,94,9600,9834,87,231,45,9571,228,9556,934,8319,54,963,9474,172,123,9794,9612,47,56,9557,9555,8801,247,110,91,9689,161,9553,183,239,237,55,9788,107,36,244,9567,9650,9575,9792,949,402,8593,9658,8597,104,189,9566,93,197,90,9496,57,165,53,960,8226,230,9608,100,9675,187,8594,102,9564,8595,111,8776,38,114,9617,117,115,32,9552,9472,9570,937,8730,201,214,9558,8359,8992,48,8592,9688,83,41,9604,9500,113,8745,170,9827,199,9830,9508,188,9668,229,62,252,8596,9829,196,9577,9576,226,9565,9562,9618,109]
 
 const SBoxPieces : array[12, Rune] = [toRunes(" ")[0],
                                       toRunes("┌")[0], toRunes("┐")[0], toRunes("└")[0], toRunes("┘")[0],
@@ -166,7 +175,7 @@ proc readFromConfig*(cv: ConfigValue, b: var AsciiWidgetBorder) =
   cv["width"].readInto(b.width)
   cv["color"].readInto(b.color)
   cv["join"].readInto(b.join)
-  cv["fill"].readInto(b.fill)
+  cv["fill"].readIntoOrElse(b.fill, true)
 
 
 defineSimpleReadFromConfig(AsciiImageWidget)
@@ -174,6 +183,15 @@ defineSimpleReadFromConfig(AsciiImageWidget)
 proc readFromConfig*(cv: ConfigValue, b: var AsciiWidget) =
   cv["border"].readInto(b.border)
 
+
+proc lookupColor*(c: AsciiColorTable, color: RGBA): uint8 =
+  let colorLen = c.r_colors.len.uint8
+  result = c.r_colors.mgetOrPut(color, colorLen)
+  if result == colorLen:
+    c.colors.add(color)
+
+proc lookupColor*(c: AsciiCanvas, color: RGBA): uint8 =
+  lookupColor(c.colorTable, color)
 
 proc `[]`*(buff: ref AsciiBuffer, x: int, y: int): Char =
   if x < 0 or y < 0 or x >= buff.dimensions.x or y >= buff.dimensions.y:
@@ -185,6 +203,7 @@ proc `[]`*(buff: ref AsciiBuffer, x: int, y: int): Char =
 proc `[]=`*(buff: ref AsciiBuffer, x: int, y: int, v: Char) =
   if x < 0 or y < 0 or x >= buff.dimensions.x or y >= buff.dimensions.y:
     warn &"Out of bounds: {x}, {y}"
+    writeStackTrace()
   else:
     buff.buffer[x * buff.dimensions.y + y] = v
 
@@ -194,18 +213,101 @@ proc swapIfZTested(v: var Char, newChar: Char) =
 
 proc writeZTested*(buff: ref AsciiBuffer, x: int, y: int, v: Char) =
   if x < 0 or y < 0 or x >= buff.dimensions.x or y >= buff.dimensions.y:
-    warn &"Out of bounds: {x}, {y}"
+    warn &"Out of bounds ztested: {x}, {y}"
+    writeStackTrace()
   else:
     let index = x * buff.dimensions.y + y
     swapIfZTested(buff.buffer[index], v)
 
 proc writeColZTested*(buff: ref AsciiBuffer, x,y: int, height: int, v: Char) =
   if x < 0 or y < 0 or x >= buff.dimensions.x or y + height >= buff.dimensions.y:
-    warn &"Out of bounds: {x}, {y}"
+    warn &"Out of bounds col ztested: {x}, {y}"
+    writeStackTrace()
   else:
     let index = x * buff.dimensions.y + y
     for i in 0 ..< height:
       swapIfZTested(buff.buffer[index + i], v)
+
+proc effectiveBounds(c: AsciiCanvas): Recti =
+  if c.boundsStack.isEmpty:
+    recti(0,0,c.buffer.dimensions.x, c.buffer.dimensions.y)
+  else:
+    c.boundsStack.last
+
+
+proc writeColZTested*(c: AsciiCanvas, x,y: int, height: int, v: Char) =
+  let bounds = effectiveBounds(c)
+  if x >= bounds.x and x < bounds.x + bounds.width:
+    var ex = x
+    var ey = y
+    var eh = height
+    if bounds.y > ey:
+      eh -= bounds.y - ey
+      ey = bounds.y
+    if ey + eh > bounds.y + bounds.height:
+      eh -= (ey + eh) - (bounds.y + bounds.height)
+
+    c.buffer.writeColZTested(ex,ey,eh,v)
+
+
+proc blit*(writeTo: ref AsciiBuffer,readFrom : ref AsciiBuffer) =
+  if writeTo.dimensions != readFrom.dimensions:
+    warn &"Cannot blit buffers of different sizes without offset: {writeTo.dimensions}, {readFrom.dimensions}"
+    return
+
+  for i in 0 ..< writeTo.dimensions.x * writeTo.dimensions.y:
+    let c = readFrom.buffer[i]
+    if c.rune != 0.Rune:
+      writeTo.buffer[i] = c
+
+proc blit*(writeTo: ref AsciiBuffer,readFrom : ref AsciiBuffer, readRect: Recti, writeOffset: Vec2i) =
+  for x in readRect.position.x ..< readRect.position.x + readRect.dimensions.x:
+    for y in readRect.position.y ..< readRect.position.y + readRect.dimensions.y:
+      let c = readFrom[x,y]
+      if c.rune != 0.Rune:
+        writeTo[x + writeOffset.x, y + writeOffset.y] = c
+
+proc blit*(writeTo: ref AsciiBuffer,readFrom : ref AsciiBuffer, writeOffset: Vec2i) =
+  blit(writeTo, readFrom, rect(vec2i(0,0), readFrom.dimensions), writeOffset)
+
+proc blit*(writeTo: AsciiCanvas, readFrom: ref AsciiBuffer, writeOffset: Vec2i) =
+  let writeRect = intersect(rect(writeOffset, readFrom.dimensions), effectiveBounds(writeTo))
+  blit(writeTo.buffer, readFrom, rect(writeRect.position - writeOffset, writeRect.dimensions), writeRect.position)
+
+
+proc write*(c: AsciiCanvas, x: int, y: int, v: Char) =
+  let bounds = effectiveBounds(c)
+  if bounds.x <= x and bounds.y <= y and bounds.x + bounds.width > x and bounds.y + bounds.height > y:
+    writeZTested(c.buffer, x, y, v)
+
+proc write*(c: AsciiCanvas, x: int, y: int, z: int8, s: string, colorIndex: uint8 = 0) =
+  let runes = toRunes(s)
+  for i in 0 ..< runes.len:
+    write(c, x + i, y, Char(rune: toRunes(s)[i], foreground: colorIndex, z: z))
+
+proc write*(c: AsciiCanvas, x: int, y: int, z: int8, s: string, color: RGBA) =
+  let colorIndex = lookupColor(c, color)
+  write(c, x, y, z, s, colorIndex)
+
+proc pushBounds*(c: AsciiCanvas, bounds: Recti) =
+  c.boundsStack.add(bounds)
+
+## push new bounds that narrow the existing bounds
+proc pushNarrowBounds*(c: AsciiCanvas, bounds: Recti) =
+  let cur = effectiveBounds(c)
+  pushBounds(c, intersect(cur, bounds))
+
+proc popBounds*(c: AsciiCanvas) =
+  if c.boundsStack.isEmpty:
+    warn &"Trying to pop empty bounds stack"
+  else:
+    c.boundsStack.setLen(c.boundsStack.len - 1)
+
+proc equalContents*(a: ref AsciiBuffer, b: ref AsciiBuffer) : bool =
+  if a.isNil or b.isNil: false
+  elif a.dimensions != b.dimensions: false
+  elif a.dimensions.x <= 0 or a.dimensions.y <= 0: true
+  else: cmpMem(a.buffer[0].addr, b.buffer[0].addr, a.dimensions.x * a.dimensions.y * sizeof(Char)) == 0
 
 
 proc clear*(buff: ref AsciiBuffer) =
@@ -255,52 +357,6 @@ proc runeInfo*(g: AsciiCanvas, r: Rune) : RuneInfo =
 proc runeInfo*(g: AsciiCanvas, x: int, y: int): RuneInfo =
   runeInfo(g, g.buffer[x,y].rune)
 
-proc equalContents*(a: ref AsciiBuffer, b: ref AsciiBuffer) : bool =
-  if a.isNil or b.isNil: false
-  elif a.dimensions != b.dimensions: false
-  elif a.dimensions.x <= 0 or a.dimensions.y <= 0: true
-  else: cmpMem(a.buffer[0].addr, b.buffer[0].addr, a.dimensions.x * a.dimensions.y * sizeof(Char)) == 0
-
-proc blit*(writeTo: ref AsciiBuffer,readFrom : ref AsciiBuffer) =
-  if writeTo.dimensions != readFrom.dimensions:
-    warn &"Cannot blit buffers of different sizes: {writeTo.dimensions}, {readFrom.dimensions}"
-    return
-
-
-  for i in 0 ..< writeTo.dimensions.x * writeTo.dimensions.y:
-    let c = readFrom.buffer[i]
-    if c.rune != 0.Rune:
-      writeTo.buffer[i] = c
-
-proc write*(buf: ref AsciiBuffer, x: int, y: int, z: int8, s: string, colorIndex: uint8) =
-  let runes = toRunes(s)
-  if x < 0 or y < 0 or y >= buf.dimensions.y or x + runes.len >= buf.dimensions.x: warn &"Drawing out of bounds: {x}, {y}, {s}"
-  else:
-    # let cursor = x * buf.dimensions.y + y
-    # for i in 0 ..< runes.len:
-    #   buf.buffer[cursor + i].rune = runes[i]
-    for i in 0 ..< runes.len:
-      buf[x + i,y] = Char(rune: runes[i], foreground: colorIndex)
-
-proc write*(c: AsciiCanvas, x: int, y: int, z: int8, s: string, colorIndex: uint8 = 0) =
-  c.buffer.write(x,y,z,s,colorIndex)
-  c.revision.inc
-
-proc lookupColor*(c: AsciiCanvas, color: RGBA): uint8 =
-  let colorLen = c.colorTable.r_colors.len.uint8
-  result = c.colorTable.r_colors.mgetOrPut(color, colorLen)
-  if result == colorLen:
-    c.colorTable.colors.add(color)
-
-proc write*(c: AsciiCanvas, x: int, y: int, z: int8, s: string, color: RGBA) =
-  let colorIndex = lookupColor(c, color)
-  c.buffer.write(x,y,z,s,colorIndex)
-  c.revision.inc
-
-proc write*(c: AsciiCanvas, x: int, y: int, v: Char) =
-  let cur = c.buffer[x,y]
-  if cur.z <= v.z:
-    c.buffer.writeZTested(x,y,v)
 
 proc boxPiecesToConnections(b: BoxPieces): array[4,uint8] =
   case b: # left, right, down, up
@@ -334,15 +390,17 @@ proc connectionsToBoxPieces(conn: array[4,uint8]) : BoxPieces =
 
 proc dimensions*(c: AsciiCanvas) :Vec2i = c.buffer.dimensions
 
-proc joinChar(c : AsciiCanvas, x : int, y : int, boxPiece: BoxPieces, colorIndex: uint8) =
-  let cur = c.buffer[x,y]
-  let info = runeInfo(c, cur.rune)
-  
-  let curConn = boxPiecesToConnections(info.boxPiece)
-  let addConn = boxPiecesToConnections(boxPiece)
-  let effPiece = connectionsToBoxPieces([max(curConn[0],addConn[0]), max(curConn[1],addConn[1]), max(curConn[2],addConn[2]), max(curConn[3],addConn[3])])
+proc joinChar(c : AsciiCanvas, x : int, y : int, z: int8, boxPiece: BoxPieces, colorIndex: uint8) =
+  let bounds = effectiveBounds(c)
+  if x >= bounds.x and y >= bounds.y and x < bounds.x + bounds.width and y < bounds.y + bounds.height:
+    let cur = c.buffer[x,y]
+    let info = runeInfo(c, cur.rune)
 
-  c.buffer[x,y] = Char(rune: SBoxPieces[effPiece.ord], foreground: colorIndex)
+    let curConn = boxPiecesToConnections(info.boxPiece)
+    let addConn = boxPiecesToConnections(boxPiece)
+    let effPiece = connectionsToBoxPieces([max(curConn[0],addConn[0]), max(curConn[1],addConn[1]), max(curConn[2],addConn[2]), max(curConn[3],addConn[3])])
+
+    write(c, x, y, Char(rune: SBoxPieces[effPiece.ord], foreground: colorIndex, z: z))
 
 
 proc drawBox*(c: AsciiCanvas, x,y,z: int, width: int, height: int, color: RGBA, fill: bool, join: bool = true, boxStyle: BoxStyle = BoxStyle.Single) =
@@ -351,29 +409,37 @@ proc drawBox*(c: AsciiCanvas, x,y,z: int, width: int, height: int, color: RGBA, 
   let colorIndex = c.lookupColor(color)
 
   if join:
-    joinChar(c, x, y, BoxPieces.TopLeft, colorIndex)
-    joinChar(c, farx, y, BoxPieces.TopRight, colorIndex)
-    joinChar(c, farx, fary, BoxPieces.BottomRight, colorIndex)
-    joinChar(c, x, fary, BoxPieces.BottomLeft, colorIndex)
+    joinChar(c, x, y, z.int8, BoxPieces.TopLeft, colorIndex)
+    joinChar(c, farx, y, z.int8, BoxPieces.TopRight, colorIndex)
+    joinChar(c, farx, fary, z.int8, BoxPieces.BottomRight, colorIndex)
+    joinChar(c, x, fary, z.int8, BoxPieces.BottomLeft, colorIndex)
   else:
-    c.buffer.writeZTested(x,y, Char(rune: SBoxPieces[BoxPieces.TopLeft.ord], foreground: colorIndex, z: z.int8))
-    c.buffer.writeZTested(farX,y, Char(rune: SBoxPieces[BoxPieces.TopRight.ord], foreground: colorIndex, z: z.int8))
-    c.buffer.writeZTested(farx,fary, Char(rune: SBoxPieces[BoxPieces.BottomRight.ord], foreground: colorIndex, z: z.int8))
-    c.buffer.writeZTested(x,fary, Char(rune: SBoxPieces[BoxPieces.BottomLeft.ord], foreground: colorIndex, z: z.int8))
+    c.write(x,y, Char(rune: SBoxPieces[BoxPieces.TopLeft.ord], foreground: colorIndex, z: z.int8))
+    c.write(farX,y, Char(rune: SBoxPieces[BoxPieces.TopRight.ord], foreground: colorIndex, z: z.int8))
+    c.write(farx,fary, Char(rune: SBoxPieces[BoxPieces.BottomRight.ord], foreground: colorIndex, z: z.int8))
+    c.write(x,fary, Char(rune: SBoxPieces[BoxPieces.BottomLeft.ord], foreground: colorIndex, z: z.int8))
 
   for ax in x+1 ..< farx:
-    c.buffer.writeZTested(ax,y, Char(rune: SBoxPieces[BoxPieces.Horizontal.ord], foreground: colorIndex, z: z.int8))
-    c.buffer.writeZTested(ax,fary, Char(rune: SBoxPieces[BoxPieces.Horizontal.ord], foreground: colorIndex, z: z.int8))
+    if join:
+      joinChar(c, ax, y, z.int8, BoxPieces.Horizontal, colorIndex)
+      joinChar(c, ax, fary, z.int8, BoxPieces.Horizontal, colorIndex)
+    else:
+      c.write(ax,y, Char(rune: SBoxPieces[BoxPieces.Horizontal.ord], foreground: colorIndex, z: z.int8))
+      c.write(ax,fary, Char(rune: SBoxPieces[BoxPieces.Horizontal.ord], foreground: colorIndex, z: z.int8))
 
   for ay in y+1 ..< fary:
-    c.buffer.writeZTested(x,ay, Char(rune: SBoxPieces[BoxPieces.Vertical.ord], foreground: colorIndex, z: z.int8))
-    c.buffer.writeZTested(farx,ay, Char(rune: SBoxPieces[BoxPieces.Vertical.ord], foreground: colorIndex, z: z.int8))
+    if join:
+      joinChar(c, x, ay, z.int8, BoxPieces.Vertical, colorIndex)
+      joinChar(c, farx, ay, z.int8, BoxPieces.Vertical, colorIndex)
+    else:
+      c.write(x,ay, Char(rune: SBoxPieces[BoxPieces.Vertical.ord], foreground: colorIndex, z: z.int8))
+      c.write(farx,ay, Char(rune: SBoxPieces[BoxPieces.Vertical.ord], foreground: colorIndex, z: z.int8))
 
   if fill:
     let bw = 1
     for dx in bw ..< width - bw:
       # TODO: actual background colors
-      writeColZTested(c.buffer, x + dx, y + bw, height - bw * 2, Char(rune: zeroRune))
+      writeColZTested(c, x + dx, y + bw, height - bw * 2, Char(rune: spaceRune, z : z.int8))
 
   c.revision.inc
 
@@ -518,7 +584,7 @@ proc imgToBitPattern(img: Image) : BitPattern =
 
 var runeBitPatterns {.threadvar.}: seq[BitPattern]
 
-proc imageToAscii*(c: AsciiCanvas, gfx: ref AsciiGraphics, img: Image, outDim: Vec2i, outPos: Vec3i, samples : int) =
+proc imageToAscii*(buff: ref AsciiBuffer, gfx: ref AsciiGraphics, img: Image, outDim: Vec2i, outPos: Vec3i) =
   if runeBitPatterns.isEmpty:
     let f = font(gfx.typeface, gfx.baseCharDimensions.y)
     for i in 0 ..< allRuneInts.len:
@@ -576,11 +642,11 @@ proc imageToAscii*(c: AsciiCanvas, gfx: ref AsciiGraphics, img: Image, outDim: V
 
         (bestRune, invert)
 
-      let secIndex = secondaryOpt.map((it) => lookupColor(c, it)).get(0u8)
-      let priIndex = lookupColor(c, primary)
+      let secIndex = secondaryOpt.map((it) => lookupColor(gfx.colorTable, it)).get(0u8)
+      let priIndex = lookupColor(gfx.colorTable, primary)
       let foreground = if invert: secIndex else: priIndex
       let background = if invert: priIndex else: secIndex
-      write(c, outPos.x + x, outPos.y + y, Char(rune: r, foreground: foreground, background: background, z: outPos.z.int8))
+      buff[x, y] = Char(rune: r, foreground: foreground, background: background, z: outPos.z.int8)
 
 
       # let pxs = xf
@@ -618,7 +684,6 @@ proc imageToAscii*(c: AsciiCanvas, gfx: ref AsciiGraphics, img: Image, outDim: V
       # write(c, outPos.x + x, outPos.y + y, wchar)
       #
       # sampleCounts.clear()
-  c.revision.inc
 
 
 
@@ -667,6 +732,7 @@ method onEvent*(g: AsciiCanvasComponent, world: LiveWorld, display: DisplayWorld
 method initialize(g: AsciiCanvasComponent, world: LiveWorld, display: DisplayWorld) =
   g.name = "AsciiCanvasComponent"
   g.initializePriority = 100
+  g.updatePriority = 100
   g.vao = newVAO[SimpleVertex, uint32]()
   g.shader = initShader("shaders/simple")
   g.texture = newTextureBlock(1024, 1, false)
@@ -674,7 +740,7 @@ method initialize(g: AsciiCanvasComponent, world: LiveWorld, display: DisplayWor
 
   let gcd : ref GraphicsContextData = display[GraphicsContextData]
   let baseSize = 16
-  let size = 32
+  let size = 40
   # let typeface = loadArxTypeface("resources/fonts/Px437_SanyoMBC775.ttf")
   # let typeface = loadArxTypeface("resources/fonts/Px437_Acer710_Mono.ttf")
   # let typeface = loadArxTypeface("resources/fonts/Px437_ToshibaSat_8x16.ttf")
@@ -760,7 +826,8 @@ method onEvent*(g: AsciiWindowingSystemComponent, world: LiveWorld, display: Dis
       
 method initialize(g: AsciiWindowingSystemComponent, world: LiveWorld, display: DisplayWorld) =
   g.name = "AsciiWindowingSystemComponent"
-  g.initializePriority = 0
+  g.initializePriority = 50
+  g.updatePriority = 50
 
   let gfx = display[AsciiGraphics]
   let canvas = newCanvas(gfx)
@@ -777,72 +844,45 @@ method initialize(g: AsciiWindowingSystemComponent, world: LiveWorld, display: D
   display.attachDataRef(windowingSystem)
 
   display.attachData(AsciiWindowing(canvas: canvas))
-  let windowing = display[AsciiWindowing]
 
-  # let testWidget = windowingSystem.createWidget("TestWidgets", "TestBox")
-  # let testTextWidget = windowingSystem.createWidget("TestWidgets", "TestText")
-  # let testList = windowingSystem.createWidget("TestWidgets", "TestList")
-  # let testImage = windowingSystem.createWidget("TestWidgets", "TestImage")
-  # var items = @[
-  #                   {"id": bindValue("a"), "content": bindValue("A"), "color": bindValue(rgba(255,255,255,255))}.toTable,
-  #                   {"id": bindValue("b"), "content": bindValue("Longer Item"),  "color": bindValue(rgba(255,255,255,255))}.toTable,
-  #                   {"id": bindValue("c"), "content": bindValue("Last"),  "color": bindValue(rgba(255,255,255,255))}.toTable
-  #               ]
-  #
-  # let samples : ref int = new(int)
-  # samples[] = 2
-  # testList.bindValue("testData.items", items)
-  # windowingSystem.desktop.bindValue("testData.image", image("hexcrawl/test/mushroom_cropped.png"))
-  # windowingSystem.desktop.bindValue("testData.samples", samples[])
-  #
-  #
-  # takeFocus(testList, world)
-  # testList.onEventOfType(WidgetKeyPress, press):
-  #   case press.key:
-  #     of KeyCode.Equal:
-  #       samples[].inc
-  #       windowingSystem.desktop.bindValue("testData.samples", samples[])
-  #     of KeyCode.Minus:
-  #       samples[].dec
-  #       windowingSystem.desktop.bindValue("testData.samples", samples[])
-  #     of KeyCode.Z:
-  #       discard
-  #     of KeyCode.X:
-  #       discard
-  #     else: discard
-  #
-  #
-  #   let i = case press.key:
-  #     of KeyCode.A: 0
-  #     of KeyCode.B: 1
-  #     of KeyCode.C: 2
-  #     else: -1
-  #   if i >= 0:
-  #     let curSel = selectedListIndex(testList).get(-1)
-  #     if curSel == i:
-  #       items[i]["content"] = bindValue(items[i]["content"].asString & "+")
-  #     else:
-  #       selectListIndex(testList, i)
-  #     testList.bindValue("testData.items", items)
-  #
-  #
-  # onEventLW(testList):
-  #   extract(ListItemSelect, index, widget, originatingWidget):
-  #     for i in 0 ..< items.len:
-  #       if i == index:
-  #         items[i]["color"] = bindValue(rgba(255,100,100,255))
-  #       else:
-  #           items[i]["color"] = bindValue(rgba(255,255,255,255))
-  #     testList.bindValue("testData.items", items)
-  #
-  # selectListIndex(testList, 0)
 
+
+proc renderWidgetToCanvas(widget: Widget, canvas: AsciiCanvas, beforeChildren: bool) =
+  let aw = widget.data(AsciiWidget)
+  for comm in aw.drawCommands:
+    if comm.beforeChildren == beforeChildren:
+      case comm.kind:
+        of AsciiDrawCommandKind.Box:
+          drawBox(canvas, comm.position.x, comm.position.y, comm.position.z, comm.dimensions.x, comm.dimensions.y, comm.foreground, comm.fill, join = comm.join)
+        of AsciiDrawCommandKind.Chars:
+          for i in 0 ..< comm.chars.len:
+            write(canvas, comm.position.x + i, comm.position.y, comm.chars[i])
+        of AsciiDrawCommandKind.Buffer:
+          blit(canvas, comm.buffer, comm.position.xy)
+
+proc renderWidget(widget: Widget, canvas: AsciiCanvas) =
+  if widget.showing:
+    renderWidgetToCanvas(widget, canvas, true)
+    pushNarrowBounds(canvas, rect(widget.resolvedPosition.xy + widget.clientOffset.xy, widget.resolvedDimensions.xy - widget.clientOffset.xy * 2))
+    for c in widget.children.sortedByIt(it.resolvedPosition.z):
+      renderWidget(c, canvas)
+    popBounds(canvas)
+    renderWidgetToCanvas(widget, canvas, false)
 
 method update(g: AsciiWindowingSystemComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
-  discard display[WindowingSystem].update(nil, world, display)
+  let ws = display[WindowingSystem]
+  if ws.update(nil, world, display):
+    let asciiWS = display[AsciiWindowing]
+    asciiWS.canvas.clear()
+    renderWidget(ws.desktop, asciiWS.canvas)
+
 
 method customRender*(ws: AsciiWidgetPlugin, display: DisplayWorld, widget: Widget, tb: TextureBlock, bounds: Bounds) =
+  if not widget.hasData(AsciiWidget):
+    warn &"Widget did not have ascii data: {widget.identifier}"
+
   let ascii = widget.data(AsciiWidget)
+  ascii.drawCommands.clear()
   let border = ascii.border
   if border.width.value > 0:
     let pos = widget.resolvedPosition
@@ -851,8 +891,8 @@ method customRender*(ws: AsciiWidgetPlugin, display: DisplayWorld, widget: Widge
       border.color.get.value
     else:
       White
-    drawBox(display[AsciiWindowing].canvas, pos.x, pos.y, pos.z, dim.x, dim.y, color, false)
-    # ascii.drawCommands.add(AsciiDrawCommand(kind: AsciiDrawCommandKind.Box, position: pos, dimensions: dim, color: color, fill: border.fill))
+    # drawBox(display[AsciiWindowing].canvas, pos.x, pos.y, pos.z, dim.x, dim.y, color, false)
+    ascii.drawCommands.add(AsciiDrawCommand(kind: AsciiDrawCommandKind.Box, position: pos, dimensions: dim, foreground: color, fill: border.fill, beforeChildren: true, join: border.join))
 
 
 method clientOffset*(ws: AsciiWidgetPlugin, widget: Widget, axis: Axis): Option[Vec3i] =
@@ -876,7 +916,8 @@ method handleEvent*(ws: AsciiWidgetPlugin, widget: Widget, event: UIEvent, displ
   discard
 
 method onCreated*(ws: AsciiWidgetPlugin, widget: Widget) =
-  discard
+  if not widget.hasData(AsciiWidget):
+    widget.attachData(AsciiWidget())
 
 
 
@@ -885,16 +926,13 @@ method customRender*(ws: AsciiImageWidgetPlugin, display: DisplayWorld, widget: 
   if widget.hasData(ImageDisplay):
     let ID = widget.data(ImageDisplay)
     let AIW = widget.data(AsciiImageWidget)
-    let c : AsciiCanvas = display[AsciiWindowing].canvas
     let gfx = display[AsciiGraphics]
-
-
-    # create 2x2, 3x3, 4x4 set from the font, compare to 4x4, 3x3, 2x2 sampling to find a match
+    let ascii = widget.data(AsciiWidget)
 
     let img = ID.effectiveImage.asImage
     if img.modifiedOnDisk:
       img.reloadImage()
-    let pos = widget.resolvedPosition
+    let pos = widget.resolvedPosition + widget.clientOffset
     let contentDim = (widget.resolvedDimensions - widget.clientOffset.xy * 2)
     let contentPixelDim = contentDim * gfx.baseCharDimensions
     let xRatio = contentPixelDim.x.float32 / img.width.float32
@@ -905,8 +943,11 @@ method customRender*(ws: AsciiImageWidgetPlugin, display: DisplayWorld, widget: 
 
     let offset = (contentDim - asciiDim) div 2
 
-    let samples = AIW.samples.map((a) => a.value).get(2)
-    imageToAscii(c, gfx, img, asciiDim, pos + vec3i(offset.x, offset.y, 0) + widget.clientOffset, samples)
+    if AIW.buffer.isNil or AIW.buffer.dimensions != asciiDim:
+      AIW.buffer = newAsciiBuffer(asciiDim.x, asciiDim.y)
+
+    imageToAscii(AIW.buffer, gfx, img, asciiDim, vec3i(0,0,pos.z))
+    ascii.drawCommands.add(AsciiDrawCommand(kind: AsciiDrawCommandKind.Buffer, buffer: AIW.buffer, position: pos + vec3i(offset,0), dimensions: asciiDim))
 
 method readDataFromConfig*(g: AsciiImageWidgetPlugin, cv: ConfigValue, widget: Widget) =
   if cv["type"].asStr("").toLowerAscii == "imagedisplay":
@@ -1027,7 +1068,6 @@ method intrinsicSize*(g: AsciiTextWidgetPlugin, widget: Widget, axis: Axis, mini
       maxDims.x = min(maxDims.x, widget.resolvedDimensions.x - widget.clientOffset.x * 2)
 
     let layout = layoutChars(charsFor(g, widget, td), td.multiLine, maxDims, HorizontalAlignment.Left)
-    info &"Layout for intrinsic: {layout}"
     some(max(dimensions(layout)[axis], minimums[axis]))
   else:
     none(int)
@@ -1041,6 +1081,7 @@ method updateBindings*(g: AsciiTextWidgetPlugin, widget: Widget, resolver: var B
 
 method customRender*(g: AsciiTextWidgetPlugin, display: DisplayWorld, widget: Widget, tb: TextureBlock, bounds: Bounds) =
   if widget.hasData(TextDisplay):
+    let ascii = widget.data(AsciiWidget)
     let c : AsciiCanvas = display[AsciiWindowing].canvas
     let td = widget.data(TextDisplay)
 
@@ -1048,7 +1089,6 @@ method customRender*(g: AsciiTextWidgetPlugin, display: DisplayWorld, widget: Wi
     let co = widget.clientOffset
     let dimensions = widget.resolvedDimensions - co.xy * 2
     let layout = layoutChars(chars, td.multiLine, dimensions, td.horizontalAlignment.get(HorizontalAlignment.Left))
-    info &"MultiLine: {td.multiLine}\ndim: {widget.resolvedDimensions}\nlayout:\n{layout}"
 
     let position = widget.resolvedPosition + co
 
@@ -1061,9 +1101,12 @@ method customRender*(g: AsciiTextWidgetPlugin, display: DisplayWorld, widget: Wi
       let endText = endOffset + line.charRange.width
       let endContent = dimensions.x
 
+      var lineChars: seq[Char]
       for i in 0 ..< endContent:
-        let r = if i < endOffset: Char(rune: spaceRune, z: position.z.int8)
+        var r = if i < endOffset: Char(rune: spaceRune)
         elif i < endText: chars[line.charRange.min + i - endOffset]
-        else: Char(rune: spaceRune, z: position.z.int8)
-        write(c, ax + i, ay, r)
+        else: Char(rune: spaceRune)
+        r.z = position.z.int8
+        lineChars.add(r)
+      ascii.drawCommands.add(AsciiDrawCommand(kind: AsciiDrawCommandKind.Chars, position: vec3i(ax, ay, position.z), dimensions: vec2i(chars.len,1), chars: lineChars, beforeChildren: false))
     c.revision.inc

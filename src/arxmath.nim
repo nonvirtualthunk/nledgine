@@ -15,6 +15,7 @@ proc rect*[T](pos: Vec2[T], dim: Vec2[T]): Rect[T] =
 proc recti*[X,Y,W,H](x: X,y: Y,w: W,h : H): Recti =
    Recti(position: vec2i(x.int32, y.int32), dimensions: vec2i(w.int32, h.int32))
 
+
 proc rectf*[X,Y,W,H](x: X,y: Y,w: W,h : H): Rectf =
    Rectf(position: vec2f(x.float32, y.float32), dimensions: vec2f(w.float32, h.float32))
 
@@ -64,6 +65,17 @@ proc hasIntersection*[T](a: Rect[T], b : Rect[T]): bool =
       false
    else:
       true
+
+proc intersect*[T](a: Rect[T], b: Rect[T]): Rect[T] =
+   let minX = max(a.position.x, b.position.x)
+   let minY = max(a.position.y, b.position.y)
+   let maxX = min(a.position.x + a.dimensions.x, b.position.x + b.dimensions.x)
+   let maxY = min(a.position.y + a.dimensions.y, b.position.y + b.dimensions.y)
+   if maxX >= minX and maxY >= minY:
+     result.position.x = minX
+     result.position.y = minY
+     result.dimensions.x = maxX - minX
+     result.dimensions.y = maxY - minY
 
 proc minAll*(a: var Vec3i, b: Vec3i) =
    a.x = a.x.min(b.x)

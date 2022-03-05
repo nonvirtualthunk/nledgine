@@ -1,4 +1,5 @@
 import nimgl/glfw
+import options
 
 type
   KeyCode* {.pure, size: int32.sizeof.} = enum
@@ -141,3 +142,9 @@ proc mouseButtonFromGLFW*(button : int32) : MouseButton =
     of 1 : MouseButton.Right
     of 2 : MouseButton.Middle
     else: MouseButton.Other
+
+proc numeral*(k : KeyCode): Option[int] =
+  if k.ord >= KeyCode.K0.ord and k.ord <= KeyCode.K9.ord:
+    some(k.ord - KeyCode.K0.ord)
+  else:
+    none(int)

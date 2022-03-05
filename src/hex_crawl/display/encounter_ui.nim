@@ -1,6 +1,7 @@
 import game_prelude
 import engines
 import windowingsystem/windowingsystem
+import windowingsystem/rich_text
 import graphics/color
 import sequtils
 import noto
@@ -18,15 +19,15 @@ type
 
 
   PromptB = object
-    prompt: string
-    text: string
+    prompt: RichText
+    text: RichText
     id: int
     selectColor: RGBA
     promptColor: RGBA
 
 
   EncounterB = object
-    text: string
+    text: RichText
     image: Image
     prompts: seq[PromptB]
 
@@ -38,8 +39,6 @@ method initialize(g: EncounterUI, world: LiveWorld, display: DisplayWorld) =
   g.captain = toSeq(world.entitiesWithData(Captain))[0]
   g.encounterStackWatcher = watch: world.data(g.captain, Captain).encounterStack
   g.encounterUI = display[WindowingSystem].desktop.createChild("EncounterUI","EncounterWidget")
-
-  recur(display[WindowingSystem].desktop)
 
   let conf = config("hexcrawl/widgets/EncounterUI.sml")
 
@@ -81,14 +80,14 @@ method update(g: EncounterUI, world: LiveWorld, display: DisplayWorld, df: float
 
 method onEvent(g : EncounterUI, world : LiveWorld, display : DisplayWorld, event : Event) =
   matcher(event):
-    extract(KeyRelease, key):
-      if key == KeyCode.R:
-        info "Reload"
+    extract(KeyRelease, key, modifiers):
+      if key == KeyCode.R and modifiers.ctrl:
         for widget in display[WindowingSystem].desktop.descendantsMatching((w) => true):
           widget.markForUpdate(RecalculationFlag.Contents)
-      elif key == KeyCode.K1:
-        let outcome = determineOutcome(world, g.captain, g.activeOptions[0])
+      elif key.numeral.isSome and key.numeral.get > 0 and key.numeral.get <= g.activeOptions.len:
+        let optionChosen = key.numeral.get - 1
+        let outcome = determineOutcome(world, g.captain, g.activeOptions[optionChosen])
         if outcome.text.nonEmpty:
-          info outcome.text
+          info &"{outcome.text}"
         for eff in outcome.effects:
           applyEffect(world, g.captain, eff)

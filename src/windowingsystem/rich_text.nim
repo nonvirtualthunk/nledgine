@@ -17,6 +17,9 @@ import unicode
 const DefaultFontName* = "pf_ronda_seven.ttf"
 
 const TaxonRune* = toRunes("†")[0]
+const OpenFormatRune* = toRunes("{")[0]
+const CloseFormatRune* = toRunes("}")[0]
+const DivideFormatRune* = toRunes("|")[0]
 
 resources.preloadFont(DefaultFontName)
 
@@ -186,22 +189,38 @@ proc add*(s: var RichTextSection,
       s.text.add(str)
 
 
+
+proc takeRunesUntil*(runes: seq[Rune], start: int, until: Rune) : (int, string) =
+  var str : string
+  var i = start
+  while i < runes.len:
+    let c = runes[i]
+    i.inc
+    if c == until:
+      return (i, str)
+    else:
+      str.add(c)
+  warn &"takeRunesUntil({runes},{start},{until}) is predicated on assuming the rune will be encountered, but it was not"
+
 # Parse out a more involved rich text from a raw string
 # Current features:
 #   † based taxon lookup
+#   {text|format} based formatting, currently just supports basic coloration
 proc parseRichText*(str: string): RichText =
   var nonStandard = false
   var marker = 0
 
+
   var i = 0
   var c : Rune
-  while i < str.len:
-    fastRuneAt(str, i, c, false)
+  let runes = toRunes(str)
+  while i < runes.len:
+    c = runes[i]
     # indicates a taxon, as opposed to raw text
     if c == TaxonRune:
       # add the text from the last marker to this point as raw text
       if marker < i:
-        result.add(richText(str[marker ..< i]))
+        result.add(richText($(runes[marker ..< i])))
       # skip past the †
       i.inc(c.size)
       var taxonIdent = ""
@@ -217,8 +236,21 @@ proc parseRichText*(str: string): RichText =
       result.add(richText(findTaxon(taxonIdent)))
       nonStandard = true
       marker = i
+    elif c == OpenFormatRune:
+      # add the text from the last marker to this point as raw text
+      if marker < i:
+        result.add(richText($(runes[marker ..< i])))
+
+      let (formatI,rawText) = takeRunesUntil(runes, i + 1, DivideFormatRune)
+      let (newI,formatStr) = takeRunesUntil(runes, formatI, CloseFormatRune)
+      i = newI
+      marker = newI
+
+      let color = parseConfig(formatStr).readInto(RGBA)
+      result.add(richText(rawText, color = some(color)))
+      nonStandard = true
     else:
-      i.inc(c.size)
+      i.inc
 
   # if we didn't encounter anything out of the ordinary just instantiate it with the raw
   # string value

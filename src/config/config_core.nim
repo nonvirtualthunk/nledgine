@@ -624,7 +624,10 @@ proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
 proc parseConfig*(str: string): ConfigValue =
   var ctx = ParseContext(str: str, cursor: 0)
   ctx.skipWhitespace()
-  result = parseObj(ctx, ctx.peek() != '{')
+  if ctx.peek == '[':
+    result = parseArray(ctx)
+  else:
+    result = parseObj(ctx, ctx.peek() != '{')
   for (inheritor, basePath) in ctx.merges:
     let baseConfig = result.getByPath(basePath)
     if baseConfig.kind == ConfigValueKind.Object:

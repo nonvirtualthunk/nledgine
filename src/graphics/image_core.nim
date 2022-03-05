@@ -44,7 +44,19 @@ proc reloadImage*(img: Image) =
       img.data = stbi.load("resources/images/unknown.png", width, height, channels, stbi.Default)
       img.sentinel = true
 
-    if channels != 4:
+    if channels == 3:
+      let tmpData = img.data
+      img.data = createSharedU(byte, width * height * 4)
+      for i in 0 ..< width * height:
+        let srcO = i * 3
+        let destO = i * 4
+        cast[ptr uint8]((cast[uint](img.data) + (destO + 0).uint))[] = cast[ptr uint8]((cast[uint](tmpData) + (srcO + 0).uint))[]
+        cast[ptr uint8]((cast[uint](img.data) + (destO + 1).uint))[] = cast[ptr uint8]((cast[uint](tmpData) + (srcO + 1).uint))[]
+        cast[ptr uint8]((cast[uint](img.data) + (destO + 2).uint))[] = cast[ptr uint8]((cast[uint](tmpData) + (srcO + 2).uint))[]
+        cast[ptr uint8]((cast[uint](img.data) + (destO + 3).uint))[] = 255
+      channels = 4
+      freeShared(tmpData)
+    elif channels != 4:
       raise newException(ValueError, "Only 4 channel images are currently supported [" & path & "] : " & $channels)
 
     img.channels = channels
@@ -181,7 +193,7 @@ proc copyFrom*(target: Image, src: Image, position: Vec2i) =
 ## Returns true if the image on disk has been modified more recently than the image in memory
 proc modifiedOnDisk*(img: Image): bool =
   if img.resourcePath.isSome:
-    if getLastModificationTime(img.resourcePath.get) > img.lastModified:
+    if fileExists(img.resourcePath.get) and getLastModificationTime(img.resourcePath.get) > img.lastModified:
       return true
   false
 

@@ -1,6 +1,6 @@
 Encounters {
   SundarsLanding|Initial {
-    text: "The journey through the Gate does not bear remembering. Simple, honest darkness would have been preferrable to the colors that lit that interminable passage. The way forward was clear and empty, but looking back nothing could be seen but a web of thorns, and each vine covered in watchful, waiting eyes. You did not look back again until you felt the warm air of a new world on your face."
+    text: "The journey through the Gate does not bear remembering. The way forward was clear and empty, but looking back nothing could be seen but a web of thorns, and each vine covered in watchful, waiting eyes. You did not look back again until you felt the warm air of a new world on your face."
     options: [{
       kind: Choice
       prompt: "Continue..."
@@ -10,7 +10,7 @@ Encounters {
     }]
   }
   SundarsLanding|Initial|Urchin {
-    text: "The better sorts have to be paid to take the crossing. They have something they're leaving behind. For you, all you left behind were bad memories, a certain amount of suspicion by the local magistrate, and a cautious respect among the lower folk of the back alleys of the capital. In exchange you've gained a new start in life and a Worrying Debt to someone on the other side who arranged your arrival."
+    text: "The better sorts have to be paid to take the crossing, they have something they're leaving behind. All you left behind were bad memories and suspicion. In exchange you've gained a new start in life and a {Worrying Debt|[255,100,100,255]} to someone on the other side who arranged your arrival."
     options: {
       kind: Choice
       prompt: "Continue..."
@@ -21,7 +21,7 @@ Encounters {
     }
   }
   SundarsLanding|Main {
-    text: "Sundar's Gate broods over the city that encircles it in widening rings, visible at its great height even from the outer edges of the city. Three great roads lead inward to feed it the products of conquest and cultivation. Spire wood, fiddler's glass, distressingly shaped but nourishing foodstuffs all make their way by cart, ox, and man to the Gate and through to feed the distant empire beyond. Around them and off a maze of smaller tributaries are a dizzing array of buildings all abuzz with a similarly dizzying array of people. Here is the bastion of civilization in the wild lands of the Crossroads."
+    text: "Sundar's Gate broods over the city that encircles it in widening rings, visible at its great height even from the outer edges of the city. Three great roads lead inward to feed it the products of conquest and cultivation. Spire wood, fiddler's glass, distressingly shaped but nourishing foodstuffs. All make their way by cart, ox, and man to the Gate and through to feed the distant empire beyond. Around them and off a maze of smaller tributaries are a dizzing array of buildings all abuzz with a dizzying array of people. Here is the bastion of civilization in the wild lands of the Crossroads."
     options: [{
       kind: Location
       prompt: "The Gate"
@@ -95,11 +95,11 @@ Encounters {
   }
 
   SundarsLanding|TheInnerRing {
-    text: "The buildings closest to the Gate were built early on, when the first expeditions crossed through. Generally the architects seem to have wanted to erect beacons of culture and civilization to enthrall an untamed world. The effect is slightly spoiled by the practical necessity for crenelations, spikes, and arrow slits. The defensive ditches have been transformed into decorative ponds, however, and the entire district is filled with the colors of flowering water plants. The calls from the floating stalls compete with the insistent requests of the waterfowl for the attention of passers by."
+    text: "The buildings closest to the Gate were built when the first expeditions crossed through. The architects seem to have wanted to erect beacons of culture and civilization to enthrall an untamed world. The effect is slightly spoiled by the practical necessity of crenelations, spikes, and arrow slits. Now though, the defensive ditches have been transformed into decorative ponds and the entire district is filled with the colors of flowering water plants. The calls from the floating stalls compete with the insistent requests of the waterfowl for the attention of passers by."
     options: [{
       kind: Choice
       prompt: "Purchase a roasted duck"
-      text: "You fancy that the birds swimming nearest to the stall are eyeing you reproachfully as you approach, but the tall man at the grill is very enthusiastic about the freshness of his wares."
+      text: "The birds swimming nearest to the stall eye you reproachfully as you walk nearer, but the tall man at the grill is very enthusiastic about the freshness of his wares."
       requirements: [
         [Money, 2],
         [Qualities.RoastedDuck,0]
@@ -138,20 +138,22 @@ Encounters {
       kind: Choice
       prompt: "Approach the Dapper Bureaucrat"
       text: "A well dressed and enthusiastic noblewoman is holding court in the most well appointed sub-magistrate's office you have ever seen."
+      next: [SundarsLanding|TheFloweringCourt|DapperBureaucratOffice]
+    }]
+  }
+
+  SundarsLanding|TheFloweringCourt|DapperBureaucratOffice {
+    text: "You walk to the Dapper Bureaucrat's court as her previous supplicants depart. Her official stamps have been custom carved from old world mahogany and the rugs covering the floor look too expensive to step on without being arrested, but she ushers you over. You walk to the petitioner's chair gingerly and accept a steaming cup of something fragrant.\n\n\"Now, how can I, Her Eminence's humble servant, be of assistance to one of her loyal subjects?\""
+    options: [{
+      prompt: "Ask how you might be able to serve the empire"
+      text: "There seems to be a great deal outside the city that might warrant attention. A valiant adventurer such as yourself could provide that attention, provided sufficient remuneration."
       next: [{
-        text: "You walk to the Dapper Bureaucrat's court as her previous supplicants depart. Her official stamps have been custom carved from old world mahogany and the rugs covering the floor look too expensive to step on without being arrested but she ushers you over. You walk to the petitioner's chair gingerly and accept a steaming cup of something fragrant.\n\n\"Now, how can I, Her Eminence's humble servant be of assistance to one of her loyal subjects?\""
-        options: [{
-          prompt: "Ask how you might be able to serve the empire"
-          text: "There seems to be a great deal outside the city that might warrant attention. A valiant adventurer such as yourself could provide that attention, provided sufficient remuneration."
-          next: [{
-            condition: [Qualities.Quest|DapperBureaucrat, 0]
-            text: "\"I am surprised and flattered that you think I, a lowly sub-magistrate, has the power to influence our foreign policy beyond the walls. You are in luck, however. In the course of my duties I happen to have heard of a small issue. If that issue were to be resolved I am confident I could arrange a small dispensation\""
-            effects: [
-              Quests.SimpleEmpireQuest,
-              [Qualities.Quest|DapperBureaucrat, 1]
-            ]
-          }]
-        }]
+        condition: [Qualities.Quest|DapperBureaucrat, 0]
+        text: "\"I am surprised and flattered that you think I, a lowly sub-magistrate, has the power to influence our foreign policy beyond the walls. You are in luck, however. In the course of my duties I happen to have heard of a small issue. If that issue were to be resolved I am confident I could arrange a small dispensation\""
+        effects: [
+          Quests.SimpleEmpireQuest,
+          [Qualities.Quest|DapperBureaucrat, 1]
+        ]
       }]
     }]
   }

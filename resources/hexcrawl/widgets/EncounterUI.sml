@@ -5,7 +5,7 @@ EncounterWidget {
   x: 0
   y: 0
   width: expandToParent(30)
-  height: expandToParent(20)
+  height: expandToParent(15)
   border.width: 0
 
   children {
@@ -15,8 +15,8 @@ EncounterWidget {
       x: 0
       y: 0
 
-      width: 64
-      height: 48
+      width: 48
+      height: 32
 
       image: "hexcrawl/test/6g5yccljmag81_smaller.png"
     }

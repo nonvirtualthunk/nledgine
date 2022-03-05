@@ -53,7 +53,7 @@ proc glyphImage*(f: ArxFont, r: Rune) : image_core.Image =
     var path = f.font.typeface.getGlyphPath(r)
     let bounds = f.computeBounds($r)
     if bounds.x <= 0.0f or bounds.y <= 0.0f:
-      echo "zero Rune: ", r, " Bounds: ", bounds
+      echo "zero Rune: ", r, " (", r.int, ") Bounds: ", bounds
       createImage(vec2i(1,1))
     else:
       let gimg = newImage(bounds.x.int, ((f.font.typeface.ascent - f.font.typeface.descent) * f.scale).int)
