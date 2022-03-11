@@ -275,6 +275,12 @@ proc parseIntOpt*(str: string): Option[int] =
   except ValueError:
     none(int)
 
+proc parseBoolOpt*(str: string): Option[bool] =
+  try:
+    some(parseBool(str))
+  except ValueError:
+    none(bool)
+
 proc parseFloatOpt*(str: string): Option[float] =
   try:
     some(parseFloat(str))
@@ -594,6 +600,26 @@ template maxByIt*[T](s: seq[T], stmts) : Option[T] =
       maxF = f.float
       result = some(v)
   result
+
+
+template mapIt*[T](s: Option[T], stmts: untyped): untyped =
+
+  if s.isNone:
+    var it{.inject.}: T
+    none(typeof(stmts))
+  else:
+    let it {.inject.} = s.get
+    let f = stmts
+    some(f)
+
+template flatMapIt*[T](s: Option[T], stmts: untyped): untyped =
+  if s.isNone:
+    var it{.inject.}: T
+    none(typeof(stmts.get))
+  else:
+    let it {.inject.} = s.get
+    let f = stmts
+    f
 
 
 iterator upOrDownIter*[T](s : Slice[T]) : T =

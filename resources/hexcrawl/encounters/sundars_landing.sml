@@ -7,10 +7,17 @@ Encounters {
       hidden: true
       requirement: [Qualities.Urchin, 1]
       next: SundarsLanding|Initial|Urchin
+    },{
+      kind: Location
+      prompt: "FIGHT!"
+      text: "To battle! For Testing!"
+      challenge: [Combat, 3, Slime]
+      onSuccess: [[Money, 5]]
+      onFailure: [[Damage, 5]]
     }]
   }
   SundarsLanding|Initial|Urchin {
-    text: "The better sorts have to be paid to take the crossing, they have something they're leaving behind. All you left behind were bad memories and suspicion. In exchange you've gained a new start in life and a {Worrying Debt|[255,100,100,255]} to someone on the other side who arranged your arrival."
+    text: "The better sorts have to be paid to take the crossing, they have something they're leaving behind. All you left behind were bad memories and suspicion. In exchange you've gained a new start in life and a {Worrying Debt|[200,100,100,255]} to someone on the other side who arranged your arrival."
     options: {
       kind: Choice
       prompt: "Continue..."
@@ -129,6 +136,10 @@ Encounters {
       prompt: "The Flowering Court"
       text: "A sprawling maze of waterways and little stone buildings spring off the main Spireward road."
       next: SundarsLanding|TheFloweringCourt
+    },{
+      kind: Location
+      prompt: "Leave the Inner Ring"
+      next: SundarsLanding|Main
     }]
   }
 
@@ -139,6 +150,10 @@ Encounters {
       prompt: "Approach the Dapper Bureaucrat"
       text: "A well dressed and enthusiastic noblewoman is holding court in the most well appointed sub-magistrate's office you have ever seen."
       next: [SundarsLanding|TheFloweringCourt|DapperBureaucratOffice]
+    },{
+      kind: Location
+      prompt: "Return to the Inner Ring"
+      next: SundarsLanding|TheInnerRing
     }]
   }
 
@@ -155,6 +170,12 @@ Encounters {
           [Qualities.Quest|DapperBureaucrat, 1]
         ]
       }]
-    }]
+      },{
+        kind: Location
+        prompt: "Depart"
+        text: "Your business here is done"
+        next: SundarsLanding|TheFloweringCourt
+      }
+    ]
   }
 }

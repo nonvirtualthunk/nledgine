@@ -18,7 +18,7 @@ EncounterWidget {
       width: 48
       height: 32
 
-      image: "hexcrawl/test/6g5yccljmag81_smaller.png"
+      image: "%(encounter.image)"
     }
 
     TextArea {
@@ -36,6 +36,18 @@ EncounterWidget {
           width: 100%
           text: "%(encounter.text)"
           multiLine: true
+
+          border.width: 0
+        }
+
+        EffectText {
+          type: TextDisplay
+          x: 0
+          y: 1 below EncounterText
+          width: 100%
+          text: "%(encounter.effectText)"
+          multiLine: true
+          horizontalAlignment: Centered
 
           border.width: 0
         }

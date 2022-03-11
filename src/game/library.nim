@@ -47,6 +47,18 @@ proc get*[T](lib: Library[T], key: Taxon): Option[ref T] =
   else:
     none(ref T)
 
+proc getOrDefault*[T](lib: Library[T], key: Taxon, fallback: Taxon, warnOnMissing: bool = true): ref T =
+  if lib.values.contains(key):
+    lib.values[key]
+  else:
+    if warnOnMissing:
+      warn &"Could not find {key} in library for {$T}, falling back to default {fallback}"
+    if lib.values.contains(fallback):
+      lib.values[fallback]
+    else:
+      warn &"\tFallback not present either, returning nil"
+      nil
+
 proc `==`*(a: LibraryTaxon, b: Taxon): bool =
   a.taxon == b
 

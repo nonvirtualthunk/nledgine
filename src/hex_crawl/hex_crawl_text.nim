@@ -27,23 +27,8 @@ proc debugPrint*[T](data: ref T) =
 
 
 let world = createLiveWorld()
-let captain = world.createEntity()
-captain.attachData(
-  Captain(
-    encounterStack: @[taxon("Encounters", "SundarsLanding|Initial")],
-    attributes: {
-      † Attributes.Iron : 2,
-      † Attributes.Silver : 2,
-      † Attributes.Mask : 2,
-      † Attributes.Lens : 2,
-      † Attributes.Art : 2,
-      † Attributes.Spirit : 2,
-    }.toTable,
-    money: 20
-  )
-)
-captain.attachData(Flags())
-
+let captain = createCaptain(world)
+captain[Captain].encounterStack = @[EncounterElement(node: some(taxon("Encounters", "SundarsLanding|Initial")))]
 
 const lineLength = 80
 

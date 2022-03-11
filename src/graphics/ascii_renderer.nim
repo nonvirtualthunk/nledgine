@@ -649,44 +649,6 @@ proc imageToAscii*(buff: ref AsciiBuffer, gfx: ref AsciiGraphics, img: Image, ou
       buff[x, y] = Char(rune: r, foreground: foreground, background: background, z: outPos.z.int8)
 
 
-      # let pxs = xf
-      # let pys = yf
-      #
-      # for dx in 0 ..< samples:
-      #   for dy in 0 ..< samples:
-      #     let color = sampleImage(pxs + (dx.float32 + 0.5f32) * xdf, pys + (dy.float32 + 0.5f32) * ydf)
-      #     var added = false
-      #     for i in 0 ..< sampleCounts.len:
-      #       if sampleCounts[i][0] == color:
-      #         sampleCounts[i][1].inc
-      #         added = true
-      #         break
-      #     if not added:
-      #       sampleCounts.add((color, 1))
-
-      # let wchar = if sampleCounts.len == 1:
-      #   Char(rune: ShadingRunes[3], foreground: lookupColor(c, sampleCounts[0][0]))
-      # else:
-      #   sampleCounts.sort((a, b) => cmp(-a[1], -b[1]))
-      #   let primary = sampleCounts[0]
-      #   let secondary = sampleCounts[1]
-      #   let ratio = primary[1].float32 / secondary[1].float32
-      #   let rune = if ratio > 3.0f32:
-      #     ShadingRunes[3]
-      #   elif ratio >= 2.0f32:
-      #     ShadingRunes[2]
-      #   elif ratio >= 1.5f32:
-      #     ShadingRunes[1]
-      #   else:
-      #     ShadingRunes[0]
-      #   Char(rune: rune, foreground: lookupColor(c, primary[0]), background: lookupColor(c, secondary[0]), z: outPos.z.int8)
-      #
-      # write(c, outPos.x + x, outPos.y + y, wchar)
-      #
-      # sampleCounts.clear()
-
-
-
 
 proc layout(runes: seq[Rune], minDim: Vec2i, maxDim: Vec2i,  multiLine: bool, hAlign: HorizontalAlignment): seq[(int, main_core.ClosedIntRange)] =
   result = @[]

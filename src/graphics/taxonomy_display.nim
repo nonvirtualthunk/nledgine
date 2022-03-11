@@ -5,12 +5,14 @@ import images
 import config
 import resources
 import strformat
+import windowingsystem/rich_text
 
 export library
 
 type
    TaxonomyDisplay* = object
       icon*: Option[ImageRef]
+      text*: Option[RichText]
 
 defineSimpleReadFromConfig(TaxonomyDisplay)
 
@@ -25,7 +27,7 @@ defineLibrary[TaxonomyDisplay]:
 
    proc process(keyAccum: string, cv: ConfigValue) =
       if cv.isObj:
-         if cv.hasField("icon"):
+         if cv.hasField("icon") or cv.hasField("text"):
             let t = qualifiedTaxon(keyAccum)
             let tmp = new TaxonomyDisplay
             cv.readInto(tmp[])

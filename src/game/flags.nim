@@ -162,6 +162,9 @@ proc flagValue*(world: LiveWorld, entity: Entity, flag: Taxon): int =
   else:
     0
 
+proc changeFlagValue*(flags: ref Flags, flag: Taxon, delta: int) =
+  flags.flags[flag] = flags.flags.getOrDefault(flag, 0) + delta
+
 proc keyedFlagValues*(flags: ref Flags, flag: string): Table[Taxon, int] =
   let flag = taxon("flags", flag)
   for key in flags.keyedFlags.getOrDefault(flag).keys:

@@ -1001,7 +1001,9 @@ proc ensureDependency(dep: Dependency, dirtySet: HashSet[Dependency], completedS
 
 proc collectDirty(dep: Dependency, dirty: var HashSet[Dependency]) =
   var toRemove: seq[Dependent]
-  for dependent in dep.widget.dependents:
+  # Copy here since we may be modifying this on the widget itself
+  let dependents = dep.widget.dependents
+  for dependent in dependents:
     if dependent.dependentWidget.destroyed:
       toRemove.add(dependent)
     else:

@@ -3,6 +3,10 @@ import game_prelude
 import strutils
 import noto
 import windowingsystem/rich_text
+import game/randomness
+import game/flags
+import graphics/taxonomy_display
+import graphics/color
 
 type
   EffectKind* {.pure.} = enum
@@ -24,6 +28,10 @@ type
     Choice
     Location
 
+  EnemyForce* = object
+    kind*: Taxon
+    number*: int
+
   Effect* = object
     case kind* : EffectKind
     of EffectKind.Damage, EffectKind.Money, EffectKind.Terror, EffectKind.Crew:
@@ -36,6 +44,7 @@ type
       encounterNode*: Taxon
     of EffectKind.Quest:
       quest*: Taxon
+
 
   Condition* = object
     case kind*: ConditionKind
@@ -72,12 +81,15 @@ type
 
   ChallengeKind* = enum
     Attribute
+    Combat
 
   Challenge* = object
     case kind* : ChallengeKind:
       of ChallengeKind.Attribute:
         attribute*: Taxon
         difficulty*: int
+      of ChallengeKind.Combat:
+        enemies*: seq[EnemyForce]
 
 
   ChallengeCheck* = object
@@ -92,14 +104,28 @@ type
     Failure
     CriticalFailure
 
+  OutcomeAccessor* = object
+    optionIndex*: int
+    challengeResult*: ChallengeResult
+    outcomeIndex*: int
+
+  EncounterElement* = object
+    node*: Option[Taxon]
+    outcome*: Option[OutcomeAccessor]
+
+
   Captain* = object
     attributes*: Table[Taxon, int]
     money*: int
     activeOfficers*: seq[Entity]
     terror*: int
     crew*: int
-    encounterStack*: seq[Taxon]
+    encounterStack*: seq[EncounterElement]
     quests*: seq[Taxon]
+    deck*: Entity
+
+  ResourcePools* = object
+    resources*: Table[Taxon, Reduceable[int]]
 
   Officer* = object
 
@@ -107,24 +133,45 @@ type
   Character* = object
     name*: string
     health*: Reduceable[int]
-    deck*: seq[Entity]
+    dead*: bool
 
   ChallengeCheckEvent* = ref object of GameEvent
     challenge*: Challenge
     check*: ChallengeCheck
 
 
-  Combatant* = object
-    name*: string
-    health*: Reduceable[int]
-    hand*: seq[Entity]
-    discarded*: seq[Entity]
-    burned*: seq[Entity]
-    draw*: seq[Entity]
-    blockAmount*: int
+  # Combatant* = object
+  #   name*: string
+  #   health*: Reduceable[int]
     
   EnemyCombatant* = object
-    intent*: seq[CardEffect]
+    intent*: string
+    lastIntent*: Option[string]
+    actions*: Table[string, EnemyAction]
+    xp*: int
+
+  EnemyArchetype* = object
+    name*: string
+    actions*: Table[string, EnemyAction]
+    xp*: int
+    health*: DiceExpression
+
+  EnemyAction* = object
+    effects*: seq[CardEffect]
+    weight*: float
+
+  Column* = object
+    combatants*: seq[Entity]
+    blockAmount*: int
+
+  TacticalSide* {.pure.} = enum
+    Friendly
+    Enemy
+
+  TacticalBoard* = object
+    sides*: array[2, Table[int, Column]]
+    activated*: Entity
+    friendlyTurn*: bool
 
   CardEffectKind* {.pure.} = enum
     Damage
@@ -132,6 +179,7 @@ type
     Move
     WorldEffect
     ApplyFlag
+    Activate
 
   TacticalDirection* {.pure.} = enum
     Left
@@ -169,6 +217,9 @@ type
     of CardEffectKind.ApplyFlag:
       flag*: Taxon
       flagAmount*: int
+    of CardEffectKind.Activate:
+      discard
+
 
   CardEffectGroup* = object
     name*: string
@@ -185,25 +236,50 @@ type
 
   Card* = object
     effectGroups*: seq[CardEffectGroup]
+    archetype*: Taxon
 
   CardArchetype* = object
+    name*: string
     effectGroups*: seq[CardEffectGroup]
+
+
+  CardEffectResolvedEvent* = ref object of GameEvent
+    entity*: Entity
+    effect*: CardEffect
+    targets*: seq[Entity]
+
+  CardPlayedEvent* = ref object of GameEvent
+    entity*: Entity
+    card*: Entity
+
+  EncounterOptionChosenEvent* = ref object of GameEvent
+    entity*: Entity
+    option*: EncounterOption
+
+  EncounterOutcomeContinueEvent* = ref object of GameEvent
+    entity*: Entity
 
 
 
 defineReflection(Captain)
+defineReflection(ResourcePools)
 defineReflection(Character)
 defineReflection(Officer)
-defineReflection(Combatant)
+# defineReflection(Combatant)
 defineReflection(EnemyCombatant)
 defineReflection(Card)
+defineReflection(TacticalBoard)
 
 
+proc `$`*(c: EnemyForce) : string =
+  &"{c.kind} x{c.number}"
 
 proc `$`*(c: Challenge) : string =
   case c.kind:
     of ChallengeKind.Attribute:
       &"AttributeChallenge({c.attribute}, {c.difficulty})"
+    of ChallengeKind.Combat:
+      &"CombatChallenge({c.enemies})"
 
 proc `$`*(e: Effect) : string =
   case e.kind:
@@ -229,6 +305,102 @@ proc `$`*(e: Effect) : string =
     of EffectKind.SetFlag:
       &"SetFlag({e.flag}, to: {e.to})"
 
+
+proc flagToRichText*(flag: Taxon): RichText =
+  library(TaxonomyDisplay).get(flag).flatMapIt(it.text).get(richText(flag.displayName))
+
+proc toRichText*(world: LiveWorld, e: Effect, entity: Entity, presentTense: bool): RichText =
+  case e.kind:
+    of EffectKind.Encounter:
+      richText(&"Encounter({e.encounterNode})")
+    of EffectKind.Quest:
+      richText(&"You have gained a Quest")
+    of EffectKind.ChangeFlag:
+      let newValue = entity[Flags].flagValue(e.flag)
+
+      let verb = if e.by > 0:
+        if presentTense: "Gain" else: "Gained"
+      else:
+        if presentTense: "Lose" else: "Lost"
+
+      let flagDisp = flagToRichText(e.flag)
+      var t = richText(&"{verb} ")
+      t.add(flagDisp)
+      t.add(richText(&", now {newValue}"))
+      t
+    of EffectKind.Money, EffectKind.Crew, EffectKind.Damage, EffectKind.Terror:
+      let verb = if e.amount.min > 0:
+        if e.kind == EffectKind.Damage:
+          if presentTense: "Take" else: "Took"
+        else:
+          if presentTense: "Gain" else: "Gained"
+      else:
+        if e.kind == EffectKind.Damage:
+          if presentTense: "Heal" else: "Healed"
+        else:
+          if presentTense: "Lose" else: "Lost"
+      let noun = case e.kind:
+        of EffectKind.Money: richText("Money", color = some(rgba(241,196,60,255)))
+        of EffectKind.Crew: richText("Crew", color = some(rgba(198,171,92,255)))
+        of EffectKind.Damage: richText("Damage", color = some(rgba(200,100,100,255)))
+        of EffectKind.Terror: richText("Terror", color = some(rgba(290,19,60,255)))
+        else: richText("Unknown")
+
+      let endValue = case e.kind:
+        of EffectKind.Money: entity[Captain].money
+        of EffectKind.Crew: entity[Captain].crew
+        of EffectKind.Damage: entity[Character].health.currentValue
+        of EffectKind.Terror: entity[Captain].terror
+        else: 0
+
+      var t = richText(&"{verb} {e.amount.min.abs} ")
+      t.add(noun)
+      t.add(richText(&", now {endValue}"))
+      t
+    of EffectKind.SetFlag:
+      richText(&"{e.flag} is now {e.to}")
+
+
+proc toRichText*(world: LiveWorld, e: CardEffect, entity: Entity): RichText =
+  # TODO: incorporate targeting, that's kind of important
+  case e.kind:
+    of CardEffectKind.Damage: richText(&"{e.damageAmount} Damage")
+    of CardEffectKind.Block: richText(&"{e.blockAmount} Block")
+    of CardEffectKind.Move: richText(&"Move {($e.direction).capitalize}")
+    of CardEffectKind.WorldEffect: toRichText(world, e.effect, entity, true)
+    of CardEffectKind.ApplyFlag:
+      var t = richText("Apply {e.flagAmount} ")
+      t.add(flagToRichText(e.flag))
+      t
+    of CardEffectKind.Activate:
+      richText("Activate")
+
+proc outcomes*(opt: EncounterOption, res : ChallengeResult): seq[EncounterOutcome] =
+  case res:
+    of ChallengeResult.CriticalFailure:
+      if opt.onCriticalFailure.nonEmpty: opt.onCriticalFailure
+      elif opt.onFailure.nonEmpty: opt.onFailure
+      else:
+        warn &"challenge result was a critical failure, but no on failure handling at all {opt}"
+        opt.onSuccess
+    of ChallengeResult.CriticalSuccess:
+      if opt.onCriticalSuccess.nonEmpty: opt.onCriticalSuccess
+      else: opt.onSuccess
+    of ChallengeResult.Success: opt.onSuccess
+    of ChallengeResult.Failure:
+      if opt.onFailure.nonEmpty: opt.onFailure
+      else:
+        warn &"challenge result was a failure, but no on failure handling {opt}"
+        opt.onSuccess
+
+proc outcome*(node: ref EncounterNode, acc: OutcomeAccessor): EncounterOutcome =
+  if node.options.len > acc.optionIndex:
+    let opt = node.options[acc.optionIndex]
+    let oc = outcomes(opt, acc.challengeResult)
+    if oc.len > acc.outcomeIndex:
+      return oc[acc.outcomeIndex]
+  warn &"Encounter outcome accessor was not in bounds {node[]}, {acc}"
+  EncounterOutcome(text: richText("Not found"))
 
 
 proc readFromConfig*(cv: ConfigValue, c: var Condition) =
@@ -261,15 +433,25 @@ proc readFromConfig*(cv: ConfigValue, c: var Challenge) =
     let arr = cv.asArr
     if arr.len > 0:
       let kind = arr[0].asStr
-      let attrOpt = maybeTaxon("Attributes",kind)
-      if attrOpt.isSome:
-        if arr.len > 1:
-          c = Challenge(kind: ChallengeKind.Attribute, attribute: attrOpt.get, difficulty: arr[1].asInt)
-        else:
-          warn &"Attribute challenge should have a difficulty supplied, defaulting to 1"
-          c = Challenge(kind: ChallengeKind.Attribute, attribute: attrOpt.get, difficulty: 1)
+      if kind.toLowerAscii == "combat":
+        # i.e. [combat, 3, slimes]
+        if arr.len == 3:
+          let count = arr[1].asInt
+          let enemyKind = maybeTaxon("enemies", arr[2].asStr)
+          if enemyKind.isSome:
+            c = Challenge(kind: ChallengeKind.Combat, enemies: @[EnemyForce(kind: enemyKind.get, number: count)])
+          else:
+            warn &"Unknown enemy kind for combat: {arr[2].asStr}"
       else:
-        warn &"Unknown kind of challenge: {cv}"
+        let attrOpt = maybeTaxon("Attributes",kind)
+        if attrOpt.isSome:
+          if arr.len > 1:
+            c = Challenge(kind: ChallengeKind.Attribute, attribute: attrOpt.get, difficulty: arr[1].asInt)
+          else:
+            warn &"Attribute challenge should have a difficulty supplied, defaulting to 1"
+            c = Challenge(kind: ChallengeKind.Attribute, attribute: attrOpt.get, difficulty: 1)
+        else:
+          warn &"Unknown kind of challenge: {cv}"
     else:
       warn &"Empty challenge array in config?: {cv}"
   else:
@@ -458,8 +640,9 @@ proc readFromConfig*(cv: ConfigValue, e: var CardEffect) =
         of "damage": CardEffectKind.Damage
         of "block": CardEffectKind.Block
         of "move": CardEffectKind.Move
-        of "worldeffect": CardEffectKind.WorldEffect
-        of "applyflag": CardEffectKind.ApplyFlag
+        of "worldeffect", "world effect": CardEffectKind.WorldEffect
+        of "applyflag", "apply flag": CardEffectKind.ApplyFlag
+        of "activate": CardEffectKind.Activate
         else:
           warn &"Unknown kind for effect {arr}"
           CardEffectKind.Block
@@ -487,10 +670,20 @@ proc readFromConfig*(cv: ConfigValue, e: var CardEffect) =
           e = CardEffect(kind: kind, flag: flag, flagAmount: amount, target: target.get(CardEffectTarget(kind: CardEffectTargetKind.Enemy)))
         of CardEffectKind.WorldEffect:
           warn &"Arbitrary world effects not yet supported for cardeffect deserialization {cv}"
+        of CardEffectKind.Activate:
+          let (target, rem) = extractTarget(arr)
+          if target.isSome:
+            e = CardEffect(kind: kind, target: target.get)
+          else:
+            warn &"Activate ability must have explicitly indicated target"
+
   else:
     warn &"Non-array config for effect {cv}"
 
 defineSimpleReadFromConfig(CardEffectGroup)
+defineSimpleReadFromConfig(EnemyAction)
+defineSimpleReadFromConfig(EnemyArchetype)
+
 # proc readFromConfig*(cv: ConfigValue, e: var CardEffectGroup) =
 #   cv["name"].readInto(e.name)
 #   cv["costs"].readInto(e.costs)
@@ -501,7 +694,13 @@ proc readFromConfig*(cv: ConfigValue, ct: var CardArchetype) =
     cv["effectGroups"].readInto(ct.effectGroups)
   else:
     cv.readInto(ct.effectGroups)
+  cv["name"].readInto(ct.name)
 
 
 defineSimpleLibrary[EncounterNode]("hexcrawl/encounters/mod.sml", "Encounters")
 defineSimpleLibrary[CardArchetype]("hexcrawl/game/cards/mod.sml", "Cards")
+defineSimpleLibrary[EnemyArchetype]("hexcrawl/game/enemies/mod.sml", "Enemies")
+
+
+template `[]`*(arr: array[2, Table[int, Column]], s: TacticalSide): var Table[int, Column] =
+  arr[s.ord]

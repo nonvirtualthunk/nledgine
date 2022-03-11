@@ -25,8 +25,10 @@ type
     cardWidgets: Table[Entity,Widget]
     focused*: bool
     tentativeCard*: Option[Entity]
+    selectedGroup*: int
     cardControlHints: Widget
     cardDefinitionHints: Widget
+    active: bool
 
     showHints*: bool
 
@@ -43,7 +45,6 @@ type
     primaryStats*: Option[RichText]
     image*: Option[Image]
     textOptions*: seq[RichText]
-    selectedOption*: int
     definitions*: seq[RichText]
 
 
@@ -97,17 +98,31 @@ method initialize(g: AsciiCardComponent, world: LiveWorld, display: DisplayWorld
         if key == KeyCode.Tab:
           cardUI.focused = not cardUI.focused
           cardUI.modified = true
-        elif key == KeyCode.Left and cardUI.focused:
+        elif key == KeyCode.Left:
           let index = max(tentativeCardIndex(cardUI) - 1, 0)
           cardUI.tentativeCard = some(cardUI.hand[index].entity)
+          cardUI.selectedGroup = 0
           cardUI.modified = true
-        elif key == KeyCode.Right and cardUI.focused:
+        elif key == KeyCode.Right:
           let index = min(tentativeCardIndex(cardUI) + 1, cardUI.hand.len - 1)
           cardUI.tentativeCard = some(cardUI.hand[index].entity)
+          cardUI.selectedGroup = 0
           cardUI.modified = true
+        elif key == KeyCode.Up or key == KeyCode.Down:
+          let delta = if key == KeyCode.Up: -1 else: 1
+          if cardUI.hand.len > 0:
+            let tent = cardUI.hand[tentativeCardIndex(cardUI)]
+            cardUI.selectedGroup = (cardUI.selectedGroup + tent.textOptions.len + delta) mod (tent.textOptions.len)
+            cardUI.modified = true
     extract(KeyRelease, key):
       discard
 
+proc `active=`*(cardUI: ref CardUI, b: bool) =
+  if cardUI.active != b:
+    cardUI.active = b
+    cardUI.modified = true
+
+proc active*(cardUI: ref CardUI): bool = cardUI.active
 
 proc removeUnneededCardWidgets(cardUI: ref CardUI) =
   var handEntities: HashSet[Entity]
@@ -141,7 +156,7 @@ proc toRichText(c: CardCostB): RichText =
     for s in result.sections.mitems:
       s.color = c.color
 
-proc toInternalBinding(c: CardDisplayB) : CardDisplayInternal =
+proc toInternalBinding(c: CardDisplayB, selectedGroup: int) : CardDisplayInternal =
   var cdi : CardDisplayInternal
   cdi.formattedName = c.name
   if c.primaryCost.isSome:
@@ -155,7 +170,7 @@ proc toInternalBinding(c: CardDisplayB) : CardDisplayInternal =
   cdi.textOptions = c.textOptions
   cdi.hasMultipleOptions = c.textOptions.len > 1
   for i in 0 ..< cdi.textOptions.len:
-    if i == c.selectedOption:
+    if i == selectedGroup:
       cdi.textOptions[i].tint = none(RGBA)
     else:
       cdi.textOptions[i].tint = some(rgba(80,80,80,255))
@@ -192,7 +207,8 @@ proc syncCardWidgets(cardUI: ref CardUI) =
     for i in 0 ..< cardUI.hand.len:
       let c = cardUI.hand[i]
       let w = cardUI.cardWidgets[c.entity]
-      w.bindValue("card", toInternalBinding(c))
+      let selectedGroup = if cardUI.tentativeCard == some(c.entity): cardUI.selectedGroup else: 0
+      w.bindValue("card", toInternalBinding(c, selectedGroup))
       w.x = fixedPos(i * offsetPer)
       if cardUI.focused:
         w.y = fixedPos(cardYOffset(cardUI, i), WidgetOrientation.BottomLeft)
@@ -200,7 +216,7 @@ proc syncCardWidgets(cardUI: ref CardUI) =
         w.y = fixedPos(cardYOffset(cardUI, i) - w.resolvedDimensions.y + 2, WidgetOrientation.BottomLeft)
       # Z gets further back the further away from the selected index you are
       w.z = absolutePos(cardUI.hand.len + 1 - (topIndex - i).abs)
-      if cardUI.focused and cardUI.tentativeCard == some(c.entity):
+      if cardUI.tentativeCard == some(c.entity):
         w.data(AsciiWidget).border.color = some(bindable(rgba(120,120,255,255)))
       else:
         w.data(AsciiWidget).border.color = none(Bindable[RGBA])
@@ -209,7 +225,7 @@ proc updateHintUI(cardUI: ref CardUI) =
   if cardUI.focused and cardUI.tentativeCard.isSome:
     let i = tentativeCardIndex(cardUI)
     let cardWidget = cardUI.cardWidgets[cardUI.tentativeCard.get]
-    cardUI.cardControlHints.bindValue("card", toInternalBinding(cardUI.hand[i]))
+    cardUI.cardControlHints.bindValue("card", toInternalBinding(cardUI.hand[i], 0))
     cardUI.cardControlHints.x = matchPos(cardWidget.identifier)
 
     let definitions = cardUI.hand[i].definitions
@@ -227,6 +243,7 @@ proc updateTentativeCard(cardUI: ref CardUI) =
 method update(g: AsciiCardComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
   let cardUI: ref CardUI = display[CardUI]
   if cardUI.modified:
+    cardUI.handWidget.bindValue("active", cardUI.active)
     cardUI.handWidget.bindValue("handShowing", cardUI.focused and cardUI.tentativeCard.isSome)
     updateTentativeCard(cardUI)
     removeUnneededCardWidgets(cardUI)
@@ -240,13 +257,14 @@ method update(g: AsciiCardComponent, world: LiveWorld, display: DisplayWorld, df
 
 method onEvent*(g: AsciiCardComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
   let cardUI : ref CardUI = display[CardUI]
-  matcher(event):
-    extract(KeyPress, key):
-      if key == KeyCode.LeftShift or key == KeyCode.RightShift:
-        display[WindowingSystem].desktop.bindValue("showDetail", true)
-    extract(KeyRelease, key):
-      if key == KeyCode.LeftShift or key == KeyCode.RightShift:
-        display[WindowingSystem].desktop.bindValue("showDetail", false)
+  if cardUI.active:
+    matcher(event):
+      extract(KeyPress, key):
+        if key == KeyCode.LeftShift or key == KeyCode.RightShift:
+          display[WindowingSystem].desktop.bindValue("showDetail", true)
+      extract(KeyRelease, key):
+        if key == KeyCode.LeftShift or key == KeyCode.RightShift:
+          display[WindowingSystem].desktop.bindValue("showDetail", false)
 
 
 

@@ -6,6 +6,7 @@ Cards {
   }
 
   Defend {
+    name: "Defend"
     effectGroups: [
       {
         name: "Defend"
@@ -13,12 +14,12 @@ Cards {
         effects: [[block, 5]]
       },
       {
-        name: "Move left"
+        name: "Move Left"
         costs: [[energy,1]]
         effects: [[move,left]]
       },
       {
-        name: "Move left"
+        name: "Move Right"
         costs: [[energy,1]]
         effects: [[move,right]]
       },

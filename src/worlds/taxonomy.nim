@@ -29,6 +29,7 @@ type
 
   TaxonomyLoader* = object
     loadTaxonsFrom*: proc (cv: ConfigValue) : seq[ProtoTaxon] {.gcsafe.}
+    loadStaticTaxons*: proc (): seq[ProtoTaxon] {.gcsafe.}
 
 
 var TaxonomyLoaderCount = 0
@@ -281,19 +282,37 @@ proc load(taxonomy: ref Taxonomy) {.gcsafe.} =
             parents.add(taxonomy.taxon(namespace, parentStr))
         discard taxonomy.addTaxon(namespace, name, parents)
 
+  proc loadProtoTaxon(t: ProtoTaxon) =
+    var parents : seq[Taxon]
+    for p in t.parents:
+      let norm = normalizeTaxonStr(p)
+      if taxonomy.taxonsByName.contains(norm):
+        parents.add(taxonomy.taxonsByName[norm])
+      else:
+        let sections = p.split('.')
+        if sections.len == 2:
+          let namespace = normalizeTaxonStr(sections[0])
+          let name = normalizeTaxonStr(sections[1])
+          if taxonomy.taxonsByNameAndNamespace.contains((namespace, name)):
+            parents.add(taxonomy.taxonsByNameAndNamespace[(namespace, name)])
+          else:
+            warn &"Could not resolve parent by namespace.name when using custom taxon loader {namespace} : {name}"
+        else:
+          warn &"Could not resolve parent when using custom taxon loader {p}"
+    discard taxonomy.addTaxon(t.namespace, t.name, parents)
+
+  for i in 0 ..< TaxonomyLoaderCount:
+    if not TaxonomyLoaders[i].loadStaticTaxons.isNil:
+      for t in TaxonomyLoaders[i].loadStaticTaxons():
+        loadProtoTaxon(t)
+
   for v in conf["TaxonomySources"].asArr:
     let sourcePath = v.asStr
     let sourceConf = resources.config(sourcePath)
     for i in 0 ..< TaxonomyLoaderCount:
-      for t in TaxonomyLoaders[i].loadTaxonsFrom(sourceConf):
-        var parents : seq[Taxon]
-        for p in t.parents:
-          let norm = normalizeTaxonStr(p)
-          if taxonomy.taxonsByName.contains(norm):
-            parents.add(taxonomy.taxonsByName[norm])
-          else:
-            warn &"Could not resolve parent when using custom taxon loader {p}"
-        discard taxonomy.addTaxon(t.namespace, t.name, parents)
+      if not TaxonomyLoaders[i].loadTaxonsFrom.isNil:
+        for t in TaxonomyLoaders[i].loadTaxonsFrom(sourceConf):
+          loadProtoTaxon(t)
 
 
 
