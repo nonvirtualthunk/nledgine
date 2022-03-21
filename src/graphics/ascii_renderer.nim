@@ -1001,10 +1001,16 @@ proc layoutChars(chars: seq[Char], multiLine: bool, maxDims: Vec2i, hAlign: Hori
           if isWhiteSpace(r):
             lastBreakPoint = i
 
-          if i - lstart >= cWidth:
-            lines.add(lstart ..< lastBreakPoint)
-            i = lastBreakPoint
-            lstart = lastBreakPoint+1
+          if i - lstart >= cWidth :
+            if lastBreakPoint > lstart:
+              lines.add(lstart ..< lastBreakPoint)
+              i = lastBreakPoint
+              lstart = lastBreakPoint+1
+            else:
+              lines.add(lstart ..< i)
+              lstart = i
+
+
 
         i.inc
 

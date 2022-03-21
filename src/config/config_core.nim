@@ -635,6 +635,7 @@ proc parseConfig*(str: string): ConfigValue =
     else:
       warn &"Haven't implemented non-object-overlay inherited config values\n\tbasePath: {basePath}"
 
+
 proc readConfigFromFile*(path: string): ConfigValue =
   parseConfig(readFile(path))
 

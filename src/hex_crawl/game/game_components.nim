@@ -20,6 +20,8 @@ type
 
   EncounterComponent* = ref object of LiveGameComponent
 
+  CardBattleComponent* = ref object of LiveGameComponent
+
 
 method initialize(g: CaptainComponent, world: LiveWorld) =
   g.name = "CaptainComponent"
@@ -66,3 +68,17 @@ method onEvent(g: EncounterComponent, world: LiveWorld, event: Event) =
   #       cap.encounterStack.setLen(cap.encounterStack.len - 1)
   #       for eff in elem.outcome.get.effects:
   #         applyEffect(world, entity, eff)
+
+
+
+
+
+method initialize(g: CardBattleComponent, world: LiveWorld) =
+  g.name = "EncounterComponent"
+
+
+method update(g: CardBattleComponent, world: LiveWorld) =
+  discard
+
+method onEvent(g: CardBattleComponent, world: LiveWorld, event: Event) =
+  discard

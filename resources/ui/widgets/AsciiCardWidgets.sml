@@ -14,6 +14,7 @@ HandWidget {
       z: 50
       width: 34
       height: wrap content
+      ignoreMissingRelativePosition: true
 
       border.width: 1
       border.color: [200,200,200,255]
@@ -43,6 +44,7 @@ HandWidget {
       height: wrap content
       z: 50
       border.width: 1
+      ignoreMissingRelativePosition: true
 
       showing: ["%(showDetail)", "%(handShowing)", "%(hasDefinitions)"]
 

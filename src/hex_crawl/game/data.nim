@@ -259,6 +259,10 @@ type
   EncounterOutcomeContinueEvent* = ref object of GameEvent
     entity*: Entity
 
+  IntentChosenEvent* = ref object of GameEvent
+    entity*: Entity
+    intent*: string
+
 
 
 defineReflection(Captain)
@@ -269,6 +273,12 @@ defineReflection(Officer)
 defineReflection(EnemyCombatant)
 defineReflection(Card)
 defineReflection(TacticalBoard)
+
+eventToStr(IntentChosenEvent)
+eventToStr(EncounterOutcomeContinueEvent)
+eventToStr(EncounterOptionChosenEvent)
+eventToStr(CardPlayedEvent)
+eventToStr(CardEffectResolvedEvent)
 
 
 proc `$`*(c: EnemyForce) : string =

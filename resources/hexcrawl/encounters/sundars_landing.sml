@@ -11,9 +11,12 @@ Encounters {
       kind: Location
       prompt: "FIGHT!"
       text: "To battle! For Testing!"
-      challenge: [Combat, 3, Slime]
-      onSuccess: [[Money, 5]]
-      onFailure: [[Damage, 5]]
+      challenge: [Combat, 1, Slime]
+      onSuccess: [{
+        text: "You batter the slimes into inanimate piles of goo and collect a few coins floating in the sticky remains"
+        effects: [[Money, 5], SundarsLanding|Initial]
+      }]
+      onFailure: [[Damage, 5], SundarsLanding|Initial]
     }]
   }
   SundarsLanding|Initial|Urchin {
@@ -92,6 +95,10 @@ Encounters {
             [Crew, "2-3"]
             [Qualities.RecruitingAtTheGate,1]
           ]
+        }],
+        onFailure: [{
+          text: "The guards at the gate are unusually attentive today and the fresh arrivals are cautious, there will be no new faces around the fire tonight."
+          effects: [[Qualities.RecruitingAtTheGate,1]]
         }]
       },{
         kind: Choice

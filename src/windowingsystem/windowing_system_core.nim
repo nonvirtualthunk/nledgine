@@ -146,6 +146,7 @@ type
     liveWorldEventCallbacks: seq[(UIEvent, LiveWorld, DisplayWorld) -> void]
     acceptsFocus*: bool
     destroyed*: bool
+    ignoreMissingRelativePosition*: bool
 
   WidgetArchetype* = object
     widgetData: Widget
@@ -568,7 +569,8 @@ iterator dependentOn(p: WidgetPosition, axis: Axis, widget: Widget, parent: Widg
       yield (widget: relativeWidget.get, kind: DependencyKind.Position, axis: axis)
       yield (widget: relativeWidget.get, kind: DependencyKind.Dimensions, axis: axis)
     else:
-      warn &"Relative positioning with target {p.relativeToWidget} on widget {widget.identifier}, but no matching relative widget found"
+      if not widget.ignoreMissingRelativePosition:
+        warn &"Relative positioning with target {p.relativeToWidget} on widget {widget.identifier}, but no matching relative widget found"
 
     if not isFarSide(axis, p.relativeToWidgetAnchorPoint):
       yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
@@ -577,7 +579,8 @@ iterator dependentOn(p: WidgetPosition, axis: Axis, widget: Widget, parent: Widg
     if matchWidget.isSome:
       yield (widget: matchWidget.get, kind: DependencyKind.Position, axis: axis)
     else:
-      warn &"Matched position did not find correspondng widget {p.matchWidget} to match to"
+      if not widget.ignoreMissingRelativePosition:
+        warn &"Matched position did not find corresponding widget {p.matchWidget} to match to"
   of WidgetPositionKind.Absolute:
     if isFarSide(axis, p.absoluteAnchorTo) or p.absoluteAnchorTo == WidgetOrientation.Center:
       yield (widget: widget, kind: DependencyKind.Dimensions, axis: axis)
@@ -831,14 +834,16 @@ proc resolvePositionValue(w: Widget, axis: Axis, pos: WidgetPosition): int =
       else:
         relativeToWidget.get.resolvedPosition[axis] - pos.relativeOffset * w.windowingSystem.pixelScale - w.resolvedDimensions[axis]
     else:
-      warn &"resolvePositionValue(...) looking for relative widget {pos.relativeToWidget} on widget {w.identifier} but none found"
+      if not w.ignoreMissingRelativePosition:
+        warn &"resolvePositionValue(...) looking for relative widget {pos.relativeToWidget} on widget {w.identifier} but none found"
       0
   of WidgetPositionKind.Match:
     let matchWidget = w.parent.get.childByIdentifier(pos.matchWidget)
     if matchWidget.isSome:
       matchWidget.get.resolvedPosition[axis]
     else:
-      warn &"resolvePositionValue(...) looking for match widget {pos.matchWidget} on widget {w.identifier} but none found"
+      if not w.ignoreMissingRelativePosition:
+        warn &"resolvePositionValue(...) looking for match widget {pos.matchWidget} on widget {w.identifier} but none found"
       0
   of WidgetPositionKind.Absolute:
     if pos.absoluteAnchorTo == WidgetOrientation.Center:
@@ -1484,6 +1489,7 @@ proc readFromConfig*(cv: ConfigValue, e: var Widget) =
   readInto(cv["height"], e.dimensions[1])
   readInto(cv["padding"], e.padding)
   readIntoOrElse(cv["showing"], e.showing_f, @[bindable(true)])
+  readInto(cv["ignoreMissingRelativePosition"], e.ignoreMissingRelativePosition)
 
   if e.dimensions[0].kind == WidgetDimensionKind.Intrinsic:
     readInto(cv["minWidth"], e.dimensions[0].intrinsicMin)

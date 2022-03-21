@@ -340,6 +340,62 @@ proc applyCardCost*(world: LiveWorld, entity: Entity, cost: CardCost): bool {.di
     false
 
 
+proc occupiedColumnRange*(board: ref TacticalBoard, side: TacticalSide): (int,int) =
+  var minX = 1000000
+  var maxX = -1000000
+  for x, col in board.sides[side]:
+    if col.combatants.nonEmpty:
+      minX = min(minX, x)
+      maxX = max(maxX, x)
+
+  if minX > maxX:
+    (0,0)
+  else:
+    (minX, maxX)
+
+
+proc occupiedColumnRange*(board: ref TacticalBoard): (int,int) =
+  var minX = 1000000
+  var maxX = -1000000
+  for side in enumValues(TacticalSide):
+    let (lx, hx) = occupiedColumnRange(board, side)
+    minX = min(minX, lx)
+    maxX = max(maxX, hx)
+  if minX > maxX:
+    (0,0)
+  else:
+    (minX, maxX)
+
+
+proc moveCombatant*(world: LiveWorld, entity: Entity, target: Entity, direction: TacticalDirection) =
+  let board : ref TacticalBoard = tacticalBoard(world)
+  let (side, x, y) = positionOf(board, target)
+  let col = columnAt(board, x, side)
+  case direction:
+    of TacticalDirection.Forward, TacticalDirection.Back:
+      let dy = if direction == TacticalDirection.Forward: -1 else: 1
+      if dy < 0 and y == 0:
+        discard
+      elif dy > 0 and y == col.combatants.len-1:
+        discard
+      else:
+        mcolumnAt(board, x, side).combatants[y] = col.combatants[y + dy]
+        mcolumnAt(board, x, side).combatants[y + dy] = target
+    of TacticalDirection.Left, TacticalDirection.Right:
+      let (minX,maxX) = occupiedColumnRange(board)
+      let (minEnemyX, maxEnemyX) = occupiedColumnRange(board, oppositeSide(side))
+      let dx = if direction == TacticalDirection.Left: -1 else: 1
+
+      # can move if not already the furthest left/right, or if there is another combatant in this column
+      # basically prevents moving further and further away and creating pointless open space
+      if (x + dx >= minX and x + dx <= maxX) or
+         (x + dx >= minEnemyX - 1 and x + dx <= maxEnemyX + 1) or
+          col.combatants.len > 1:
+        mcolumnAt(board, x, side).combatants.deleteValue(target)
+        mcolumnAt(board, x + dx, side).combatants.add(target)
+
+
+
 proc applyCardEffect*(world: LiveWorld, entity: Entity, effect: CardEffect) =
   if isDead(entity): return
 
@@ -389,7 +445,8 @@ proc applyCardEffect*(world: LiveWorld, entity: Entity, effect: CardEffect) =
         for t in targets:
           gainBlock(world, entity, t, effect.blockAmount)
       of CardEffectKind.Move:
-        warn &"Move effects not yet implemented"
+        for target in targets:
+          moveCombatant(world, entity, target, effect.direction)
 
 
 proc formDeck*(world: LiveWorld, captain:Entity) =
@@ -425,9 +482,10 @@ proc chooseIntent*(world: LiveWorld, enemy: Entity) =
   var v = r.nextFloat(sumWeight)
   for k, action in ec.actions:
     if v <= action.weight:
-      if ec.intent.nonEmpty:
-        ec.lastIntent = some(ec.intent)
-      ec.intent = k
+      world.eventStmts(IntentChosenEvent(entity: enemy, intent: k)):
+        if ec.intent.nonEmpty:
+          ec.lastIntent = some(ec.intent)
+        ec.intent = k
       break
     v -= action.weight
 
@@ -442,7 +500,12 @@ proc startCaptainTurn*(world: LiveWorld, captain: Entity) =
   for i in 0 ..< 5: drawCard(world, deck)
 
   let board = tacticalBoard(world)
+  board.friendlyTurn = true
   for x, col in board.sides[TacticalSide.Friendly.ord].mpairs: startTurn(col)
+
+  let rp = captain[ResourcePools]
+  for k,r in rp.resources.mpairs:
+    r.recoverBy(100)
   # TODO: increment/decrement flags and suchlike
 
 proc endCaptainTurn*(world: LiveWorld, captain: Entity) =
@@ -486,6 +549,7 @@ proc setupTacticalBoard*(world: LiveWorld, captain: Entity, enemies: seq[Entity]
   for x in 0 ..< friends.len:
     board.sides[TacticalSide.Friendly][x + offset] = Column(combatants: @[friends[x]])
 
+  board.activated = captain
   startCaptainTurn(world, captain)
 
 
@@ -531,6 +595,7 @@ proc placeEnemyOnBoard*(world: LiveWorld, enemy: Entity) =
 
 proc playCard*(world: LiveWorld, captain: Entity, card: Entity, activeGroup: int = 0) =
   world.eventStmts(CardPlayedEvent(entity: captain, card: card)):
+    let deck = captain[Captain].deck
     let effectGroup = card[Card].effectGroups[activeGroup]
     var costFailed: bool = false
     for cost in effectGroup.costs:
@@ -543,6 +608,8 @@ proc playCard*(world: LiveWorld, captain: Entity, card: Entity, activeGroup: int
     else:
       for effect in effectGroup.effects:
         applyCardEffect(world, captain, effect)
+
+      moveCardTo(world, deck, card, † CardLocations.DiscardPile)
 
 
 
@@ -587,6 +654,7 @@ proc createCaptain*(world: LiveWorld, name : string = "Captain") : Entity =
     name: some(name),
     kind: † Characters.Captain
   ))
+  captain.attachData(ResourcePools(resources: {† ResourcePools.Energy : reduceable(3)}.toTable))
 
   var cards: seq[Entity]
   for i in 0 ..< 5:

@@ -169,4 +169,9 @@ method onEvent(g : EncounterUI, world : LiveWorld, display : DisplayWorld, event
 
             g.pendingOption = some(opt)
             handleNextPendingChallenge(g, world, display)
+      extract(CombatChallengeFinished, combatResult):
+        g.pendingChallenges.delete(0)
+        g.challengeResults.add(combatResult)
+        handleNextPendingChallenge(g, world, display)
+
 

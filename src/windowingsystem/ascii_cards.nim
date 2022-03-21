@@ -61,6 +61,9 @@ type
     textOptions: seq[RichText]
     hasMultipleOptions: bool
 
+  CardChosenEvent* = ref object of UIEvent
+    card*: Entity
+    activeGroup*: int
 
 
 type
@@ -114,6 +117,10 @@ method initialize(g: AsciiCardComponent, world: LiveWorld, display: DisplayWorld
             let tent = cardUI.hand[tentativeCardIndex(cardUI)]
             cardUI.selectedGroup = (cardUI.selectedGroup + tent.textOptions.len + delta) mod (tent.textOptions.len)
             cardUI.modified = true
+        elif key == KeyCode.Enter:
+          if cardUI.tentativeCard.isSome:
+            display.addEvent(CardChosenEvent(card: cardUI.tentativeCard.get, activeGroup: cardUI.selectedGroup))
+
     extract(KeyRelease, key):
       discard
 
@@ -233,8 +240,20 @@ proc updateHintUI(cardUI: ref CardUI) =
     cardUI.cardDefinitionHints.bindValue("hasDefinitions", definitions.nonEmpty)
     cardUI.cardDefinitionHints.x = relativePos(cardWidget.identifier, 1, WidgetOrientation.TopRight)
     cardUI.cardDefinitionHints.y = matchPos(cardWidget.identifier)
+  else:
+    cardUI.cardControlHints.x = fixedPos(0)
+    cardUI.cardDefinitionHints.x = fixedPos(0)
+    cardUI.cardDefinitionHints.y = fixedPos(0)
 
 proc updateTentativeCard(cardUI: ref CardUI) =
+  var containsTentative = false
+  for h in cardUI.hand:
+    if cardUI.tentativeCard == some(h.entity):
+      containsTentative = true
+      break
+
+  if not containsTentative:
+    cardUI.tentativeCard = none(Entity)
   if cardUI.tentativeCard.isNone:
     if cardUI.hand.nonEmpty:
       cardUI.tentativeCard = some(cardUI.hand[0].entity)
