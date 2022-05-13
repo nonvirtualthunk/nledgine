@@ -157,7 +157,7 @@ method update(g: VNGraphics, world: LiveWorld, display: DisplayWorld, df: float)
       for y in countdown(chunk.dim-1, 0):
         for z in 0 ..< chunk.dim:
           let objId = chunk[x,y,z]
-          if objId != 0:
+          if objId.kind != 0:
             let v = vChunk[x,y,z]
 
             let ax = (pos.x + x).float32
@@ -169,7 +169,7 @@ method update(g: VNGraphics, world: LiveWorld, display: DisplayWorld, df: float)
               let f = v.progress.float32 / 180.0f32
               av += cardinalVector3Df(v.beltDir) * f
 
-            let objKind = objLib[objId]
+            let objKind = objLib[objId.kind]
             objQB.texture = imageLike(objKind.image)
             objQB.isoTilePos = av
             objQB.groundOffset = if v.kind == VoxelKind.Belt:

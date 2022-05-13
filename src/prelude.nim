@@ -68,6 +68,7 @@ type
 
   Vec2d* = Vec2[float64]
   Vec3s* = Vec3[int16]
+  Vec3i8* = Vec3[int8]
 
   Cardinals2D* {.pure.} = enum
     Left
@@ -171,6 +172,10 @@ proc vec3s*(x,y,z: int)  : Vec3[int16] {.inline.} = Vec3[int16](arr: [x.int16, y
 proc vec3s*(x,y,z: int16)  : Vec3[int16] {.inline.} = Vec3[int16](arr: [x, y, z])
 proc vec3s*(v: Vec3i)  : Vec3[int16] {.inline.} = Vec3[int16](arr: [v.x.int16, v.y.int16, v.z.int16])
 
+proc vec3i8*(x,y,z: int)  : Vec3i8 {.inline.} = Vec3[int8](arr: [x.int8, y.int8, y.int8])
+proc vec3i8*(x,y,z: int8)  : Vec3i8 {.inline.} = Vec3[int8](arr: [x, y, z])
+proc vec3i8*(v: Vec3i)  : Vec3i8 {.inline.} = Vec3[int8](arr: [v.x.int8, v.y.int8, v.z.int8])
+
 converter toVec2i*(v: Vec2[int]): Vec2i = vec2i(v.x.int32, v.y.int32)
 converter toVec2int*(v: Vec2i): Vec2[int] = vec2(v.x.int, v.y.int)
 
@@ -218,6 +223,10 @@ iterator enumValues*[T](t: typedesc[T]): T =
   for o in ord(low(t))..ord(high(t)):
     yield T(o)
 
+proc enumValuesSeq*[T](t: typedesc[T]): seq[T] =
+  for ev in enumValues(t):
+    result.add(ev)
+
 iterator axes*(): Axis =
   yield Axis.X
   yield Axis.Y
@@ -261,6 +270,10 @@ proc `[]`*(v: Vec2f, axis: Axis): float = v[axis.ord]
 
 proc `*`*(v: Vec2i, m: int): Vec2i = vec2i(v.x * m, v.y * m)
 proc `*`*(v: Vec3s, f: float32): Vec3s = vec3s((v.x.float32 * f).int16, (v.y.float32 * f).int16, (v.z.float32 * f).int16)
+
+proc `+`*(a,b: Vec3i8) : Vec3i8 = vec3i8(a.x + b.x, a.y + b.y, a.z + b.z)
+proc `-`*(a,b: Vec3i8) : Vec3i8 = vec3i8(a.x + b.x, a.y + b.y, a.z + b.z)
+proc vec3i*(a: Vec3i8) : Vec3i = vec3i(a.x.int, a.y.int, a.z.int)
 
 proc `div`*(a: Vec2i, b: int): Vec2i =
   vec2i(a.x div b, a.y div b)

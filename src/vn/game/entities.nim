@@ -16,6 +16,7 @@ import strutils
 import graphics/color
 import game/flags
 import game/grids
+import noto
 
 type
   VoxelKind* {.size: sizeof(uint8).} = enum
@@ -26,6 +27,10 @@ type
     Entity
 
 
+  Object* = object
+    kind*: uint16
+    pressure*: uint8
+    temperature*: uint8
 
   Voxel* = object
     gridScale*: uint8
@@ -40,18 +45,14 @@ type
       level*:     uint8
     of VoxelKind.Entity:
       entityId*:  uint16
-      origin*: bool
+      origin*: Vec3i8
     of VoxelKind.Empty, VoxelKind.Floor:
       discard
 
 
-
-  ObjectHolder* = object
-    kindIndex*: uint16
-
   Region* = object
     grid*: SparseGrid3D[4, Voxel]
-    objects*: SparseGrid3D[4, uint16]
+    objects*: SparseGrid3D[4, Object]
 
   Regions* = object
     regions*: seq[Entity]
@@ -70,7 +71,7 @@ type
 
   MachineIngredient* = object
     label*: Option[Taxon]
-    objectKind*: uint16
+    objectKind*: Object
 
   Machine* = object
     region*: Entity
@@ -79,7 +80,7 @@ type
     progress*: int
     activeRecipe*: Option[LibraryTaxon]
     rotation*: int
-    ingredients*: seq[MachineIngredient]
+    ingredients*: Multimap[int, MachineIngredient]
     pendingOutputs*: seq[MachineIngredient]
     outputIncrementor*: int
 
@@ -112,15 +113,21 @@ type
     outputs*: seq[MachineInterface]
     flags*: ref Flags
 
+  ObjectMatcher* = object
+    kind*: uint16
+    pressure*: IntRange
+    temperature*: IntRange
+
+
   RecipeOutput* = object
     label*: Option[Taxon]
-    objectKind*: uint16
+    objectKind*: Object
     quantity*: int
     chance*: Option[float]
 
   RecipeInput* = object
     label*: Option[Taxon]
-    objectKind*: uint16
+    objectKind*: ObjectMatcher
     quantity*: int
 
   Recipe* = object
@@ -150,13 +157,19 @@ defineSimpleReadFromConfig(ObjectKind)
 
 defineSimpleLibrary[ObjectKind]("vn/objects/object_kinds.sml", "Objects")
 
+proc readFromConfig*(cv: ConfigValue, v: var ObjectMatcher) =
+  if cv.isStr:
+    v.kind = library(ObjectKind).id(cv.readInto(Taxon)).uint32.uint16
+  else:
+    warn &"full ObjectMatcher config not yet supported: {cv}"
+
 proc readFromConfig*(cv: ConfigValue, v: var RecipeInput) =
-  v.objectKind = library(ObjectKind).id(cv["objectKind"].readInto(Taxon)).uint32.uint16
+  cv["objectKind"].readInto(v.objectKind)
   cv["quantity"].readIntoOrElse(v.quantity, 1)
   cv["label"].readInto(v.label)
 
 proc readFromConfig*(cv: ConfigValue, v: var RecipeOutput) =
-  v.objectKind = library(ObjectKind).id(cv["objectKind"].readInto(Taxon)).uint32.uint16
+  v.objectKind.kind = library(ObjectKind).id(cv["objectKind"].readInto(Taxon)).uint32.uint16
   cv["quantity"].readIntoOrElse(v.quantity, 1)
   cv["chance"].readInto(v.chance)
   cv["label"].readInto(v.label)
@@ -199,9 +212,16 @@ proc `==`*(a,b: Voxel) : bool =
     of VoxelKind.Empty, VoxelKind.Floor:
       true
 
+proc entity(a: Voxel) : Entity =
+  case a.kind:
+    of VoxelKind.Entity:
+      Entity(id: a.entityId.int)
+    else:
+      SentinelEntity
+
 proc initRegion(region : ref Region) =
   region.grid = new SparseGrid3D[4, Voxel]
-  region.objects = new SparseGrid3D[4, uint16]
+  region.objects = new SparseGrid3D[4, Object]
 
 proc createRegion*(world: LiveWorld): Entity =
   result = world.createEntity()

@@ -9,6 +9,12 @@ Qualities {
     isA: Qualities.Background
   }
 
+  Sellsword {
+    name: "Sellsword"
+    description: "You have killed men, you have been paid. Death is your constant companion and you maintain an amiable conversation."
+    isA: Qualities.Background
+  }
+
   AWorryingDebt {
     name: "A Worrying Debt"
     description: "You incurred a debt to make it through the Gate. How will it be repaid?"

@@ -8,7 +8,6 @@ import windowingsystem/windowingsystem_component
 import graphics/color
 import game/entities
 import worlds
-import vn/game/entities
 import vn/game/logic
 import vn/game/core_components
 import vn/game/machine_component

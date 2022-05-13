@@ -8,7 +8,6 @@ import events
 import core/metrics
 import noto
 import glm
-import events
 import nimgl/glfw
 
 type

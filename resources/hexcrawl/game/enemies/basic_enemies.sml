@@ -14,4 +14,20 @@ Enemies {
     xp: 4
     health: "5-7"
   }
+
+  Dandy {
+    name: "Dandy"
+    actions {
+      Punch {
+        effects: [[damage, 2]]
+        weight: 3
+      }
+      Tackle {
+        effects: [[damage, 1], [apply flag, slow, 1]]
+        weight: 1
+      }
+    }
+    xp: 2
+    health: 4-6
+  }
 }

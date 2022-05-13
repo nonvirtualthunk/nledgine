@@ -5,7 +5,6 @@ import entities
 import events
 import game/library
 import prelude
-import events
 import core/metrics
 import noto
 import glm
@@ -34,11 +33,27 @@ proc advanceBelts(g: BeltComponent, world: LiveWorld) =
         assert(v.kind == VoxelKind.Belt)
         let curObj = reg.objects[segment]
         if curObj != 0:
-          let startProgress = v.progress
-          v.progress = min(v.progress + v.speed, 180)
           let toPos = segment + cardinalVector3D(v.beltDir)
           var toV = reg.grid[toPos]
           let toObj = reg.objects[toPos]
+          let startProgress = v.progress
+
+          var blocked = false
+          if toV.kind == VoxelKind.Belt and toObj != 0 and toV.progress < startProgress:
+            blocked = true
+          else:
+            for cardinal in enumValues(Cardinals2D):
+              let possibleSrcPos = toPos + cardinalVector3D(cardinal)
+              if possibleSrcPos != segment:
+                let possibleSrcV = reg.grid[possibleSrcPos]
+                # if it's feeding into the same target as us
+                if possibleSrcV.kind == VoxelKind.Belt and possibleSrcV.beltDir == opposite(cardinal):
+                  if possibleSrcV.progress > startProgress:
+                    blocked = true
+                    break
+
+          if not blocked:
+            v.progress = min(v.progress + v.speed, 180)
 
           # if toObj != 0 and toV.kind == VoxelKind.Belt and toV.beltDir != v.beltDir:
           #   v.progress = startProgress
@@ -52,6 +67,9 @@ proc advanceBelts(g: BeltComponent, world: LiveWorld) =
                   v.progress = 0
                   toV.progress = 0
                   reg.grid[toPos] = toV
+              of VoxelKind.Entity:
+                let ent = v.entity
+
               else:
                 discard
 

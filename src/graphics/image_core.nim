@@ -174,6 +174,7 @@ proc extractRamp*(img: Image, sx: int, sy: int) : ColorRamp =
       break
     x.inc
 
+
 proc copyFrom*(target: Image, src: Image, position: Vec2i) =
   if target.channels != src.channels:
     raise newException(ValueError, "copyFrom(...) on images with differing channel counts")
@@ -189,6 +190,46 @@ proc copyFrom*(target: Image, src: Image, position: Vec2i) =
       let targetPointer = target[position.x, position.y + y]
       copyMem(targetPointer, srcPointer, src.dimensions.x * 4)
 
+proc copyFrom*(target: Image, src: Image, srcPosition: Vec2i, targetPosition:Vec2i, regionDim: Vec2i) =
+  if target.channels != src.channels:
+    raise newException(ValueError, "copyFrom(...) on images with differing channel counts")
+
+  if srcPosition.x < 0 or srcPosition.y < 0 or targetPosition.x < 0 or targetPosition.y < 0 or
+      targetPosition.x + regionDim.x > target.dimensions.x or targetPosition.y + regionDim.y > target.dimensions.y or
+      srcPosition.x + regionDim.x > src.dimensions.x or srcPosition.y + regionDim.y > src.dimensions.y:
+    warn &"Trying to perform invalid image copy from {srcPosition} -> {targetPosition}, dim: {regionDim}"
+  else:
+    for y in 0 ..< regionDim.y:
+      let srcPointer = src[srcPosition.x, srcPosition.y + y]
+      let targetPointer = target[targetPosition.x, targetPosition.y + y]
+      copyMem(targetPointer, srcPointer, src.dimensions.x * 4)
+
+
+proc trimmed*(img: Image): Image =
+  var mins: Vec2i = vec2i(img.dimensions.x - 1, img.dimensions.y - 1)
+  var maxs: Vec2i = vec2i(-1,-1)
+
+  for x in 0 ..< img.dimensions.x:
+    for y in 0 ..< img.dimensions.y:
+      if img[x,y,3] > 0:
+        mins.x = min(mins.x, x)
+        mins.y = min(mins.y, y)
+        maxs.x = max(maxs.x, x)
+        maxs.y = max(maxs.y, y)
+
+  if mins.x > maxs.x:
+    result = createImage(vec2i(1,1))
+  else:
+    result = createImage(vec2i(maxs.x - mins.x + 1, maxs.y - mins.y + 1))
+    result.copyFrom(img, mins, vec2i(0,0), maxs - mins + 1)
+
+proc flipY*(img: Image) =
+  var register = createU(uint8, img.dimensions.y * 4)
+  for y in 0 ..< img.dimensions.y div 2:
+    copyMem(register, img[0,y], img.dimensions.x * 4)
+    copyMem(img[0,y], img[0, img.dimensions.y - y - 1], img.dimensions.x * 4)
+    copyMem(img[0, img.dimensions.y - y - 1], register, img.dimensions.x * 4)
+  dealloc(register)
 
 ## Returns true if the image on disk has been modified more recently than the image in memory
 proc modifiedOnDisk*(img: Image): bool =

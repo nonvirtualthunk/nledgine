@@ -1429,23 +1429,27 @@ proc readFromConfig*(cv: ConfigValue, e: var WidgetDimension) =
       else:
         e = proportionalSize(num)
     elif cv.isStr:
-      matcher(cv.asStr):
-        extractMatches(expandToParentPattern, gapStr):
-          if gapStr != "":
-            e = expandToParent(parseInt(gapStr))
-          else:
-            e = expandToParent(0)
-        extractMatches(expandToWidgetPattern, widgetStr, gapStr):
-          if gapStr != "":
-            e = expandToWidget(widgetStr, parseInt(gapStr))
-          else:
-            e = expandToWidget(widgetStr, 0)
-        extractMatches(percentagePattern, percentStr):
-          e = proportionalSize(parseInt(percentStr).float / 100.0)
-        extractMatches(wrapContentPattern):
-          e = wrapContent()
+      let str = cv.asStr
+      if str == "intrinsic":
+        e = intrinsic()
+      else:
+        matcher(cv.asStr):
+          extractMatches(expandToParentPattern, gapStr):
+            if gapStr != "":
+              e = expandToParent(parseInt(gapStr))
+            else:
+              e = expandToParent(0)
+          extractMatches(expandToWidgetPattern, widgetStr, gapStr):
+            if gapStr != "":
+              e = expandToWidget(widgetStr, parseInt(gapStr))
+            else:
+              e = expandToWidget(widgetStr, 0)
+          extractMatches(percentagePattern, percentStr):
+            e = proportionalSize(parseInt(percentStr).float / 100.0)
+          extractMatches(wrapContentPattern):
+            e = wrapContent()
 
-        warn &"unsupported dimension expression: {cv.asStr}"
+          warn &"unsupported dimension expression: {cv.asStr}"
     else:
       warn &"Invalid config for widget position : {cv}"
 

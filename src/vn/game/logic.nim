@@ -7,6 +7,7 @@ import sets
 import algorithm
 import prelude
 import noto
+import core
 
 import events
 
@@ -69,7 +70,7 @@ proc setObject*(world: LiveWorld, region: Entity, reg: ref Region, x,y,z: int, o
   let objLib = library(ObjectKind)
   let libId = objLib.id(obj)
   let libId16 = libId.uint32.uint16
-  reg.objects[x,y,z] = libId16
+  reg.objects[x,y,z] = Object(kind: libId16)
 
 proc `[]`*(lib: Library[ObjectKind], o: uint16) : ref ObjectKind =
   lib[o.uint32.LibraryID]
@@ -80,16 +81,39 @@ proc beltGroupIndexContaining*(bd: ref BeltData, v: Vec3i) : int =
       return i
   -1
 
+proc matches*(om: ObjectMatcher, o: Object) : bool =
+  om.kind == o.kind and om.pressure.contains(o.pressure.int) and om.temperature.contains(o.temperature.int)
+
+proc currentIngredientCount*(machine: ref Machine, inputIndex: int) : int =
+  machine.ingredients[inputIndex].len
+
 proc hasAllIngredients*(machine: ref Machine, recipe: ref Recipe) : bool =
-  for input in recipe.inputs:
-    var matchingCount = 0
-    for ingredient in machine.ingredients:
-      if ingredient.objectKind == input.objectKind and ingredient.label == input.label:
-        matchingCount += 1
-    if matchingCount < input.quantity:
+  for inputIndex in 0 ..< recipe.inputs.len:
+    let input = recipe.inputs[inputIndex]
+    if currentIngredientCount(machine,inputIndex) < input.quantity:
       return false
+  # for input in recipe.inputs:
+  #   var matchingCount = 0
+  #   for ingredient in machine.ingredients:
+  #     if input.objectKind.matches(ingredient.objectKind) and ingredient.label == input.label:
+  #       matchingCount += 1
+  #   if matchingCount < input.quantity:
+  #     return false
   true
 
+
+
+proc hasSpaceForIngredient*(machine: ref Machine, iface: MachineInterface, obj: Object): bool =
+  if machine.activeRecipe.isSome:
+    let inputs = library(Recipe)[machine.activeRecipe.get].inputs
+    for inputIndex in 0 ..< inputs.len:
+      let recipeInput = inputs[inputIndex]
+      if recipeInput.label == iface.label and recipeInput.objectKind.matches(obj):
+        if currentIngredientCount(machine, inputIndex) < recipeInput.quantity * 2:
+          return true
+
+
+  false
 
 # proc topographicSort*(bg: var BeltGroup) =
 #   var sorted: seq[Vec3i]
@@ -158,4 +182,4 @@ proc placeMachine*(world: LiveWorld, region: Entity, machine: Entity, position: 
     for dy in 0 ..< mk.size.y:
       for dz in 0 ..< mk.size.z:
         subSetVoxel(world, region, reg, position.x + dx, position.y + dy, position.z + dz,
-                      Voxel(kind: VoxelKind.Entity, entityId: entId, origin: dx == 0 and dy == 0 and dz == 0))
+                      Voxel(kind: VoxelKind.Entity, entityId: entId, origin: vec3i8(-dx,-dy,-dz)))

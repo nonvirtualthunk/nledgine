@@ -1,6 +1,7 @@
 import reflects/reflect_types
 import noto
 import options
+import tables
 
 type
   Reduceable*[T] = object
@@ -19,6 +20,8 @@ type
     min*: int
     max*: int
 
+  Multimap*[K,V] = object
+    table*: Table[K, seq[V]]
 
 proc contains*(r: IntRange, i: int) : bool = r.min.get(i) <= i and r.max.get(i) >= i
 proc contains*(r: ClosedIntRange, i: int) : bool = r.min <= i and r.max >= i
@@ -97,3 +100,17 @@ proc add*[T](r: var Reduceable[T], v: T) =
   r.reducedBy -= v
 proc sub*[T](r: var Reduceable[T], v: T) =
   r.reducedBy += v
+
+
+proc add*[K, V](m: var Multimap[K,V], k: K, v: V) =
+  m.table.mgetOrPut(k, @[]).add(v)
+
+proc `[]`*[K,V](m: Multimap[K,V], k: K): seq[V] =
+  m.table.getOrDefault(k)
+
+iterator pairs*[K,V] (m: Multimap[K,V]): (K, seq[V]) =
+  for k,v in m.table.pairs:
+    yield (k, v)
+
+proc clear*[K,V](m: var Multimap[K,V]) =
+  m.table.clear()

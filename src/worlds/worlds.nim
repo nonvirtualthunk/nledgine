@@ -77,6 +77,7 @@ type
     entityCounter: int
     eventClock: WorldEventClock
     eventCallbacks*: seq[(Event) -> void]
+    dataCopyFunctions*: seq[(LiveWorld, Entity, Entity) -> void]
 
 
 converter toView*(world: World): WorldView = world.view
@@ -284,6 +285,10 @@ proc setUpType*[C](world: LiveWorld, dataType: DataType[C]) =
     world.dataContainers.setLen(dataType.index + 1)
   let dataContainer = DataContainer[C](dataStore: Table[int, ref C](), defaultValue: new C, dataTypeIndex: dataType.index)
   world.dataContainers[dataType.index] = dataContainer
+  let copyFunc = proc (w: LiveWorld, a: Entity, b: Entity) =
+    if w.hasData(a, dataType):
+      w.attachData(b, w.data(a, dataType)[])
+  world.dataCopyFunctions.add(copyFunc)
 
 proc setUpType*[C](world: DisplayWorld, dataType: DataType[C]) =
   if world.dataContainers.len <= dataType.index:
@@ -839,7 +844,10 @@ proc copyEntity*(display: DisplayWorld, original: DisplayEntity): DisplayEntity 
   for copyFunc in display.dataCopyFunctions:
     copyFunc(display, original, result)
 
-
+proc copyEntity*(world: LiveWorld, original: Entity): Entity =
+  result = world.createEntity()
+  for copyFunc in world.dataCopyFunctions:
+    copyFunc(world, original, result)
 
 
 

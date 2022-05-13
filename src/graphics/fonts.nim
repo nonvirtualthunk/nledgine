@@ -30,6 +30,7 @@ type
     glyphLibrary*: Table[(Rune,int), image_core.Image]
     pixelFont*: bool
     baseSize*: int
+    sentinelImage*: image_core.Image
 
   ArxFont* = object
     arxTypeface* : ArxTypeface
@@ -42,7 +43,8 @@ converter toTypeface*(t : ArxTypeface): Typeface = t.typeface
 
 proc loadArxTypeface*(path: string) : ArxTypeface =
   ArxTypeface(
-    typeface: readFont(path).typeface
+    typeface: readFont(path).typeface,
+    sentinelImage: createImage(vec2i(1,1))
   )
 
 
@@ -53,8 +55,11 @@ proc glyphImage*(f: ArxFont, r: Rune) : image_core.Image =
     var path = f.font.typeface.getGlyphPath(r)
     let bounds = f.computeBounds($r)
     if bounds.x <= 0.0f or bounds.y <= 0.0f:
-      echo "zero Rune: ", r, " (", r.int, ") Bounds: ", bounds
-      createImage(vec2i(1,1))
+      if r != Rune(10):
+        echo "zero Rune: ", r, " (", r.int, ") Bounds: ", bounds
+      let arxImg = f.arxTypeface.sentinelImage
+      f.arxTypeface.glyphLibrary[(r, f.font.size.int)] = arxImg
+      arxImg
     else:
       let gimg = newImage(bounds.x.int, ((f.font.typeface.ascent - f.font.typeface.descent) * f.scale).int)
 

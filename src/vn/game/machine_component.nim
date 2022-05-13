@@ -7,7 +7,6 @@ import prelude
 import events
 import noto
 import glm
-import events
 import logic
 import game/grids
 

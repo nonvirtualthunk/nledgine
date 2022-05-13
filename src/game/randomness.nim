@@ -148,15 +148,18 @@ proc nextFloatNormalDistribution*(r : var Randomizer): float =
 
 # returns a value between 0 ..< max exclusive
 proc nextInt*(r: var Randomizer, max: int): int =
-  case r.style:
-  of RandomizationStyle.Random:
-    r.rand.rand(0 ..< max)
-  of RandomizationStyle.Median:
-    max div 2
-  of RandomizationStyle.High:
-    max(max-1, 0)
-  of RandomizationStyle.Low:
+  if max == 0:
     0
+  else:
+    case r.style:
+    of RandomizationStyle.Random:
+      r.rand.rand(0 ..< max)
+    of RandomizationStyle.Median:
+      max div 2
+    of RandomizationStyle.High:
+      max(max-1, 0)
+    of RandomizationStyle.Low:
+      0
 
 # returns a value between min ..< max exclusive
 proc nextInt*(r: var Randomizer, min, max: int): int =
