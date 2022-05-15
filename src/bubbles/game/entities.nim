@@ -59,6 +59,7 @@ type
     progress*: int
     progressRequired*: Option[int]
     level*: int
+    enemy*: Entity
 
   StageDescription* = object
     cannonPosition*: Vec2f
@@ -71,10 +72,24 @@ type
   Reward* = object
     bubbles*: seq[Entity]
 
+  Combatant* = object
+    name*: string
+    image*: Image
+    health*: Reduceable[int]
+    blockAmount*: int
+
+  PlayerActionKind* {.pure.} = enum
+    Attack
+    Block
+    Skill
+
   Player* = object
     bubbles*: seq[Entity]
     pendingRewards*: seq[Reward]
     completedLevel*: int
+    actionProgress*: Table[PlayerActionKind, int]
+    actionProgressRequired*: Table[PlayerActionKind, int]
+    playArea*: Rectf
 
   Cannon* = object
     position*: Vec2f
@@ -82,34 +97,69 @@ type
     maxVelocity*: float
     currentVelocityScale*: float
 
-  BubbleMovedEvent* = ref object of GameEvent
+  IntentKind* {.pure.} = enum
+    Attack
+    Block
+
+  Intent* = object
+    amount*: int
+    duration*: Reduceable[int]
+    case kind*: IntentKind
+    of IntentKind.Attack:
+      discard
+    of IntentKind.Block:
+      discard
+
+  Enemy* = object
+    intents*: seq[Intent]
+    activeIntent*: Intent
+
+  BubbleEvent* = ref object of GameEvent
+
+  CharacterEvent* = ref object of GameEvent
+
+  BubbleMovedEvent* = ref object of BubbleEvent
     stage*: Entity
     bubble*: Entity
 
-  BubbleStoppedEvent* = ref object of GameEvent
+  BubbleStoppedEvent* = ref object of BubbleEvent
     stage*: Entity
     bubble*: Entity
 
-  BubblePoppedEvent* = ref object of GameEvent
+  BubblePoppedEvent* = ref object of BubbleEvent
     stage*: Entity
     bubble*: Entity
 
-  BubbleCollisionEvent* = ref object of GameEvent
+  BubbleCollisionEvent* = ref object of BubbleEvent
     stage*: Entity
     bubbles*: (Entity, Entity)
 
-  BubbleCollisionEndEvent* = ref object of GameEvent
+  BubbleCollisionEndEvent* = ref object of BubbleEvent
     stage*: Entity
     bubbles*: (Entity, Entity)
 
-  BubbleRewardCreatedEvent* = ref object of GameEvent
+  BubbleRewardCreatedEvent* = ref object of BubbleEvent
     bubble*: Entity
 
+  DamageDealtEvent* = ref object of CharacterEvent
+    attacker*: Entity
+    defender*: Entity
+    damage*: int
+    blockedDamage*: int
+
+  BlockGainedEvent* = ref object of CharacterEvent
+    entity*: Entity
+    blockAmount*: int
+
+  EnemyCreatedEvent* = ref object of CharacterEvent
+    entity*: Entity
 
 defineReflection(Bubble)
 defineReflection(Stage)
 defineReflection(Cannon)
 defineReflection(Player)
+defineReflection(Enemy)
+defineReflection(Combatant)
 
 eventToStr(BubbleMovedEvent)
 eventToStr(BubbleStoppedEvent)
@@ -117,6 +167,9 @@ eventToStr(BubblePoppedEvent)
 eventToStr(BubbleCollisionEvent)
 eventToStr(BubbleCollisionEndEvent)
 eventToStr(BubbleRewardCreatedEvent)
+eventToStr(DamageDealtEvent)
+eventToStr(BlockGainedEvent)
+eventToStr(EnemyCreatedEvent)
 
 
 proc rgba*(color: BubbleColor) : RGBA =
@@ -187,3 +240,15 @@ proc descriptor*(m: BubbleMod) : string =
     of BubbleModKind.Big: &"Big {toRomanNumeral(m.number)}"
     of BubbleModKind.HighNumber: &"Difficult {toRomanNumeral(m.number)}"
     of BubbleModKind.Normal: "Normal"
+
+
+proc icon*(intent: Intent): Image =
+  case intent.kind:
+    of IntentKind.Attack: image("bubbles/images/icons/attack.png")
+    of IntentKind.Block: image("bubbles/images/icons/block.png")
+
+proc color*(intent: Intent): RGBA =
+  case intent.kind:
+    of IntentKind.Attack: rgba(0.75, 0.15, 0.2, 1.0)
+    of IntentKind.Block: rgba(0.2, 0.1, 0.75, 1.0)
+

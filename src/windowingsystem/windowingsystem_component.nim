@@ -26,6 +26,7 @@ type
     initTime: UnitOfTime
     rootConfigPath: string
     extraComponents: seq[WindowingComponent]
+    initialWidget: Option[(string, string)]
 
 proc createWindowingSystemComponent*(rootConfigPath: string, extraComponents: seq[WindowingComponent] = @[]): WindowingSystemComponent =
   WindowingSystemComponent(
@@ -33,8 +34,12 @@ proc createWindowingSystemComponent*(rootConfigPath: string, extraComponents: se
     eventPriority: 100,
     updatePriority: -100,
     rootConfigPath: rootConfigPath,
-    extraComponents: extraComponents
+    extraComponents: extraComponents,
   )
+
+proc withMainWidget*(ws: WindowingSystemComponent, namespace: string, name: string) : WindowingSystemComponent =
+  ws.initialWidget = some((namespace, name))
+  ws
 
 proc render(g: WindowingSystemComponent, display: DisplayWorld) =
   display[WindowingSystem].render(g.vao, g.texture)
@@ -52,8 +57,12 @@ method initialize(g: WindowingSystemComponent, display: DisplayWorld) =
   display.attachDataRef(windowingSystem)
   g.camera = createWindowingCamera(1)
 
-  windowingSystem.desktop.background = nineWayImage("ui/woodBorder.png")
-  windowingSystem.desktop.background.pixelScale = 1
+  if g.initialWidget.isSome:
+    windowingSystem.desktop.createChild(g.initialWidget.get()[0], g.initialWidget.get()[1])
+    windowingSystem.desktop.background.draw = bindable(false)
+  else:
+    windowingSystem.desktop.background = nineWayImage("ui/woodBorder.png")
+    windowingSystem.desktop.background.pixelScale = 1
 
 proc handleEventWrapper(ws: WindowingSystemRef, event: WidgetEvent, world: LiveWorld, display: DisplayWorld) : bool =
   result = handleEvent(ws, event, world, display)

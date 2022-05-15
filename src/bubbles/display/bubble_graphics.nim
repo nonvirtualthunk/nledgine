@@ -43,8 +43,7 @@ defineDisplayReflection(NumberGraphics)
 
 method initialize(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld) =
   g.canvas = createSimpleCanvas("shaders/simple")
-  # display[WindowingSystem].desktop.background.image = bindable(imageRef("ui/woodBorderTransparent.png"))
-  display[WindowingSystem].desktop.background.draw = bindable(false)
+  # display[WindowingSystem].desktop.background.draw = bindable(false)
 
   var ng = new NumberGraphics
   let f = font("goethe.ttf").font(20)
@@ -146,6 +145,17 @@ method update(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld, df: fl
 
 
 
+proc updateCannonDirection(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld) =
+  let GCD = display[GraphicsContextData]
+  for stage in activeStages(world):
+    let sd = stage[Stage]
+    let cannon = sd.cannon
+    let cd = cannon[Cannon]
+
+    let worldPos = display[CameraData].camera.pixelToWorld(GCD.framebufferSize, GCD.windowSize, g.mousePos)
+    let v = worldPos.xy - cd.position
+    cd.direction = v.normalizeSafe
+    cd.currentVelocityScale = (v.lengthSafe / 800.0f).max(0.25f).min(1.0f)
 
 method onEvent*(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld, event: Event) =
   let GCD = display[GraphicsContextData]
@@ -163,15 +173,10 @@ method onEvent*(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld, even
           discard
     extract(MouseMove, position):
       g.mousePos = position
-      for stage in activeStages(world):
-        let sd = stage[Stage]
-        let cannon = sd.cannon
-        let cd = cannon[Cannon]
-
-        let worldPos = display[CameraData].camera.pixelToWorld(GCD.framebufferSize, GCD.windowSize, g.mousePos)
-        let v = worldPos.xy - cd.position
-        cd.direction = v.normalizeSafe
-        cd.currentVelocityScale = (v.lengthSafe / 800.0f).max(0.25f).min(1.0f)
+      updateCannonDirection(g, world, display)
+    extract(MouseDrag, position):
+      g.mousePos = position
+      updateCannonDirection(g, world, display)
     extract(MouseRelease, position):
       for stage in activeStages(world):
         fireBubble(world, stage, stage[Stage].cannon)

@@ -16,6 +16,13 @@ import game/logic
 import game/components
 import arxmath
 import display/components as display_components
+import core
+import resources
+
+const WindowSize = vec2f(1200,1000)
+const FullPlayAreaSize = vec2f(WindowSize.x - 400.0f32, WindowSize.y)
+const PlayAreaSize = vec2f(FullPlayAreaSize.x - 50, FullPlayAreaSize.y - 50)
+const ClippedPlayArea = rectf(PlayAreaSize.x * -0.5f, PlayAreaSize.y * -0.5f, PlayAreaSize.x, PlayAreaSize.y)
 
 type
   InitComponent = ref object of LiveGameComponent
@@ -34,12 +41,18 @@ method initialize(g: InitComponent, world: LiveWorld) =
   let player = world.createEntity()
   player.attachData(Player(
     bubbles: bubbles,
-    # pendingRewards: @[Reward(bubbles: @[createRewardBubble(world), createRewardBubble(world), createRewardBubble(world)])]
+    actionProgressRequired: {PlayerActionKind.Attack: 2, PlayerActionKind.Block: 2, PlayerActionKind.Skill: 3}.toTable,
+    playArea: ClippedPlayArea
+  ))
+  player.attachData(Combatant(
+    name: "Player",
+    health: reduceable(4),
+    image: image("bubbles/images/player.png"),
   ))
 
   let stageDesc = StageDescription(
                       linearDrag: 90.0f32,
-                      cannonPosition: vec2f(0, -500),
+                      cannonPosition: vec2f(0.5f, 0.1f),
                       cannonVelocity: 700.0f32,
                       progressRequired: some(1),
                       makeActive: true
@@ -51,10 +64,10 @@ method initialize(g: InitComponent, world: LiveWorld) =
 
 
 main(GameSetup(
-  windowSize: vec2i(800, 1200),
+  windowSize: vec2i(WindowSize),
   resizeable: false,
   windowTitle: "Bubbles",
-  clearColor: rgba(0.15,0.15,0.15,1.0),
+  clearColor: rgba(0.35,0.35,0.35,1.0),
   liveGameComponents: @[
     BasicLiveWorldDebugComponent()
       .ignoringEventType(BubbleMovedEvent)
@@ -65,10 +78,12 @@ main(GameSetup(
     initComponent(),
   ],
   graphicsComponents: @[
-    createCameraComponent(createPixelCamera(2)),
-    createWindowingSystemComponent("bubbles/widgets/"),
+    createCameraComponent(createPixelCamera(2, vec2f(-200, 0))),
+    createWindowingSystemComponent("bubbles/widgets/")
+      .withMainWidget("MainUI", "MainUI"),
     BubbleGraphics(),
-    RewardUIComponent()
+    RewardUIComponent(),
+    MainUIComponent()
   ],
   useLiveWorld: true,
 ))

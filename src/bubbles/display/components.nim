@@ -8,12 +8,14 @@ import windowingsystem/windowingsystem
 import noto
 import math
 import patty
-import graphics/core
+import graphics/core as gfx_core
 import game/library
 import worlds
 import bubbles/game/logic
 import bubbles/game/entities
 import bubble_graphics
+import core
+import strutils
 
 type
    RewardUIComponent* = ref object of GraphicsComponent
@@ -23,6 +25,7 @@ type
 
    RewardInfo* = object
      rewardIndex*: int
+
 
 defineDisplayReflection(RewardInfo)
 
@@ -35,7 +38,7 @@ method initialize(g: RewardUIComponent, world: LiveWorld, display: DisplayWorld)
    g.rewardsWatcher = watch: player(world)[Player].pendingRewards
 
    let ws = display[WindowingSystem]
-   g.rewardsWidget = ws.desktop.createChild("RewardWidgets", "RewardWidget")
+   g.rewardsWidget = ws.desktop.descendantByIdentifier("PlayArea").get.createChild("RewardWidgets", "RewardWidget")
    # g.rewardsWidget.childByIdentifier("SkipButton").get.onEventOfTypeW(WidgetMouseRelease, release):
    #    g.skipReward = true
 
@@ -79,3 +82,58 @@ method onEvent(g: RewardUIComponent, world: LiveWorld, display: DisplayWorld, ev
         if originatingWidget.isDescendantOf(g.rewardChoiceWidgets[i]):
           info &"Choosing reward {i}"
           chooseReward(world, i)
+
+
+
+
+
+type
+  MainUIComponent* = ref object of GraphicsComponent
+    infoArea*: Widget
+    needsUpdate*: bool
+
+method initialize(g: MainUIComponent, world: LiveWorld, display: DisplayWorld) =
+   g.name = "MainUIComponent"
+   g.needsUpdate = true
+
+
+   let ws = display[WindowingSystem]
+   g.infoArea = ws.desktop.descendantByIdentifier("InfoArea").get
+
+method update(g: MainUIComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
+  if g.needsUpdate:
+    for stage in activeStages(world):
+      let sd = stage[Stage]
+      let ed = sd.enemy[Enemy]
+      let ecd = sd.enemy[Combatant]
+      g.infoArea.bindValue("enemyName", ecd.name)
+      g.infoArea.bindValue("enemyImage", ecd.image)
+      g.infoArea.bindValue("enemyIntentIcon", icon(ed.activeIntent))
+      g.infoArea.bindValue("enemyIntentText", ed.activeIntent.amount)
+      g.infoArea.bindValue("enemyIntentColor", color(ed.activeIntent))
+      g.infoArea.bindValue("enemyIntentTime", ed.activeIntent.duration.currentValue)
+      g.infoArea.bindValue("enemyHealth", ecd.health.currentValue)
+      g.infoArea.bindValue("enemyMaxHealth", ecd.health.maxValue)
+      g.infoArea.bindValue("enemyBlock", ecd.blockAmount)
+      g.infoArea.bindValue("enemyBlockShowing", ecd.blockAmount > 0)
+
+    let p = player(world)
+    let pcd = p[Combatant]
+    let pd = p[Player]
+
+    g.infoArea.bindValue("playerName", pcd.name)
+    g.infoArea.bindValue("playerImage", pcd.image)
+    g.infoArea.bindValue("playerHealth", pcd.health.currentValue)
+    g.infoArea.bindValue("playerMaxHealth", pcd.health.maxValue)
+    g.infoArea.bindValue("playerBlock", pcd.blockAmount)
+    g.infoArea.bindValue("playerBlockShowing", pcd.blockAmount > 0)
+
+    for action in enumValues(PlayerActionKind):
+      let str = ($action).toLowerAscii
+      g.infoArea.bindValue(&"{str}Progress", pd.actionProgress.getOrDefault(action))
+      g.infoArea.bindValue(&"{str}ProgressRequired", pd.actionProgressRequired.getOrDefault(action, 1))
+
+method onEvent(g: MainUIComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
+  if event of CharacterEvent:
+    g.needsUpdate = true
+  discard

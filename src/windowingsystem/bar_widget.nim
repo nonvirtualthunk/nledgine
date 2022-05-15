@@ -19,6 +19,7 @@ type
     pixelScale*: int
     textDisplay*: Widget
     textConfig*: ConfigValue
+    offsetInnerBar*: bool
 
   BarWidgetComponent* = ref object of WindowingComponent
 
@@ -52,7 +53,7 @@ method render*(ws: BarWidgetComponent, widget: Widget): seq[WQuad] =
 
     let frameImg = bw.frame.image.asImage
     let imgMetrics = imageMetricsFor(frameImg)
-    let sizeOffset = -imgMetrics.borderWidth
+    let sizeOffset = if not bw.offsetInnerBar: 0 else: -imgMetrics.borderWidth
 
     var nwi = bw.fill
     nwi.dimensionDelta = vec2i(sizeOffset, sizeOffset)
@@ -72,6 +73,7 @@ proc readFromConfig*(cv: ConfigValue, bw: var BarWidget) =
   cv["frame"].readInto(bw.frame)
   cv["fill"].readInto(bw.fill)
   cv["pixelScale"].readIntoOrElse(bw.pixelScale, 1)
+  cv["offsetInnerBar"].readIntoOrElse(bw.offsetInnerBar, true)
   bw.textConfig = cv["text"]
 
 method readDataFromConfig*(ws: BarWidgetComponent, cv: ConfigValue, widget: Widget) =

@@ -1378,6 +1378,7 @@ const expandToWidgetPattern = re"(?i)expand\s?to\s?([a-zA-Z0-9]+)(?:\(([0-9]+)\)
 const percentagePattern = re"([0-9]+)%"
 const centeredPattern = re"(?i)center(ed)?"
 const wrapContentPattern = re"(?i)wrap\s?content"
+const matchPosPattern = re"(?i)match ([a-zA-Z0-9]+)"
 
 proc readFromConfig*(cv: ConfigValue, e: var WidgetPosition, widget: Widget) =
   if cv.nonEmpty:
@@ -1412,6 +1413,8 @@ proc readFromConfig*(cv: ConfigValue, e: var WidgetPosition, widget: Widget) =
           #   e = relativePos(target.get, parseInt(distStr).int32, dir)
           # else:
           #   warn &"failed to parse widget above/below relative position : {str}"
+        extractMatches(matchPosPattern, targetStr):
+          e = matchPos(targetStr)
         extractMatches(centeredPattern, distStr):
           e = centered()
         warn &"unsupported position expression: {str}"

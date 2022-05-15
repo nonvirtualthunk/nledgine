@@ -8,9 +8,62 @@ import prelude
 import noto
 import core
 import game/randomness
-
+import resources
 import arxmath
 
+
+iterator activeStages*(world: LiveWorld): Entity =
+  for ent in world.entitiesWithData(Stage):
+    if ent[Stage].active:
+      yield ent
+
+
+proc player*(world: LiveWorld): Entity =
+  for p in world.entitiesWithData(Player):
+    return p
+  SentinelEntity
+
+
+
+proc colorToAction*(color: BubbleColor): PlayerActionKind =
+  case color:
+    of BubbleColor.Red: PlayerActionKind.Attack
+    of BubbleColor.Blue: PlayerActionKind.Block
+    of BubbleColor.Green: PlayerActionKind.Skill
+    else: PlayerActionKind.Attack
+
+
+proc doDamage*(world: LiveWorld, attacker: Entity, defender: Entity, amount: int) =
+  let unblocked = max(0, amount - defender[Combatant].blockAmount)
+  world.eventStmts(DamageDealtEvent(attacker: attacker, defender: defender, damage: unblocked, blockedDamage: amount - unblocked)):
+    defender[Combatant].blockAmount = max(0, defender[Combatant].blockAmount - amount)
+    defender[Combatant].health.reduceBy(unblocked)
+
+proc gainBlock*(world: LiveWorld, defender: Entity, amount: int) =
+  world.eventStmts(BlockGainedEvent(entity: defender, blockAmount: amount)):
+    defender[Combatant].blockAmount += amount
+
+
+proc performAction*(world: LiveWorld, entity: Entity, action: PlayerActionKind) =
+  case action:
+    of PlayerActionKind.Attack:
+      for stage in activeStages(world):
+        doDamage(world, entity, stage[Stage].enemy, 1)
+    of PlayerActionKind.Skill:
+      for stage in activeStages(world):
+        doDamage(world, entity, stage[Stage].enemy, 1)
+      gainBlock(world, entity, 1)
+    of PlayerActionKind.Block:
+      gainBlock(world, entity, 1)
+
+
+proc advanceAction*(world: LiveWorld, action: PlayerActionKind, amount: int) =
+  let p = player(world)
+  let pd = p[Player]
+  pd.actionProgress[action] = pd.actionProgress.getOrDefault(action) + amount
+  if pd.actionProgress[action] >= pd.actionProgressRequired.getOrDefault(action):
+    performAction(world, p, action)
+    pd.actionProgress[action] = 0
 
 
 proc fireBubble*(world : LiveWorld, stage: Entity, cannon: Entity) =
@@ -41,21 +94,70 @@ proc collideBubbles*(world: LiveWorld, stage: Entity, bubbleA: Entity, bubbleB: 
         bd.number = bd.maxNumber
         world.addFullEvent(BubblePoppedEvent(bubble: bubble, stage: stage))
 
-iterator activeStages*(world: LiveWorld): Entity =
-  for ent in world.entitiesWithData(Stage):
-    if ent[Stage].active:
-      yield ent
 
-proc player*(world: LiveWorld): Entity =
-  for p in world.entitiesWithData(Player):
-    return p
-  SentinelEntity
 
+proc createEnemy*(world: LiveWorld, stage: Entity): Entity =
+  let sd = stage[Stage]
+  var r = randomizer(world)
+  let enemy = world.createEntity()
+
+  case r.nextInt(3):
+    of 0:
+      enemy.attachData(Enemy(
+        intents: @[
+          Intent(kind: IntentKind.Attack, amount: 2, duration: reduceable(8)),
+          Intent(kind: IntentKind.Block, amount: 1, duration: reduceable(3)),
+          Intent(kind: IntentKind.Attack, amount: 1, duration: reduceable(5))
+        ]
+      ))
+      enemy.attachData(Combatant(
+        health: reduceable(4),
+        name: "Goblin",
+        image: image("bubbles/images/enemies/goblin.png")
+      ))
+    of 1:
+      enemy.attachData(Enemy(
+        intents: @[
+          Intent(kind: IntentKind.Attack, amount: 1, duration: reduceable(6)),
+          Intent(kind: IntentKind.Attack, amount: 1, duration: reduceable(5))
+        ]
+      ))
+      enemy.attachData(Combatant(
+        health: reduceable(3),
+        name: "Rat",
+        image: image("bubbles/images/enemies/rat.png")
+      ))
+    else:
+      enemy.attachData(Enemy(
+        intents: @[
+          Intent(kind: IntentKind.Attack, amount: 1, duration: reduceable(6)),
+          Intent(kind: IntentKind.Attack, amount: 1, duration: reduceable(5)),
+          Intent(kind: IntentKind.Block, amount: 1, duration: reduceable(2)),
+        ]
+      ))
+      enemy.attachData(Combatant(
+        health: reduceable(3),
+        name: "Bat",
+        image: image("bubbles/images/enemies/bat.png")
+      ))
+  enemy[Enemy].activeIntent = pickFrom(r, enemy[Enemy].intents)[1]
+  world.postEvent(EnemyCreatedEvent(entity: enemy))
+  enemy
+
+
+proc fractionalToAbsolutePosition*(sd: ref Stage, xf: float, yf: float) : Vec2f =
+  let x = sd.bounds.x + sd.bounds.width * xf
+  let y = sd.bounds.y + sd.bounds.height * yf
+  vec2f(x,y)
 
 proc createStage*(world: LiveWorld, player: Entity, stageDesc: StageDescription) : Entity =
   let cannon = world.createEntity()
+
+  let bounds = player[Player].playArea
+
+  let absoluteCannonPosition = vec2f(bounds.x, bounds.y) + bounds.dimensions * stageDesc.cannonPosition
   cannon.attachData(Cannon(
-    position: stageDesc.cannonPosition,
+    position: absoluteCannonPosition,
     maxVelocity: stageDesc.cannonVelocity,
     currentVelocityScale: 1.0f32,
     direction: vec2f(0,1)
@@ -63,6 +165,7 @@ proc createStage*(world: LiveWorld, player: Entity, stageDesc: StageDescription)
 
   var r = randomizer(world)
   var magazine : seq[Entity]
+
   for bubble in player[Player].bubbles:
     let copy = world.copyEntity(bubble)
     copy[Bubble].number = copy[Bubble].maxNumber
@@ -74,11 +177,25 @@ proc createStage*(world: LiveWorld, player: Entity, stageDesc: StageDescription)
     bubbles: @[],
     magazine: magazine,
     cannon: cannon,
-    bounds: rectf(-400,-600,800,1200),
+    bounds: bounds,
     linearDrag: stageDesc.linearDrag,
     level: stageDesc.level,
     progressRequired: stageDesc.progressRequired
   ))
+
+  let sd = stage[Stage]
+  let prePlacedBubbles = 3
+  for i in 0 ..< prePlacedBubbles:
+    if sd.magazine.isEmpty: continue
+
+    let bubble = sd.magazine[0]
+    sd.bubbles.add(bubble)
+    sd.magazine.delete(0)
+
+    let spacing = (1.float32/prePlacedBubbles.float32)
+    bubble[Bubble].position = fractionalToAbsolutePosition(sd, spacing * (i.float32 + 0.5f32), 0.75f32)
+
+  stage[Stage].enemy = createEnemy(world, stage)
 
   stage
 
@@ -111,7 +228,7 @@ proc advanceStage*(world: LiveWorld) =
   let player = player(world)
   var desc = StageDescription(
                linearDrag: 90.0f32,
-               cannonPosition: vec2f(0, -500),
+               cannonPosition: vec2f(0.5f, 0.1f),
                cannonVelocity: 700.0f32,
                progressRequired: some(8),
                makeActive: true,
@@ -126,7 +243,7 @@ proc advanceStage*(world: LiveWorld) =
       desc.cannonVelocity = 800.float32
     of 3:
       desc.progressRequired = some(15)
-      desc.cannonPosition = vec2f(-200, -500)
+      desc.cannonPosition = vec2f(-0.25f, 0.1f)
     of 4:
       desc.progressRequired = some(20)
     else:

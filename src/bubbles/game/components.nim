@@ -13,6 +13,7 @@ import logic
 import tables
 import sets
 import windowingsystem/windowingsystem
+import core
 
 type
   PhysicsComponent = ref object of LiveGameComponent
@@ -141,12 +142,21 @@ method initialize(g: StageComponent, world: LiveWorld) =
 
 method onEvent(g: StageComponent, world: LiveWorld, event: Event) =
   postMatcher(event):
+    extract(DamageDealtEvent, attacker, defender):
+      if defender[Combatant].health.currentValue <= 0:
+        if defender.hasData(Player):
+          err &"YOU HAVE LOST"
+        else:
+          info &"Stage complete"
+          for stage in activeStages(world):
+            completeStage(world, stage)
     extract(BubblePoppedEvent, stage, bubble):
-      let sd = stage[Stage]
-      if sd.active:
-        sd.progress.inc
-        if sd.progressRequired.isSome and sd.progressRequired.get <= sd.progress:
-          completeStage(world, stage)
+      advanceAction(world, colorToAction(bubble[Bubble].color), 1)
+    #   let sd = stage[Stage]
+    #   if sd.active:
+    #     sd.progress.inc
+    #     if sd.progressRequired.isSome and sd.progressRequired.get <= sd.progress:
+    #       completeStage(world, stage)
 
 
 method update(g: StageComponent, world: LiveWorld) =

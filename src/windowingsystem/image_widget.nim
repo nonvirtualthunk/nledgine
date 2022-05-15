@@ -102,6 +102,7 @@ proc effectiveColor*(ID: ref ImageDisplay) : RGBA =
 
 proc calcSize(ID: ref ImageDisplay, widget: Widget, axis: Axis): int =
   let img = ID.effectiveImage.asImage
+  if img == nil: return 0
   case ID.scale.kind:
   of Scale:
     (img.dimensions[axis].float * ID.scale.scale).int * widget.pixelScale
