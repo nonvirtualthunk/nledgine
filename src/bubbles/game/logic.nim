@@ -17,6 +17,11 @@ iterator activeStages*(world: LiveWorld): Entity =
     if ent[Stage].active:
       yield ent
 
+iterator activeStagesD*(world: LiveWorld): ref Stage =
+  for ent in world.entitiesWithData(Stage):
+    if ent[Stage].active:
+      yield ent[Stage]
+
 
 proc player*(world: LiveWorld): Entity =
   for p in world.entitiesWithData(Player):
@@ -43,18 +48,47 @@ proc gainBlock*(world: LiveWorld, defender: Entity, amount: int) =
   world.eventStmts(BlockGainedEvent(entity: defender, blockAmount: amount)):
     defender[Combatant].blockAmount += amount
 
+proc applyModifier*(world: LiveWorld, entity: Entity, modifier: CombatantMod) =
+  world.eventStmts(ModifierAppliedEvent(entity: entity, modifier: modifier)):
+    var found = false
+    for m in entity[Combatant].modifiers.mitems:
+      if m.kind == modifier.kind:
+        m.number += modifier.number
+        found = true
+        break
+    if not found:
+      entity[Combatant].modifiers.add(modifier)
+
+proc applyModifier*(world: LiveWorld, entity: Entity, modifier: BubbleMod) =
+  var found = false
+  for m in entity[Bubble].modifiers.mitems:
+    if m.kind == modifier.kind:
+      m.number += modifier.number
+      found = true
+      break
+  if not found:
+    entity[Bubble].modifiers.add(modifier)
+
+
+proc defaultEffectFor*(action: PlayerActionKind) : seq[PlayerEffect] =
+  case action:
+    of PlayerActionKind.Attack: @[PlayerEffect(kind: PlayerEffectKind.Attack, amount: 1)]
+    of PlayerActionKind.Block: @[PlayerEffect(kind: PlayerEffectKind.Block, amount: 1)]
+    of PlayerActionKind.Skill: @[PlayerEffect(kind: PlayerEffectKind.Mod, modifier: combatantMod(CombatantModKind.Strength, 1))]
 
 proc performAction*(world: LiveWorld, entity: Entity, action: PlayerActionKind) =
-  case action:
-    of PlayerActionKind.Attack:
-      for stage in activeStages(world):
-        doDamage(world, entity, stage[Stage].enemy, 1)
-    of PlayerActionKind.Skill:
-      for stage in activeStages(world):
-        doDamage(world, entity, stage[Stage].enemy, 1)
-      gainBlock(world, entity, 1)
-    of PlayerActionKind.Block:
-      gainBlock(world, entity, 1)
+  let pd = entity[Player]
+  let cd = entity[Combatant]
+  let effects = pd.effects.getOrDefault(action, defaultEffectFor(action))
+  for effect in effects:
+    case effect.kind:
+      of PlayerEffectKind.Attack:
+        for stage in activeStages(world):
+          doDamage(world, entity, stage[Stage].enemy, effect.amount + sumModifiers(cd, CombatantModKind.Strength))
+      of PlayerEffectKind.Block:
+        gainBlock(world, entity, effect.amount + sumModifiers(cd, CombatantModKind.Dexterity))
+      of PlayerEffectKind.Mod:
+        applyModifier(world, entity, effect.modifier)
 
 
 proc advanceAction*(world: LiveWorld, action: PlayerActionKind, amount: int) =
@@ -65,34 +99,82 @@ proc advanceAction*(world: LiveWorld, action: PlayerActionKind, amount: int) =
     performAction(world, p, action)
     pd.actionProgress[action] = 0
 
+proc pickIntent*(world: LiveWorld, enemy: Entity) =
+  var r = randomizer(world, 12)
+  enemy[Enemy].activeIntent = pickFrom(r, enemy[Enemy].intents)[1]
+  world.postEvent(IntentChangedEvent(entity: enemy))
+
+proc advanceEnemyAction*(world: LiveWorld, enemy: Entity, amount: int) =
+  let ed = enemy[Enemy]
+  ed.activeIntent.duration.reduceBy(amount)
+  if ed.activeIntent.duration.currentValue <= 0:
+    case ed.activeIntent.kind:
+      of IntentKind.Attack:
+        doDamage(world, enemy, player(world), ed.activeIntent.amount)
+      of IntentKind.Block:
+        gainBlock(world, enemy, ed.activeIntent.amount)
+    pickIntent(world, enemy)
+
 
 proc fireBubble*(world : LiveWorld, stage: Entity, cannon: Entity) =
   let cd = cannon[Cannon]
-  if stage[Stage].magazine.nonEmpty:
-    let bubble = stage[Stage].magazine[0]
-    bubble[Bubble].position = cd.position
-    bubble[Bubble].velocity = cd.direction * cd.maxVelocity * cd.currentVelocityScale
-    stage[Stage].magazine.delete(0)
-    stage[Stage].bubbles.add(bubble)
+  let sd = stage[Stage]
+  if sd.activeMagazine.nonEmpty:
+    let bubble = sd.activeMagazine.bubbles[0]
+    let bd = bubble[Bubble]
+    bd.position = cd.position
+    bd.velocity = cd.direction * cd.maxVelocity * cd.currentVelocityScale
+    sd.activeMagazine.bubbles.delete(0)
+    sd.bubbles.add(bubble)
+    attachModifiers(world, bubble, player(world), bd.inPlayPlayerMods)
+    advanceEnemyAction(world, sd.enemy, 1)
 
 
 proc hasIntersection*(p1: Vec2f, r1: float32, p2: Vec2f, r2: float32) : bool =
   (p2 - p1).lengthSafe <= r1 + r2
 
+iterator allColors*(a: ref Bubble): BubbleColor =
+  yield a.color
+  for c in a.secondaryColors:
+    yield c
+
+proc haveSharedColor*(a, b: ref Bubble) : bool =
+  if hasModifier(a, BubbleModKind.Chromophilic) or hasModifier(b, BubbleModKind.Chromophilic):
+    true
+  else:
+    for ac in allColors(a):
+      for bc in allColors(b):
+        if ac == bc:
+          return true
+    false
+
+
+proc popBubble*(world: LiveWorld, stage: Entity, bubble: Entity) =
+  let bd = bubble[Bubble]
+  stage[Stage].bubbles.delValue(bubble)
+  stage[Stage].activeMagazine.bubbles.add(bubble)
+  bd.number = bd.maxNumber
+  bd.bounceCount = 0
+  detachModifiers(world, bubble, player(world))
+  world.addFullEvent(BubblePoppedEvent(bubble: bubble, stage: stage))
+
 
 proc collideBubbles*(world: LiveWorld, stage: Entity, bubbleA: Entity, bubbleB: Entity) =
+  let shareColor = haveSharedColor(bubbleA[Bubble], bubbleB[Bubble])
+  let countDownBy = if shareColor:
+    max(bubbleA[Bubble].payload, bubbleB[Bubble].payload)
+  else:
+    0
+
   for bubble in @[bubbleA, bubbleB]:
     if not isDestroyed(world, bubble):
       let bd = bubble[Bubble]
-      if bubbleA[Bubble].color == bubbleB[Bubble].color:
-        bd.number = (bd.number - 1).max(0)
+      bd.number = max(bd.number - countDownBy, 0)
+      if hasModifier(bd, BubbleModKind.Chromophobic) and not shareColor:
+        bd.number = min(bd.number + 1, 9)
 
       if bd.number == 0:
-        stage[Stage].bubbles.delValue(bubble)
-        # world.destroyEntity(bubble)
-        stage[Stage].magazine.add(bubble)
-        bd.number = bd.maxNumber
-        world.addFullEvent(BubblePoppedEvent(bubble: bubble, stage: stage))
+        popBubble(world, stage, bubble)
 
 
 
@@ -140,7 +222,7 @@ proc createEnemy*(world: LiveWorld, stage: Entity): Entity =
         name: "Bat",
         image: image("bubbles/images/enemies/bat.png")
       ))
-  enemy[Enemy].activeIntent = pickFrom(r, enemy[Enemy].intents)[1]
+  pickIntent(world, enemy)
   world.postEvent(EnemyCreatedEvent(entity: enemy))
   enemy
 
@@ -164,18 +246,23 @@ proc createStage*(world: LiveWorld, player: Entity, stageDesc: StageDescription)
   ))
 
   var r = randomizer(world)
-  var magazine : seq[Entity]
+  var magazines : seq[Magazine]
+  for i in 0 ..< 3: magazines.add(new Magazine)
 
+  var i = 0
   for bubble in player[Player].bubbles:
+    let magazine = magazines[i mod magazines.len]
     let copy = world.copyEntity(bubble)
     copy[Bubble].number = copy[Bubble].maxNumber
-    magazine.insert(copy, r.nextInt(magazine.len+1))
+    magazine.bubbles.insert(copy, r.nextInt(magazine.bubbles.len+1))
+    i.inc
 
   let stage = world.createEntity()
   stage.attachData(Stage(
     active: stageDesc.makeActive,
     bubbles: @[],
-    magazine: magazine,
+    magazines: magazines,
+    activeMagazine: magazines[0],
     cannon: cannon,
     bounds: bounds,
     linearDrag: stageDesc.linearDrag,
@@ -186,11 +273,11 @@ proc createStage*(world: LiveWorld, player: Entity, stageDesc: StageDescription)
   let sd = stage[Stage]
   let prePlacedBubbles = 3
   for i in 0 ..< prePlacedBubbles:
-    if sd.magazine.isEmpty: continue
+    let magazine = sd.magazines[i mod sd.magazines.len]
+    if magazine.isEmpty: continue
 
-    let bubble = sd.magazine[0]
+    let bubble = magazine.takeBubble()
     sd.bubbles.add(bubble)
-    sd.magazine.delete(0)
 
     let spacing = (1.float32/prePlacedBubbles.float32)
     bubble[Bubble].position = fractionalToAbsolutePosition(sd, spacing * (i.float32 + 0.5f32), 0.75f32)
@@ -200,15 +287,46 @@ proc createStage*(world: LiveWorld, player: Entity, stageDesc: StageDescription)
   stage
 
 
+proc allColors*(): seq[BubbleColor] = enumValuesSeq(BubbleColor)
+
 proc createRewardBubble*(world: LiveWorld) : Entity =
   let bubble = createBubble(world)
   let bd = bubble[Bubble]
   var r = randomizer(world)
-  bd.color = pickFrom(r, enumValuesSeq(BubbleColor))[1]
-  if r.nextInt(6) >= 4: bd.modifiers.add(bubbleMod(BubbleModKind.Big))
-  if r.nextInt(6) >= 4: bd.modifiers.add(bubbleMod(BubbleModKind.Bouncy))
-  if r.nextInt(6) >= 4: bd.modifiers.add(bubbleMod(BubbleModKind.HighNumber))
-  if r.nextInt(6) >= 4: bd.modifiers.add(bubbleMod(BubbleModKind.Chromophobic))
+  let colors = @[BubbleColor.Red, BubbleColor.Green, BubbleColor.Blue]
+  bd.color = pickFrom(r, colors)[1]
+  let buffCount = r.nextInt(2) + 1
+  let malusCount = buffCount - 1
+
+  for i in 0 ..< buffCount:
+    let buffKind = case r.nextInt(9):
+      of 0: BubbleModKind.Big
+      of 1: BubbleModKind.Bouncy
+      of 2: BubbleModKind.Juggernaut
+      of 3: BubbleModKind.Potency
+      of 4: BubbleModKind.Power
+      of 5: BubbleModKind.Chain
+      of 6: BubbleModKind.Chromophilic
+      else: BubbleModKind.Normal
+
+    if buffKind != BubbleModKind.Normal:
+      applyModifier(world, bubble, bubbleMod(buffKind, 1))
+    else:
+      var otherColors = colors
+      for color in allColors(bd):
+        otherColors.delValue(color)
+      if otherColors.nonEmpty:
+        bd.secondaryColors.add(pickFrom(r, otherColors)[1])
+
+
+  for i in 0 ..< malusCount:
+    let malusKind = case r.nextInt(5):
+      of 0,1,2: BubbleModKind.HighNumber
+      of 3: BubbleModKind.WallAverse
+      of 4: BubbleModKind.Chromophobic
+      else: BubbleModKind.Normal
+    applyModifier(world, bubble, bubbleMod(malusKind, 1))
+
   world.postEvent(BubbleRewardCreatedEvent(bubble: bubble))
   bubble
 
@@ -219,6 +337,12 @@ proc completeStage*(world: LiveWorld, stage: Entity) =
   sd.active = false
   player[Player].completedLevel = sd.level
 
+  for k,v in player[Player].actionProgress.mpairs:
+    v = 0
+  player[Combatant].blockAmount = 0
+  player[Combatant].modifiers.clear()
+  player[Combatant].externalModifiers.clear()
+
   player[Player].pendingRewards.add(Reward(
     bubbles: @[createRewardBubble(world), createRewardBubble(world), createRewardBubble(world)]
   ))
@@ -228,8 +352,8 @@ proc advanceStage*(world: LiveWorld) =
   let player = player(world)
   var desc = StageDescription(
                linearDrag: 90.0f32,
-               cannonPosition: vec2f(0.5f, 0.1f),
-               cannonVelocity: 700.0f32,
+               cannonPosition: vec2f(0.5f, 0.25f),
+               cannonVelocity: 600.0f32,
                progressRequired: some(8),
                makeActive: true,
                level: player[Player].completedLevel + 1
@@ -240,10 +364,10 @@ proc advanceStage*(world: LiveWorld) =
       desc.progressRequired = some(8)
     of 2:
       desc.progressRequired = some(10)
-      desc.cannonVelocity = 800.float32
+      desc.cannonVelocity = 700.float32
     of 3:
       desc.progressRequired = some(15)
-      desc.cannonPosition = vec2f(-0.25f, 0.1f)
+      desc.cannonPosition = vec2f(0.25f, 0.25f)
     of 4:
       desc.progressRequired = some(20)
     else:

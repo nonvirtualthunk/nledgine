@@ -79,7 +79,11 @@ proc drawBubble(g: BubbleGraphics, world: LiveWorld, qb: var QuadBuilder, bubble
   let forward = vec3f(1.0f,0.0f,0.0f)
   let ortho = vec3f(0.0f,1.0f,0.0f)
 
-  drawQuad(g, image("bubbles/images/bubble_2.png"), rgba(b.color), vec3f(pos, 0.0f), forward, ortho, vec2f(b.radius * 2.0f, b.radius * 2.0f))
+  if b.secondaryColors.isEmpty:
+    drawQuad(g, image("bubbles/images/bubble_2.png"), rgba(b.color), vec3f(pos, 0.0f), forward, ortho, vec2f(b.radius * 2.0f, b.radius * 2.0f))
+  else:
+    drawQuad(g, image("bubbles/images/bicolor_bubble.png"), rgba(b.color), vec3f(pos, 0.0f), forward, ortho, vec2f(b.radius * 2.0f, b.radius * 2.0f))
+    drawQuad(g, image("bubbles/images/bicolor_bubble_ring.png"), rgba(b.secondaryColors[0]), vec3f(pos, 0.0f), forward, ortho, vec2f(b.radius * 2.0f, b.radius * 2.0f))
 
   let numeral = g.numerals[b.number]
   let numeralSizeM = 24 div numeral.dimensions.y
@@ -91,6 +95,33 @@ proc drawBubble(g: BubbleGraphics, world: LiveWorld, qb: var QuadBuilder, bubble
   qb.centered()
   qb.drawTo(g.canvas)
 
+  if b.modifiers.nonEmpty:
+    qb.position = vec3f(pos, 0.0f)
+    qb.color = rgba(190,190,190,255)
+    qb.dimensions = vec2f(12.0f,12.0f)
+    qb.centered()
+
+    let d = b.radius - 8.0f
+    var i = 0
+    for m in b.modifiers:
+      qb.position = case i:
+        of 0: vec3f(pos + vec2f(0.0f,-d), 0.0f)
+        of 1: vec3f(pos + vec2f(d, 0.0f), 0.0f)
+        of 2: vec3f(pos + vec2f(0.0f, d), 0.0f)
+        else: vec3f(pos + vec2f(-d, 0.0f), 0.0f)
+
+      qb.texture = case m.kind:
+        of BubbleModKind.Power: image("bubbles/images/bubble_modifiers/x2.png")
+        of BubbleModKind.Potency: image(&"bubbles/images/bubble_modifiers/plus_{max(m.number, 1)}.png")
+        of BubbleModKind.Juggernaut: image(&"bubbles/images/bubble_modifiers/juggernaut.png")
+        of BubbleModKind.Chain: image(&"bubbles/images/bubble_modifiers/chain.png")
+        of BubbleModKind.Chromophilic: image(&"bubbles/images/bubble_modifiers/chromophilic.png")
+        of BubbleModKind.Chromophobic: image(&"bubbles/images/bubble_modifiers/chromophobic.png")
+        else: continue
+      i.inc
+
+      qb.drawTo(g.canvas)
+
 
 method update(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
 
@@ -98,12 +129,19 @@ method update(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld, df: fl
 
   let aimDot = image("bubbles/images/aim_dot.png")
 
+  let magazineVectors = @[vec2f(-0.5,-0.5).normalize, vec2f(0.0,-1.0f), vec2f(0.5,-0.5).normalize]
   for stage in activeStages(world):
     let sd = stage[Stage]
-    if sd.magazine.nonEmpty:
-      drawBubble(g, world, qb, sd.magazine[0], some(sd.cannon[Cannon].position))
-      for i in 1 ..< sd.magazine.len:
-        drawBubble(g, world, qb, sd.magazine[i], some(sd.cannon[Cannon].position + vec2f(48.0f, -48.0f) + vec2f(48.0f * i.float32,0.0f)))
+    for mi in 0 ..< sd.magazines.len:
+      let magazine = sd.magazines[mi]
+      if magazine.nonEmpty:
+        var indexOffset = 0
+        if magazine == sd.activeMagazine:
+          indexOffset = 1
+          drawBubble(g, world, qb, magazine.bubbles[0], some(sd.cannon[Cannon].position))
+
+        for i in indexOffset ..< magazine.bubbles.len:
+          drawBubble(g, world, qb, magazine.bubbles[i], some(sd.cannon[Cannon].position + magazineVectors[mi] * 48.0f * (i - indexOffset + 2).float32))
 
     for bubble in sd.bubbles:
       drawBubble(g, world, qb, bubble, none(Vec2f))
@@ -113,6 +151,7 @@ method update(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld, df: fl
 
     let baseImg = image("bubbles/images/cannon_base.png")
     let turretImg = image("bubbles/images/cannon_turret.png")
+    let feedImg = image("bubbles/images/cannon_feed.png")
 
 
     let vel = (c.maxVelocity * c.currentVelocityScale).int
@@ -131,6 +170,12 @@ method update(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld, df: fl
     let turretOrtho = vec3f(c.direction,0.0f32)
     let turretForward = turretOrtho.cross(vec3f(0.0f,0.0f,1.0f))
     drawQuad(g, turretImg, rgba(255,255,255,255), turretCenter, turretForward, turretOrtho, vec2f(turretImg.dimensions))
+
+    let feedVec = magazineVectors[sd.activeMagazineIndex]
+    let feedCenter = vec3f(c.position + feedVec * (baseImg.height.float32 * 0.5f32 + feedImg.height.float32 * 0.3f32), 0.0f32)
+    let feedOrtho = vec3f(feedVec,0.0f32) * -1.0f32
+    let feedForward = feedOrtho.cross(vec3f(0.0f,0.0f,1.0f))
+    drawQuad(g, feedImg, rgba(255,255,255,255), feedCenter, feedForward, feedOrtho, vec2f(feedImg.dimensions))
 
     qb.position = vec3f(c.position, 0.0f)
     qb.color = rgba(255,255,255,255)
@@ -154,8 +199,10 @@ proc updateCannonDirection(g: BubbleGraphics, world: LiveWorld, display: Display
 
     let worldPos = display[CameraData].camera.pixelToWorld(GCD.framebufferSize, GCD.windowSize, g.mousePos)
     let v = worldPos.xy - cd.position
-    cd.direction = v.normalizeSafe
-    cd.currentVelocityScale = (v.lengthSafe / 800.0f).max(0.25f).min(1.0f)
+    let rawDir = v.normalizeSafe
+    let dir = vec2f(rawDir.x, max(rawDir.y, 0.2f)).normalize
+    cd.direction = dir
+    cd.currentVelocityScale = (v.lengthSafe / 500.0f).max(0.25f).min(1.0f)
 
 method onEvent*(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld, event: Event) =
   let GCD = display[GraphicsContextData]
@@ -169,6 +216,12 @@ method onEvent*(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld, even
         of KeyCode.X:
           display[CameraData].camera.changeScale(-1)
           display.addEvent(CameraChangedEvent())
+        of KeyCode.Left:
+          for stage in activeStagesD(world):
+            stage.activeMagazine = stage.magazines[(stage.activeMagazineIndex + stage.magazines.len - 1) mod stage.magazines.len]
+        of KeyCode.Right:
+          for stage in activeStagesD(world):
+            stage.activeMagazine = stage.magazines[(stage.activeMagazineIndex + stage.magazines.len + 1) mod stage.magazines.len]
         else:
           discard
     extract(MouseMove, position):

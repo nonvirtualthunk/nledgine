@@ -55,10 +55,23 @@ method update(g: PhysicsComponent, world: LiveWorld) =
       let spd = b.velocity.lengthSafe
       if spd > 0.001:
         var newPos = b.position + b.velocity * deltaTime
+        var wallCollision : Option[Wall]
         for axis in axes2d():
-          if newPos[axis] + b.radius >= sd.bounds.max(axis) or
-             newPos[axis] - b.radius <= sd.bounds.min(axis):
+          var hit = false
+          if newPos[axis] + b.radius >= sd.bounds.max(axis):
+            wallCollision = if axis == Axis.X: some(Wall.Right) else: some(Wall.Top)
+            hit = true
+          elif newPos[axis] - b.radius <= sd.bounds.min(axis):
+            wallCollision = if axis == Axis.X: some(Wall.Left) else: some(Wall.Bottom)
+            hit = true
+
+          if hit:
             b.velocity[axis] = (b.velocity[axis] * -1.0f32)
+
+        if wallCollision.isSome:
+          if b.lastHitWall != wallCollision:
+            world.postEvent(WallCollisionEvent(stage: stage, bubble: bubble, wall: wallCollision.get))
+        b.lastHitWall = wallCollision
 
         newPos = b.position + b.velocity * deltaTime
 
@@ -98,8 +111,12 @@ method update(g: PhysicsComponent, world: LiveWorld) =
             # con = true
             let j = ((1.0f + min(bd.elasticity, obd.elasticity)) * -1.0f * velAlongNormal) / (1.0/1.0 + 1.0/1.0)
             let impulse = n * j
-            bd.velocity += impulse * (1.0/1.0)
-            obd.velocity -= impulse * (1.0/1.0)
+            let ignoreBDV = hasModifier(bd, BubbleModKind.Juggernaut) and bd.velocity.lengthSafe > obd.velocity.lengthSafe
+            let ignoreOBDV = hasModifier(obd, BubbleModKind.Juggernaut) and obd.velocity.lengthSafe > bd.velocity.lengthSafe
+            if not ignoreBDV:
+              bd.velocity += impulse * (1.0/1.0)
+            if not ignoreOBDV:
+              obd.velocity -= impulse * (1.0/1.0)
             bd.position -= n * distanceOfIntersection * 0.55
             obd.position += n * distanceOfIntersection * 0.55
 
@@ -132,6 +149,17 @@ method onEvent(g: BubbleComponent, world: LiveWorld, event: Event) =
   postMatcher(event):
     extract(BubbleCollisionEndEvent,stage, bubbles):
       collideBubbles(world, stage, bubbles[0], bubbles[1])
+      bubbles[0][Bubble].bounceCount.inc
+      bubbles[1][Bubble].bounceCount.inc
+    extract(BubblePoppedEvent, stage, bubble):
+      advanceAction(world, colorToAction(bubble[Bubble].color), bubble[Bubble].potency)
+    extract(WallCollisionEvent, stage, bubble):
+      bubble[Bubble].bounceCount.inc
+      if bubble[Bubble].hasModifier(BubbleModKind.WallAverse):
+        bubble[Bubble].number = min(bubble[Bubble].number + 1, 9)
+    extract(BubbleStoppedEvent, bubble):
+      bubble[Bubble].bounceCount = 0
+      bubble[Bubble].lastHitWall = none(Wall)
 
 
 proc stageComponent*() : StageComponent =
@@ -150,8 +178,6 @@ method onEvent(g: StageComponent, world: LiveWorld, event: Event) =
           info &"Stage complete"
           for stage in activeStages(world):
             completeStage(world, stage)
-    extract(BubblePoppedEvent, stage, bubble):
-      advanceAction(world, colorToAction(bubble[Bubble].color), 1)
     #   let sd = stage[Stage]
     #   if sd.active:
     #     sd.progress.inc

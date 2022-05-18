@@ -63,6 +63,12 @@ method update(g: RewardUIComponent, world: LiveWorld, display: DisplayWorld, df:
         w.bindValue("descriptors", descriptorString)
         if b[Bubble].radius == 24.0f32:
           w.bindValue("image", image("bubbles/images/bubble_2.png"))
+          if b[Bubble].secondaryColors.nonEmpty:
+            w.bindValue("imageOverlay", image("bubbles/images/bicolor_bubble_ring.png"))
+            w.bindValue("imageOverlayColor", rgba(b[Bubble].secondaryColors[0]))
+            w.bindValue("imageOverlayShowing", true)
+          else:
+            w.bindValue("imageOverlayShowing", false)
         else:
           w.bindValue("image", image("bubbles/images/large_bubble_2.png"))
         w.bindValue("imageColor", rgba(b[Bubble].color))
@@ -92,6 +98,10 @@ type
     infoArea*: Widget
     needsUpdate*: bool
 
+  ModifierB = object
+    image: Image
+    number: int
+
 method initialize(g: MainUIComponent, world: LiveWorld, display: DisplayWorld) =
    g.name = "MainUIComponent"
    g.needsUpdate = true
@@ -102,20 +112,24 @@ method initialize(g: MainUIComponent, world: LiveWorld, display: DisplayWorld) =
 
 method update(g: MainUIComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
   if g.needsUpdate:
+    var hasStage = false
     for stage in activeStages(world):
+      hasStage = true
       let sd = stage[Stage]
       let ed = sd.enemy[Enemy]
       let ecd = sd.enemy[Combatant]
-      g.infoArea.bindValue("enemyName", ecd.name)
-      g.infoArea.bindValue("enemyImage", ecd.image)
-      g.infoArea.bindValue("enemyIntentIcon", icon(ed.activeIntent))
-      g.infoArea.bindValue("enemyIntentText", ed.activeIntent.amount)
-      g.infoArea.bindValue("enemyIntentColor", color(ed.activeIntent))
-      g.infoArea.bindValue("enemyIntentTime", ed.activeIntent.duration.currentValue)
-      g.infoArea.bindValue("enemyHealth", ecd.health.currentValue)
-      g.infoArea.bindValue("enemyMaxHealth", ecd.health.maxValue)
-      g.infoArea.bindValue("enemyBlock", ecd.blockAmount)
-      g.infoArea.bindValue("enemyBlockShowing", ecd.blockAmount > 0)
+      g.infoArea.bindValue("enemy.name", ecd.name)
+      g.infoArea.bindValue("enemy.image", ecd.image)
+      g.infoArea.bindValue("enemy.intentIcon", icon(ed.activeIntent))
+      g.infoArea.bindValue("enemy.intentText", ed.activeIntent.amount)
+      g.infoArea.bindValue("enemy.intentColor", color(ed.activeIntent))
+      g.infoArea.bindValue("enemy.intentTime", ed.activeIntent.duration.currentValue)
+      g.infoArea.bindValue("enemy.health", ecd.health.currentValue)
+      g.infoArea.bindValue("enemy.maxHealth", ecd.health.maxValue)
+      g.infoArea.bindValue("enemy.block", ecd.blockAmount)
+      g.infoArea.bindValue("enemy.blockShowing", ecd.blockAmount > 0)
+
+    g.infoArea.bindValue("enemy.showing", hasStage)
 
     let p = player(world)
     let pcd = p[Combatant]
@@ -127,6 +141,13 @@ method update(g: MainUIComponent, world: LiveWorld, display: DisplayWorld, df: f
     g.infoArea.bindValue("playerMaxHealth", pcd.health.maxValue)
     g.infoArea.bindValue("playerBlock", pcd.blockAmount)
     g.infoArea.bindValue("playerBlockShowing", pcd.blockAmount > 0)
+
+    var modifiers: seq[ModifierB]
+    for mk in enumValues(CombatantModKind):
+      let v = sumModifiers(pcd, mk)
+      if v > 0:
+        modifiers.add(ModifierB(image: icon(mk), number: v))
+    g.infoArea.bindValue("playerModifiers", modifiers)
 
     for action in enumValues(PlayerActionKind):
       let str = ($action).toLowerAscii

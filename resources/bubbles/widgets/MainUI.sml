@@ -88,67 +88,76 @@ MainUI {
           x: 0
           y: 0
           width: expandToParent
-          height: WrapContent
+          height: 300
           padding: [5,5]
 
           children {
-            EnemyName {
-              type: TextDisplay
-              text: "%(enemyName)"
-              fontSize: 20
-              horizontalAlignment: center
-              width: 100%
-            }
-            EnemyImage {
-              type: ImageDisplay
-              image: "%(enemyImage)"
-              scale: scale(6)
-              x: centered
-              y: 0 below EnemyName
-            }
-            EnemyIntent {
+            EnemySection {
               type: Div
-              x: 0 from Right
-              y: 0 below EnemyName
-              width: WrapContent
-              height: WrapContent
-              children {
-                IntentDisplay: ${LabeledNumber} {
-                  children.ImageLabel.image: "%(enemyIntentIcon)"
-                  children.NumberDisplay.text: "%(enemyIntentText)"
-                  children.NumberDisplay.textColor: "%(enemyIntentColor)"
-                }
-                IntentTimeDisplay: ${LabeledNumber} {
-                  y: 0 below IntentDisplay
-                  children.ImageLabel.image: "bubbles/images/icons/time.png"
-                  children.NumberDisplay.text: "%(enemyIntentTime)"
-                  children.NumberDisplay.textColor: [0.9,0.9,0.9,1.0]
-                }
-              }
-            }
-            EnemyHealthBar: ${LabeledBar} {
-              x: 0
-              y: 15 below EnemyImage
-              children.BarImageLabel.image: "bubbles/images/icons/health.png"
-              children.Bar {
-                currentValue: "%(enemyHealth)"
-                maxValue: "%(enemyMaxHealth)"
-                fill.color: [0.75, 0.15, 0.2, 1.0]
-                fill.edgeColor: [0.75, 0.15, 0.2, 1.0]
-              }
-            }
-            EnemyBlock: ${LabeledNumber} {
-              x: 5 right of EnemyHealthBar
-              y: match EnemyHealthBar
-              showing: "%(enemyBlockShowing)"
+              showing: "%(enemy.showing)"
+              width: 100%
+              height: 100%
 
               children {
-                ImageLabel {
-                  image: "bubbles/images/icons/block.png"
+                EnemyName {
+                  type: TextDisplay
+                  text: "%(enemy.name)"
+                  fontSize: 20
+                  horizontalAlignment: center
+                  width: 100%
                 }
-                NumberDisplay {
-                  text: "%(enemyBlock)"
-                  textColor: [0.2, 0.1, 0.75, 1.0]
+                EnemyImage {
+                  type: ImageDisplay
+                  image: "%(enemy.image)"
+                  scale: scale(6)
+                  x: centered
+                  y: 0 below EnemyName
+                }
+                EnemyIntent {
+                  type: Div
+                  x: 0 from Right
+                  y: 0 below EnemyName
+                  width: WrapContent
+                  height: WrapContent
+                  children {
+                    IntentDisplay: ${LabeledNumber} {
+                      children.ImageLabel.image: "%(enemy.intentIcon)"
+                      children.NumberDisplay.text: "%(enemy.intentText)"
+                      children.NumberDisplay.textColor: "%(enemy.intentColor)"
+                    }
+                    IntentTimeDisplay: ${LabeledNumber} {
+                      y: 0 below IntentDisplay
+                      children.ImageLabel.image: "bubbles/images/icons/time.png"
+                      children.NumberDisplay.text: "%(enemy.intentTime)"
+                      children.NumberDisplay.textColor: [0.9,0.9,0.9,1.0]
+                    }
+                  }
+                }
+                EnemyHealthBar: ${LabeledBar} {
+                  x: 0
+                  y: 15 below EnemyImage
+                  children.BarImageLabel.image: "bubbles/images/icons/health_2.png"
+                  children.Bar {
+                    currentValue: "%(enemy.health)"
+                    maxValue: "%(enemy.maxHealth)"
+                    fill.color: [0.75, 0.15, 0.2, 1.0]
+                    fill.edgeColor: [0.75, 0.15, 0.2, 1.0]
+                  }
+                }
+                EnemyBlock: ${LabeledNumber} {
+                  x: 5 right of EnemyHealthBar
+                  y: match EnemyHealthBar
+                  showing: "%(enemy.blockShowing)"
+
+                  children {
+                    ImageLabel {
+                      image: "bubbles/images/icons/block.png"
+                    }
+                    NumberDisplay {
+                      text: "%(enemy.block)"
+                      textColor: [0.2, 0.1, 0.75, 1.0]
+                    }
+                  }
                 }
               }
             }
@@ -178,14 +187,27 @@ MainUI {
               x: centered
               y: 0 below PlayerName
             }
+            ModifiersDisplay {
+              type: ListWidget
+              y: 15 below PlayerImage
+              width: WrapContent
+              height: WrapContent
+              x: centered
+              horizontal: true
+              selectable: false
+
+              listItemArchetype: MainUI.ModifierWidget
+              listItemBinding: "playerModifiers -> modifier"
+              gapSize: 0
+            }
             MainStatsDisplay {
               type: Div
-              y: 15 below PlayerImage
+              y: 5 below ModifiersDisplay
               width: 100%
               height: WrapContent
               children {
                 HealthBar: ${LabeledBar} {
-                  children.BarImageLabel.image: "bubbles/images/icons/health.png"
+                  children.BarImageLabel.image: "bubbles/images/icons/health_2.png"
                   children.Bar {
                     currentValue: "%(playerHealth)"
                     maxValue: "%(playerMaxHealth)"
@@ -253,7 +275,7 @@ MainUI {
                 SkillBar: ${LabeledBar} {
                   y: 5 below BlockBar
                   width: 100%
-                  children.BarImageLabel.image: "bubbles/images/icons/skill.png"
+                  children.BarImageLabel.image: "bubbles/images/icons/buff.png"
                   children.Bar {
                     currentValue: "%(skillProgress)"
                     maxValue: "%(skillProgressRequired)"
@@ -266,6 +288,30 @@ MainUI {
           }
         }
       }
+    }
+  }
+}
+
+
+ModifierWidget {
+  type: Div
+  children {
+    ModifierImage {
+      type: ImageDisplay
+      image: "%(modifier.image)"
+      width: 32
+      height: 32
+      scale: scaleToFit
+      background.draw: false
+    }
+    ModifierText {
+      type: TextDisplay
+      text: "%(modifier.number)"
+      fontSize: 12
+      textColor: [255,255,255,255]
+      background.draw: false
+      x: -3 right of ModifierImage
+      y: -8 below ModifierImage
     }
   }
 }

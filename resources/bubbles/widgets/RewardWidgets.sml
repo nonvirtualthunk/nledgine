@@ -67,6 +67,18 @@ RewardOptionWidget {
           y: centered
           x: centered
         }
+        OptionOverlayImage {
+          type: ImageDisplay
+          showing: "%(imageOverlayShowing)"
+          image: "%(imageOverlay)"
+          color: "%(imageOverlayColor)"
+          width: intrinsic
+          height: intrinsic
+          scale: scale(2)
+          x: centered
+          y: centered
+          z: 1
+        }
         NumberImage {
           type: ImageDisplay
           image: "%(numeral)"
