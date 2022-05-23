@@ -39,10 +39,12 @@ method initialize(g: InitComponent, world: LiveWorld) =
     bubble[Bubble].color = if i mod 2 == 0: BubbleColor.Red else: BubbleColor.Blue
     bubbles.add(bubble)
 
-  let bashBubble = createBubble(world)
-  bashBubble[Bubble].color = BubbleColor.Red
-  bashBubble[Bubble].modifiers = @[bubbleMod(BubbleModKind.Power), bubbleMod(BubbleModKind.HighNumber)]
-  bashBubble[Bubble].secondaryColors = @[BubbleColor.Blue]
+  # let bashBubble = createBubble(world)
+  # bashBubble[Bubble].color = BubbleColor.Red
+  # bashBubble[Bubble].modifiers = @[bubbleMod(BubbleModKind.Power), bubbleMod(BubbleModKind.HighNumber)]
+  # bashBubble[Bubble].secondaryColors = @[BubbleColor.Blue]
+  # bubbles.add(bashBubble)
+  let bashBubble = createBubble(world, † Bubbles.Bash)
   bubbles.add(bashBubble)
 
   let skillBubble = createBubble(world)
@@ -52,16 +54,10 @@ method initialize(g: InitComponent, world: LiveWorld) =
   skillBubble[Bubble].maxNumber = 1
   bubbles.add(skillBubble)
 
-  let chainBubble = createBubble(world)
-  chainBubble[Bubble].color = BubbleColor.Blue
-  chainBubble[Bubble].modifiers = @[bubbleMod(BubbleModKind.HighNumber), bubbleMod(BubbleModKind.Chain)]
+  let chainBubble = createBubble(world, † Bubbles.ChainBlock)
   bubbles.add(chainBubble)
 
-  let powerBubble = createBubble(world)
-  powerBubble[Bubble].color = BubbleColor.Green
-  powerBubble[Bubble].modifiers = @[bubbleMod(BubbleModKind.Chromophilic)]
-  powerBubble[Bubble].maxNumber = 1
-  powerBubble[Bubble].inPlayPlayerMods = @[combatantMod(CombatantModKind.Strength)]
+  let powerBubble = createBubble(world, † Bubbles.Inflame)
   bubbles.add(powerBubble)
 
   let player = world.createEntity()
@@ -70,7 +66,7 @@ method initialize(g: InitComponent, world: LiveWorld) =
     actionProgressRequired: {PlayerActionKind.Attack: 2, PlayerActionKind.Block: 2, PlayerActionKind.Skill: 3}.toTable,
     playArea: ClippedPlayArea,
     effects: {PlayerActionKind.Skill : @[PlayerEffect(amount: 1, kind: PlayerEffectKind.Mod, modifier: combatantMod(CombatantModKind.Strength))]}.toTable,
-    # pendingRewards: @[Reward(bubbles: @[createRewardBubble(world), createRewardBubble(world), createRewardBubble(world)])]
+    # pendingRewards: @[Reward(bubbles: @[createRandomizedRewardBubble(world), createRandomizedRewardBubble(world), createRandomizedRewardBubble(world)])]
   ))
   player.attachData(Combatant(
     name: "Player",

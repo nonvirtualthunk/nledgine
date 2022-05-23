@@ -151,8 +151,6 @@ method onEvent(g: BubbleComponent, world: LiveWorld, event: Event) =
       collideBubbles(world, stage, bubbles[0], bubbles[1])
       bubbles[0][Bubble].bounceCount.inc
       bubbles[1][Bubble].bounceCount.inc
-    extract(BubblePoppedEvent, stage, bubble):
-      advanceAction(world, colorToAction(bubble[Bubble].color), bubble[Bubble].potency)
     extract(WallCollisionEvent, stage, bubble):
       bubble[Bubble].bounceCount.inc
       if bubble[Bubble].hasModifier(BubbleModKind.WallAverse):

@@ -52,7 +52,7 @@ type
     Bottom
 
   Bubble* = object
-    archetype*: ref BubbleArchetype
+    archetype*: Taxon
     position*: Vec2f
     radius: float32
     velocity*: Vec2f
@@ -119,6 +119,8 @@ type
   CombatantModKind* {.pure.} = enum
     Strength
     Dexterity
+    Vulnerable
+    Weak
 
 
   CombatantMod* = object
@@ -129,12 +131,13 @@ type
     Attack
     Block
     Mod
+    EnemyMod
 
   PlayerEffect* = object
     amount*: int
     case kind*: PlayerEffectKind:
       of PlayerEffectKind.Attack, PlayerEffectKind.Block: discard
-      of PlayerEffectKind.Mod:
+      of PlayerEffectKind.Mod, PlayerEffectKind.EnemyMod:
         modifier*: CombatantMod
 
 
@@ -281,6 +284,9 @@ proc sumModifiers*(b: ref Combatant, k: CombatantModKind) : int =
     for m in ms:
       if m.kind == k: result += max(m.number, 1)
 
+proc hasModifier*(b: ref Combatant, k: CombatantModKind) : bool =
+  sumModifiers(b, k) > 0
+
 proc radius*(b: ref Bubble) : float32 =
   result = b.radius
   for m in b.modifiers:
@@ -360,6 +366,8 @@ proc icon*(m: CombatantModKind): Image =
   case m:
     of CombatantModKind.Strength: image("bubbles/images/icons/strength.png")
     of CombatantModKind.Dexterity: image("bubbles/images/icons/dex.png")
+    of CombatantModKind.Vulnerable: image("bubbles/images/icons/vulnerable.png")
+    of CombatantModKind.Weak: image("bubbles/images/icons/weak.png")
 
 proc icon*(m: CombatantMod): Image =
   icon(m.kind)
@@ -388,6 +396,10 @@ proc detachModifiers*(world: LiveWorld, src: Entity, target: Entity) =
 proc readFromConfig*(cv: ConfigValue, v: var BubbleModKind) =
   v = parseEnum[BubbleModKind](cv.asStr)
 
+proc readFromConfig*(cv: ConfigValue, v: var CombatantModKind) =
+  v = parseEnum[CombatantModKind](cv.asStr)
+
+
 proc readFromConfig*(cv: ConfigValue, v: var BubbleColor) =
   v = parseEnum[BubbleColor](cv.asStr)
 
@@ -404,24 +416,41 @@ proc readFromConfig*(cv: ConfigValue, a: var BubbleMod) =
     warn &"Invalid BubbleMod expression: {cv}"
 
 proc readFromConfig*(cv: ConfigValue, a: var CombatantMod) =
-  matcher(cv.asStr):
-    extractMatches(ModRE, kind, num):
-      a.kind = parseEnum[CombatantModKind](kind)
-      if num.nonEmpty:
-        a.number = parseInt(num)
-      else:
-        a.number = 1
+  if cv.isStr:
+    matcher(cv.asStr):
+      extractMatches(ModRE, kind, num):
+        a.kind = parseEnum[CombatantModKind](kind)
+        if num.nonEmpty:
+          a.number = parseInt(num)
+        else:
+          a.number = 1
+      warn &"Invalid CombatantMod expression: {cv}"
+  else:
     warn &"Invalid CombatantMod expression: {cv}"
 
 const AttackRE = re"(?i)attack\s?\(([0-9]+)\)"
 const BlockRE = re"(?i)block\s?\(([0-9]+)\)"
 proc readFromConfig*(cv: ConfigValue, a: var PlayerEffect) =
-  matcher(cv.asStr):
-    extractMatches(AttackRE, num):
-      a = PlayerEffect(kind: PlayerEffectKind.Attack, amount: parseInt(num))
-    extractMatches(BlockRE, num):
-      a = PlayerEffect(kind: PlayerEffectKind.Block, amount: parseInt(num))
-    a = PlayerEffect(kind: PlayerEffectKind.Mod, modifier: readInto(cv, CombatantMod))
+  if cv.isStr:
+    matcher(cv.asStr):
+      extractMatches(AttackRE, num):
+        a = PlayerEffect(kind: PlayerEffectKind.Attack, amount: parseInt(num))
+      extractMatches(BlockRE, num):
+        a = PlayerEffect(kind: PlayerEffectKind.Block, amount: parseInt(num))
+      a = PlayerEffect(kind: PlayerEffectKind.Mod, modifier: readInto(cv, CombatantMod))
+  elif cv.isArr:
+    let sections = cv.asArr
+    if sections.len == 3:
+      let target = sections[0].asStr
+      let kind = sections[1].readInto(CombatantModKind)
+      let num = sections[2].asInt
+      let modifier = CombatantMod(kind: kind, number: num)
+      case target.toLowerAscii:
+        of "enemy": a = PlayerEffect(kind: PlayerEffectKind.EnemyMod, modifier: modifier)
+        of "player": a = PlayerEffect(kind: PlayerEffectKind.Mod, modifier: modifier)
+        else: warn &"Invalid target for PlayerEffect: {target}"
+    else:
+      warn &"Array based PlayerEffect must have 3 sections"
 
 
 proc readFromConfig*(cv: ConfigValue, a: var BubbleArchetype) =

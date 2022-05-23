@@ -38,7 +38,12 @@ proc colorToAction*(color: BubbleColor): PlayerActionKind =
     else: PlayerActionKind.Attack
 
 
-proc doDamage*(world: LiveWorld, attacker: Entity, defender: Entity, amount: int) =
+proc doDamage*(world: LiveWorld, attacker: Entity, defender: Entity, rawAmount: int) =
+  let vulnAmount = if hasModifier(defender[Combatant], CombatantModKind.Vulnerable): (rawAmount * 3) div 2 else: rawAmount
+  let weakAmount = if hasModifier(attacker[Combatant], CombatantModKind.Weak): (vulnAmount * 3) div 4 else: vulnAmount
+  let amount = weakAmount
+
+
   let unblocked = max(0, amount - defender[Combatant].blockAmount)
   world.eventStmts(DamageDealtEvent(attacker: attacker, defender: defender, damage: unblocked, blockedDamage: amount - unblocked)):
     defender[Combatant].blockAmount = max(0, defender[Combatant].blockAmount - amount)
@@ -76,19 +81,27 @@ proc defaultEffectFor*(action: PlayerActionKind) : seq[PlayerEffect] =
     of PlayerActionKind.Block: @[PlayerEffect(kind: PlayerEffectKind.Block, amount: 1)]
     of PlayerActionKind.Skill: @[PlayerEffect(kind: PlayerEffectKind.Mod, modifier: combatantMod(CombatantModKind.Strength, 1))]
 
+proc performEffect*(world: LiveWorld, entity: Entity, effect: PlayerEffect) =
+  let pd = entity[Player]
+  let cd = entity[Combatant]
+  case effect.kind:
+    of PlayerEffectKind.Attack:
+      for stage in activeStages(world):
+        doDamage(world, entity, stage[Stage].enemy, effect.amount + sumModifiers(cd, CombatantModKind.Strength))
+    of PlayerEffectKind.Block:
+      gainBlock(world, entity, effect.amount + sumModifiers(cd, CombatantModKind.Dexterity))
+    of PlayerEffectKind.Mod:
+      applyModifier(world, entity, effect.modifier)
+    of PlayerEffectKind.EnemyMod:
+      for stage in activeStages(world):
+        applyModifier(world, stage[Stage].enemy, effect.modifier)
+
 proc performAction*(world: LiveWorld, entity: Entity, action: PlayerActionKind) =
   let pd = entity[Player]
   let cd = entity[Combatant]
   let effects = pd.effects.getOrDefault(action, defaultEffectFor(action))
   for effect in effects:
-    case effect.kind:
-      of PlayerEffectKind.Attack:
-        for stage in activeStages(world):
-          doDamage(world, entity, stage[Stage].enemy, effect.amount + sumModifiers(cd, CombatantModKind.Strength))
-      of PlayerEffectKind.Block:
-        gainBlock(world, entity, effect.amount + sumModifiers(cd, CombatantModKind.Dexterity))
-      of PlayerEffectKind.Mod:
-        applyModifier(world, entity, effect.modifier)
+    performEffect(world, entity, effect)
 
 
 proc advanceAction*(world: LiveWorld, action: PlayerActionKind, amount: int) =
@@ -156,6 +169,9 @@ proc popBubble*(world: LiveWorld, stage: Entity, bubble: Entity) =
   bd.number = bd.maxNumber
   bd.bounceCount = 0
   detachModifiers(world, bubble, player(world))
+  advanceAction(world, colorToAction(bubble[Bubble].color), bubble[Bubble].potency)
+  for eff in bd.onPopEffects:
+    performEffect(world, player(world), eff)
   world.addFullEvent(BubblePoppedEvent(bubble: bubble, stage: stage))
 
 
@@ -289,7 +305,21 @@ proc createStage*(world: LiveWorld, player: Entity, stageDesc: StageDescription)
 
 proc allColors*(): seq[BubbleColor] = enumValuesSeq(BubbleColor)
 
-proc createRewardBubble*(world: LiveWorld) : Entity =
+proc createBubble*(world: LiveWorld, archT: Taxon) : Entity =
+  result = createBubble(world)
+  let bd = result[Bubble]
+  let arch = library(BubbleArchetype)[archT]
+  bd.maxNumber = arch.maxNumber
+  bd.archetype = archT
+  bd.color = arch.color
+  bd.secondaryColors = arch.secondaryColors
+  bd.modifiers = arch.modifiers
+  bd.onPopEffects = arch.onPopEffects
+  bd.inPlayPlayerMods = arch.inPlayPlayerMods
+
+
+
+proc createRandomizedRewardBubble*(world: LiveWorld) : Entity =
   let bubble = createBubble(world)
   let bd = bubble[Bubble]
   var r = randomizer(world)
@@ -344,7 +374,7 @@ proc completeStage*(world: LiveWorld, stage: Entity) =
   player[Combatant].externalModifiers.clear()
 
   player[Player].pendingRewards.add(Reward(
-    bubbles: @[createRewardBubble(world), createRewardBubble(world), createRewardBubble(world)]
+    bubbles: @[createRandomizedRewardBubble(world), createRandomizedRewardBubble(world), createRandomizedRewardBubble(world)]
   ))
 
 
