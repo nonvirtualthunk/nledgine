@@ -250,39 +250,6 @@ MainUI {
                   width: 100%
                   pixelScale: 2
                 }
-                AttackBar: ${LabeledBar} {
-                  y: 5 below ActionDivider
-                  width: 100%
-                  children.BarImageLabel.image: "bubbles/images/icons/attack.png"
-                  children.Bar {
-                    currentValue: "%(attackProgress)"
-                    maxValue: "%(attackProgressRequired)"
-                    fill.color: [0.75, 0.15, 0.16, 1.0]
-                    fill.edgeColor: [0.65, 0.15, 0.2, 1.0]
-                  }
-                }
-                BlockBar: ${LabeledBar} {
-                  y: 5 below AttackBar
-                  width: 100%
-                  children.BarImageLabel.image: "bubbles/images/icons/block.png"
-                  children.Bar {
-                    currentValue: "%(blockProgress)"
-                    maxValue: "%(blockProgressRequired)"
-                    fill.color: [0.2, 0.1, 0.8, 1.0]
-                    fill.edgeColor: [0.2, 0.1, 0.8, 1.0]
-                  }
-                }
-                SkillBar: ${LabeledBar} {
-                  y: 5 below BlockBar
-                  width: 100%
-                  children.BarImageLabel.image: "bubbles/images/icons/buff.png"
-                  children.Bar {
-                    currentValue: "%(skillProgress)"
-                    maxValue: "%(skillProgressRequired)"
-                    fill.color: [0.1, 0.67, 0.15, 1.0]
-                    fill.edgeColor: [0.1, 0.7, 0.2, 1.0]
-                  }
-                }
               }
             }
           }

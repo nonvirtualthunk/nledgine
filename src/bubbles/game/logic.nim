@@ -13,9 +13,13 @@ import arxmath
 
 
 iterator activeStages*(world: LiveWorld): Entity =
+  var seen = false
   for ent in world.entitiesWithData(Stage):
     if ent[Stage].active:
+      if seen:
+        err &"There is more than one active stage? But how?"
       yield ent
+      seen = true
 
 iterator activeStagesD*(world: LiveWorld): ref Stage =
   for ent in world.entitiesWithData(Stage):
@@ -81,27 +85,27 @@ proc defaultEffectFor*(action: PlayerActionKind) : seq[PlayerEffect] =
     of PlayerActionKind.Block: @[PlayerEffect(kind: PlayerEffectKind.Block, amount: 1)]
     of PlayerActionKind.Skill: @[PlayerEffect(kind: PlayerEffectKind.Mod, modifier: combatantMod(CombatantModKind.Strength, 1))]
 
-proc performEffect*(world: LiveWorld, entity: Entity, effect: PlayerEffect) =
-  let pd = entity[Player]
+proc performEffect*(world: LiveWorld, entity: Entity, target: Entity, effect: PlayerEffect) =
   let cd = entity[Combatant]
   case effect.kind:
     of PlayerEffectKind.Attack:
       for stage in activeStages(world):
-        doDamage(world, entity, stage[Stage].enemy, effect.amount + sumModifiers(cd, CombatantModKind.Strength))
+        doDamage(world, entity, target, effect.amount + sumModifiers(cd, CombatantModKind.Strength))
     of PlayerEffectKind.Block:
       gainBlock(world, entity, effect.amount + sumModifiers(cd, CombatantModKind.Dexterity))
     of PlayerEffectKind.Mod:
       applyModifier(world, entity, effect.modifier)
     of PlayerEffectKind.EnemyMod:
       for stage in activeStages(world):
-        applyModifier(world, stage[Stage].enemy, effect.modifier)
+        applyModifier(world, target, effect.modifier)
 
 proc performAction*(world: LiveWorld, entity: Entity, action: PlayerActionKind) =
   let pd = entity[Player]
   let cd = entity[Combatant]
   let effects = pd.effects.getOrDefault(action, defaultEffectFor(action))
   for effect in effects:
-    performEffect(world, entity, effect)
+    for stage in activeStages(world):
+      performEffect(world, entity, stage[Stage].enemy, effect)
 
 
 proc advanceAction*(world: LiveWorld, action: PlayerActionKind, amount: int) =
@@ -121,11 +125,8 @@ proc advanceEnemyAction*(world: LiveWorld, enemy: Entity, amount: int) =
   let ed = enemy[Enemy]
   ed.activeIntent.duration.reduceBy(amount)
   if ed.activeIntent.duration.currentValue <= 0:
-    case ed.activeIntent.kind:
-      of IntentKind.Attack:
-        doDamage(world, enemy, player(world), ed.activeIntent.amount)
-      of IntentKind.Block:
-        gainBlock(world, enemy, ed.activeIntent.amount)
+    for eff in ed.activeIntent.effects:
+      performEffect(world, enemy, player(world), eff)
     pickIntent(world, enemy)
 
 
@@ -171,7 +172,8 @@ proc popBubble*(world: LiveWorld, stage: Entity, bubble: Entity) =
   detachModifiers(world, bubble, player(world))
   advanceAction(world, colorToAction(bubble[Bubble].color), bubble[Bubble].potency)
   for eff in bd.onPopEffects:
-    performEffect(world, player(world), eff)
+    for stage in activeStages(world):
+      performEffect(world, player(world), stage[Stage].enemy, eff)
   world.addFullEvent(BubblePoppedEvent(bubble: bubble, stage: stage))
 
 
@@ -193,51 +195,20 @@ proc collideBubbles*(world: LiveWorld, stage: Entity, bubbleA: Entity, bubbleB: 
         popBubble(world, stage, bubble)
 
 
+proc createEnemy*(world: LiveWorld, archT: Taxon): Entity =
+  let enemy = world.createEntity()
+  let arch = library(EnemyArchetype)[archT]
+  enemy.attachData(arch.enemyData)
+  enemy.attachData(arch.combatantData)
+  enemy
+
 
 proc createEnemy*(world: LiveWorld, stage: Entity): Entity =
   let sd = stage[Stage]
   var r = randomizer(world)
-  let enemy = world.createEntity()
+  let enemy = createEnemy(world, † Enemies.Goblin)
 
-  case r.nextInt(3):
-    of 0:
-      enemy.attachData(Enemy(
-        intents: @[
-          Intent(kind: IntentKind.Attack, amount: 2, duration: reduceable(8)),
-          Intent(kind: IntentKind.Block, amount: 1, duration: reduceable(3)),
-          Intent(kind: IntentKind.Attack, amount: 1, duration: reduceable(5))
-        ]
-      ))
-      enemy.attachData(Combatant(
-        health: reduceable(4),
-        name: "Goblin",
-        image: image("bubbles/images/enemies/goblin.png")
-      ))
-    of 1:
-      enemy.attachData(Enemy(
-        intents: @[
-          Intent(kind: IntentKind.Attack, amount: 1, duration: reduceable(6)),
-          Intent(kind: IntentKind.Attack, amount: 1, duration: reduceable(5))
-        ]
-      ))
-      enemy.attachData(Combatant(
-        health: reduceable(3),
-        name: "Rat",
-        image: image("bubbles/images/enemies/rat.png")
-      ))
-    else:
-      enemy.attachData(Enemy(
-        intents: @[
-          Intent(kind: IntentKind.Attack, amount: 1, duration: reduceable(6)),
-          Intent(kind: IntentKind.Attack, amount: 1, duration: reduceable(5)),
-          Intent(kind: IntentKind.Block, amount: 1, duration: reduceable(2)),
-        ]
-      ))
-      enemy.attachData(Combatant(
-        health: reduceable(3),
-        name: "Bat",
-        image: image("bubbles/images/enemies/bat.png")
-      ))
+
   pickIntent(world, enemy)
   world.postEvent(EnemyCreatedEvent(entity: enemy))
   enemy

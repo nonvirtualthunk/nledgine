@@ -121,7 +121,7 @@ method update(g: MainUIComponent, world: LiveWorld, display: DisplayWorld, df: f
       g.infoArea.bindValue("enemy.name", ecd.name)
       g.infoArea.bindValue("enemy.image", ecd.image)
       g.infoArea.bindValue("enemy.intentIcon", icon(ed.activeIntent))
-      g.infoArea.bindValue("enemy.intentText", ed.activeIntent.amount)
+      g.infoArea.bindValue("enemy.intentText", text(ed.activeIntent))
       g.infoArea.bindValue("enemy.intentColor", color(ed.activeIntent))
       g.infoArea.bindValue("enemy.intentTime", ed.activeIntent.duration.currentValue)
       g.infoArea.bindValue("enemy.health", ecd.health.currentValue)

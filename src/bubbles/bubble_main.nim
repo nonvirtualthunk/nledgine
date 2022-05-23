@@ -33,26 +33,13 @@ proc initComponent(): InitComponent =
 
 method initialize(g: InitComponent, world: LiveWorld) =
   var bubbles: seq[Entity]
-  for i in 0 ..< 9:
-    let bubble = createBubble(world)
-    # bubble[Bubble].color = if i < 3: BubbleColor.Red elif i < 6: BubbleColor.Green else: BubbleColor.Blue
-    bubble[Bubble].color = if i mod 2 == 0: BubbleColor.Red else: BubbleColor.Blue
+  for i in 0 ..< 8:
+    let bubbleType = if i mod 2 == 0: † Bubbles.Strike else: † Bubbles.Defend
+    let bubble = createBubble(world, bubbleType)
     bubbles.add(bubble)
 
-  # let bashBubble = createBubble(world)
-  # bashBubble[Bubble].color = BubbleColor.Red
-  # bashBubble[Bubble].modifiers = @[bubbleMod(BubbleModKind.Power), bubbleMod(BubbleModKind.HighNumber)]
-  # bashBubble[Bubble].secondaryColors = @[BubbleColor.Blue]
-  # bubbles.add(bashBubble)
   let bashBubble = createBubble(world, † Bubbles.Bash)
   bubbles.add(bashBubble)
-
-  let skillBubble = createBubble(world)
-  skillBubble[Bubble].color = BubbleColor.Green
-  skillBubble[Bubble].modifiers = @[bubbleMod(BubbleModKind.Potency, 2)]
-  skillBubble[Bubble].secondaryColors = @[BubbleColor.Red]
-  skillBubble[Bubble].maxNumber = 1
-  bubbles.add(skillBubble)
 
   let chainBubble = createBubble(world, † Bubbles.ChainBlock)
   bubbles.add(chainBubble)

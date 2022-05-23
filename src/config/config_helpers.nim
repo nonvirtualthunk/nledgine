@@ -149,3 +149,7 @@ proc readFromConfig*(cv: ConfigValue, i: var ClosedIntRange) =
       warn &"Array representation of int range must have 2 values: {cv}"
 
 defineSimpleReadFromConfig(Identity)
+
+proc readFromConfig*[T](cv: ConfigValue, i: var Reduceable[T]) =
+  if cv.nonEmpty:
+    i = reduceable(cv.readInto(T))

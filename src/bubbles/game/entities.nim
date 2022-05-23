@@ -162,17 +162,16 @@ type
     Block
 
   Intent* = object
-    amount*: int
+    effects*: seq[PlayerEffect]
     duration*: Reduceable[int]
-    case kind*: IntentKind
-    of IntentKind.Attack:
-      discard
-    of IntentKind.Block:
-      discard
 
   Enemy* = object
     intents*: seq[Intent]
     activeIntent*: Intent
+
+  EnemyArchetype* = object
+    enemyData*: Enemy
+    combatantData*: Combatant
 
   BubbleEvent* = ref object of GameEvent
 
@@ -351,15 +350,39 @@ proc descriptor*(m: BubbleMod) : string =
     of BubbleModKind.Chain: &"Chain{toRomanNumeral(m.number)}"
 
 
+proc icon*(eff: PlayerEffect): Image =
+  case eff.kind:
+    of PlayerEffectKind.Attack: image("bubbles/images/icons/attack.png")
+    of PlayerEffectKind.Block: image("bubbles/images/icons/block.png")
+    of PlayerEffectKind.EnemyMod: image("bubbles/images/icons/debuff.png")
+    of PlayerEffectKind.Mod: image("bubbles/images/icons/buff.png")
+
 proc icon*(intent: Intent): Image =
-  case intent.kind:
-    of IntentKind.Attack: image("bubbles/images/icons/attack.png")
-    of IntentKind.Block: image("bubbles/images/icons/block.png")
+  # TODO: multiple icons
+  for eff in intent.effects:
+    return icon(eff)
 
 proc color*(intent: Intent): RGBA =
-  case intent.kind:
-    of IntentKind.Attack: rgba(0.75, 0.15, 0.2, 1.0)
-    of IntentKind.Block: rgba(0.2, 0.1, 0.75, 1.0)
+  # Todo: multiple colors
+  for eff in intent.effects:
+    return case eff.kind:
+      of PlayerEffectKind.Attack: rgba(0.75, 0.15, 0.2, 1.0)
+      of PlayerEffectKind.Block: rgba(0.2, 0.1, 0.75, 1.0)
+      of PlayerEffectKind.EnemyMod: rgba(0.1, 0.75, 0.2, 1.0)
+      of PlayerEffectKind.Mod: rgba(0.2, 0.3, 0.8, 1.0)
+
+proc text*(intent: Intent): string =
+  for eff in intent.effects:
+    let tmp = case eff.kind:
+      of PlayerEffectKind.Attack: $eff.amount
+      of PlayerEffectKind.Block: $eff.amount
+      of PlayerEffectKind.EnemyMod: ""
+      of PlayerEffectKind.Mod: ""
+    if tmp.nonEmpty:
+      if result.nonEmpty:
+        result.add("/")
+      result.add(tmp)
+
 
 
 proc icon*(m: CombatantModKind): Image =
@@ -447,7 +470,7 @@ proc readFromConfig*(cv: ConfigValue, a: var PlayerEffect) =
       let modifier = CombatantMod(kind: kind, number: num)
       case target.toLowerAscii:
         of "enemy": a = PlayerEffect(kind: PlayerEffectKind.EnemyMod, modifier: modifier)
-        of "player": a = PlayerEffect(kind: PlayerEffectKind.Mod, modifier: modifier)
+        of "self": a = PlayerEffect(kind: PlayerEffectKind.Mod, modifier: modifier)
         else: warn &"Invalid target for PlayerEffect: {target}"
     else:
       warn &"Array based PlayerEffect must have 3 sections"
@@ -462,7 +485,37 @@ proc readFromConfig*(cv: ConfigValue, a: var BubbleArchetype) =
   cv["onPopEffects"].readInto(a.onPopEffects)
   cv["inPlayPlayerMods"].readInto(a.inPlayPlayerMods)
 
+
+proc readFromConfig*(cv: ConfigValue, e: var Combatant) =
+  cv["health"].readInto(e.health)
+  cv["name"].readInto(e.name)
+  cv["image"].readInto(e.image)
+
+proc readFromConfig*(cv: ConfigValue, e: var Intent) =
+  if cv["effect"].nonEmpty: cv["effect"].readInto(e.effects)
+  if cv["effects"].nonEmpty: cv["effects"].readInto(e.effects)
+  cv["duration"].readInto(e.duration)
+
+proc readFromConfig*(cv: ConfigValue, e: var Enemy) =
+  cv["intents"].readInto(e.intents)
+
+proc readFromConfig*(cv: ConfigValue, e: var EnemyArchetype) =
+  cv.readInto(e.enemyData)
+  cv.readInto(e.combatantData)
+
+
+
 defineSimpleLibrary[BubbleArchetype]("bubbles/game/bubbles.sml", "Bubbles")
+defineSimpleLibrary[EnemyArchetype]("bubbles/game/enemies.sml", "Enemies")
+
+info "=============================================="
 
 for t, v in library(BubbleArchetype):
   info &"{t} : {v[]}"
+
+info "=============================================="
+
+for t, v in library(EnemyArchetype):
+  info &"{t} : {v[]}"
+
+info "=============================================="
