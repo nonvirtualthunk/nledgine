@@ -190,7 +190,7 @@ proc copyFrom*(target: Image, src: Image, position: Vec2i) =
       let targetPointer = target[position.x, position.y + y]
       copyMem(targetPointer, srcPointer, src.dimensions.x * 4)
 
-proc copyFrom*(target: Image, src: Image, srcPosition: Vec2i, targetPosition:Vec2i, regionDim: Vec2i) =
+proc copyFrom*(target: Image, src: Image, targetPosition:Vec2i, srcPosition: Vec2i, regionDim: Vec2i) =
   if target.channels != src.channels:
     raise newException(ValueError, "copyFrom(...) on images with differing channel counts")
 
@@ -221,7 +221,7 @@ proc trimmed*(img: Image): Image =
     result = createImage(vec2i(1,1))
   else:
     result = createImage(vec2i(maxs.x - mins.x + 1, maxs.y - mins.y + 1))
-    result.copyFrom(img, mins, vec2i(0,0), maxs - mins + 1)
+    result.copyFrom(img, vec2i(0,0), mins, maxs - mins + 1)
 
 proc flipY*(img: Image) =
   var register = createU(uint8, img.dimensions.y * 4)

@@ -12,6 +12,10 @@ import resources
 import arxmath
 
 
+proc createBubble*(world: LiveWorld, archT: Taxon) : Entity
+proc placeBubble*(world: LiveWorld, stage: Entity, bubble: Entity, placement : BubblePlacement)
+
+
 iterator activeStages*(world: LiveWorld): Entity =
   var seen = false
   for ent in world.entitiesWithData(Stage):
@@ -89,15 +93,17 @@ proc performEffect*(world: LiveWorld, entity: Entity, target: Entity, effect: Pl
   let cd = entity[Combatant]
   case effect.kind:
     of PlayerEffectKind.Attack:
-      for stage in activeStages(world):
-        doDamage(world, entity, target, effect.amount + sumModifiers(cd, CombatantModKind.Strength))
+      doDamage(world, entity, target, effect.amount + sumModifiers(cd, CombatantModKind.Strength))
     of PlayerEffectKind.Block:
       gainBlock(world, entity, effect.amount + sumModifiers(cd, CombatantModKind.Dexterity))
     of PlayerEffectKind.Mod:
       applyModifier(world, entity, effect.modifier)
     of PlayerEffectKind.EnemyMod:
+      applyModifier(world, target, effect.modifier)
+    of PlayerEffectKind.Bubble:
       for stage in activeStages(world):
-        applyModifier(world, target, effect.modifier)
+        let bubble = createBubble(world, effect.bubbleArchetype)
+        placeBubble(world, stage, bubble, effect.bubblePlacement)
 
 proc performAction*(world: LiveWorld, entity: Entity, action: PlayerActionKind) =
   let pd = entity[Player]
@@ -130,6 +136,18 @@ proc advanceEnemyAction*(world: LiveWorld, enemy: Entity, amount: int) =
     pickIntent(world, enemy)
 
 
+
+proc fireBubbleWithoutCannon*(world : LiveWorld, stage: Entity, bubble: Entity, position: Vec2f, velocity: Vec2f) =
+  let sd = stage[Stage]
+  let bd = bubble[Bubble]
+  bd.position = position
+  bd.velocity = velocity
+  sd.bubbles.add(bubble)
+
+  let fw = sumModifiers(player(world)[Combatant], CombatantModKind.Footwork)
+  if fw > 0: gainBlock(world, player(world), fw)
+
+
 proc fireBubble*(world : LiveWorld, stage: Entity, cannon: Entity) =
   let cd = cannon[Cannon]
   let sd = stage[Stage]
@@ -140,12 +158,32 @@ proc fireBubble*(world : LiveWorld, stage: Entity, cannon: Entity) =
     bd.velocity = cd.direction * cd.maxVelocity * cd.currentVelocityScale
     sd.activeMagazine.bubbles.delete(0)
     sd.bubbles.add(bubble)
-    attachModifiers(world, bubble, player(world), bd.inPlayPlayerMods)
-    advanceEnemyAction(world, sd.enemy, 1)
+    sd.fired.add(bubble)
 
+    let fw = sumModifiers(player(world)[Combatant], CombatantModKind.Footwork)
+    if fw > 0: gainBlock(world, player(world), fw)
+
+
+proc checkFinishedFiredBubbles(world: LiveWorld, stage: Entity, bubble: Entity) =
+  let sd = stage[Stage]
+  for i in 0 ..< sd.fired.len:
+    if sd.fired[i] == bubble:
+      let bd = bubble[Bubble]
+      for eff in bd.onFireEffects:
+        performEffect(world, player(world), sd.enemy, eff)
+      attachModifiers(world, bubble, player(world), bd.inPlayPlayerMods)
+      advanceEnemyAction(world, sd.enemy, 1)
+      sd.fired.delete(i)
+      break
+
+
+proc bubbleStopped*(world: LiveWorld, stage: Entity, bubble: Entity) =
+  world.addFullEvent(BubbleStoppedEvent(stage: stage, bubble: bubble))
+  checkFinishedFiredBubbles(world, stage, bubble)
 
 proc hasIntersection*(p1: Vec2f, r1: float32, p2: Vec2f, r2: float32) : bool =
   (p2 - p1).lengthSafe <= r1 + r2
+
 
 iterator allColors*(a: ref Bubble): BubbleColor =
   yield a.color
@@ -164,9 +202,12 @@ proc haveSharedColor*(a, b: ref Bubble) : bool =
 
 
 proc popBubble*(world: LiveWorld, stage: Entity, bubble: Entity) =
+  checkFinishedFiredBubbles(world, stage, bubble)
+
   let bd = bubble[Bubble]
   stage[Stage].bubbles.delValue(bubble)
-  stage[Stage].activeMagazine.bubbles.add(bubble)
+  if not hasModifier(bd, BubbleModKind.Exhaust):
+    stage[Stage].activeMagazine.bubbles.add(bubble)
   bd.number = bd.maxNumber
   bd.bounceCount = 0
   detachModifiers(world, bubble, player(world))
@@ -179,20 +220,37 @@ proc popBubble*(world: LiveWorld, stage: Entity, bubble: Entity) =
 
 proc collideBubbles*(world: LiveWorld, stage: Entity, bubbleA: Entity, bubbleB: Entity) =
   let shareColor = haveSharedColor(bubbleA[Bubble], bubbleB[Bubble])
+
+  let bda = bubbleA[Bubble]
+  let bdb = bubbleB[Bubble]
+  let exchange = [hasModifier(bda, BubbleModKind.Exchange), hasModifier(bdb, BubbleModKind.Exchange)]
+  let selfish = [hasModifier(bda, BubbleModKind.Selfish), hasModifier(bdb, BubbleModKind.Selfish)]
+
   let countDownBy = if shareColor:
-    max(bubbleA[Bubble].payload, bubbleB[Bubble].payload)
+    if exchange[0] and exchange[1]:
+      0
+    else:
+      max(bubbleA[Bubble].payload, bubbleB[Bubble].payload)
   else:
     0
 
+  var i = 0
   for bubble in @[bubbleA, bubbleB]:
     if not isDestroyed(world, bubble):
       let bd = bubble[Bubble]
-      bd.number = max(bd.number - countDownBy, 0)
+      if exchange[(i+1) mod 2]: # if the _other_ one has exchange, this one gets an increase instead
+        bd.number = min(bd.number + countDownBy, 9)
+      elif selfish[(i+1) mod 2]:
+        discard
+      else:
+        bd.number = max(bd.number - countDownBy, 0)
+
       if hasModifier(bd, BubbleModKind.Chromophobic) and not shareColor:
         bd.number = min(bd.number + 1, 9)
 
       if bd.number == 0:
         popBubble(world, stage, bubble)
+    i.inc
 
 
 proc createEnemy*(world: LiveWorld, archT: Taxon): Entity =
@@ -206,7 +264,7 @@ proc createEnemy*(world: LiveWorld, archT: Taxon): Entity =
 proc createEnemy*(world: LiveWorld, stage: Entity): Entity =
   let sd = stage[Stage]
   var r = randomizer(world)
-  let enemy = createEnemy(world, † Enemies.Goblin)
+  let enemy = createEnemy(world, † Enemies.Slime)
 
 
   pickIntent(world, enemy)
@@ -218,6 +276,8 @@ proc fractionalToAbsolutePosition*(sd: ref Stage, xf: float, yf: float) : Vec2f 
   let x = sd.bounds.x + sd.bounds.width * xf
   let y = sd.bounds.y + sd.bounds.height * yf
   vec2f(x,y)
+
+proc fractionalToAbsolutePosition*(sd: ref Stage, v: Vec2f) : Vec2f = fractionalToAbsolutePosition(sd, v.x, v.y)
 
 proc createStage*(world: LiveWorld, player: Entity, stageDesc: StageDescription) : Entity =
   let cannon = world.createEntity()
@@ -278,55 +338,90 @@ proc allColors*(): seq[BubbleColor] = enumValuesSeq(BubbleColor)
 
 proc createBubble*(world: LiveWorld, archT: Taxon) : Entity =
   result = createBubble(world)
-  let bd = result[Bubble]
+  let bd : ref Bubble = result[Bubble]
   let arch = library(BubbleArchetype)[archT]
+  bd.name = arch.name
+  bd.image = arch.image
+  bd.numeralColor = arch.numeralColor
   bd.maxNumber = arch.maxNumber
+  bd.number = bd.maxNumber
   bd.archetype = archT
   bd.color = arch.color
   bd.secondaryColors = arch.secondaryColors
   bd.modifiers = arch.modifiers
   bd.onPopEffects = arch.onPopEffects
+  bd.onFireEffects = arch.onFireEffects
   bd.inPlayPlayerMods = arch.inPlayPlayerMods
+  bd.onCollideEffects = arch.onCollideEffects
 
+
+proc validPlacementLocation*(world: LiveWorld, sd: ref Stage, bd: ref Bubble, v: Vec2f): bool =
+  var valid = true
+  for b in sd.bubbles:
+    let tbd = b[Bubble]
+    if hasIntersection(v, bd.radius, tbd.position, tbd.radius):
+      valid = false
+      break
+  valid
+
+proc placeBubble*(world: LiveWorld, stage: Entity, bubble: Entity, placement : BubblePlacement) =
+  let bd = bubble[Bubble]
+  var r = randomizer(world)
+  let sd = stage[Stage]
+  case placement:
+    of BubblePlacement.Random:
+      while true:
+        let v = fractionalToAbsolutePosition(sd, r.nextFloat(0.0, 1.0), r.nextFloat(0.6, 1.0))
+        if validPlacementLocation(world, sd, bd, v):
+          bd.position = v
+          info &"Chosen placement: {bd[]}"
+          break
+      sd.bubbles.add(bubble)
+    of BubblePlacement.RandomMagazine:
+      world.eventStmts(BubbleAddedToMagazineEvent(stage: stage, bubble: bubble)):
+        sd.magazines[r.nextInt(sd.magazines.len)].bubbles.insert(bubble, 0)
+    of BubblePlacement.ActiveMagazine:
+      world.eventStmts(BubbleAddedToMagazineEvent(stage: stage, bubble: bubble)):
+        sd.activeMagazine.bubbles.insert(bubble, 0)
+    of BubblePlacement.Fire:
+      warn &"Fire bubble placement not yet implemented, doing random instead"
+      placeBubble(world, stage, bubble, BubblePlacement.Random)
+    of BubblePlacement.FireFromTop:
+      for i in 0 ..< 100:
+        let v = fractionalToAbsolutePosition(sd, 0.5 + (i.float / 100.0f) * 0.4, 0.9)
+        if validPlacementLocation(world, sd, bd, v):
+          fireBubbleWithoutCannon(world, stage, bubble, v, vec2f(r.nextFloat(-0.5, 0.5), -0.75).normalize * 400.0f)
+          break
+  world.postEvent(BubblePlacedEvent(stage: stage, bubble: bubble, placement: placement))
+
+
+
+proc rarityToFrequency*(rarity: Rarity): int =
+  case rarity:
+    of Rarity.Common: 3
+    of Rarity.Uncommon: 2
+    of Rarity.Rare: 1
+    of Rarity.None: 0
 
 
 proc createRandomizedRewardBubble*(world: LiveWorld) : Entity =
-  let bubble = createBubble(world)
-  let bd = bubble[Bubble]
   var r = randomizer(world)
-  let colors = @[BubbleColor.Red, BubbleColor.Green, BubbleColor.Blue]
-  bd.color = pickFrom(r, colors)[1]
-  let buffCount = r.nextInt(2) + 1
-  let malusCount = buffCount - 1
 
-  for i in 0 ..< buffCount:
-    let buffKind = case r.nextInt(9):
-      of 0: BubbleModKind.Big
-      of 1: BubbleModKind.Bouncy
-      of 2: BubbleModKind.Juggernaut
-      of 3: BubbleModKind.Potency
-      of 4: BubbleModKind.Power
-      of 5: BubbleModKind.Chain
-      of 6: BubbleModKind.Chromophilic
-      else: BubbleModKind.Normal
+  let lib = library(BubbleArchetype)
+  var total = 0
+  for k, v in lib:
+    total += v.rarity.rarityToFrequency
 
-    if buffKind != BubbleModKind.Normal:
-      applyModifier(world, bubble, bubbleMod(buffKind, 1))
-    else:
-      var otherColors = colors
-      for color in allColors(bd):
-        otherColors.delValue(color)
-      if otherColors.nonEmpty:
-        bd.secondaryColors.add(pickFrom(r, otherColors)[1])
+  var ri = r.nextInt(total) + 1
+  var chosen: Taxon
+  for k, v in lib:
+    ri -= v.rarity.rarityToFrequency
+    if ri <= 0:
+      chosen = k
+      break
 
-
-  for i in 0 ..< malusCount:
-    let malusKind = case r.nextInt(5):
-      of 0,1,2: BubbleModKind.HighNumber
-      of 3: BubbleModKind.WallAverse
-      of 4: BubbleModKind.Chromophobic
-      else: BubbleModKind.Normal
-    applyModifier(world, bubble, bubbleMod(malusKind, 1))
+  info &"Chosen: {chosen}"
+  let bubble = createBubble(world, chosen)
 
   world.postEvent(BubbleRewardCreatedEvent(bubble: bubble))
   bubble

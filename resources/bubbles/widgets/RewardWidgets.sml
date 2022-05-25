@@ -45,39 +45,45 @@ RewardOptionWidget {
       type: TextDisplay
       y: 5
       fontSize: 20
-      text: "%(name)\n %(descriptors)"
+      text: "%(name)"
       width: 100%
-      height: 40
+      height: intrinsic
+      horizontalAlignment: center
+      mulitLine: true
+    }
+    BubbleModifierDescription {
+      type: TextDisplay
+      y: 2 below OptionName
+      fontSize: 16
+      text: "%(bubbleModifiers)"
+      color: [45,45,45,255]
+      width: 100%
+      horizontalAlignment: center
+      mulitLine: true
+    }
+    EffectsDescription {
+      type: TextDisplay
+      y: 2 below BubbleModifierDescription
+      fontSize: 16
+      color: [25,25,25,255]
+      text: "%(effectsDescription)"
+      width: 100%
       horizontalAlignment: center
       mulitLine: true
     }
     ImageDiv {
       type: Div
-      width: 100%
-      height: expandToParent
-      y: 0 below OptionName
+      x: 0
+      y: centered
       children {
         OptionImage {
           type: ImageDisplay
-          image: "%(image)"
-          color: "%(imageColor)"
+          imageLayers: "%(imageLayers)"
           width: intrinsic
           height: intrinsic
           scale: scale(2)
           y: centered
           x: centered
-        }
-        OptionOverlayImage {
-          type: ImageDisplay
-          showing: "%(imageOverlayShowing)"
-          image: "%(imageOverlay)"
-          color: "%(imageOverlayColor)"
-          width: intrinsic
-          height: intrinsic
-          scale: scale(2)
-          x: centered
-          y: centered
-          z: 1
         }
         NumberImage {
           type: ImageDisplay

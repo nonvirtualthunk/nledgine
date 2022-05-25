@@ -336,6 +336,12 @@ proc isSelfOrDescendantOf*(w: Widget, target: string): bool =
   else:
     isDescendantOf(w, target)
 
+proc isSelfOrDescendantOf*(w: Widget, target: Widget): bool =
+  if w == target:
+    true
+  else:
+    isDescendantOf(w, target)
+
 proc isEmpty*(w: WidgetArchetypeIdentifier): bool =
   w.location.isEmpty or w.identifier.isEmpty
 

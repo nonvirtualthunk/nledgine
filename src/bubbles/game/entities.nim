@@ -40,10 +40,24 @@ type
     Potency
     WallAverse
     Chain
+    Exchange
+    Selfish
+    Exhaust
+    Immovable
 
   BubbleMod* = object
     kind*: BubbleModKind
     number*: int
+
+  CollisionCondition* {.pure.} = enum
+    MatchingColor
+    NonMatchingColor
+    Moving
+    NonMoving
+    
+  OnCollideEffect* = object
+    conditions*: seq[CollisionCondition]
+    effects*: seq[PlayerEffect]
 
   Wall* {.pure.} = enum
     Left
@@ -52,6 +66,9 @@ type
     Bottom
 
   Bubble* = object
+    name*: string
+    image*: Image
+    numeralColor*: RGBA
     archetype*: Taxon
     position*: Vec2f
     radius: float32
@@ -65,16 +82,30 @@ type
     bounceCount*: int
     lastHitWall*: Option[Wall]
     onPopEffects*: seq[PlayerEffect]
+    onCollideEffects*: seq[OnCollideEffect]
+    onFireEffects*: seq[PlayerEffect]
     inPlayPlayerMods*: seq[CombatantMod]
+
+  Rarity* {.pure.} = enum
+    None
+    Common
+    Uncommon
+    Rare
+
 
   BubbleArchetype* = object
     name*: string
+    image*: Image
+    numeralColor*: RGBA
+    rarity*: Rarity
     maxNumber*: int
     color*: BubbleColor
     secondaryColors*: seq[BubbleColor]
     modifiers*: seq[BubbleMod]
     onPopEffects*: seq[PlayerEffect]
     inPlayPlayerMods*: seq[CombatantMod]
+    onCollideEffects*: seq[OnCollideEffect]
+    onFireEffects*: seq[PlayerEffect]
 
   Magazine* = ref object
     bubbles*: seq[Entity]
@@ -91,6 +122,7 @@ type
     progressRequired*: Option[int]
     level*: int
     enemy*: Entity
+    fired*: seq[Entity]
 
   StageDescription* = object
     cannonPosition*: Vec2f
@@ -121,6 +153,7 @@ type
     Dexterity
     Vulnerable
     Weak
+    Footwork
 
 
   CombatantMod* = object
@@ -132,6 +165,14 @@ type
     Block
     Mod
     EnemyMod
+    Bubble
+
+  BubblePlacement* {.pure.} = enum
+    Random
+    Fire
+    FireFromTop
+    RandomMagazine
+    ActiveMagazine
 
   PlayerEffect* = object
     amount*: int
@@ -139,6 +180,9 @@ type
       of PlayerEffectKind.Attack, PlayerEffectKind.Block: discard
       of PlayerEffectKind.Mod, PlayerEffectKind.EnemyMod:
         modifier*: CombatantMod
+      of PlayerEffectKind.Bubble:
+        bubbleArchetype*: Taxon
+        bubblePlacement*: BubblePlacement
 
 
   Player* = object
@@ -181,6 +225,10 @@ type
     stage*: Entity
     bubble*: Entity
 
+  BubbleFiredEvent* = ref object of BubbleEvent
+    stage*: Entity
+    bubble*: Entity
+
   BubbleStoppedEvent* = ref object of BubbleEvent
     stage*: Entity
     bubble*: Entity
@@ -197,6 +245,15 @@ type
     stage*: Entity
     bubble*: Entity
     wall*: Wall
+
+  BubblePlacedEvent* = ref object of BubbleEvent
+    stage*: Entity
+    bubble*: Entity
+    placement*: BubblePlacement
+
+  BubbleAddedToMagazineEvent* = ref object of BubbleEvent
+    stage*: Entity
+    bubble*: Entity
 
   BubbleCollisionEndEvent* = ref object of BubbleEvent
     stage*: Entity
@@ -233,6 +290,7 @@ defineReflection(Player)
 defineReflection(Enemy)
 defineReflection(Combatant)
 
+eventToStr(BubbleFiredEvent)
 eventToStr(BubbleMovedEvent)
 eventToStr(BubbleStoppedEvent)
 eventToStr(BubblePoppedEvent)
@@ -245,6 +303,9 @@ eventToStr(EnemyCreatedEvent)
 eventToStr(IntentChangedEvent)
 eventToStr(ModifierAppliedEvent)
 eventToStr(WallCollisionEvent)
+eventToStr(BubblePlacedEvent)
+eventToStr(BubbleAddedToMagazineEvent)
+eventToStr(BubbleFiredEvent)
 
 
 proc rgba*(color: BubbleColor) : RGBA =
@@ -252,7 +313,7 @@ proc rgba*(color: BubbleColor) : RGBA =
     of BubbleColor.Red: rgba(160,15,30,255)
     of BubbleColor.Green: rgba(15, 160, 30, 255)
     of BubbleColor.Blue: rgba(15, 30, 160, 255)
-    of BubbleColor.Grey: rgba(125, 125, 125, 255)
+    of BubbleColor.Grey: rgba(100, 100, 100, 255)
     of BubbleColor.Black: rgba(75, 75, 75, 255)
     of BubbleColor.Yellow: rgba(255, 175, 50, 255)
 
@@ -348,6 +409,10 @@ proc descriptor*(m: BubbleMod) : string =
     of BubbleModKind.Potency: &"Potent{toRomanNumeral(m.number)}"
     of BubbleModKind.WallAverse: &"Wall Averse{toRomanNumeral(m.number)}"
     of BubbleModKind.Chain: &"Chain{toRomanNumeral(m.number)}"
+    of BubbleModKind.Exchange: &"Exchange"
+    of BubbleModKind.Selfish: &"Selfish"
+    of BubbleModKind.Exhaust: &"Exhaust"
+    of BubbleModKind.Immovable: &"Immovable"
 
 
 proc icon*(eff: PlayerEffect): Image =
@@ -356,6 +421,7 @@ proc icon*(eff: PlayerEffect): Image =
     of PlayerEffectKind.Block: image("bubbles/images/icons/block.png")
     of PlayerEffectKind.EnemyMod: image("bubbles/images/icons/debuff.png")
     of PlayerEffectKind.Mod: image("bubbles/images/icons/buff.png")
+    of PlayerEffectKind.Bubble: image("bubbles/images/icons/bad_bubble.png")
 
 proc icon*(intent: Intent): Image =
   # TODO: multiple icons
@@ -370,6 +436,7 @@ proc color*(intent: Intent): RGBA =
       of PlayerEffectKind.Block: rgba(0.2, 0.1, 0.75, 1.0)
       of PlayerEffectKind.EnemyMod: rgba(0.1, 0.75, 0.2, 1.0)
       of PlayerEffectKind.Mod: rgba(0.2, 0.3, 0.8, 1.0)
+      of PlayerEffectKind.Bubble: rgba(0.7, 0.7, 0.7, 1.0)
 
 proc text*(intent: Intent): string =
   for eff in intent.effects:
@@ -378,6 +445,7 @@ proc text*(intent: Intent): string =
       of PlayerEffectKind.Block: $eff.amount
       of PlayerEffectKind.EnemyMod: ""
       of PlayerEffectKind.Mod: ""
+      of PlayerEffectKind.Bubble: ""
     if tmp.nonEmpty:
       if result.nonEmpty:
         result.add("/")
@@ -391,6 +459,7 @@ proc icon*(m: CombatantModKind): Image =
     of CombatantModKind.Dexterity: image("bubbles/images/icons/dex.png")
     of CombatantModKind.Vulnerable: image("bubbles/images/icons/vulnerable.png")
     of CombatantModKind.Weak: image("bubbles/images/icons/weak.png")
+    of CombatantModKind.Footwork: image("bubbles/images/icons/footwork.png")
 
 proc icon*(m: CombatantMod): Image =
   icon(m.kind)
@@ -418,6 +487,15 @@ proc detachModifiers*(world: LiveWorld, src: Entity, target: Entity) =
 
 proc readFromConfig*(cv: ConfigValue, v: var BubbleModKind) =
   v = parseEnum[BubbleModKind](cv.asStr)
+
+proc readFromConfig*(cv: ConfigValue, v: var CollisionCondition) =
+  v = parseEnum[CollisionCondition](cv.asStr)
+
+proc readFromConfig*(cv: ConfigValue, v: var Rarity) =
+  v = parseEnum[Rarity](cv.asStr)
+
+proc readFromConfig*(cv: ConfigValue, v: var BubblePlacement) =
+  v = parseEnum[BubblePlacement](cv.asStr)
 
 proc readFromConfig*(cv: ConfigValue, v: var CombatantModKind) =
   v = parseEnum[CombatantModKind](cv.asStr)
@@ -463,27 +541,59 @@ proc readFromConfig*(cv: ConfigValue, a: var PlayerEffect) =
       a = PlayerEffect(kind: PlayerEffectKind.Mod, modifier: readInto(cv, CombatantMod))
   elif cv.isArr:
     let sections = cv.asArr
-    if sections.len == 3:
-      let target = sections[0].asStr
-      let kind = sections[1].readInto(CombatantModKind)
-      let num = sections[2].asInt
-      let modifier = CombatantMod(kind: kind, number: num)
-      case target.toLowerAscii:
-        of "enemy": a = PlayerEffect(kind: PlayerEffectKind.EnemyMod, modifier: modifier)
-        of "self": a = PlayerEffect(kind: PlayerEffectKind.Mod, modifier: modifier)
-        else: warn &"Invalid target for PlayerEffect: {target}"
+    if sections.len > 0:
+      let effKind = sections[0].asStr.toLowerAscii
+      case effKind:
+        of "mod", "modifier":
+          if sections.len != 4: warn &"Array based Mod PlayerEffect must have 4 sections: {sections}"
+          let target = sections[1].asStr
+          let kind = sections[2].readInto(CombatantModKind)
+          let num = sections[3].asInt
+          let modifier = CombatantMod(kind: kind, number: num)
+          case target.toLowerAscii:
+            of "enemy": a = PlayerEffect(kind: PlayerEffectKind.EnemyMod, modifier: modifier)
+            of "self": a = PlayerEffect(kind: PlayerEffectKind.Mod, modifier: modifier)
+            else: warn &"Invalid target for PlayerEffect: {target}"
+        of "bubble":
+          if sections.len != 3: warn &"Array based Bubble PlayerEffect must have 4 sections: {sections}"
+          let bubbleArch = taxon("bubbles", sections[1].asStr)
+          let bubblePlacement = sections[2].readInto(BubblePlacement)
+          a = PlayerEffect(kind: PlayerEffectKind.Bubble, bubbleArchetype: bubbleArch, bubblePlacement: bubblePlacement)
+        else: warn &"Invalid effect kind for arr based config: {sections}"
     else:
-      warn &"Array based PlayerEffect must have 3 sections"
+      warn &"Array based PlayerEffect must have > 0 sections"
+
+proc readFromConfig*(cv: ConfigValue, e: var OnCollideEffect) =
+  if cv["effect"].nonEmpty:
+    cv["effect"].readInto(e.effects)
+  else:
+    cv["effects"].readInto(e.effects)
+    
+  if cv["condition"].nonEmpty:
+    cv["condition"].readInto(e.conditions)
+  else:
+    cv["conditions"].readInto(e.conditions)
+
 
 
 proc readFromConfig*(cv: ConfigValue, a: var BubbleArchetype) =
   cv["name"].readInto(a.name)
+  let ci = cv["image"]
+  if ci.nonEmpty:
+    if ci.isStr and not ci.asStr.contains("/"):
+      a.image = image(&"bubbles/images/bubble/{ci.asStr}")
+    else:
+      ci.readInto(a.image)
+  cv["numeralColor"].readIntoOrElse(a.numeralColor, rgba(190,190,190,255))
+  cv["rarity"].readInto(a.rarity)
   cv["maxNumber"].readIntoOrElse(a.maxNumber, 3)
   cv["color"].readInto(a.color)
   cv["secondaryColors"].readInto(a.secondaryColors)
   cv["modifiers"].readInto(a.modifiers)
   cv["onPopEffects"].readInto(a.onPopEffects)
+  cv["onFireEffects"].readInto(a.onFireEffects)
   cv["inPlayPlayerMods"].readInto(a.inPlayPlayerMods)
+  cv["onCollideEffects"].readInto(a.onCollideEffects)
 
 
 proc readFromConfig*(cv: ConfigValue, e: var Combatant) =

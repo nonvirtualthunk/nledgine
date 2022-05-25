@@ -87,7 +87,8 @@ method update(g: PhysicsComponent, world: LiveWorld) =
           let newSpd = max(spd - sd.linearDrag * dragMult * deltaTime, 0.0f32)
           b.velocity = dir * newSpd
           if newSpd <= 0.001:
-            world.addFullEvent(BubbleStoppedEvent(stage: stage, bubble: bubble))
+            bubbleStopped(world, stage, bubble)
+
 
 
 
@@ -113,12 +114,22 @@ method update(g: PhysicsComponent, world: LiveWorld) =
             let impulse = n * j
             let ignoreBDV = hasModifier(bd, BubbleModKind.Juggernaut) and bd.velocity.lengthSafe > obd.velocity.lengthSafe
             let ignoreOBDV = hasModifier(obd, BubbleModKind.Juggernaut) and obd.velocity.lengthSafe > bd.velocity.lengthSafe
-            if not ignoreBDV:
-              bd.velocity += impulse * (1.0/1.0)
-            if not ignoreOBDV:
-              obd.velocity -= impulse * (1.0/1.0)
-            bd.position -= n * distanceOfIntersection * 0.55
-            obd.position += n * distanceOfIntersection * 0.55
+
+            let immovableB = hasModifier(bd, BubbleModKind.Immovable) and bd.velocity.lengthSafe < 0.05
+            let immovableO = hasModifier(obd, BubbleModKind.Immovable) and obd.velocity.lengthSafe < 0.05
+            if immovableB:
+              obd.velocity -= impulse * 2.0
+              obd.position += n * distanceOfIntersection * 1.1
+            elif immovableO:
+              bd.velocity += impulse * 2.0
+              bd.position -= n * distanceOfIntersection * 1.1
+            else:
+              if not ignoreBDV:
+                bd.velocity += impulse * (1.0/1.0)
+              if not ignoreOBDV:
+                obd.velocity -= impulse * (1.0/1.0)
+              bd.position -= n * distanceOfIntersection * 0.55
+              obd.position += n * distanceOfIntersection * 0.55
 
     var changedCollisionPairs = false
     for pair in collisionPairs:

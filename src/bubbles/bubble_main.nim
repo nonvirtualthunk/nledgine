@@ -38,14 +38,11 @@ method initialize(g: InitComponent, world: LiveWorld) =
     let bubble = createBubble(world, bubbleType)
     bubbles.add(bubble)
 
-  let bashBubble = createBubble(world, † Bubbles.Bash)
-  bubbles.add(bashBubble)
+  bubbles.add(createBubble(world, † Bubbles.Bash))
 
-  let chainBubble = createBubble(world, † Bubbles.ChainBlock)
-  bubbles.add(chainBubble)
-
-  let powerBubble = createBubble(world, † Bubbles.Inflame)
-  bubbles.add(powerBubble)
+  # bubbles.add(createBubble(world, † Bubbles.Inflame))
+  # bubbles.add(createBubble(world, † Bubbles.RecklessStrike))
+  bubbles.add(createBubble(world, † Bubbles.Stalwart))
 
   let player = world.createEntity()
   player.attachData(Player(

@@ -31,14 +31,14 @@ type
       case kind*: BoundValueKind
       of BoundValueKind.Empty: discard
       of BoundValueKind.Number: number: float
-      of BoundValueKind.Color: color: RGBA
+      of BoundValueKind.Color: color*: RGBA
       of BoundValueKind.Text: text: string
       of BoundValueKind.RichText: richText: RichText
       of BoundValueKind.Taxon: taxon: Taxon
       of BoundValueKind.Seq: values*: seq[BoundValue]
       of BoundValueKind.Grid: gridValues*: seq[seq[BoundValue]]
       of BoundValueKind.Bool: truth: bool
-      of BoundValueKind.Image: image: ImageRef
+      of BoundValueKind.Image: image*: ImageRef
       of BoundValueKind.Nested: nestedValues*: ref Table[string, BoundValue]
 
    Bindable*[T] = object
@@ -244,7 +244,7 @@ proc asString*(bv: BoundValue): string =
    of BoundValueKind.Image: "[images not supported as strings]"
    of BoundValueKind.Nested: "[nested values not supported as strings yest]"
 
-proc extractSimpleBindingPattern(str: string, bindingPattern: var string) =
+proc extractSimpleBindingPattern*(str: string, bindingPattern: var string) =
    var m: RegexMatch
    if not str.match(stringBindingPattern, m):
       warn &"invalid binding pattern \"{bindingPattern}\" from raw str {str}"

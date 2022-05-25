@@ -33,12 +33,26 @@ type
     canvas: SimpleCanvas
     mousePos: Vec2f
     numerals: array[10, Image]
+    bubbleImage: Image
 
   NumberGraphics* = object
     numerals*: array[10, Image]
 
 
 defineDisplayReflection(NumberGraphics)
+
+
+proc bubbleImageLayers*(b: ref Bubble): seq[ImageLayer] =
+  if b.color == BubbleColor.Red:
+    result.add(ImageLayer(image: image("bubbles/images/bubble/red_bubble.png"), color: White))
+  elif b.color == BubbleColor.Blue:
+    result.add(ImageLayer(image: image("bubbles/images/bubble/blue_bubble.png"), color: White))
+  else:
+    result.add(ImageLayer(image: image("bubbles/images/bubble_2.png"), color: rgba(b.color)))
+  for c in b.secondaryColors:
+    result.add(ImageLayer(image: image("bubbles/images/bicolor_bubble_ring.png"), color: rgba(c)))
+  if b.image != nil:
+    result.add(ImageLayer(image: b.image, color: White))
 
 
 method initialize(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld) =
@@ -48,9 +62,20 @@ method initialize(g: BubbleGraphics, world: LiveWorld, display: DisplayWorld) =
   var ng = new NumberGraphics
   let f = font("goethe.ttf").font(20)
   for i in 0 ..< 10:
-    ng.numerals[i] = f.glyphImage(toRunes(&"{i}")[0]).trimmed()
-    ng.numerals[i].flipY()
-    # ng.numerals[i].writeToFile(&"/tmp/numeral_{i}.png")
+    let baseImg = f.glyphImage(toRunes(&"{i}")[0]).trimmed()
+    baseImg.flipY()
+    baseImg.writeToFile(&"/tmp/numeral_base_{i}.png")
+    let img = createImage(vec2i(baseImg.width + 2, baseImg.height + 2))
+    copyFrom(img, baseImg, vec2i(1,1), vec2i(0,0), baseImg.dimensions)
+    for x in 0 ..< img.width:
+      for y in 0 ..< img.height:
+        if img[x,y,3] == 0:
+          if (x > 0 and img[x-1,y,0] > 0) or (y > 0 and img[x,y-1,0] > 0) or (x < img.width - 1 and img[x+1,y,0] > 0) or (y < img.height - 1 and img[x,y+1,0] > 0):
+            img[x,y] = rgba(0,0,0,255)
+
+
+    ng.numerals[i] = img
+    ng.numerals[i].writeToFile(&"/tmp/numeral_{i}.png")
   display.attachDataRef(ng)
   g.numerals = ng.numerals
 
@@ -79,23 +104,21 @@ proc drawBubble(g: BubbleGraphics, world: LiveWorld, qb: var QuadBuilder, bubble
   let forward = vec3f(1.0f,0.0f,0.0f)
   let ortho = vec3f(0.0f,1.0f,0.0f)
 
-  if b.secondaryColors.isEmpty:
-    drawQuad(g, image("bubbles/images/bubble_2.png"), rgba(b.color), vec3f(pos, 0.0f), forward, ortho, vec2f(b.radius * 2.0f, b.radius * 2.0f))
-  else:
-    drawQuad(g, image("bubbles/images/bicolor_bubble.png"), rgba(b.color), vec3f(pos, 0.0f), forward, ortho, vec2f(b.radius * 2.0f, b.radius * 2.0f))
-    drawQuad(g, image("bubbles/images/bicolor_bubble_ring.png"), rgba(b.secondaryColors[0]), vec3f(pos, 0.0f), forward, ortho, vec2f(b.radius * 2.0f, b.radius * 2.0f))
+
+  for imgLayer in bubbleImageLayers(b):
+    drawQuad(g, imgLayer.image.asImage, imgLayer.color, vec3f(pos, 0.0f), forward, ortho, vec2f(imgLayer.image.asImage.dimensions))
 
   let numeral = g.numerals[b.number]
-  let numeralSizeM = 24 div numeral.dimensions.y
+  let numeralSizeM = 30 div numeral.dimensions.y
   let numeralSize = numeral.dimensions * numeralSizeM
   qb.position = vec3f(pos.x, pos.y + 2, 0.0f32)
   qb.texture = numeral
-  qb.color = rgba(190,190,190,255)
+  qb.color = b.numeralColor
   qb.dimensions = vec2f(numeralSize)
   qb.centered()
   qb.drawTo(g.canvas)
 
-  if b.modifiers.nonEmpty:
+  if b.modifiers.nonEmpty and b.image.isNil:
     qb.position = vec3f(pos, 0.0f)
     qb.color = rgba(190,190,190,255)
     qb.dimensions = vec2f(12.0f,12.0f)
@@ -117,6 +140,8 @@ proc drawBubble(g: BubbleGraphics, world: LiveWorld, qb: var QuadBuilder, bubble
         of BubbleModKind.Chain: image(&"bubbles/images/bubble_modifiers/chain.png")
         of BubbleModKind.Chromophilic: image(&"bubbles/images/bubble_modifiers/chromophilic.png")
         of BubbleModKind.Chromophobic: image(&"bubbles/images/bubble_modifiers/chromophobic.png")
+        of BubbleModKind.Exchange: image(&"bubbles/images/bubble_modifiers/exchange.png")
+        of BubbleModKind.Exhaust: image(&"bubbles/images/bubble_modifiers/exhaust.png")
         else: continue
       i.inc
 

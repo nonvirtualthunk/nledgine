@@ -42,6 +42,8 @@ type
     color*: Bindable[RGBA]
     fractionalScaling*: bool
     drawAfterChildren*: bool
+    bindingPattern: string
+    imageLayers: seq[ImageLayer]
 
   ImageDisplayComponent* = ref object of WindowingComponent
 
@@ -81,16 +83,22 @@ proc readFromConfig*(cv: ConfigValue, v: var ImageDisplay) =
   readIntoOrElse(cv["fractionalScaling"], v.fractionalScaling, false)
   readIntoOrElse(cv["color"], v.color, bindable(rgba(1.0, 1.0, 1.0, 1.0)))
   readIntoOrElse(cv["drawImageAfterChildren"], v.drawAfterChildren, false)
+  if cv["imageLayers"].nonEmpty:
+    extractSimpleBindingPattern(cv["imageLayers"].asStr, v.bindingPattern)
 
 defineDisplayReflection(ImageDisplay)
 
 
 proc effectiveImage*(ID: ref ImageDisplay) : ImageRef =
-  result = ID.image.value
-  for ci in ID.conditionalImage:
-    if ci.condition.value:
-      result = ci.image.value
-      break
+  #TODO this is a bit of a janky way to handle multi-layered images
+  if ID.imageLayers.nonEmpty:
+    result = ID.imageLayers[0].image
+  else:
+    result = ID.image.value
+    for ci in ID.conditionalImage:
+      if ci.condition.value:
+        result = ci.image.value
+        break
 
 proc effectiveColor*(ID: ref ImageDisplay) : RGBA =
   result = ID.color.value
@@ -136,10 +144,17 @@ method render*(ws: ImageDisplayComponent, widget: Widget): seq[WQuad] =
     let x = calcPos(ID, widget, Axis.X, width)
     let y = calcPos(ID, widget, Axis.Y, height)
 
-    let color = ID.effectiveColor
+    if ID.imageLayers.nonEmpty:
+      var quads : seq[WQuad]
+      for layer in ID.imageLayers:
+        quads.add(WQuad(shape: rectShape(position = vec3f(x.float, y.float, 0.0f), dimensions = vec2i(width, height), forward = vec2f(1.0f, 0.0f)), texCoords: simpleTexCoords(), color: layer.color, beforeChildren: not ID.drawAfterChildren,
+                          image: layer.image.asImage))
+      quads
+    else:
+      let color = ID.effectiveColor
 
-    @[WQuad(shape: rectShape(position = vec3f(x.float, y.float, 0.0f), dimensions = vec2i(width, height), forward = vec2f(1.0f, 0.0f)), texCoords: simpleTexCoords(), color: color, beforeChildren: not ID.drawAfterChildren,
-        image: ID.effectiveImage.asImage)]
+      @[WQuad(shape: rectShape(position = vec3f(x.float, y.float, 0.0f), dimensions = vec2i(width, height), forward = vec2f(1.0f, 0.0f)), texCoords: simpleTexCoords(), color: color, beforeChildren: not ID.drawAfterChildren,
+          image: ID.effectiveImage.asImage)]
   else:
     @[]
 
@@ -170,6 +185,30 @@ proc updateAllBindings*(id: var ImageDisplay, resolver : var BoundValueResolver)
   for ct in id.conditionalImage.mitems:
     result = updateBindings(ct.condition, resolver) or result
     result = updateBindings(ct.image, resolver) or result
+
+  if id.bindingPattern.nonEmpty:
+    let boundSrcValue = resolver.resolve(id.bindingPattern)
+    if boundSrcValue.kind == BoundValueKind.Empty:
+       discard
+    elif boundSrcValue.kind != BoundValueKind.Seq:
+       warn &"Updating binding for image display widget with non-empty, non-seq value: {boundSrcValue}"
+    else:
+      var newLayers: seq[ImageLayer]
+      for i in 0 ..< boundSrcValue.values.len:
+        let value = boundSrcValue.values[i]
+        if value.kind == BoundValueKind.Nested:
+          if value.nestedValues.contains("image") and value.nestedValues["image"].kind == BoundValueKind.Image:
+            var layer : ImageLayer
+            layer.image = value.nestedValues["image"].image
+            if value.nestedValues.contains("color") and value.nestedValues["color"].kind == BoundValueKind.Color:
+              layer.color = value.nestedValues["color"].color
+            newLayers.add(layer)
+      if newLayers != id.imageLayers:
+        id.imageLayers = newLayers
+        result = true
+
+
+
 
 method updateBindings*(ws: ImageDisplayComponent, widget: Widget, resolver: var BoundValueResolver) =
   if widget.hasData(ImageDisplay) and updateAllBindings(widget.data(ImageDisplay)[], resolver):

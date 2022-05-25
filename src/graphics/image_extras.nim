@@ -6,6 +6,7 @@ import prelude
 import arxregex
 import strutils
 import noto
+import color
 
 type
   ImageRefKinds = enum
@@ -27,6 +28,9 @@ type
     frameCount*: int
     frameDuration*: UnitOfTime
 
+  ImageLayer* = object
+    image*: ImageRef
+    color*: RGBA
 
   ImageLikeKind* {.pure.} = enum
     Sentinel

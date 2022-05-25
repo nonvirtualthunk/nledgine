@@ -5,6 +5,7 @@ import tables
 import strformat
 import options
 import windowingsystem/windowingsystem
+import windowingsystem/image_widget
 import noto
 import math
 import patty
@@ -42,6 +43,14 @@ method initialize(g: RewardUIComponent, world: LiveWorld, display: DisplayWorld)
    # g.rewardsWidget.childByIdentifier("SkipButton").get.onEventOfTypeW(WidgetMouseRelease, release):
    #    g.skipReward = true
 
+proc effectDescription(eff: PlayerEffect): string =
+  case eff.kind:
+    of PlayerEffectKind.Attack: &"Deal {eff.amount} damage"
+    of PlayerEffectKind.Block: &"Gain {eff.amount} block"
+    of PlayerEffectKind.EnemyMod: &"Apply {eff.modifier.number} {$eff.modifier.kind}"
+    of PlayerEffectKind.Mod: &"Gain {eff.modifier.number} {$eff.modifier.kind}"
+    of PlayerEffectKind.Bubble: &"Add a {eff.bubbleArchetype.displayName} bubble"
+
 method update(g: RewardUIComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
   if g.rewardsWatcher.hasChanged:
     for w in g.rewardChoiceWidgets: w.destroyWidget()
@@ -55,23 +64,31 @@ method update(g: RewardUIComponent, world: LiveWorld, display: DisplayWorld, df:
       for b in rewards[0].bubbles:
         let w = optionsDiv.createChild("RewardWidgets", "RewardOptionWidget")
         w.identifier = &"RewardOption[{g.rewardChoiceWidgets.len}]"
-        w.bindValue("name", "Bubble")
+        w.bindValue("name", b[Bubble].name)
         var descriptorString = ""
         for m in b[Bubble].modifiers:
           if descriptorString.nonEmpty: descriptorString.add(", ")
           descriptorString.add(descriptor(m))
-        w.bindValue("descriptors", descriptorString)
-        if b[Bubble].radius == 24.0f32:
-          w.bindValue("image", image("bubbles/images/bubble_2.png"))
-          if b[Bubble].secondaryColors.nonEmpty:
-            w.bindValue("imageOverlay", image("bubbles/images/bicolor_bubble_ring.png"))
-            w.bindValue("imageOverlayColor", rgba(b[Bubble].secondaryColors[0]))
-            w.bindValue("imageOverlayShowing", true)
-          else:
-            w.bindValue("imageOverlayShowing", false)
-        else:
-          w.bindValue("image", image("bubbles/images/large_bubble_2.png"))
-        w.bindValue("imageColor", rgba(b[Bubble].color))
+        w.bindValue("bubbleModifiers", descriptorString)
+
+
+        var effectsDescription = ""
+        proc addEffDesc(str: string) =
+          if effectsDescription.nonEmpty:
+            effectsDescription.add("\n")
+          effectsDescription.add(str)
+
+        for eff in b[Bubble].onPopEffects:
+          addEffDesc(effectDescription(eff))
+
+        if b[Bubble].inPlayPlayerMods.nonEmpty:
+          addEffDesc("While in play:")
+          for modifier in b[Bubble].inPlayPlayerMods:
+            addEffDesc(&"Gain {modifier.number} {modifier.kind}")
+
+        w.bindValue("effectsDescription", effectsDescription)
+
+        w.bindValue("imageLayers", bubbleImageLayers(b[Bubble]))
         w.bindValue("numeral", display[NumberGraphics].numerals[b[Bubble].maxNumber])
         w.attachData(RewardInfo(rewardIndex: g.rewardChoiceWidgets.len))
         if g.rewardChoiceWidgets.nonEmpty:
@@ -85,8 +102,7 @@ method onEvent(g: RewardUIComponent, world: LiveWorld, display: DisplayWorld, ev
   matcher(event):
     extract(WidgetMouseRelease, originatingWidget):
       for i in 0 ..< g.rewardChoiceWidgets.len:
-        if originatingWidget.isDescendantOf(g.rewardChoiceWidgets[i]):
-          info &"Choosing reward {i}"
+        if originatingWidget.isSelfOrDescendantOf(g.rewardChoiceWidgets[i]):
           chooseReward(world, i)
 
 

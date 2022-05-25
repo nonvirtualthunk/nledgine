@@ -232,26 +232,6 @@ MainUI {
                 }
               }
             }
-            ActionBars {
-              type: Div
-              y: 15 below MainStatsDisplay
-              width: 100%
-              height: WrapContent
-              children {
-                ActionLabel {
-                  type: TextDisplay
-                  x: centered
-                  text: "Actions"
-                  fontSize: 20
-                }
-                ActionDivider {
-                  type: Divider
-                  y: 5 below ActionLabel
-                  width: 100%
-                  pixelScale: 2
-                }
-              }
-            }
           }
         }
       }
