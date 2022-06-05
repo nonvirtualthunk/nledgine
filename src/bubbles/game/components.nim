@@ -115,8 +115,8 @@ method update(g: PhysicsComponent, world: LiveWorld) =
             let ignoreBDV = hasModifier(bd, BubbleModKind.Juggernaut) and bd.velocity.lengthSafe > obd.velocity.lengthSafe
             let ignoreOBDV = hasModifier(obd, BubbleModKind.Juggernaut) and obd.velocity.lengthSafe > bd.velocity.lengthSafe
 
-            let immovableB = hasModifier(bd, BubbleModKind.Immovable) and bd.velocity.lengthSafe < 0.05
-            let immovableO = hasModifier(obd, BubbleModKind.Immovable) and obd.velocity.lengthSafe < 0.05
+            let immovableB = hasModifier(bd, BubbleModKind.Immovable) and not isMoving(bd)
+            let immovableO = hasModifier(obd, BubbleModKind.Immovable) and not isMoving(obd)
             if immovableB:
               obd.velocity -= impulse * 2.0
               obd.position += n * distanceOfIntersection * 1.1
@@ -184,9 +184,17 @@ method onEvent(g: StageComponent, world: LiveWorld, event: Event) =
         if defender.hasData(Player):
           err &"YOU HAVE LOST"
         else:
-          info &"Stage complete"
           for stage in activeStages(world):
-            completeStage(world, stage)
+            var allDead = true
+            for enemy in stage[Stage].enemies:
+              if enemy[Combatant].health.currentValue > 0:
+                allDead = false
+                break
+
+            if allDead:
+              info &"Stage complete"
+              for stage in activeStages(world):
+                completeStage(world, stage)
     #   let sd = stage[Stage]
     #   if sd.active:
     #     sd.progress.inc

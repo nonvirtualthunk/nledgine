@@ -57,6 +57,8 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     let region = regionEnt.attachData(Region)
     generateRegion(world, regionEnt)
 
+    skipToTimeOfDay(world, regionEnt, DayNight.Day, 0.7)
+
 
     let water = † TileKinds.Seawater
     let voidTile = † TileKinds.Void
@@ -113,14 +115,14 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     regionEnt[Region].initialized = true
     world.addFullEvent(RegionInitializedEvent(region: regionEnt))
 
-    let burrow = createBurrow(world, regionEnt, † Burrows.RabbitHole)
+    let burrow = createItem(world, regionEnt, † Items.RabbitHole)
     for dy in 4 ..< 10:
       if passable(world, regionEnt, playerPos + vec3i(0,dy,0)):
         placeEntity(world, burrow, playerPos + vec3i(0,dy,0))
         break
     spawnCreatureFromBurrow(world, burrow)
 
-    let spiderDen = createBurrow(world, regionEnt, † Burrows.SpiderDen)
+    let spiderDen = createItem(world, regionEnt, † Items.SpiderDen)
     for dy in 4 ..< 10:
       if passable(world, regionEnt, playerPos + vec3i(-4,dy,0)):
         placeEntity(world, spiderDen, playerPos + vec3i(-4,dy,0))
@@ -129,7 +131,7 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
 
     createPlant(world, regionEnt, † Plants.Carrot, burrow[Physical].position + vec3i(3,0,0), PlantCreationParameters(growthStage: some(† GrowthStages.Flowering)))
 
-    skipToTimeOfDay(world, regionEnt, DayNight.Night, 0.1)
+    world[TimeData].initialized()
 
 
 proc initializationGraphicsComponent() : InitializationGraphicsComponent =
@@ -146,7 +148,7 @@ main(GameSetup(
   windowSize: vec2i(1800, 1200),
   resizeable: false,
   windowTitle: "Survival",
-  clearColor: rgba(0.15,0.15,0.15,1.0),
+  clearColor: rgba(0.0,0.0,0.0,1.0),
   liveGameComponents: @[
     BasicLiveWorldDebugComponent().ignoringEventType(WorldAdvancedEvent),
     initializationComponent(),

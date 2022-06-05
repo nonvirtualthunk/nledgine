@@ -55,6 +55,11 @@ Flags {
   Meat {
     description: "The body of an animal"
     boolean: true
+    countsAs: AnimalProduct
+  }
+  AnimalProduct {
+    description: "A part or product of an animal"
+    boolean: true
   }
   Root {
     description: "The water absorbing root of a plant"
@@ -152,5 +157,9 @@ Flags {
   }
   Water {
     description: "Water, the foundation of life"
+  }
+  Corpse {
+    description: "A mortal coil bereft of its animating force"
+    countsAs: AnimalProduct
   }
 }

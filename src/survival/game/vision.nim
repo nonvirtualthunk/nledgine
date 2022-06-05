@@ -46,8 +46,8 @@ proc computeVision(g: VisionComponent, world: LiveWorld, entity: Entity, offset:
     let pcnt = d / attenuationRange
     if pcnt > 1.0:
       0.0
-    elif pcnt > 0.95:
-      1.0 - (pcnt - 0.95) / 0.05
+    # elif pcnt > 0.95:
+    #   1.0 - (pcnt - 0.95) / 0.05
     else:
       1.0
 
@@ -86,6 +86,33 @@ proc updateVision(g: VisionComponent, world: LiveWorld, entity: Entity) =
   computeVision(g, world, entity, vec2i(0,0), PD.vision)
 
   world.addFullEvent(VisionChangedEvent(entity: entity))
+
+
+
+proc effectiveVision*(vision: ref ShadowGrid[PlayerVisionSize], globalIllumination, localIllumination: float, visionRange: int, dx,dy, sx, sy: int) : float =
+  let sdx = dx * VisionResolution + sx
+  let sdy = dy * VisionResolution + sy
+
+  let sd2 = (sdx*sdx + sdy*sdy)
+  if sd2 < 3:
+    1.0
+  else:
+    # Our vision range is decreased by how dark it is
+    let effIllum = if localIllumination > globalIllumination: 1.0 else: (globalIllumination*1.4).clamp(0.0,1.0)
+
+    let effVisionRange = (visionRange * VisionResolution).float * effIllum
+    let rangeFract = sqrt(sd2.float) / effVisionRange.float
+    # if we're past our adjusted vision range, don't bother looking up obstruction
+    if rangeFract > 1.0:
+      0.0
+    else:
+      let rawV = vision.atRelativeWorldCoord(dx, dy, sx, sy, VisionResolution).float / 255.0
+      # do a soft fallof past 90% of our vision range
+      if rangeFract > 0.9:
+        rawV * pow((1.0 - rangeFract) * 10.0, 2.0)
+      else:
+        rawV
+
 
 
 method update(g: VisionComponent, world: LiveWorld) =
@@ -358,4 +385,5 @@ method onEvent(g: LightingComponent, world: LiveWorld, event: Event) =
       updateLocalIllumination(g, world, entity[Physical].region, entity)
       for e in allEquippedItems(entity[Creature]):
         updateLocalIllumination(g, world, entity[Physical].region, e)
+
 

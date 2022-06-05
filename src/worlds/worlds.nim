@@ -287,7 +287,9 @@ proc setUpType*[C](world: LiveWorld, dataType: DataType[C]) =
   world.dataContainers[dataType.index] = dataContainer
   let copyFunc = proc (w: LiveWorld, a: Entity, b: Entity) =
     if w.hasData(a, dataType):
-      w.attachData(b, w.data(a, dataType)[])
+      let newv = new C
+      newv[] = w.data(a, dataType)[]
+      w.attachDataRef(b, newv)
   world.dataCopyFunctions.add(copyFunc)
 
 proc setUpType*[C](world: DisplayWorld, dataType: DataType[C]) =
@@ -906,6 +908,11 @@ proc attachData*[C] (world: LiveWorld, entity: Entity, dataValue: C) =
     nv[] = dataValue
     dc.dataStore[entity.id] = nv
 
+proc attachDataRef*[C] (world: LiveWorld, entity: Entity, dataValue: ref C) =
+  let dataType = C.getDataType()
+  var dc = (DataContainer[C])world.dataContainers[dataType.index]
+  dc.dataStore[entity.id] = dataValue
+
 proc attachData*[C](world: LiveWorld, entity: Entity, t: typedesc[C]) : ref C {.discardable.} =
   let dataType = t.getDataType()
   var dc = (DataContainer[C])world.dataContainers[dataType.index]
@@ -926,9 +933,15 @@ template ifHasData*[C] (world: LiveWorld, entity: Entity, t: typedesc[C], v : un
 
 template ifHasData*[C] (entity: Entity, t: typedesc[C], v : untyped, stmts: untyped) =
   when declared(injectedWorld):
-    var dc = (DataContainer[C])injectedWorld.view.dataContainers[t.getDataType().index]
+    when injectedWorld is LiveWorld:
+      var dc = (DataContainer[C])injectedWorld.dataContainers[t.getDataType().index]
+    else:
+      var dc = (DataContainer[C])injectedWorld.view.dataContainers[t.getDataType().index]
   else:
-    var dc = (DataContainer[C])world.view.dataContainers[t.getDataType().index]
+    when world is LiveWorld:
+      var dc = (DataContainer[C])world.dataContainers[t.getDataType().index]
+    else:
+      var dc = (DataContainer[C])world.view.dataContainers[t.getDataType().index]
 
   let `v` {.inject.} = dc.dataStore.getOrDefault(entity.id, nil)
   if `v` != nil:

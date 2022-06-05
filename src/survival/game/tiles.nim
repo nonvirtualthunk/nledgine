@@ -43,12 +43,14 @@ type
     tileset*: TilesetTile
 
   TileLayer* = object
+    # Todo: we could probably make this a LibraryID instead, save some memory
     # what kind of tile layer is this
     tileKind*: LibraryTaxon
     # what resources are currently available
     resources*: seq[GatherableResource]
 
   Tile* = object
+    # Todo: just unify these as seq[TileLayer] and give the layer a flag indicating floor/wall/ceiling
     # individual layers of the floor on this tile, in z-order
     floorLayers*: seq[TileLayer]
     # individual layers of the wall on this tile, in z-order
@@ -57,6 +59,8 @@ type
     ceilingLayers*: seq[TileLayer]
     # entities currently in or on this tile
     entities*: seq[Entity]
+    # has been revealed at any point
+    revealed*: bool
 
   TileFlag* = distinct int
 

@@ -118,6 +118,17 @@ proc drawBubble(g: BubbleGraphics, world: LiveWorld, qb: var QuadBuilder, bubble
   qb.centered()
   qb.drawTo(g.canvas)
 
+  if b.duration.maxValue > 0:
+    let numeral = g.numerals[b.duration.currentValue]
+    let numeralSizeM = max(12 div numeral.dimensions.y, 1)
+    let numeralSize = numeral.dimensions * numeralSizeM
+    qb.position = vec3f(pos.x + 12, pos.y + 10, 0.0f32)
+    qb.texture = numeral
+    qb.color = White
+    qb.dimensions = vec2f(numeralSize)
+    qb.centered()
+    qb.drawTo(g.canvas)
+
   if b.modifiers.nonEmpty and b.image.isNil:
     qb.position = vec3f(pos, 0.0f)
     qb.color = rgba(190,190,190,255)

@@ -1,6 +1,6 @@
 Creatures {
   Human {
-    images: ["survival/graphics/creatures/player.png"]
+    images: ["survival/graphics/creatures/player/down.png"]
 
     health {
       value: 24
@@ -20,7 +20,7 @@ Creatures {
     }
     sanity: 25
 
-    visionRange: 16
+    visionRange: 18
 
     strength: 0
     dexterity: 0
@@ -33,7 +33,7 @@ Creatures {
     canEat: [Flags.Vegetable, Flags.Root, Flags.Meat, Flags.Cooked, Flags.Water, Flags.Fruit]
     cannotEat: [Flags.Grass]
 
-    baseMoveTime: 20 ticks
+    baseMoveTime: 12 ticks
 
     innateActions {
       Gather: 1
@@ -117,6 +117,8 @@ Creatures {
         duration: 1 short action
       }
     }
+
+    corpse: Items.RabbitCorpse
   }
 
   Spider {
@@ -175,5 +177,29 @@ Creatures {
         duration: 1 short action
       }
     }
+  }
+}
+
+Items {
+  RabbitCorpse {
+    description: "An ex-rabbit"
+    weight: 400
+    durability: 20
+    transforms : [
+      {
+        recipeTemplate: Carve
+        difficulty: 3
+        output: [
+          RawMeat
+        ]
+      }
+    ]
+
+    flags {
+      Corpse: 1
+    }
+
+    image: "survival/graphics/creatures/rabbit/rabbit_dead.png"
+    stackable: false
   }
 }

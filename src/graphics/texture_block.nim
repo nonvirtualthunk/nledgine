@@ -140,8 +140,11 @@ proc blankTexCoords*(tb: TextureBlock): ref array[4, Vec2f]
 proc `[]`*(tb: TextureBlock, img: Image): ref array[4, Vec2f] =
   let tmp = tb.imageData.getOrDefault(img, nil)
   if tmp == nil:
-    tb.addNewImage(img)
-    result = tb.imageData[img].texCoords
+    if img == nil:
+      result = tb.blankTexCoords
+    else:
+      tb.addNewImage(img)
+      result = tb.imageData[img].texCoords
   else:
     result = tmp.texCoords
 

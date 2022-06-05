@@ -34,7 +34,7 @@ type
 
 
 method initialize(g: AIComponent, world: LiveWorld) =
-  g.name = "BurrowComponent"
+  g.name = "AIComponent"
   g.lastUpdatedTick = world[TimeData].currentTime
   g.emptyFlags = new Flags
 
@@ -74,10 +74,8 @@ method update(g: AIComponent, world: LiveWorld) =
   discard
 
 func neighborFunc(t: Vec3i, r: var seq[Vec3i]) =
-  r.add(vec3i(t.x-1,t.y,t.z))
-  r.add(vec3i(t.x+1,t.y,t.z))
-  r.add(vec3i(t.x,t.y-1,t.z))
-  r.add(vec3i(t.x,t.y+1,t.z))
+  for n in neighbors(t):
+    r.add(n)
 
 
 proc performTask(g: AIComponent, world: LiveWorld, actor: Entity, creature: ref Creature, phys: ref Physical, region: ref Region, ai: ref CreatureAI, task: var CreatureTask) : CreatureTaskResult =
@@ -85,37 +83,52 @@ proc performTask(g: AIComponent, world: LiveWorld, actor: Entity, creature: ref 
   let ck = creatureKind(actorKind)
   case task.kind:
     of CreatureTaskKind.MoveTo:
+      let target = task.target
       if isHeld(world, actor):
         let pos = effectivePosition(world, actor)
-        placeEntity(world, actor, pos)
-
-      if task.activePath.isNone:
-        let pf = createPathfinder(world, actor)
-        task.activePath = findPath(pf, pathRequest(world, phys.position, task.target, task.moveAdjacentTo))
-
-      # if we weren't able to find a path
-      if task.activePath.isNone:
-        taskInvalid()
-      else:
-        let path = task.activePath.get
-        let currentStep = indexWhereIt(path.steps, it == phys.position)
-        if currentStep == -1:
-          warn &"We are off of our exploration path, resetting path to allow for another attempt"
-          task.activePath = none(Path)
-          taskContinues()
-        elif currentStep == path.steps.len - 1:
-          if isEntityTarget(task.target):
-            if task.target.entity.hasData(Burrow):
-              moveEntityToInventory(world, actor, task.target.entity)
-          taskSucceeded()
-        else:
-          let nextStep = currentStep + 1
-          if moveEntity(world, actor, path.steps[nextStep]):
-            taskContinues()
+        let exitPos = if passable(world, region, pos):
+            some(pos)
           else:
-            warn &"Could not move into tile needed for movement task, resetting path to replan"
+            # Todo: if a path can't be found from any of these exit choices, choose a different one
+            var possibleExits: seq[Vec3i]
+            for n in neighbors(pos):
+              if passable(world, region, n):
+                possibleExits.add(n)
+            minBy(possibleExits, (n) => distance(world, n, target).get(0))
+
+        if exitPos.isSome:
+          placeEntity(world, actor, exitPos.get)
+          taskContinues()
+        else:
+          taskInvalid("Could not find appropriate exit from holding entity")
+      else:
+        if task.activePath.isNone:
+          let pf = createPathfinder(world, actor)
+          task.activePath = findPath(pf, pathRequest(world, phys.position, target, task.moveAdjacentTo))
+
+        # if we weren't able to find a path
+        if task.activePath.isNone:
+          taskInvalid()
+        else:
+          let path = task.activePath.get
+          let currentStep = indexWhereIt(path.steps, it == phys.position)
+          if currentStep == -1:
+            warn &"We are off of our exploration path, resetting path to allow for another attempt"
             task.activePath = none(Path)
             taskContinues()
+          elif currentStep == path.steps.len - 1:
+            if isEntityTarget(task.target):
+              if task.target.entity.hasData(Burrow):
+                moveEntityToInventory(world, actor, task.target.entity)
+            taskSucceeded()
+          else:
+            let nextStep = currentStep + 1
+            if moveEntity(world, actor, path.steps[nextStep]):
+              taskContinues()
+            else:
+              warn &"Could not move into tile needed for movement task, resetting path to replan"
+              task.activePath = none(Path)
+              taskContinues()
     of CreatureTaskKind.EatFrom:
       var ate = false
       for item in actor[Inventory].items:
@@ -165,7 +178,7 @@ proc performTask(g: AIComponent, world: LiveWorld, actor: Entity, creature: ref 
       else:
         taskContinues()
     of CreatureTaskKind.Attack:
-      attack(world, actor, task.target)
+      attack(world, actor, task.target, allEquippedItems(actor[Creature]))
       taskSucceeded()
 
 
@@ -206,6 +219,10 @@ proc chooseNewGoal(g: AIComponent, world: LiveWorld, actor: Entity, creature: re
       of CreatureSchedule.Crepuscular:
         if fract > 0.15 and fract < 0.85:
           situationalPriority[CreatureGoals.Home] = 1.0f # TODO: ramping priority like with diurnal/nocturnal
+
+    # If the burrow has been destroyed then home is no longer a valid option
+    if isSurvivalEntityDestroyed(world, ai.burrow):
+      situationalPriority[CreatureGoals.Home] = 0.0f
 
     if heldBy(world, actor) == some(ai.burrow) and situationalPriority.getOrDefault(CreatureGoals.Home) > 0.0:
       discard
@@ -252,7 +269,7 @@ proc chooseNewGoal(g: AIComponent, world: LiveWorld, actor: Entity, creature: re
         chosenGoal = goal
         bestPriority = base * situational
 
-    info &"Situational priorities:\n\t{situationalPriority}\n\tchosen goal: {chosenGoal}"
+    info &"Situational priorities for {debugIdentifier(world, actor)}:\n\t{situationalPriority}\n\tchosen goal: {chosenGoal}"
 
     if ai.activeGoal != chosenGoal:
       ai.activeGoal = chosenGoal
@@ -424,10 +441,10 @@ proc updateEntity(g: AIComponent, world: LiveWorld, actor: Entity, currentTime: 
       of CreatureGoals.Examine:
         ai.tasks = @[waitTask(LongActionTime)]
       of CreatureGoals.Home:
-        if heldBy(world, actor) == some(ai.burrow):
+        if aiHeldBy == some(ai.burrow):
           ai.tasks = @[waitTask(LongActionTime * 4)]
         else:
-          ai.tasks = @[moveTask(ai.burrow, moveAdjacentTo = false)]
+          ai.tasks = @[moveTask(ai.burrow, moveAdjacentTo = true)]
       of CreatureGoals.Attack:
         var targets: seq[Entity]
         for examineEnt in entitiesNear(world, actor, examinationRange):
@@ -471,7 +488,7 @@ method onEvent(g: AIComponent, world: LiveWorld, event: Event) =
 
               iter.inc
               if iter > 10:
-                warn &"> 10 iterations in ai entity update, likely missed either reducing available time or marking as non-advanceable"
+                warn &"> 10 iterations in ai entity update, likely missed either reducing available time or marking as non-advanceable {debugIdentifier(world, ent)}"
                 warn &"\t{ent[CreatureAI][]}"
                 break
         g.lastUpdatedTick = tick
@@ -479,5 +496,5 @@ method onEvent(g: AIComponent, world: LiveWorld, event: Event) =
         let curTime = world[TimeData].currentTime
         if entity.hasData(Player):
           for aiEnt in entitiesNear(world, entity, 6):
-            if aiEnt.hasData(Creature) and aiEnt.hasData(CreatureAI):
+            if aiEnt.hasData(Creature) and aiEnt.hasData(CreatureAI) and not aiEnt.hasData(Player):
               chooseNewGoal(g, world, aiEnt, aiEnt[Creature], aiEnt[Physical], aiEnt[Physical].region[Region], aiEnt[CreatureAI], curTime)

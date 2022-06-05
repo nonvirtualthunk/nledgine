@@ -54,9 +54,9 @@ method initialize(g: InitComponent, world: LiveWorld) =
   ))
   player.attachData(Combatant(
     name: "Player",
-    health: reduceable(4),
+    health: reduceable(30),
     image: image("bubbles/images/player.png"),
-    modifiers: @[combatantMod(CombatantModKind.Dexterity)]
+    modifiers: @[]
   ))
 
   let stageDesc = StageDescription(

@@ -23,7 +23,7 @@ TileKinds {
       center: "survival/graphics/tiles/stone/center.png"
       upEdges: "survival/graphics/tiles/stone/up_edges.png"
       upCorners: "survival/graphics/tiles/stone/up_corners.png"
-      ramp: ["#262b44", "#3a4446", "#5a6988", "#8b9bb4"]
+      ramp: ["#262b44", "#3a4446", "#5a6988", "#3a4446"]
       upRamp: ["#31784F", "#478F3C", "#6FA64C", "#85AD50"]
       layer: 3
       decor: [
@@ -125,7 +125,7 @@ TileKinds {
       center: "survival/graphics/tiles/sand/center.png"
       upEdges: "survival/graphics/tiles/sand/up_edges.png"
       upCorners: "survival/graphics/tiles/sand/up_corners.png"
-      ramp: ["#d8a579", "#e1af84", "#ebc099", "#ebc099"]
+      ramp: ["#a46d5b", "#daa07c", "#e8bf9b", "#daa07c"]
       upRamp: ["#31784F", "#478F3C", "#6FA64C", "#85AD50"]
       layer: 2
     }
@@ -199,6 +199,7 @@ TileKinds {
     tileset {
       center: "survival/graphics/tiles/water/center.png"
       upEdges: "survival/graphics/tiles/water/up_edges.png"
+      downEdges: "survival/graphics/tiles/water/down_edges.png"
       upCorners: "survival/graphics/tiles/water/up_corners.png"
       upRamp: ["#31784F", "#478F3C", "#6FA64C", "#85AD50"]
       layer: 1

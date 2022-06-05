@@ -50,6 +50,8 @@ proc effectDescription(eff: PlayerEffect): string =
     of PlayerEffectKind.EnemyMod: &"Apply {eff.modifier.number} {$eff.modifier.kind}"
     of PlayerEffectKind.Mod: &"Gain {eff.modifier.number} {$eff.modifier.kind}"
     of PlayerEffectKind.Bubble: &"Add a {eff.bubbleArchetype.displayName} bubble"
+    of PlayerEffectKind.LoseHealth: &"Lose {eff.amount} health"
+    of PlayerEffectKind.TakeDamage: &"Take {eff.amount} damage"
 
 method update(g: RewardUIComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
   if g.rewardsWatcher.hasChanged:
@@ -79,7 +81,8 @@ method update(g: RewardUIComponent, world: LiveWorld, display: DisplayWorld, df:
           effectsDescription.add(str)
 
         for eff in b[Bubble].onPopEffects:
-          addEffDesc(effectDescription(eff))
+          for subEff in eff.effects:
+            addEffDesc(effectDescription(subEff))
 
         if b[Bubble].inPlayPlayerMods.nonEmpty:
           addEffDesc("While in play:")
@@ -118,6 +121,20 @@ type
     image: Image
     number: int
 
+  EnemyB = object
+    name: string
+    image: Image
+    intentIcon: Image
+    intentText: string
+    intentColor: RGBA
+    intentTime: int
+    health: int
+    maxHealth: int
+    `block`: int
+    blockShowing: bool
+    modifiers: seq[ModifierB]
+
+
 method initialize(g: MainUIComponent, world: LiveWorld, display: DisplayWorld) =
    g.name = "MainUIComponent"
    g.needsUpdate = true
@@ -126,24 +143,41 @@ method initialize(g: MainUIComponent, world: LiveWorld, display: DisplayWorld) =
    let ws = display[WindowingSystem]
    g.infoArea = ws.desktop.descendantByIdentifier("InfoArea").get
 
+
+proc computeModifiers*(world: LiveWorld, entity: Entity): seq[ModifierB] =
+  let pcd = entity[Combatant]
+  var modifiers: seq[ModifierB]
+  for mk in enumValues(CombatantModKind):
+    let v = sumModifiers(pcd, mk)
+    if v > 0:
+      modifiers.add(ModifierB(image: icon(mk), number: v))
+  modifiers
+
 method update(g: MainUIComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
   if g.needsUpdate:
     var hasStage = false
     for stage in activeStages(world):
-      hasStage = true
       let sd = stage[Stage]
-      let ed = sd.enemy[Enemy]
-      let ecd = sd.enemy[Combatant]
-      g.infoArea.bindValue("enemy.name", ecd.name)
-      g.infoArea.bindValue("enemy.image", ecd.image)
-      g.infoArea.bindValue("enemy.intentIcon", icon(ed.activeIntent))
-      g.infoArea.bindValue("enemy.intentText", text(ed.activeIntent))
-      g.infoArea.bindValue("enemy.intentColor", color(ed.activeIntent))
-      g.infoArea.bindValue("enemy.intentTime", ed.activeIntent.duration.currentValue)
-      g.infoArea.bindValue("enemy.health", ecd.health.currentValue)
-      g.infoArea.bindValue("enemy.maxHealth", ecd.health.maxValue)
-      g.infoArea.bindValue("enemy.block", ecd.blockAmount)
-      g.infoArea.bindValue("enemy.blockShowing", ecd.blockAmount > 0)
+      hasStage = true
+      var enemyBindings: seq[EnemyB]
+      for enemy in sd.enemies:
+        let ed = enemy[Enemy]
+        let ecd = enemy[Combatant]
+        if ecd.health.currentValue > 0:
+          enemyBindings.add(EnemyB(
+            name: ecd.name,
+            image: ecd.image,
+            intentIcon: icon(ed.activeIntent),
+            intentText: text(ed.activeIntent),
+            intentColor: color(ed.activeIntent),
+            intentTime: ed.activeIntent.duration.currentValue,
+            health: ecd.health.currentValue,
+            maxHealth: ecd.health.maxValue,
+            `block`: ecd.blockAmount,
+            blockShowing: ecd.blockAmount > 0,
+            modifiers: computeModifiers(world, enemy)
+          ))
+      g.infoArea.bindValue("enemies", enemyBindings)
 
     g.infoArea.bindValue("enemy.showing", hasStage)
 
@@ -157,13 +191,7 @@ method update(g: MainUIComponent, world: LiveWorld, display: DisplayWorld, df: f
     g.infoArea.bindValue("playerMaxHealth", pcd.health.maxValue)
     g.infoArea.bindValue("playerBlock", pcd.blockAmount)
     g.infoArea.bindValue("playerBlockShowing", pcd.blockAmount > 0)
-
-    var modifiers: seq[ModifierB]
-    for mk in enumValues(CombatantModKind):
-      let v = sumModifiers(pcd, mk)
-      if v > 0:
-        modifiers.add(ModifierB(image: icon(mk), number: v))
-    g.infoArea.bindValue("playerModifiers", modifiers)
+    g.infoArea.bindValue("playerModifiers", computeModifiers(world, p))
 
     for action in enumValues(PlayerActionKind):
       let str = ($action).toLowerAscii

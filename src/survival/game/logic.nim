@@ -33,6 +33,10 @@ type ActionChoice* = object
   tool*: Entity
   action*: Taxon
 
+type PossibleAttack* = object
+  source*: Entity
+  attack*: AttackType
+
 
 
 # /+===================================================+\
@@ -54,6 +58,8 @@ proc shiftFraction*(fract: float, minFract: float, maxFract: float) : float =
 ## How many times the given interval has been hit between startTime (inclusive) and endTime (exclusive)
 ## i.e. if the interval is every 10 ticks, then there will be 2 between 13 and 40 (landing on 20 and 30)
 proc intervalsIn*(startTime: Ticks, endTime: Ticks, interval: Ticks) : int =
+  if interval.int == 0: return 0
+
   let startIntervalIdx = startTime.int div interval.int
   let endIntervalIdx = (endTime.int - 1) div interval.int
   max(endIntervalIdx - startIntervalIdx, 0)
@@ -89,8 +95,14 @@ proc displayName*(world: LiveWorld, target: Target) : string =
     of TargetKind.Tile:
       &"Tile at {target.tilePos}"
 
+proc distance*(world: LiveWorld, a: Vec3i, t: Target): Option[float] =
+  let tp = positionOf(world, t)
+  if tp.isSome:
+    some(distance(a, tp.get))
+  else:
+    none(float)
 
-proc distance(world: LiveWorld, a,b: Entity): float =
+proc distance*(world: LiveWorld, a,b: Entity): float =
   if a.hasData(Physical) and b.hasData(Physical):
     distance(a[Physical].position, b[Physical].position)
   else:
@@ -108,6 +120,12 @@ proc effectivePosition*(world: LiveWorld, e: Entity): Vec3i =
   else:
     warn &"effectivePosition(...) called for non-physical entity"
     vec3i(10000,10000,10000)
+
+proc effectivePosition*(world: LiveWorld, phys: ref Physical): Vec3i =
+  if phys.heldBy.isSome:
+    effectivePosition(world, phys.heldBy.get)
+  else:
+    phys.position
 
 proc addToRegion*(world: LiveWorld, e: Entity, region: Entity) =
   e[Physical].region = region
@@ -180,12 +198,16 @@ proc createGatherableDataFromYields*(world: LiveWorld, ent: Entity, yields: seq[
 
 proc reduceDurability*(world: LiveWorld, ent: Entity, reduceBy: int) =
   if ent.hasData(Item):
-    let evt = DurabilityReducedEvent(entity: ent, reducedBy: reduceBy, newDurability: max(0, ent[Item].durability.currentValue - reduceBy))
-    world.eventStmts(evt):
-      let item = ent[Item]
-      item.durability.reduceBy(reduceBy)
-      if item.durability.currentValue <= 0:
-        destroySurvivalEntity(world, ent)
+    let item = ent[Item]
+    if item.durability.maxValue == 0:
+      info &"reduceDurability() called with item that does not use durability. May not be an issue {debugIdentifier(world, ent)}"
+    else:
+      let evt = DurabilityReducedEvent(entity: ent, reducedBy: reduceBy, newDurability: max(0, ent[Item].durability.currentValue - reduceBy))
+      world.eventStmts(evt):
+
+        item.durability.reduceBy(reduceBy)
+        if item.durability.currentValue <= 0:
+          destroySurvivalEntity(world, ent)
   else:
     info &"reduceDurability() called on non-item: {ent}"
 
@@ -304,8 +326,12 @@ iterator entitiesNear*(world: LiveWorld, entity: Entity, range: int): Entity =
   if entity.hasData(Physical):
     let phys = entity[Physical]
     let reg = phys.region[Region]
-    for v in reg.entityQuadTree.getNear(phys.position.x, phys.position.y, range):
-      if distance(v[Physical].position, phys.position) <= range.float:
+    let pos = effectivePosition(world, entity)
+    for v in reg.entityQuadTree.getNear(pos.x, pos.y, range):
+      # We don't need to use effectivePosition here, moving into an inventory should remove an entity from the quad tree
+      # if we need to include held items we expand the inventories of any top level nearby entities
+      let vPhys = v[Physical]
+      if not vPhys.destroyed and distance(vPhys.position, pos) <= range.float:
         yield v
 
 proc passable*(world: LiveWorld, tile: ptr Tile) : bool =
@@ -324,6 +350,12 @@ proc passable*(world: LiveWorld, region: ref Region, position: Vec3i) : bool =
   passable(world, tilePtr(region, position))
 
 
+iterator neighbors*(v: Vec3i) : Vec3i =
+  yield vec3i(v.x+1,v.y,v.z)
+  yield vec3i(v.x,v.y+1,v.z)
+  yield vec3i(v.x-1,v.y,v.z)
+  yield vec3i(v.x,v.y-1,v.z)
+
 proc moveEntity*(world: LiveWorld, creature: Entity, toPos: Vec3i) : bool {.discardable.} =
   if not passable(world, creature[Physical].region, toPos):
     return false
@@ -331,6 +363,10 @@ proc moveEntity*(world: LiveWorld, creature: Entity, toPos: Vec3i) : bool {.disc
   withWorld(world):
     if creature.hasData(Physical):
       let phys = creature.data(Physical)
+      if phys.heldBy.isSome:
+        warn &"Should explicitly remove an entity from being held before moving it. Performing implicit removal from inventory {debugIdentifier(world, creature)}"
+        placeEntity(world, creature, effectivePosition(world, phys.heldBy.get))
+
       let fromPos = phys.position
       let region = phys.region[Region]
 
@@ -354,23 +390,25 @@ proc moveEntity*(world: LiveWorld, creature: Entity, toPos: Vec3i) : bool {.disc
 
 proc moveEntityDelta*(world: LiveWorld, creature: Entity, delta: Vec3i) : bool {.discardable.} =
   if creature.hasData(Physical):
-    moveEntity(world, creature, creature[Physical].position + delta)
+    moveEntity(world, creature, effectivePosition(world, creature) + delta)
 
 
 proc createItem*(world: LiveWorld, region: Entity, itemKind: Taxon) : Entity =
   let lib = library(ItemKind)
-  let ik = lib[itemKind]
+  let ik : ref ItemKind = lib[itemKind]
 
   var rand = randomizer(world)
 
   let ent = world.createEntity()
   world.eventStmts(ItemCreatedEvent(entity: ent, itemKind: itemKind)):
+
     ent.attachData(Item(
       durability : reduceable(ik.durability.rollInt(rand)),
       decay: reduceable(ik.decay),
       breaksInto: ik.breaksInto,
       decaysInto: ik.decaysInto,
-      actions: ik.actions
+      actions: ik.actions,
+      attack: ik.attack
     ))
 
     ifPresent(ik.food):
@@ -388,11 +426,15 @@ proc createItem*(world: LiveWorld, region: Entity, itemKind: Taxon) : Entity =
         maxFuel: ik.fuel
       ))
 
-    ifPresent(ik.light):
-      ent.attachData(it)
+    ifPresent(ik.light): ent.attachData(it)
 
-    ifPresent(ik.fire):
+    ifPresent(ik.fire): ent.attachData(it)
+
+    ifPresent(ik.burrow):
       ent.attachData(it)
+      ent.attachData(Inventory(maximumWeight: 1000000))
+
+    if ik.resources.nonEmpty: createGatherableDataFromYields(world, ent, ik.resources, itemKind)
 
     ent.attachData(Physical(
       region: region,
@@ -400,7 +442,7 @@ proc createItem*(world: LiveWorld, region: Entity, itemKind: Taxon) : Entity =
       blocksLight: ik.blocksLight,
       weight: ik.weight.rollInt(rand).int32,
       images: ik.images,
-      health: vital(ik.health.rollInt(rand)),
+      health: vital(ik.health.rollInt(rand)).withRecoveryTime(ik.healthRecoveryTime),
       createdAt: world[TimeData].currentTime
     ))
 
@@ -422,6 +464,7 @@ proc createCreature*(world: LiveWorld, region: Entity, creatureKind: Taxon) : En
   world.eventStmts(CreatureCreatedEvent(entity: ent, creatureKind: creatureKind)):
     ent.attachData(ck.creature)
     ent.attachData(ck.physical)
+    ent[Physical].dynamic = true
     ent.attachData(ck.flags)
     ent.attachData(ck.combatAbility)
     ent.attachData(Identity(kind: creatureKind))
@@ -432,39 +475,23 @@ proc createCreature*(world: LiveWorld, region: Entity, creatureKind: Taxon) : En
 
   ent
 
-proc createBurrow*(world: LiveWorld, region: Entity, burrowKind: Taxon): Entity =
-  let lib = library(BurrowKind)
-  let arch = lib[burrowKind]
-
-  let ent = world.createEntity()
-  world.eventStmts(BuildingCreatedEvent(entity: ent, buildingKind: burrowKind)):
-    ent.attachData(arch.burrow)
-    ent.attachData(arch.physical)
-    ent.attachData(arch.flags)
-    ent.attachData(Identity(kind: burrowKind))
-    ent.attachData(Inventory())
-
-    addToRegion(world, ent, region)
-
-  ent
-
-proc spawnCreatureFromBurrow*(world: LiveWorld, burrow: Entity) : Entity {.discardable.} =
-  let burrowData = burrow[Burrow]
-  world.eventStmts(BurrowSpawnEvent(burrow: burrow)):
-    # Reset progress since a spawn is now occurring
-    burrowData.spawnProgress = 0.Ticks
-    burrowData.nutrientsGathered = 0
-
-    let phys = burrow[Physical]
-    let creature = createCreature(world, phys.region, burrowData.creatureKind)
-
-    # moveEntityToInventory(world, creature, burrow)
-    placeEntity(world, creature, phys.position)
-
-    creature[CreatureAI].burrow = burrow
-
-    burrowData.creatures.add(creature)
-    result = creature
+# proc createBurrow*(world: LiveWorld, region: Entity, burrowKind: Taxon): Entity =
+#   let lib = library(BurrowKind)
+#   let arch : ref BurrowKind = lib[burrowKind]
+#
+#   let ent = world.createEntity()
+#   world.eventStmts(BuildingCreatedEvent(entity: ent, buildingKind: burrowKind)):
+#     ent.attachData(arch.burrow)
+#     ent.attachData(arch.physical)
+#     ent.attachData(arch.flags)
+#     ent.attachData(Identity(kind: burrowKind))
+#     ent.attachData(Inventory())
+#     if arch.resources.nonEmpty:
+#       createGatherableDataFromYields(world, ent, arch.resources, burrowKind)
+#
+#     addToRegion(world, ent, region)
+#
+#   ent
 
 proc unequipItemFrom*(world: LiveWorld, entity: Entity, item: Entity) =
   let creature = entity[Creature]
@@ -500,7 +527,8 @@ proc placeEntity*(world: LiveWorld, entity: Entity, atPosition: Vec3i, capsuled:
 
   let curEnts = entitiesAt(region[Region], atPosition)
   for ent in curEnts:
-    if ent[Physical].occupiesTile and not ent[Physical].capsuled:
+    let ephys = ent[Physical]
+    if ephys.occupiesTile and not ephys.capsuled and not ephys.destroyed:
       world.addFullEvent(CouldNotPlaceEntityEvent(entity: entity, position: atPosition))
       return false
 
@@ -531,6 +559,30 @@ proc moveEntityToInventory*(world: LiveWorld, item: Entity, toInventory: Entity)
     # entities that are in an inventory shouldn't be tracked in the quadtree
     phys.region[Region].entityQuadTree.remove(phys.position.x, phys.position.y, item)
 
+
+
+
+proc spawnCreatureFromBurrow*(world: LiveWorld, burrow: Entity) : Entity {.discardable.} =
+  let burrowData = burrow[Burrow]
+  world.eventStmts(BurrowSpawnEvent(burrow: burrow)):
+    # Reset progress since a spawn is now occurring
+    burrowData.spawnProgress = 0.Ticks
+    burrowData.nutrientsGathered = 0
+
+    let phys = burrow[Physical]
+    let creature = createCreature(world, phys.region, burrowData.creatureKind)
+
+    moveEntityToInventory(world, creature, burrow)
+    # placeEntity(world, creature, phys.position)
+
+
+    creature[CreatureAI].burrow = burrow
+
+    burrowData.creatures.add(creature)
+    result = creature
+
+
+
 ## Returns true if the entity given can access the item given for the purposes of crafting
 proc canAccessForCrafting*(world: LiveWorld, entity: Entity, item: Entity) : bool =
   # if we're holding the item, we can definitely access it
@@ -549,8 +601,7 @@ proc canAccessForCrafting*(world: LiveWorld, entity: Entity, item: Entity) : boo
   false
 
 proc recursivelyExpandInventoryIncludingSelf(world: LiveWorld, entity: Entity, into : var seq[Entity]) =
-  if entity.hasData(Item):
-    into.add(entity)
+  into.add(entity)
 
   if entity.hasData(Inventory):
     for item in entity[Inventory].items:
@@ -559,13 +610,18 @@ proc recursivelyExpandInventoryIncludingSelf(world: LiveWorld, entity: Entity, i
 proc entitiesAccessibleForCrafting*(world: LiveWorld, actor: Entity): seq[Entity] =
   recursivelyExpandInventoryIncludingSelf(world, actor, result)
 
-  for tile in tilesInRange(world, regionFor(world, actor), actor[Physical].position, CraftingRange):
+  for tile in tilesInRange(world, regionFor(world, actor), effectivePosition(world, actor), CraftingRange):
     for entity in tile.entities:
       if entity != actor:
         recursivelyExpandInventoryIncludingSelf(world, entity, result)
 
-proc entitiesHeldBy*(world: LiveWorld, entity: Entity): seq[Entity] =
+proc entitiesHeldByIncludingSelf*(world: LiveWorld, entity: Entity): seq[Entity] =
   recursivelyExpandInventoryIncludingSelf(world, entity, result)
+
+proc entitiesHeldBy*(world: LiveWorld, entity: Entity): seq[Entity] =
+  if entity.hasData(Inventory):
+      for item in entity[Inventory].items:
+        recursivelyExpandInventoryIncludingSelf(world, item, result)
 
 proc heldBy*(world: LiveWorld, entity: Entity): Option[Entity] =
   let physOpt = entity.dataOpt(Physical)
@@ -599,6 +655,9 @@ proc resourceYieldFor*(world: LiveWorld, target: Target, rsrc: GatherableResourc
   elif rsrc.source.isA(† TileKind):
     let tk = tileKind(rsrc.source)
     tk.resources
+  elif rsrc.source.isA(† Item):
+    let ik = itemKind(rsrc.source)
+    ik.resources
   else:
     warn &"resourceYieldFor(...) called with unsupported resource source: {rsrc.source}"
     @[]
@@ -660,7 +719,8 @@ proc placeEntityWith*(world: LiveWorld, ent: Entity, with: Entity) =
     if with[Physical].heldBy.isSome:
       moveEntityToInventory(world, ent, with[Physical].heldBy.get)
     else:
-      placeEntity(world, ent, with[Physical].position, with[Physical].capsuled)
+      let capsuled = if ent.hasData(Creature): false else: with[Physical].capsuled
+      placeEntity(world, ent, effectivePosition(world, with), capsuled)
   else:
     warn &"Placing entity with another makes no sense if the other is non-physical: {debugIdentifier(world, ent)}, {debugIdentifier(world, with)}"
 
@@ -686,57 +746,56 @@ proc damageEntity*(world: LiveWorld, ent: Entity, damageAmount: int, damageType:
     false
 
 
-proc possibleAttacks*(world: LiveWorld, actor: Entity): Table[Taxon, AttackType] =
+iterator possibleAttacks*(world: LiveWorld, actor: Entity, allowedEquipment: seq[Entity]): PossibleAttack =
   let kind = actor[Identity].kind
   if kind.isA(† Creature):
     let ck = creatureKind(kind)
-    for k,v in ck.innateAttacks:
-      result[k] = v
+    for v in ck.innateAttacks:
+      yield PossibleAttack(attack: v, source: actor)
+
+    for item in allowedEquipment:
+      if item[Item].attack.isSome:
+        yield PossibleAttack(attack: item[Item].attack.get, source: item)
 
 
-proc attack*(world: LiveWorld, actor: Entity, target: Target, attackKindToUse: Option[Taxon] = none(Taxon)) =
-  let attacks = possibleAttacks(world, actor)
-
-  var attackKind : Taxon = UnknownThing
-  var attackType: AttackType
-
-  if attackKindToUse.isSome:
-    let ao = attacks.get(attackKindToUse.get)
-    if ao.isSome:
-      attackKind = attackKindToUse.get
-      attackType = ao.get
+proc attack*(world: LiveWorld, actor: Entity, target: Target, possibleAttack: PossibleAttack) =
+  let attackType = possibleAttack.attack
+  var rand = randomizer(world)
+  if isTileTarget(target):
+    warn &"Attacks on a general tile are not yet supported: {target}"
   else:
-    for k,v in attacks:
-      attackKind = k
-      attackType = v
-      break
+    world.eventStmts(AttackEvent(attacker: actor, target: target, attackType: attackType)):
+      let defaultCombatAbility = new CombatAbility
+      let targetEnt = target.entity
+      let attackerCA = actor.dataOpt(CombatAbility).get(defaultCombatAbility)
+      let targetCA = targetEnt.dataOpt(CombatAbility).get(defaultCombatAbility)
 
-  if attackKind != UnknownThing:
-    var rand = randomizer(world)
-    if isTileTarget(target):
-      warn &"Attacks on a general tile are not yet supported: {target}"
-    else:
-      world.eventStmts(AttackEvent(attacker: actor, target: target, attackKind: attackKind)):
-        let defaultCombatAbility = new CombatAbility
-        let targetEnt = target.entity
-        let attackerCA = actor.dataOpt(CombatAbility).get(defaultCombatAbility)
-        let targetCA = targetEnt.dataOpt(CombatAbility).get(defaultCombatAbility)
+      let isHit = nextFloat(rand) < attackType.accuracy
 
-        let isHit = nextFloat(rand) < attackType.accuracy
+      if isHit:
+        let armor = targetCA.armor.getOrDefault(attackType.damageType, 0)
+        # each point of armor gives a 50% chance to negate a point of damage, so roll `armor`d2 - `armor` to simulate dice with faces [0,1]
+        let damageReducedBy = roll(dicePool(armor,2), rand).total - armor
+        let damage = attackType.damageAmount - damageReducedBy
+        world.eventStmts(AttackHitEvent(attacker: actor, target: target, damage: damage, armorReduction: damageReducedBy, attackType: attackType, damageType: attackType.damageType)):
+          damageEntity(world, targetEnt, damage, attackType.damageType, "attack")
+      else:
+        world.addFullEvent(AttackMissedEvent(attacker: actor, target: target, attackType: attackType))
 
-        if isHit:
-          let armor = targetCA.armor.getOrDefault(attackType.damageType, 0)
-          # each point of armor gives a 50% chance to negate a point of damage, so roll `armor`d2 - `armor` to simulate dice with faces [0,1]
-          let damageReducedBy = roll(dicePool(armor,2), rand).total - armor
-          let damage = attackType.damageAmount - damageReducedBy
-          world.eventStmts(AttackHitEvent(attacker: actor, target: target, damage: damage, armorReduction: damageReducedBy, attackKind: attackKind, damageType: attackType.damageType)):
-            damageEntity(world, targetEnt, damage, attackType.damageType, "attack")
-        else:
-          world.addFullEvent(AttackMissedEvent(attacker: actor, target: target, attackKind: attackKind))
+      advanceCreatureTime(world, actor, attackType.duration)
 
-        advanceCreatureTime(world, actor, attackType.duration)
+proc attack*(world: LiveWorld, actor: Entity, target: Target, allowedEquipment: seq[Entity]) =
+
+  var attackType: Option[PossibleAttack]
+
+  for possibleAttack in possibleAttacks(world, actor, allowedEquipment):
+    attackType = some(possibleAttack)
+    break
+
+  if attackType.isSome:
+    attack(world, actor, target, attackType.get)
   else:
-    warn &"Could not find appropriate attack to use. Available: {attacks}, requested: {attackKindToUse}"
+    warn &"Could not find appropriate attack to use. Available: {toSeq(possibleAttacks(world, actor, allowedEquipment))}, requested: {allowedEquipment}"
 
 
 
@@ -890,7 +949,7 @@ proc interact*(world: LiveWorld, entity: Entity, target: Target, actions: Table[
   let targetPos = positionOf(world, target)
   info &"Target Pos: {targetPos}"
   if entity.hasData(Physical) and targetPos.isSome:
-    let facing = primaryDirectionFrom(entity[Physical].position.xy, targetPos.get().xy)
+    let facing = primaryDirectionFrom( effectivePosition(world, entity).xy, targetPos.get().xy)
     world.eventStmts(FacingChangedEvent(entity: entity, facing: facing)):
       entity[Physical].facing = facing
 
@@ -901,7 +960,7 @@ proc interact*(world: LiveWorld, entity: Entity, target: Target, actions: Table[
 proc facedPosition*(world: LiveWorld, entity: Entity) : Vec3i =
   if entity.hasData(Physical):
     let phys = entity[Physical]
-    phys.position + vector3iFor(phys.facing)
+    effectivePosition(world, phys) + vector3iFor(phys.facing)
   else:
     warn &"facedPosition has no meaning for a non-physical entity"
     vec3i(0,0,0)
@@ -915,33 +974,44 @@ proc interact*(world: LiveWorld, entity: Entity, tools: seq[Entity], target: Tar
 
   addPossibleAction(† Actions.Gather, 1, entity)
 
-  for tool in tools:
-    if tool.hasData(Item):
-      for action, value in tool[Item].actions:
-        addPossibleAction(action, value, tool)
-    elif tool.hasData(Player):
-      addPossibleAction(† Actions.Gather, 1, tool)
-
-  interact(world, entity, target, actions)
-
-proc interactionTargetsAt*(world: LiveWorld, region: Entity, targetPos: Vec3i, skipNonBlocking: bool = false) : seq[Target] =
-  for target in entitiesAt(region[Region], targetPos):
-    let occupiesTile = target[Physical].occupiesTile
-    if not skipNonBlocking or occupiesTile:
-      result.add(Target(kind: TargetKind.Entity, entity: target))
-    if occupiesTile:
-      return
-
-  let tile = tile(region, targetPos.x, targetPos.y, targetPos.z)
-
-  if tile.wallLayers.nonEmpty:
-    result.add(Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Wall, region: region, tilePos: targetPos, index: tile.wallLayers.len - 1))
+  # Todo: non-hostile interactions with creatures
+  if target.kind == TargetKind.Entity and target.entity.hasData(Creature):
+    attack(world, entity, target, tools)
+    true
   else:
-    if not skipNonBlocking:
-      if tile.floorLayers.nonEmpty:
-        result.add(Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Floor, region: region, tilePos: targetPos, index: tile.floorLayers.len - 1))
-      if tile.ceilingLayers.nonEmpty:
-        result.add(Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Ceiling, region: region, tilePos: targetPos, index: tile.ceilingLayers.len - 1))
+    for tool in tools:
+      if tool.hasData(Item):
+        for action, value in tool[Item].actions:
+          addPossibleAction(action, value, tool)
+      elif tool.hasData(Player):
+        addPossibleAction(† Actions.Gather, 1, tool)
+
+    interact(world, entity, target, actions)
+
+iterator interactionTargetsAt*(world: LiveWorld, region: Entity, targetPos: Vec3i, skipNonBlocking: bool = false) : Target =
+  var done = false
+  for target in entitiesAt(region[Region], targetPos):
+    if target.hasData(Creature):
+      yield Target(kind: TargetKind.Entity, entity: target)
+    else:
+      let occupiesTile = target[Physical].occupiesTile
+      if not skipNonBlocking or occupiesTile:
+        yield Target(kind: TargetKind.Entity, entity: target)
+      if occupiesTile:
+        done = true
+        break
+
+  if not done:
+    let tile = tile(region, targetPos.x, targetPos.y, targetPos.z)
+
+    if tile.wallLayers.nonEmpty:
+      yield Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Wall, region: region, tilePos: targetPos, index: tile.wallLayers.len - 1)
+    else:
+      if not skipNonBlocking:
+        if tile.floorLayers.nonEmpty:
+          yield Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Floor, region: region, tilePos: targetPos, index: tile.floorLayers.len - 1)
+        if tile.ceilingLayers.nonEmpty:
+          yield Target(kind: TargetKind.TileLayer, layer: TileLayerKind.Ceiling, region: region, tilePos: targetPos, index: tile.ceilingLayers.len - 1)
 
 ## skipNonBlocking indicates that we only want to interact with entities/tile layers that prevent us from moving
 ## i.e. we're trying to move but if something is in the way we can infer we want to interact with it
@@ -990,7 +1060,7 @@ proc possibleActions*(world: LiveWorld, actor: Entity, considering: Entity) : se
   if isEquippable(world, considering):
     result.add(ActionChoice(target: consideringTarget, action: † Actions.Equip))
   if canIgnite(world, consideringTarget):
-    for heldEnt in entitiesHeldBy(world, actor):
+    for heldEnt in entitiesHeldByIncludingSelf(world, actor):
       if heldEnt.hasData(Item) and heldEnt[Item].actions.hasKey(† Actions.Ignite):
         result.add(ActionChoice(target: consideringTarget, action: † Actions.Ignite, tool: heldEnt))
 
@@ -1362,6 +1432,8 @@ proc destroySurvivalEntity*(world: LiveWorld, ent: Entity, bypassDestructiveCrea
   world.eventStmts(EntityDestroyedEvent(entity: ent)):
     if ent.hasData(Physical):
       let phys = ent[Physical]
+      phys.destroyed = true
+
       if not bypassDestructiveCreation:
         if ent.hasData(Creature):
           ent[Creature].dead = true
@@ -1376,11 +1448,18 @@ proc destroySurvivalEntity*(world: LiveWorld, ent: Entity, bypassDestructiveCrea
             let newItem = createItem(world, phys.region, item.breaksInto.get)
             placeEntityWith(world, newItem, ent)
 
+      if ent.hasData(Inventory):
+        for heldEnt in entitiesHeldBy(world, ent):
+          placeEntityWith(world, heldEnt, ent)
+          if heldEnt.hasData(CreatureAI):
+            let ai = heldEnt[CreatureAI]
+            ai.activeGoal = CreatureGoals.Think
+            ai.tasks.clear()
+
       removeItemFromGroundInternal(world, ent)
       removeItemFromInventoryInternal(world, ent)
       phys.region[Region].entityQuadTree.remove(phys.position.x, phys.position.y, ent)
       phys.region[Region].entities.excl(ent)
-      phys.destroyed = true
     else:
       warn &"No current means of destroying non-physical entity {debugIdentifier(world, ent)}"
 

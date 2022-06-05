@@ -157,6 +157,20 @@ Items {
     }
   }
 
+  SpiderSilk {
+    description: "The webbing of a giant spider"
+    weight: 5-10
+    durability: 12
+    flags {
+      Cordage: 1
+      AnimalProduct: 1
+    }
+
+    image: "survival/graphics/items/animal/spider_silk.png"
+    stackable: true
+
+  }
+
   Branch {
     description: "A branch of a tree, separated by force or chance"
     weight: 400-500
@@ -186,7 +200,7 @@ Items {
   Log {
     description: "A section of the trunk of a tree"
     weight: 2000-2500
-    fuel: 3000
+    fuel: 4000
     durability: 30
     transforms : [
       {
@@ -215,7 +229,7 @@ Items {
   Plank {
     description: "A piece of wood cut into a more readily usable shape"
     weight: 700-800
-    fuel: 1000
+    fuel: 1200
     durability: "+2"
 
     flags {
@@ -232,7 +246,7 @@ Items {
   WoodPole {
     description: "A sturdy wooden pole useful for construction and toolmaking"
     weight: 300-400
-    fuel: 450
+    fuel: 550
     durability: "+2"
 
     flags {
@@ -250,7 +264,7 @@ Items {
   Dowels {
     description: "Small cylindrical pieces of wood used to join pieces of wood or make simple hinges"
     weight: 50-75
-    fuel: 150
+    fuel: 200
     durability: 10
     flags {
       Wood: 1
@@ -272,7 +286,7 @@ Items {
 
   WoodStake {
     weight: 200-300
-    fuel: 200
+    fuel: 250
     durability: 15
     flags {
       Wood: 1
@@ -296,7 +310,7 @@ Items {
 
   WoodShavings {
     weight: 20-30
-    fuel: 100
+    fuel: 150
     durability: 2
     flags {
       Compostable: 1
@@ -370,6 +384,28 @@ Items {
     decay: 7 days
     decaysInto: RottingVegetation
     image: "survival/graphics/items/plants/carrot_root.png"
+    stackable: true
+  }
+
+  RawMeat {
+    weight: 200
+    durability: 15
+
+    flags {
+      Meat: 1
+    }
+
+    food {
+      hunger: 2-3
+      stamina: -1
+      hydration: -1
+      sanity: 0
+    }
+
+    durability : 4
+    decay: 2 days
+    decaysInto: RottingVegetation
+    image: "survival/graphics/items/animal/steak.png"
     stackable: true
   }
 
@@ -463,7 +499,7 @@ Items {
 
   Leaves {
     weight: 10
-    fuel: 75
+    fuel: 150
     durability: 4
     flags: {
       Compostable : 1
@@ -476,7 +512,7 @@ Items {
 
   Vines {
     weight: 50
-    fuel: 200
+    fuel: 300
     durability: 15
     flags: {
       Binding: 1
@@ -594,6 +630,14 @@ Items {
       Cut: 1
     }
 
+    attack {
+      kind: Slash
+      damageType: Slashing
+      damageAmount: 5
+      accuracy: 0.8
+      duration: 1 short action
+    }
+
     image: "survival/graphics/items/tool/axe.png"
 
     recipe {
@@ -650,8 +694,7 @@ Items {
   }
 
   RoughString {
-    weight: 50
-    durability: 10
+    durability: "+2"
     flags {
       Binding: 1
     }
@@ -674,6 +717,26 @@ Items {
     }
 
     stackable: true
+  }
+
+  SilkString {
+    durability: "+5"
+    flags {
+      Binding: 2
+    }
+    image: "survival/graphics/items/material/silk_string.png"
+
+    recipe {
+      name: "braid string"
+      recipeTemplate: Combine
+      specializationOf: Recipes.RoughString
+      ingredients {
+        Ingredient: [
+          Items.SpiderSilk,
+          Items.SpiderSilk
+        ]
+      }
+    }
   }
 
   Ash {
@@ -699,7 +762,7 @@ Items {
     }
 
     fire {
-      fuelRemaining: 1500
+      fuelRemaining: 2500
       durabilityLossTime: 100
       consumedWhenFuelExhausted: true
       activeImages: "survival/graphics/items/lights/torch_lit.png"

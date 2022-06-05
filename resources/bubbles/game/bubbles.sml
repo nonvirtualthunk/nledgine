@@ -51,7 +51,7 @@ Bubbles {
     color: Red
     secondaryColors: [Blue]
     modifiers: [Chain]
-    onPopEffects: [attack(2), block(2)]
+    onPopEffects: [[attack, 2, no block loss], block(2)]
   }
   Footwork {
     name: "Footwork"
@@ -79,7 +79,7 @@ Bubbles {
     rarity: Common
     maxNumber: 4
     color: Red
-    onPopEffects: [attack(6), attack(6)]
+    onPopEffects: [attack(3), attack(3)]
   }
   Stalwart {
     name: "Stalwart"
@@ -91,7 +91,7 @@ Bubbles {
     onPopEffects: [block(3)]
     onCollideEffects: [{
       effects: [block(1)]
-      conditions: MatchingColor
+      conditions: []
     }]
   }
 
@@ -112,5 +112,32 @@ Bubbles {
     image: "wound.png"
     maxNumber: 2
     color: Grey
+  }
+
+  Poison {
+    name: "Poison"
+    image: "poison.png"
+    maxNumber: 3
+    color: Grey
+    secondaryColors: [Red]
+    modifiers: [Exhaust]
+    onCollideEffects: [{
+      effects: [loseHealth(1)]
+      conditions: [MatchingColor]
+    }]
+  }
+
+  Bomb {
+    name: "Bomb"
+    image: "bomb.png"
+    duration: 6
+    maxNumber: 3
+    color: Grey
+    secondaryColors: [Blue]
+    modifiers: [Selfish, Exhaust]
+    onPopEffects: [{
+      conditions: [FromDuration]
+      effects: [takeDamage(10)]
+    }]
   }
 }

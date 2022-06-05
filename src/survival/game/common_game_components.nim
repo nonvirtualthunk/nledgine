@@ -10,6 +10,7 @@ import survival_core
 import logic
 import game/flags
 import sets
+import tables
 
 type
   CreatureComponent* = ref object of LiveGameComponent
@@ -21,18 +22,33 @@ type
     lastUpdatedTick*: Ticks
 
 
+  UpdateTrackingData* = object
+    lastUpdatedTick*: Table[string, Ticks]
+
+defineReflection(UpdateTrackingData)
+
+
+
+proc lastUpdatedTick*(world: LiveWorld, key: string): Ticks =
+  world[UpdateTrackingData].lastUpdatedTick.getOrDefault(key, world[TimeData].initializedTime)
+
+proc setLastUpdatedTick*(world: LiveWorld, key: string, tick: Ticks) =
+  world[UpdateTrackingData].lastUpdatedTick[key] = tick
+
 # /+============================================+\
 # ||               Fire Component               ||
 # \+============================================+/
 
 method initialize(g: FireComponent, world: LiveWorld) =
   g.name = "FireComponent"
+  world.attachData(UpdateTrackingData())
 
 method onEvent(g: FireComponent, world: LiveWorld, event: Event) =
-  matcher(event):
+  postMatcher(event):
     extract(WorldAdvancedEvent, tick):
-      let startTime = g.lastUpdatedTick
-      let dt = (tick - g.lastUpdatedTick).int
+      let startTime = lastUpdatedTick(world, "fire")
+      let dt = (tick - startTime).int
+      echo &"Tick: {tick}, startTime: {startTime}, dt: {dt}, init time: {world[TimeData].initializedTime}"
       for ent in world.entitiesWithData(Fire):
         if not isSurvivalEntityDestroyed(world, ent):
           let fire = ent[Fire]
@@ -64,7 +80,7 @@ method onEvent(g: FireComponent, world: LiveWorld, event: Event) =
                 ent[Flags].flags[† Flags.Fire] = 0
                 if fire.consumedWhenFuelExhausted:
                   destroySurvivalEntity(world, ent)
-        g.lastUpdatedTick = tick
+        setLastUpdatedTick(world, "fire", tick)
 
 
 
@@ -146,9 +162,12 @@ method onEvent(g: PhysicalComponent, world: LiveWorld, event: Event) =
             if updateEntity(g, world, ent, tick):
               g.toUpdate.incl(ent)
         else:
+          var toRemoveFromUpdate: HashSet[Entity]
           for ent in g.toUpdate:
             if not updateEntity(g, world, ent, tick):
-              g.toUpdate.excl(ent)
+              toRemoveFromUpdate.incl(ent)
+          for ent in toRemoveFromUpdate:
+            g.toUpdate.excl(ent)
 
         g.lastUpdatedTick = tick
       extract(DamageTakenEvent, entity):
@@ -173,6 +192,8 @@ method update(g: BurrowComponent, world: LiveWorld) =
   discard
 
 proc updateEntity(g: BurrowComponent, world: LiveWorld, burrow: Entity, currentTime: Ticks) =
+  if isSurvivalEntityDestroyed(world, burrow): return
+
   let burrowData = burrow[Burrow]
   # If we haven't reached max population for this burrow yet, check to see if more creatures spawn
   if burrowData.creatures.len < burrowData.maxPopulation:

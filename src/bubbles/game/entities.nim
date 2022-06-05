@@ -68,6 +68,7 @@ type
   Bubble* = object
     name*: string
     image*: Image
+    duration*: Reduceable[int]
     numeralColor*: RGBA
     archetype*: Taxon
     position*: Vec2f
@@ -81,7 +82,7 @@ type
     modifiers*: seq[BubbleMod]
     bounceCount*: int
     lastHitWall*: Option[Wall]
-    onPopEffects*: seq[PlayerEffect]
+    onPopEffects*: seq[OnPopEffect]
     onCollideEffects*: seq[OnCollideEffect]
     onFireEffects*: seq[PlayerEffect]
     inPlayPlayerMods*: seq[CombatantMod]
@@ -96,13 +97,14 @@ type
   BubbleArchetype* = object
     name*: string
     image*: Image
+    duration*: Reduceable[int]
     numeralColor*: RGBA
     rarity*: Rarity
     maxNumber*: int
     color*: BubbleColor
     secondaryColors*: seq[BubbleColor]
     modifiers*: seq[BubbleMod]
-    onPopEffects*: seq[PlayerEffect]
+    onPopEffects*: seq[OnPopEffect]
     inPlayPlayerMods*: seq[CombatantMod]
     onCollideEffects*: seq[OnCollideEffect]
     onFireEffects*: seq[PlayerEffect]
@@ -121,7 +123,7 @@ type
     progress*: int
     progressRequired*: Option[int]
     level*: int
-    enemy*: Entity
+    enemies*: seq[Entity]
     fired*: seq[Entity]
 
   StageDescription* = object
@@ -166,6 +168,8 @@ type
     Mod
     EnemyMod
     Bubble
+    LoseHealth
+    TakeDamage
 
   BubblePlacement* {.pure.} = enum
     Random
@@ -177,13 +181,23 @@ type
   PlayerEffect* = object
     amount*: int
     case kind*: PlayerEffectKind:
-      of PlayerEffectKind.Attack, PlayerEffectKind.Block: discard
+      of PlayerEffectKind.Attack:
+        noBlockLoss*: bool
+      of PlayerEffectKind.Block, PlayerEffectKind.LoseHealth, PlayerEffectKind.TakeDamage:
+        discard
       of PlayerEffectKind.Mod, PlayerEffectKind.EnemyMod:
         modifier*: CombatantMod
       of PlayerEffectKind.Bubble:
         bubbleArchetype*: Taxon
         bubblePlacement*: BubblePlacement
 
+  PopCondition* {.pure.} = enum
+    FromCollision
+    FromDuration
+
+  OnPopEffect* = object
+    effects*: seq[PlayerEffect]
+    conditions*: seq[PopCondition]
 
   Player* = object
     bubbles*: seq[Entity]
@@ -193,6 +207,7 @@ type
     actionProgressRequired*: Table[PlayerActionKind, int]
     effects*: Table[PlayerActionKind, seq[PlayerEffect]]
     playArea*: Rectf
+    seenEnemyGroups*: HashSet[Taxon]
 
 
   Cannon* = object
@@ -212,6 +227,13 @@ type
   Enemy* = object
     intents*: seq[Intent]
     activeIntent*: Intent
+
+  EnemyGroupEntry* = object
+    possibleEnemyKinds*: seq[Taxon]
+
+  EnemyGroup* = object
+    enemies*: seq[EnemyGroupEntry]
+    difficulty*: int
 
   EnemyArchetype* = object
     enemyData*: Enemy
@@ -268,7 +290,15 @@ type
     damage*: int
     blockedDamage*: int
 
+  HealthLostEvent* = ref object of CharacterEvent
+    entity*: Entity
+    amount*: int
+
   BlockGainedEvent* = ref object of CharacterEvent
+    entity*: Entity
+    blockAmount*: int
+
+  BlockLostEvent* = ref object of CharacterEvent
     entity*: Entity
     blockAmount*: int
 
@@ -306,6 +336,7 @@ eventToStr(WallCollisionEvent)
 eventToStr(BubblePlacedEvent)
 eventToStr(BubbleAddedToMagazineEvent)
 eventToStr(BubbleFiredEvent)
+eventToStr(BlockLostEvent)
 
 
 proc rgba*(color: BubbleColor) : RGBA =
@@ -422,6 +453,8 @@ proc icon*(eff: PlayerEffect): Image =
     of PlayerEffectKind.EnemyMod: image("bubbles/images/icons/debuff.png")
     of PlayerEffectKind.Mod: image("bubbles/images/icons/buff.png")
     of PlayerEffectKind.Bubble: image("bubbles/images/icons/bad_bubble.png")
+    of PlayerEffectKind.LoseHealth: image("bubbles/images/icons/debuff.png")
+    of PlayerEffectKind.TakeDamage: image("bubbles/images/icons/debuff.png")
 
 proc icon*(intent: Intent): Image =
   # TODO: multiple icons
@@ -437,6 +470,8 @@ proc color*(intent: Intent): RGBA =
       of PlayerEffectKind.EnemyMod: rgba(0.1, 0.75, 0.2, 1.0)
       of PlayerEffectKind.Mod: rgba(0.2, 0.3, 0.8, 1.0)
       of PlayerEffectKind.Bubble: rgba(0.7, 0.7, 0.7, 1.0)
+      of PlayerEffectKind.LoseHealth: rgba(0.75, 0.15, 0.2, 1.0)
+      of PlayerEffectKind.TakeDamage: rgba(0.75, 0.15, 0.2, 1.0)
 
 proc text*(intent: Intent): string =
   for eff in intent.effects:
@@ -446,6 +481,8 @@ proc text*(intent: Intent): string =
       of PlayerEffectKind.EnemyMod: ""
       of PlayerEffectKind.Mod: ""
       of PlayerEffectKind.Bubble: ""
+      of PlayerEffectKind.LoseHealth: $eff.amount
+      of PlayerEffectKind.TakeDamage: $eff.amount
     if tmp.nonEmpty:
       if result.nonEmpty:
         result.add("/")
@@ -491,6 +528,9 @@ proc readFromConfig*(cv: ConfigValue, v: var BubbleModKind) =
 proc readFromConfig*(cv: ConfigValue, v: var CollisionCondition) =
   v = parseEnum[CollisionCondition](cv.asStr)
 
+proc readFromConfig*(cv: ConfigValue, v: var PopCondition) =
+  v = parseEnum[PopCondition](cv.asStr)
+
 proc readFromConfig*(cv: ConfigValue, v: var Rarity) =
   v = parseEnum[Rarity](cv.asStr)
 
@@ -531,6 +571,8 @@ proc readFromConfig*(cv: ConfigValue, a: var CombatantMod) =
 
 const AttackRE = re"(?i)attack\s?\(([0-9]+)\)"
 const BlockRE = re"(?i)block\s?\(([0-9]+)\)"
+const LoseHealthRE = re"(?i)lose\s?Health\s?\(([0-9]+)\)"
+const TakeDamageRE = re"(?i)take\s?Damage\s?\(([0-9]+)\)"
 proc readFromConfig*(cv: ConfigValue, a: var PlayerEffect) =
   if cv.isStr:
     matcher(cv.asStr):
@@ -538,6 +580,10 @@ proc readFromConfig*(cv: ConfigValue, a: var PlayerEffect) =
         a = PlayerEffect(kind: PlayerEffectKind.Attack, amount: parseInt(num))
       extractMatches(BlockRE, num):
         a = PlayerEffect(kind: PlayerEffectKind.Block, amount: parseInt(num))
+      extractMatches(LoseHealthRE, num):
+        a = PlayerEffect(kind: PlayerEffectKind.LoseHealth, amount: parseInt(num))
+      extractMatches(TakeDamageRE, num):
+        a = PlayerEffect(kind: PlayerEffectKind.TakeDamage, amount: parseInt(num))
       a = PlayerEffect(kind: PlayerEffectKind.Mod, modifier: readInto(cv, CombatantMod))
   elif cv.isArr:
     let sections = cv.asArr
@@ -559,6 +605,17 @@ proc readFromConfig*(cv: ConfigValue, a: var PlayerEffect) =
           let bubbleArch = taxon("bubbles", sections[1].asStr)
           let bubblePlacement = sections[2].readInto(BubblePlacement)
           a = PlayerEffect(kind: PlayerEffectKind.Bubble, bubbleArchetype: bubbleArch, bubblePlacement: bubblePlacement)
+        of "attack":
+          let damageAmount = sections[1].asInt
+          var noBlockLoss = false
+          for i in 2 ..< sections.len:
+            case sections[i].asStr.toLowerAscii:
+              of "no block loss": noBlockLoss = true
+              else: warn &"Invalid modifier to attack: {sections[i]}"
+          a = PlayerEffect(kind: PlayerEffectKind.Attack, amount: damageAmount, noBlockLoss: noBlockLoss)
+        of "losehealth":
+          let amount = sections[1].asInt
+          a = PlayerEffect(kind: PlayerEffectKind.LoseHealth, amount: amount)
         else: warn &"Invalid effect kind for arr based config: {sections}"
     else:
       warn &"Array based PlayerEffect must have > 0 sections"
@@ -573,6 +630,22 @@ proc readFromConfig*(cv: ConfigValue, e: var OnCollideEffect) =
     cv["condition"].readInto(e.conditions)
   else:
     cv["conditions"].readInto(e.conditions)
+
+proc readFromConfig*(cv: ConfigValue, e: var OnPopEffect) =
+  if cv.isStr:
+    e.effects = @[cv.readInto(PlayerEffect)]
+  elif cv.isArr:
+    e.effects = @[cv.readInto(PlayerEffect)]
+  else:
+    if cv["effect"].nonEmpty:
+      cv["effect"].readInto(e.effects)
+    else:
+      cv["effects"].readInto(e.effects)
+
+    if cv["condition"].nonEmpty:
+      cv["condition"].readInto(e.conditions)
+    else:
+      cv["conditions"].readInto(e.conditions)
 
 
 
@@ -594,6 +667,7 @@ proc readFromConfig*(cv: ConfigValue, a: var BubbleArchetype) =
   cv["onFireEffects"].readInto(a.onFireEffects)
   cv["inPlayPlayerMods"].readInto(a.inPlayPlayerMods)
   cv["onCollideEffects"].readInto(a.onCollideEffects)
+  cv["duration"].readInto(a.duration)
 
 
 proc readFromConfig*(cv: ConfigValue, e: var Combatant) =
@@ -613,10 +687,20 @@ proc readFromConfig*(cv: ConfigValue, e: var EnemyArchetype) =
   cv.readInto(e.enemyData)
   cv.readInto(e.combatantData)
 
+proc readFromConfig*(cv: ConfigValue, e: var EnemyGroupEntry) =
+  if cv.isStr:
+    e.possibleEnemyKinds = @[taxon("Enemies", cv.asStr)]
+  elif cv.isArr:
+    for sv in cv.asArr:
+      e.possibleEnemyKinds.add(taxon("Enemies", sv.asStr))
+
+defineSimpleReadFromConfig(EnemyGroup)
+
 
 
 defineSimpleLibrary[BubbleArchetype]("bubbles/game/bubbles.sml", "Bubbles")
 defineSimpleLibrary[EnemyArchetype]("bubbles/game/enemies.sml", "Enemies")
+defineSimpleLibrary[EnemyGroup]("bubbles/game/enemy_groups.sml", "EnemyGroups")
 
 info "=============================================="
 

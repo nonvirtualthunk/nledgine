@@ -10,5 +10,7 @@ Attacks {
   Bite {
     isA: NaturalAttack
   }
+  Slash {
 
+  }
 }

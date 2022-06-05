@@ -46,7 +46,7 @@ proc `*`*(a: Ticks16, b: int) : Ticks16 = (a.int * b).Ticks16
 
 converter toTicksFull*(t: Ticks16) : Ticks = Ticks(t.int16.int)
 
-const ticksRe = "([+-]?[0-9]+\\.?[0-9]?)\\s*([a-zA-Z ]+)?".re
+const ticksRe = "([+-]?[0-9]+\\.?[0-9]*)\\s*([a-zA-Z ]+)?".re
 const ticksPerRe = "([+-]?[0-9]+\\.?[0-9]?)\\s*per\\s*([a-zA-Z ]+)".re
 
 const TicksPerDay* = 12000
@@ -112,6 +112,7 @@ proc readFromConfig*(cv: ConfigValue, ticks: var Ticks) =
 
 type
   TimeData* = object
+    initializedTime*: Ticks
     currentTime*: Ticks
 
   Path* = object
@@ -120,3 +121,7 @@ type
     stepCosts*: seq[int]
 
 defineReflection(TimeData)
+
+
+proc initialized*(t: ref TimeData) =
+  t.initializedTime = t.currentTime

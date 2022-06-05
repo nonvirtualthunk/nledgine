@@ -51,6 +51,23 @@ type
     frameCount*: int
     secondsPerFrame*: float
 
+  GraphicalModKind* {.pure.} = enum
+    Offset
+    Tint
+    Texture
+
+  GraphicalMod* = object
+    case kind*: GraphicalModKind:
+      of GraphicalModKind.Offset:
+        offset*: Vec3f
+      of GraphicalModKind.Tint:
+        tint*: RGBA
+      of GraphicalModKind.Texture:
+        texture*: ImageRef
+
+  AnimationData* = object
+
+
 
 
 eventToStr(CancelContext)

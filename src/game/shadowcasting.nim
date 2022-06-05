@@ -42,6 +42,12 @@ func atWorldCoord*[D: static[int]](g: ShadowGrid[D], wx: int, wy: int, ox: int, 
   let dy = wy - oy
   g[dx * resolution + sx, dy * resolution + sy]
 
+func atRelativeWorldCoord*[D: static[int]](g: ShadowGrid[D], dx: int, dy: int, sx: int, sy: int, resolution: int) : uint8 =
+  g[dx * resolution + sx, dy * resolution + sy]
+
+func atRelativeWorldCoord*[D: static[int]](g: ref ShadowGrid[D], dx: int, dy: int, sx: int, sy: int, resolution: int) : uint8 =
+  g[dx * resolution + sx, dy * resolution + sy]
+
 proc reset*[D: static[int]](g : var ShadowGrid[D]) =
   zeroMem(g.grid[0].addr, (D*2+1) * (D*2+1))
   # discard

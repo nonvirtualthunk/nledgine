@@ -233,20 +233,20 @@ proc message*(world: LiveWorld, evt: Event, activeEventStack: seq[Event]): Optio
     extract(DamageTakenEvent, entity, damageTaken, damageType, source, reason):
       if entity == player and not anyOfType(activeEventStack, AttackHitEvent): # attack events handle this themselves
         result = some(richText(&"You take {damageTaken} {damageType} damage"))
-    extract(AttackHitEvent, attacker, target, attackKind, damage, damageType):
+    extract(AttackHitEvent, attacker, target, attackType, damage, damageType):
       if attacker == player:
         let enemyKind = targetToTaxon(world, target)
 
-        result = some(richText(&"You {attackKind} the {enemyKind} for {damage} {damageType} damage"))
+        result = some(richText(&"You {attackType.kind} the {enemyKind} for {damage} {damageType} damage"))
       elif isEntityTarget(target) and target.entity == player:
         let attackerKind = attacker[Identity].kind
 
-        result = some(richText(&"The {attackerKind} {attackKind} you for {damage} {damageType} damage"))
-    extract(AttackMissedEvent, attacker, target, attackKind):
+        result = some(richText(&"The {attackerKind} {attackType.kind} you for {damage} {damageType} damage"))
+    extract(AttackMissedEvent, attacker, target, attackType):
       if attacker == player:
-        result = some(richText(&"(You attempt to {attackKind} the {targetToTaxon(world, target)} but you miss"))
+        result = some(richText(&"(You attempt to {attackType.kind} the {targetToTaxon(world, target)} but you miss"))
       elif isEntityTarget(target) and target.entity == player:
-        result = some(richText(&"The {entityKind(world, attacker)} attempst to {attackKind} you but misses"))
+        result = some(richText(&"The {entityKind(world, attacker)} attempst to {attackType.kind} you but misses"))
 
 
 

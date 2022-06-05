@@ -99,19 +99,19 @@ type
   AttackEvent* = ref object of GameEvent
     attacker*: Entity
     target*: Target
-    attackKind*: Taxon
+    attackType*: AttackType
 
   AttackHitEvent* = ref object of GameEvent
     attacker*: Entity
     target*: Target
-    attackKind*: Taxon
+    attackType*: AttackType
     damage*: int
     damageType*: Taxon
     armorReduction*: int
 
   AttackMissedEvent* = ref object of GameEvent
     attacker*: Entity
-    attackKind*: Taxon
+    attackType*: AttackType
     target*: Target
 
 

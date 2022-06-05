@@ -67,6 +67,10 @@ proc recoverBy*[T](r: var Reduceable[T], delta: T) =
   if r.reducedBy < 0:
     r.reducedBy = 0
 
+proc recoverToFull*[T](r: var Reduceable[T]) =
+  r.reducedBy = 0
+
+
 proc changeMaxBy*[T](r: var Reduceable[T], v: T) =
   r.max += v
 

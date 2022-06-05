@@ -267,11 +267,11 @@ proc craft(cm: CraftingMenu, world: LiveWorld) =
 
 
 proc toggle*(cm: CraftingMenu, world: LiveWorld) =
-  cm.widget.showing = bindable(not cm.widget.showing.value)
+  cm.widget.showing = bindable(not cm.widget.showing)
   cm.needsUpdate = true
 
 proc showing*(cm: CraftingMenu): bool =
-  cm.widget.showing.value
+  cm.widget.showing
 
 proc hide*(cm: CraftingMenu) =
   cm.widget.showing = bindable(false)
@@ -331,6 +331,6 @@ proc onEvent*(cm: CraftingMenu, world: LiveWorld, display: DisplayWorld, event: 
 
 
 proc update*(cm: CraftingMenu, world: LiveWorld) =
-  if cm.needsUpdate and cm.widget.showing.value:
+  if cm.needsUpdate and cm.widget.showing:
     updateRecipeSlotSelections(cm, world)
     cm.needsUpdate = false

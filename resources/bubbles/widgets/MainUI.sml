@@ -88,79 +88,23 @@ MainUI {
           x: 0
           y: 0
           width: expandToParent
-          height: 300
+          height: 75%
           padding: [5,5]
 
           children {
-            EnemySection {
-              type: Div
+            EnemiesList {
+              type: ListWidget
+              background.draw = false
+
               showing: "%(enemy.showing)"
               width: 100%
               height: 100%
 
-              children {
-                EnemyName {
-                  type: TextDisplay
-                  text: "%(enemy.name)"
-                  fontSize: 20
-                  horizontalAlignment: center
-                  width: 100%
-                }
-                EnemyImage {
-                  type: ImageDisplay
-                  image: "%(enemy.image)"
-                  scale: scale(6)
-                  x: centered
-                  y: 0 below EnemyName
-                }
-                EnemyIntent {
-                  type: Div
-                  x: 0 from Right
-                  y: 0 below EnemyName
-                  width: WrapContent
-                  height: WrapContent
-                  children {
-                    IntentDisplay: ${LabeledNumber} {
-                      children.ImageLabel.image: "%(enemy.intentIcon)"
-                      children.NumberDisplay.text: "%(enemy.intentText)"
-                      children.NumberDisplay.textColor: "%(enemy.intentColor)"
-                    }
-                    IntentTimeDisplay: ${LabeledNumber} {
-                      y: 0 below IntentDisplay
-                      children.ImageLabel.image: "bubbles/images/icons/time.png"
-                      children.NumberDisplay.text: "%(enemy.intentTime)"
-                      children.NumberDisplay.textColor: [0.9,0.9,0.9,1.0]
-                    }
-                  }
-                }
-                EnemyHealthBar: ${LabeledBar} {
-                  x: 0
-                  y: 15 below EnemyImage
-                  children.BarImageLabel.image: "bubbles/images/icons/health_2.png"
-                  children.Bar {
-                    currentValue: "%(enemy.health)"
-                    maxValue: "%(enemy.maxHealth)"
-                    fill.color: [0.75, 0.15, 0.2, 1.0]
-                    fill.edgeColor: [0.75, 0.15, 0.2, 1.0]
-                  }
-                }
-                EnemyBlock: ${LabeledNumber} {
-                  x: 5 right of EnemyHealthBar
-                  y: match EnemyHealthBar
-                  showing: "%(enemy.blockShowing)"
-
-                  children {
-                    ImageLabel {
-                      image: "bubbles/images/icons/block.png"
-                    }
-                    NumberDisplay {
-                      text: "%(enemy.block)"
-                      textColor: [0.2, 0.1, 0.75, 1.0]
-                    }
-                  }
-                }
-              }
+              listItemArchetype: "MainUI.EnemySection"
+              listItemBinding: "enemies -> enemy"
+              gapSize: 10
             }
+
           }
         }
         CharacterScreen {
@@ -168,7 +112,7 @@ MainUI {
           background.image: ui/buttonBackground.png
           x: 0
           y: 0 below BattleScreen
-          width: expandToParent
+          width: 100%
           height: expandToParent
           padding: [5,5]
 
@@ -183,7 +127,7 @@ MainUI {
             PlayerImage {
               type: ImageDisplay
               image: "%(playerImage)"
-              scale: scale(6)
+              scale: scale(4)
               x: centered
               y: 0 below PlayerName
             }
@@ -259,6 +203,92 @@ ModifierWidget {
       background.draw: false
       x: -3 right of ModifierImage
       y: -8 below ModifierImage
+    }
+  }
+}
+
+
+
+
+
+EnemySection {
+  type: Div
+  width: 100%
+  height: WrapContent
+
+  children {
+    EnemyName {
+      type: TextDisplay
+      text: "%(enemy.name)"
+      fontSize: 20
+      horizontalAlignment: center
+      width: 100%
+    }
+    EnemyImage {
+      type: ImageDisplay
+      image: "%(enemy.image)"
+      scale: scale(4)
+      x: centered
+      y: 0 below EnemyName
+    }
+    EnemyModifiersDisplay {
+      type: ListWidget
+      y: 15 below EnemyImage
+      width: WrapContent
+      height: WrapContent
+      x: centered
+      horizontal: true
+      selectable: false
+
+      listItemArchetype: MainUI.ModifierWidget
+      listItemBinding: "enemy.modifiers -> modifier"
+      gapSize: 0
+    }
+    EnemyIntent {
+      type: Div
+      x: 0 from Right
+      y: 0 below EnemyName
+      width: WrapContent
+      height: WrapContent
+      children {
+        IntentDisplay: ${LabeledNumber} {
+          children.ImageLabel.image: "%(enemy.intentIcon)"
+          children.NumberDisplay.text: "%(enemy.intentText)"
+          children.NumberDisplay.textColor: "%(enemy.intentColor)"
+        }
+        IntentTimeDisplay: ${LabeledNumber} {
+          y: 0 below IntentDisplay
+          children.ImageLabel.image: "bubbles/images/icons/time.png"
+          children.NumberDisplay.text: "%(enemy.intentTime)"
+          children.NumberDisplay.textColor: [0.9,0.9,0.9,1.0]
+        }
+      }
+    }
+    EnemyHealthBar: ${LabeledBar} {
+      x: 0
+      y: 15 below EnemyModifiersDisplay
+      children.BarImageLabel.image: "bubbles/images/icons/health_2.png"
+      children.Bar {
+        currentValue: "%(enemy.health)"
+        maxValue: "%(enemy.maxHealth)"
+        fill.color: [0.75, 0.15, 0.2, 1.0]
+        fill.edgeColor: [0.75, 0.15, 0.2, 1.0]
+      }
+    }
+    EnemyBlock: ${LabeledNumber} {
+      x: 5 right of EnemyHealthBar
+      y: match EnemyHealthBar
+      showing: "%(enemy.blockShowing)"
+
+      children {
+        ImageLabel {
+          image: "bubbles/images/icons/block.png"
+        }
+        NumberDisplay {
+          text: "%(enemy.block)"
+          textColor: [0.2, 0.1, 0.75, 1.0]
+        }
+      }
     }
   }
 }

@@ -34,6 +34,7 @@ type
     components: seq[GameComponent]
     eventBus: EventBus
     world*: World
+    initialized: bool
 
   LiveGameComponent* = ref object of RootRef
     name*: string
@@ -48,6 +49,7 @@ type
     components: seq[LiveGameComponent]
     eventBus: EventBus
     world*: LiveWorld
+    initialized: bool
 
 
 
@@ -183,19 +185,23 @@ proc processEvents(ge: GameEngine) =
           callback(ge.world, evt)
 
 proc processEvents(ge: LiveGameEngine) =
-  for evt in ge.eventBus.newEvents:
-    for comp in ge.components:
-      comp.componentTimers.eventTimer.time(0.01, evt.toString):
-        comp.onEvent(ge.world, evt)
-        for callback in comp.eventCallbacks:
-          callback(ge.world, evt)
+  if ge.initialized:
+    for evt in ge.eventBus.newEvents:
+      for comp in ge.components:
+        comp.componentTimers.eventTimer.time(0.01, evt.toString):
+          comp.onEvent(ge.world, evt)
+          for callback in comp.eventCallbacks:
+            callback(ge.world, evt)
 
 proc initialize*(ge: GameEngine) =
-  ge.components = ge.components.sortedByIt(it.initializePriority * -1)
-  for comp in ge.components:
-    comp.initialize(ge.world)
-    comp.componentTimers.init(comp.name)
-  ge.components = ge.components.sortedByIt(it.eventPriority * -1)
+  if ge.initialized:
+    ge.components = ge.components.sortedByIt(it.initializePriority * -1)
+    for comp in ge.components:
+      comp.initialize(ge.world)
+      comp.componentTimers.init(comp.name)
+    ge.components = ge.components.sortedByIt(it.eventPriority * -1)
+    ge.initialized = true
+    ge.processEvents()
 
 proc initialize*(ge: LiveGameEngine) =
   ge.components = ge.components.sortedByIt(it.initializePriority * -1)
@@ -203,6 +209,8 @@ proc initialize*(ge: LiveGameEngine) =
     comp.initialize(ge.world)
     comp.componentTimers.init(comp.name)
   ge.components = ge.components.sortedByIt(it.eventPriority * -1)
+  ge.initialized = true
+  ge.processEvents()
 
 
 

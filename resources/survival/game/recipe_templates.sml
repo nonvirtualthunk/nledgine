@@ -118,6 +118,9 @@ RecipeTemplates {
         distinct: true
       }
     }
+
+    weightContribution: 1.0
+    durabilityContribution: 1.25
   }
 
   Smash: ${BaseTemplate} {

@@ -22,7 +22,7 @@ const VisionResolution* = 2
 const ShadowResolution* = 2
 const LocalLightRadius* = 64
 const LocalLightRadiusWorldResolution* = 64 div ShadowResolution
-
+const PlayerVisionSize* = 64
 
 type
   TileLayerKind* {.pure.} = enum
@@ -104,7 +104,7 @@ type
     occupiesTile*: bool
     # whether or not this entity blocks the passage of light
     blocksLight*: bool
-    # whether or not this entity moves of its own accord
+    # whether or not this entity changes of its own accord
     dynamic*: bool
     # whether this entity has been destroyed
     destroyed*: bool
@@ -132,8 +132,6 @@ type
     hunger*: Vital
     # how sane the creature is
     sanity*: Vital
-    # how many ticks before losing a point of hunger
-    hungerLossTime*: Option[Ticks]
     # whether or not the creature has died
     dead*: bool
     # raw physical strength, applies to physical attacks, carrying, pushing, etc
@@ -154,7 +152,7 @@ type
 
   Player* = object
     quickSlots*: array[10, Entity]
-    vision*: ref ShadowGrid[64]
+    vision*: ref ShadowGrid[PlayerVisionSize]
 
   Plant* = object
     # current stage of growth (budding, vegetative growth, flowering, etc)
@@ -222,6 +220,7 @@ type
     creature*: Creature
     flags*: Flags
     combatAbility*: CombatAbility
+    corpse*: Option[Taxon]
 
     actionImages*: Table[Taxon, ImageLike]
 
@@ -250,7 +249,7 @@ type
     # animals with claws might be able to cut, rabbits can dig, etc)
     innateActions*: Table[Taxon, int]
     # attacks that the creature can perform inherently, without any equipment
-    innateAttacks*: Table[Taxon, AttackType]
+    innateAttacks*: seq[AttackType]
 
 
   PlantGrowthStageInfo* = object
@@ -289,6 +288,9 @@ type
     # actions that this item can be used for
     actions*: Table[Taxon, int]
 
+    # attack that can be made with this item, if applicable
+    attack*: Option[AttackType]
+
 
   Inventory* = object
     # the maximum amount of weight that can be stored in this inventory
@@ -310,6 +312,7 @@ type
     decaysInto*: Option[Taxon]
     weight*: DiceExpression
     health*: DiceExpression
+    healthRecoveryTime*: Ticks
     images*: seq[ImageRef]
     occupiesTile*: bool
     blocksLight*: bool
@@ -318,10 +321,13 @@ type
     light*: Option[LightSource]
     food*: Option[FoodKind]
     fire*: Option[Fire]
+    burrow*: Option[Burrow]
+    resources*: seq[ResourceYield]
     # Whether individual items of this kind are sufficiently interchangeable that they
     # can be "stacked" when displayed rather than showing each individually
     stackable*: bool
     actions*: Table[Taxon, int]
+    attack*: Option[AttackType]
 
 
   ActionKind* = object
@@ -478,8 +484,9 @@ type
     # what creatures are currently active from this burrow (dead ones should be pruned periodically, but may be in the list at some times)
     # The inventory of the burrow is what is used to show what animals are actually literally inside the burrow at any point
     creatures* {.noAutoLoad.} : seq[Entity]
-    # what can be used to destroy this burrow (i.e. dig up a rabbit burrow, chop up a beaver den)
-    canDestroyWith*: seq[Taxon]
+    # # what can be used to destroy this burrow (i.e. dig up a rabbit burrow, chop up a beaver den)
+    # Disabled in favor of treating it like a normal destructive resource gathering
+    # canDestroyWith*: seq[Taxon]
 
   CreatureTaskKind* {.pure.} = enum
     MoveTo
@@ -506,6 +513,7 @@ type
 
   CreatureTaskResult* = object
     kind*: CreatureTaskResultKind
+    reason*: string
 
 
   CreatureAI* = object
@@ -519,10 +527,11 @@ type
     # to deprioritize goals when doing them repeatedly is unhelpful (i.e. checking for threats)
     completedGoals*: Table[CreatureGoals, Ticks]
 
-  BurrowKind* = object
-    burrow*: Burrow
-    physical*: Physical
-    flags*: Flags
+  # BurrowKind* = object
+  #   burrow*: Burrow
+  #   physical*: Physical
+  #   resources*: List[ResourceYield]
+  #   flags*: Flags
 
   CombatAbility* = object
     # the amount to reduce incoming damage by, organized by damage type
@@ -530,6 +539,8 @@ type
 
 
   AttackType* = object
+    # the "identity" of this attack (i.e. Bite, Kick)
+    kind*: Taxon
     # what type of damage is done by this attack (bludgeoning, slashing, fire, etc)
     damageType*: Taxon
     # the base amount of damage done
@@ -571,6 +582,8 @@ proc readFromConfig*(cv: ConfigValue, v: var Vital) =
   elif cv.isObj:
     if cv["value"].isNumber:
       v.value = reduceable(cv["value"].asInt)
+    else:
+      warn("Vital's value is not a number: " & $cv["value"])
     cv["recoveryTime"].readInto(v.recoveryTime)
     cv["lossTime"].readInto(v.lossTime)
   else:
@@ -708,12 +721,18 @@ defineSimpleReadFromConfig(ActionKind)
 defineSimpleReadFromConfig(Recipe)
 defineSimpleReadFromConfig(Physical)
 defineSimpleReadFromConfig(Creature)
-defineSimpleReadFromConfig(AttackType)
 
-proc readFromConfig*(cv: ConfigValue, v: var BurrowKind) =
-  cv.readInto(v.burrow)
-  cv.readInto(v.physical)
-  cv["flags"].readInto(v.flags)
+proc readFromConfig*(cv: ConfigValue, v: var AttackType) =
+  cv["kind"].readInto(v.kind)
+  cv["damageType"].readInto(v.damageType)
+  cv["damageAmount"].readInto(v.damageAmount)
+  cv["accuracy"].readInto(v.accuracy)
+  cv["duration"].readInto(v.duration)
+
+# proc readFromConfig*(cv: ConfigValue, v: var BurrowKind) =
+#   cv.readInto(v.burrow)
+#   cv.readInto(v.physical)
+#   cv["flags"].readInto(v.flags)
 
 proc readFromConfig*(cv: ConfigValue, v: var CreatureGoals) =
   try:
@@ -721,9 +740,12 @@ proc readFromConfig*(cv: ConfigValue, v: var CreatureGoals) =
   except ValueError:
     warn &"Unsupported config for creature goal: {cv}"
 
+proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) {.gcsafe.}
+
 proc readFromConfig*(cv: ConfigValue, ck: var CreatureKind) =
   cv.readInto(ck.creature)
   cv.readInto(ck.physical)
+  cv["corpse"].readInto(ck.corpse)
 
   cv["canEat"].readInto(ck.canEat)
   cv["cannotEat"].readInto(ck.cannotEat)
@@ -734,7 +756,10 @@ proc readFromConfig*(cv: ConfigValue, ck: var CreatureKind) =
   cv["aggressionRange"].readInto(ck.aggressionRange)
 
   readIntoTaxonTable(cv["innateActions"], ck.innateActions, "Actions")
-  readIntoTaxonTable(cv["innateAttacks"], ck.innateAttacks, "Attacks")
+  for k,subV in cv["innateAttacks"].pairsOpt:
+    var at = subV.readInto(AttackType)
+    at.kind = taxon("Attacks", k)
+    ck.innateAttacks.add(at)
   readIntoTaxonTable(cv["actionImages"], ck.actionImages, "Actions")
 
 proc readFromConfig*(cv: ConfigValue, ik: var LightSource) =
@@ -747,6 +772,7 @@ proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["decay"].readInto(ik.decay)
   cv["weight"].readInto(ik.weight)
   cv["health"].readInto(ik.health)
+  cv["healthRecoveryTime"].readInto(ik.healthRecoveryTime)
   cv["image"].readInto(ik.images)
   cv["images"].readInto(ik.images)
   cv["occupiesTile"].readInto(ik.occupiesTile)
@@ -756,8 +782,11 @@ proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["fire"].readInto(ik.fire)
   cv["light"].readInto(ik.light)
   cv["stackable"].readInto(ik.stackable)
+  cv["burrow"].readInto(ik.burrow)
+  cv["resources"].readInto(ik.resources)
   ik.flags = new Flags
   cv["flags"].readInto(ik.flags[])
+  cv["attack"].readInto(ik.attack)
 
   readIntoTaxonTable(cv["actions"], ik.actions, "Actions")
 
@@ -785,10 +814,10 @@ proc vector3fFor*(d: Direction) : Vec3f = DirectionVectors3f[d.ord]
 proc vector3iFor*(d: Direction) : Vec3i = DirectionVectors3i[d.ord]
 
 defineSimpleLibrary[PlantKind]("survival/game/plant_kinds.sml", "Plants")
-defineSimpleLibrary[ItemKind]("survival/game/items.sml", "Items")
+defineSimpleLibrary[ItemKind](@["survival/game/items.sml", "survival/game/creatures.sml", "survival/game/burrows.sml"], "Items")
 defineSimpleLibrary[ActionKind]("survival/game/actions.sml", "Actions")
 defineSimpleLibrary[CreatureKind]("survival/game/creatures.sml", "Creatures")
-defineSimpleLibrary[BurrowKind]("survival/game/burrows.sml", "Burrows")
+# defineSimpleLibrary[BurrowKind]("survival/game/burrows.sml", "Burrows")
 defineSimpleLibrary[RecipeTemplate]("survival/game/recipe_templates.sml", "RecipeTemplates")
 # defineSimpleLibrary[Recipe]("survival/game/recipes.sml", "Recipes")
 defineLibrary[Recipe]:
@@ -835,7 +864,7 @@ proc creatureKind*(kind: Taxon) : ref CreatureKind = library(CreatureKind)[kind]
 proc recipeTemplate*(kind: Taxon): ref RecipeTemplate = library(RecipeTemplate)[kind]
 proc recipeTemplateFor*(recipe: ref Recipe): ref RecipeTemplate = recipeTemplate(recipe.recipeTemplate)
 proc recipe*(kind: Taxon): ref Recipe = library(Recipe)[kind]
-
+# proc burrowKind*(t : Taxon): ref BurrowKind = library(BurrowKind)[t]
 
 
 
@@ -972,7 +1001,7 @@ proc attackTask*(entity: Entity): CreatureTask =
 
 proc taskSucceeded*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Succeeded)
 proc taskFailed*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Failed)
-proc taskInvalid*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Invalid)
+proc taskInvalid*(reason: string = ""): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Invalid, reason: reason)
 proc taskContinues*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Continues)
 
 when isMainModule:
