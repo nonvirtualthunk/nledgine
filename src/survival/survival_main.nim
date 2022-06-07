@@ -139,7 +139,7 @@ proc initializationGraphicsComponent() : InitializationGraphicsComponent =
   result.initializePriority = 10000
 
 method initialize(g: InitializationGraphicsComponent, display: DisplayWorld) =
-  let cam = createPixelCamera(4).withMoveSpeed(0.0f).withEye(vec3f(0.0f,10000.0f,0.0f))
+  let cam = createPixelCamera(3).withMoveSpeed(0.0f).withEye(vec3f(0.0f,10000.0f,0.0f))
   display.attachData(CameraData(camera: cam))
 
 

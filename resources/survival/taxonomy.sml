@@ -40,7 +40,6 @@ TaxonomySources : [
   survival/game/growth_stages.sml
   survival/game/plant_kinds.sml
   survival/game/flags.sml
-  survival/game/creatures.sml
   survival/game/body_parts.sml
   survival/game/recipe_templates.sml
   survival/game/recipes.sml

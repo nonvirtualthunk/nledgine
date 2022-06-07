@@ -60,6 +60,11 @@ Flags {
   AnimalProduct {
     description: "A part or product of an animal"
     boolean: true
+    countsAs: NonVegan
+  }
+  NonVegan {
+    description: "Has in some way been derived from an animal"
+    boolean: true
   }
   Root {
     description: "The water absorbing root of a plant"

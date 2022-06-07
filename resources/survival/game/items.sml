@@ -176,17 +176,6 @@ Items {
     weight: 400-500
     fuel: 800
     durability: 20
-    transforms : [
-      {
-        recipeTemplate: Cut
-        difficulty: 2
-        output: [
-          WoodPole
-          Bark
-          Twigs
-        ]
-      }
-    ]
     image: "survival/graphics/items/plants/branch.png"
 
     flags {
@@ -202,19 +191,6 @@ Items {
     weight: 2000-2500
     fuel: 4000
     durability: 30
-    transforms : [
-      {
-        recipeTemplate: Cut
-        difficulty: 3
-        output: [
-          Plank,
-          Plank,
-          Bark,
-          Bark,
-          Twigs
-        ]
-      }
-    ]
 
     flags {
       Wood: 1

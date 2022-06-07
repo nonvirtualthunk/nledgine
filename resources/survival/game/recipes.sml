@@ -1,7 +1,7 @@
 Recipes {
 
   RoastedVegetable {
-    name: "roasted vegetable"
+    name: "roast vegetable"
     recipeTemplate: Roast
     ingredients {
       Ingredient {
@@ -10,20 +10,6 @@ Recipes {
     }
     outputs: [{
       item: Items.RoastedVegetable
-    }]
-  }
-
-  RoastedCarrot {
-    name: "roasted carrot"
-    specializationOf: Recipes.RoastedVegetable
-    recipeTemplate: Roast
-    ingredients {
-      Ingredient {
-        specifiers: Items.CarrotRoot
-      }
-    }
-    outputs: [{
-      item: Items.RoastedCarrot
     }]
   }
 

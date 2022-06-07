@@ -50,10 +50,12 @@ type
     actionMenu*: Widget
     craftingMenu*: CraftingMenu
     lastRepeat*: UnitOfTime
+    lastMove*: UnitOfTime
     inventoryWidget*: Widget
     choosingQuickSlot*: int
     choosingQuickSlotWidget*: Widget
     activeEventStack*: seq[Event]
+    movementDelta*: Vec2i
 
   ActionInfo = object
     action: ActionChoice
@@ -263,6 +265,11 @@ proc closeMenus(g: PlayerControlComponent) =
 method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
   let ws = display[WindowingSystem]
   matcher(event):
+    extract(KeyRelease, key):
+      case key:
+        of KeyCode.W, KeyCode.A, KeyCode.S, KeyCode.D:
+          g.movementDelta = vec2i(0,0)
+        else: discard
     extract(KeyPress, key, modifiers, repeat):
       if not repeat:
         g.lastRepeat = relTime()
@@ -279,29 +286,14 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
         else: vec2(0,0)
 
       if delta.x != 0 or delta.y != 0:
-        withWorld(world):
+        if modifiers.shift:
           for player in world.entitiesWithData(Player):
             let phys = player[Physical]
             let facing = primaryDirectionFrom(phys.position.xy, phys.position.xy + delta)
-            # or facing != phys.facing
-            if modifiers.shift:
-              world.eventStmts(FacingChangedEvent(entity: player, facing: facing)):
-                phys.facing = facing
-            else:
-              let toPos = phys.position + vec3i(delta.x, delta.y, 0)
-              let toTile = tileRef(phys.region[Region], toPos)
-
-              if not interact(world, player, player[Creature].allEquippedItems, toPos, skipNonBlocking=true):
-
-                moveEntityDelta(world, player, vec3i(delta.x, delta.y, 0))
-                for ent in toTile.entities:
-                  ifHasData(ent, Physical, phys):
-                    if phys.capsuled:
-                      if ent.hasData(Item):
-                        moveEntityToInventory(world, ent, player)
-                      else:
-                        warn &"Entity on the ground but not an item: {ent[Identity].kind}"
-
+            world.eventStmts(FacingChangedEvent(entity: player, facing: facing)):
+              phys.facing = facing
+        else:
+          g.movementDelta = delta
       elif key.ord >= KeyCode.K0.ord and key.ord <= KeyCode.K9.ord:
         # map 1-9 -> 0-8, 0 -> 9 so we can use the keys in order of the keyboard
         let index = if key == KeyCode.K0:
@@ -458,6 +450,30 @@ proc constructActionInfo(world: LiveWorld, player: Entity, considering: Entity):
     ))
 
 method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
+  if g.movementDelta != vec2i(0,0):
+    if relTime() - g.lastMove >= 0.18.seconds:
+      g.lastMove = relTime()
+      let delta = g.movementDelta
+      withWorld(world):
+        for player in world.entitiesWithData(Player):
+          let phys : ref Physical = player[Physical]
+          let facing = primaryDirectionFrom(phys.position.xy, phys.position.xy + delta)
+          # or facing != phys.facing
+          let toPos = phys.position + vec3i(delta.x, delta.y, 0)
+          let toTile = tileRef(phys.region[Region], toPos)
+
+          if not interact(world, player, player[Creature].allEquippedItems, toPos, skipNonBlocking=true):
+
+            moveEntityDelta(world, player, vec3i(delta.x, delta.y, 0))
+            for ent in toTile.entities:
+              ifHasData(ent, Physical, phys):
+                # if phys.capsuled:
+                if not phys.occupiesTile:
+                  if ent.hasData(Item):
+                    moveEntityToInventory(world, ent, player)
+                  else:
+                    warn &"Entity on the ground but not an item: {ent[Identity].kind}"
+
   g.craftingMenu.update(world)
 
   withWorld(world):

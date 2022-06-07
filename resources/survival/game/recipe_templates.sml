@@ -5,6 +5,7 @@ BaseTemplate {
     "Flags.Stone": max
     "Flags.Vegetable": max
     "Flags.Meat": max
+    "Flags.NonVegan": max
   }
 
   durabilityContribution: 0.75

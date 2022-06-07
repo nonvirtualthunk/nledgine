@@ -1437,7 +1437,10 @@ proc destroySurvivalEntity*(world: LiveWorld, ent: Entity, bypassDestructiveCrea
       if not bypassDestructiveCreation:
         if ent.hasData(Creature):
           ent[Creature].dead = true
-          # TODO: Create corpse
+          let ck = creatureKind(ent[Identity].kind)
+          if ck.corpse.isSome:
+            let newItem = createItem(world, phys.region, ck.corpse.get)
+            placeEntityWith(world, newItem, ent)
         elif ent.hasData(Fire) and ent[Fire].active:
           let burnsInto = ent[Fire].burnsInto.get(† Items.Ash)
           let newItem = createItem(world, phys.region, burnsInto)

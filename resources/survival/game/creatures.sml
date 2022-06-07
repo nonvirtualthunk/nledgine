@@ -20,7 +20,7 @@ Creatures {
     }
     sanity: 25
 
-    visionRange: 18
+    visionRange: 20
 
     strength: 0
     dexterity: 0
@@ -78,7 +78,7 @@ Creatures {
     strength: -2
     dexterity: 2
     constitution: -1
-    baseMoveTime: 15 ticks
+    baseMoveTime: 10 ticks
     schedule: Diurnal
     weight: 150
 
@@ -125,6 +125,7 @@ Creatures {
     health {
       value: 6
     }
+    corpse: Items.SpiderCorpse
     stamina {
       value: 10
       recoveryTime: 1 long action
@@ -142,7 +143,7 @@ Creatures {
     strength: -1
     dexterity: 1
     constitution: -1
-    baseMoveTime: 25 ticks
+    baseMoveTime: 15 ticks
     schedule: Nocturnal
     weight: 300
 
@@ -189,7 +190,7 @@ Items {
       {
         recipeTemplate: Carve
         difficulty: 3
-        output: [
+        outputs: [
           RawMeat
         ]
       }
@@ -200,6 +201,24 @@ Items {
     }
 
     image: "survival/graphics/creatures/rabbit/rabbit_dead.png"
+    stackable: false
+  }
+
+  SpiderCorpse {
+    description: "Still too many legs, less scuttling though"
+    weight: 300
+    durability: 15
+    transforms: [{
+      recipeTemplate: Carve
+      difficulty: 2
+      outputs: [ RawMeat, SpiderSilk ]
+    }]
+
+    flags {
+      Corpse: 1
+    }
+
+    image: "survival/graphics/creatures/spider/spider_dead.png"
     stackable: false
   }
 }

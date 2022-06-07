@@ -6,6 +6,7 @@ import sequtils
 import noto
 import glm
 import options
+import std/strbasics
 
 const ConfigParsingDebug = false
 
@@ -602,10 +603,11 @@ proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
   of '[':
     parseArray(ctx)
   else:
-    let rawValue = if underArr:
+    var rawValue : string = if underArr:
       ctx.parseUntil(fieldValueEndCharactersInArr)
     else:
       ctx.parseUntil(fieldValueEndCharactersInObj)
+
     if cmpIgnoreCase(rawValue, "true") == 0:
       ConfigValue(kind: ConfigValueKind.Bool, truth: true)
     elif cmpIgnoreCase(rawValue, "false") == 0:
@@ -615,6 +617,7 @@ proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
         let f = parseFloat rawValue
         ConfigValue(kind: ConfigValueKind.Number, num: f)
       except ValueError:
+        strip(rawValue, false, true)
         ConfigValue(kind: ConfigValueKind.String, str: rawValue)
 
   if result.kind == ConfigValueKind.Object and baseConfig.len > 0:

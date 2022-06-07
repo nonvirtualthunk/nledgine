@@ -647,7 +647,10 @@ proc readFromConfig*(cv: ConfigValue, r: var RecipeOutput) =
       r.item = t
       r.amount = outputDistribution
     else:
-      warn &"Recipe output did not have a valid item type: {cv.asStr}"
+      warn &"Recipe output did not have a valid item type: {cv.asStr}, {kind}"
+      warn &"All items:\n"
+      for t in taxonsInNamespace("Items"):
+        warn &"\t{t}"
   else:
     readFromConfigByField(cv, RecipeOutput, r)
     if r.amount.maxValue == 0:
@@ -813,6 +816,24 @@ proc vectorFor*(d: Direction) : Vec2i = DirectionVectors[d.ord]
 proc vector3fFor*(d: Direction) : Vec3f = DirectionVectors3f[d.ord]
 proc vector3iFor*(d: Direction) : Vec3i = DirectionVectors3i[d.ord]
 
+
+addTaxonomyLoader(TaxonomyLoader(
+  loadTaxonsFrom: proc(cv: ConfigValue) : seq[ProtoTaxon] {.gcsafe.} =
+      var r : seq[ProtoTaxon]
+      for key, item in cv["Items"].pairsOpt:
+        if item["recipe"].nonEmpty:
+          r.add(ProtoTaxon(namespace: "Recipes", name: key, parents : @["Recipe"]))
+        if item["transforms"].nonEmpty:
+          for trans in item["transforms"].asArr:
+            if trans["recipeTemplate"].nonEmpty:
+              let str = trans["recipeTemplate"].asStr & key
+              r.add(ProtoTaxon(namespace: "Recipes", name: str, parents : @["Recipe"]))
+            else:
+              warn &"transform within an item has no recipeTemplate: {key}"
+      r
+))
+
+
 defineSimpleLibrary[PlantKind]("survival/game/plant_kinds.sml", "Plants")
 defineSimpleLibrary[ItemKind](@["survival/game/items.sml", "survival/game/creatures.sml", "survival/game/burrows.sml"], "Items")
 defineSimpleLibrary[ActionKind]("survival/game/actions.sml", "Actions")
@@ -825,7 +846,9 @@ defineLibrary[Recipe]:
   var lib = new Library[Recipe]
   lib.defaultNamespace = namespace
 
-  for confPath in @["survival/game/recipes.sml", "survival/game/items.sml"]:
+  let templateLib = library(RecipeTemplate)
+
+  for confPath in @["survival/game/recipes.sml", "survival/game/items.sml", "survival/game/creatures.sml"]:
     let confs = config(confPath)
     for k, v in confs["Recipes"].pairsOpt:
       let key = taxon("Recipes", k)
@@ -854,8 +877,37 @@ defineLibrary[Recipe]:
             )
           )
         lib[key] = ri
+      if v.hasField("transforms"):
+        for trans in v["transforms"].asArr:
+          if trans["recipeTemplate"].nonEmpty:
+            let recipeTemplateStr = trans["recipeTemplate"].asStr
+            let str = recipeTemplateStr & k
+            let key = taxon("Recipes", str)
+            var ri: ref Recipe = new Recipe
+            ri.taxon = key
+            ri.name = recipeTemplateStr.capitalize & " " & key.displayName.capitalize
+
+            readInto(trans, ri[])
+            let templ = templateLib[recipeTemplateStr]
+            var numIngredients = 0
+            for slotName, slot in templ.recipeSlots:
+              if slot.kind == RecipeSlotKind.Ingredient:
+                numIngredients.inc
+
+                ri.ingredients[slotName] = @[RecipeRequirement(specifiers: @[itemKey])]
+            if numIngredients > 1:
+              warn &"'transforms' based recipe definition for {itemKey} uses a recipeTemplate with > 1 ingredient, this generally won't work well"
+
+            lib[key] = ri
 
   lib
+
+
+info "ALL RECIPES======================="
+for k,v in library(Recipe):
+  info &"{k}: {v[]}"
+  info "-------------"
+info "END RECIPES======================="
 
 proc plantKind*(kind: Taxon) : ref PlantKind = library(PlantKind)[kind]
 proc itemKind*(kind: Taxon) : ref ItemKind = library(ItemKind)[kind]
@@ -866,16 +918,6 @@ proc recipeTemplateFor*(recipe: ref Recipe): ref RecipeTemplate = recipeTemplate
 proc recipe*(kind: Taxon): ref Recipe = library(Recipe)[kind]
 # proc burrowKind*(t : Taxon): ref BurrowKind = library(BurrowKind)[t]
 
-
-
-addTaxonomyLoader(TaxonomyLoader(
-  loadTaxonsFrom: proc(cv: ConfigValue) : seq[ProtoTaxon] {.gcsafe.} =
-      var r : seq[ProtoTaxon]
-      for key, item in cv["Items"].pairsOpt:
-        if item["recipe"].nonEmpty:
-          r.add(ProtoTaxon(namespace: "Recipes", name: key, parents : @["Recipe"]))
-      r
-))
 
 
 proc recipesForTemplate*(t: ref RecipeTemplate) : seq[ref Recipe] =

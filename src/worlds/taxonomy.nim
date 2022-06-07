@@ -8,6 +8,7 @@ import strutils
 import strformat
 import options
 import sugar
+import std/editdistance
 
 type
   Taxon* = ref object
@@ -88,11 +89,23 @@ proc hash*(a: Taxon): Hash =
   else:
     a.id.hash
 
+
+
+proc capitalizeInternal(s : string) : string =
+  result = ""
+  for i in 0 ..< s.len:
+   let c = s[i]
+   if i == 0 or s[i - 1] == ' ':
+    result.add(c.toUpperAscii)
+   else:
+    result.add(c)
+
+
 proc `$`*(a: Taxon): string =
   if a == nil:
     "nil"
   else:
-    a.namespace.replace(" ", "_") & "." & a.name.replace(" ", "_")
+    a.namespace.capitalizeInternal.replace(" ", "") & "." & a.name.capitalizeInternal.replace(" ", "")
 
 proc `$`*(a: seq[Taxon]): string =
   result = "["
@@ -128,10 +141,29 @@ proc displayName*(t: Taxon): string =
       if i == 0 or result[i-1] == ' ':
         result[i] = result[i].toUpperAscii
 
+
+iterator taxons*(t: ref Taxonomy): Taxon =
+  for v in t.taxonsByNameAndNamespace.values:
+    yield v
+
+iterator taxonsInNamespace*(t: ref Taxonomy, namespace: string): Taxon =
+  let norm = normalizeTaxonStr(namespace)
+  for v in t.taxons:
+    if v.namespace == norm:
+      yield v
+
+iterator taxonsInNamespace*(namespace: string): Taxon =
+  let norm = normalizeTaxonStr(namespace)
+  for v in getGlobalTaxonomy().taxons:
+    if v.namespace == norm:
+      yield v
+
+
 proc taxon*(t: ref Taxonomy, namespace: string, name: string, warnOnAbsence: bool = true): Taxon {.gcsafe.} =
   let name = normalizeTaxonStr(name)
   let namespace = normalizeTaxonStr(namespace)
   result = t.taxonsByNameAndNamespace.getOrDefault((namespace, name), UnknownThing)
+
   if result == UnknownThing:
     if namespace != RootNamespace:
       let sepIndex = namespace.rfind(".")
@@ -144,7 +176,10 @@ proc taxon*(t: ref Taxonomy, namespace: string, name: string, warnOnAbsence: boo
   if warnOnAbsence and result == UnknownThing:
     writeStackTrace()
     warn &"Unresolveable taxon {namespace}.{name}"
-
+    for subT in taxonsInNamespace(t, namespace):
+      let dist = editDistanceAscii(subT.name, name)
+      if dist < 3:
+        warn &"\tSimilar: {subT.namespace}.{subT.name}, distance: {dist}"
 
 
 proc taxon*(t: ref Taxonomy, name: string): Taxon =
@@ -206,15 +241,6 @@ proc addTaxon(t: ref Taxonomy, namespace: string, name: string, parents: seq[Tax
 
 proc addTaxon(t: ref Taxonomy, name: string, parents: seq[Taxon]): Taxon =
   t.addTaxon(RootNamespace, name, parents)
-
-iterator taxons*(t: ref Taxonomy): Taxon =
-  for v in t.taxonsByNameAndNamespace.values:
-    yield v
-
-iterator taxonsInNamespace*(t: ref Taxonomy, namespace: string): Taxon =
-  for v in t.taxons:
-    if v.namespace == namespace:
-      yield v
 
 
 

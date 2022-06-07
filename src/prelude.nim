@@ -105,6 +105,15 @@ let programStartTime* = now()
 proc `<`*(a: UnitOfTime, b: UnitOftime): bool =
   a.seconds < b.seconds
 
+proc `<=`*(a: UnitOfTime, b: UnitOftime): bool =
+  a.seconds <= b.seconds
+
+proc `>=`*(a: UnitOfTime, b: UnitOftime): bool =
+  a.seconds >= b.seconds
+
+proc `>`*(a: UnitOfTime, b: UnitOftime): bool =
+  a.seconds > b.seconds
+
 proc microseconds*(f: float): UnitOfTime =
   UnitOfTime(seconds: (f / 1000000.0))
 
