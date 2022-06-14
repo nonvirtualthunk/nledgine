@@ -2,9 +2,11 @@ import strutils
 import arxregex
 import engines
 import survival/game/logic
+import survival/game/entities
 import noto
 import windowingsystem/windowingsystem
 import survival/display/world_graphics
+import worlds/taxonomy
 
 
 type
@@ -19,6 +21,7 @@ type
 
 const printEntityRe = "print\\s+([0-9]+)".re
 const printPlayerRe = "print\\s+player".re
+const spawnRe = "spawn\\s+([a-zA-Z0-9.]+)".re
 const funcRe = "([a-zA-Z]+[a-zA-Z0-9]*)\\(([a-zA-Z0-9]+)?\\)".re
 
 
@@ -52,6 +55,19 @@ method onEvent*(g: SurvivalDebugComponent, world: LiveWorld, display: DisplayWor
           printEntityData(world, player(world))
         extractMatches(printEntityRe, target):
           printEntityData(world, Entity(id: target.parseInt))
+        extractMatches(spawnRe, spawnTarget):
+          let t = findTaxon(spawnTarget)
+          if t == UnknownThing:
+            warn &"Unknown taxon to spawn: {spawnTarget}"
+          else:
+            let reg = player(world)[Physical].region
+            let pos = facedPosition(world, world.player)
+            if t.isA(† Item):
+              let item = createItem(world, reg, t)
+              placeEntity(world, item, pos, capsuled = true)
+            elif t.isA(† Creature):
+              let creature = createCreature(world, reg, t)
+              placeEntity(world, creature, pos)
         extractMatches(funcRe, funcName, arg0):
           case funcName:
             of "enable":

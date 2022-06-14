@@ -372,17 +372,86 @@ Items {
     }
 
     food {
-      hunger: 2-3
+      hunger: 4-5
       stamina: -1
       hydration: -1
-      sanity: 0
+      sanity: -4
     }
 
-    durability : 4
     decay: 2 days
     decaysInto: RottingVegetation
     image: "survival/graphics/items/animal/steak.png"
     stackable: true
+  }
+
+  RawInsectMeat {
+    weight: 200
+    durability: 10
+
+    flags {
+      Meat: 1
+    }
+
+    food {
+      hunger: 2-3
+      stamina: -2
+      hydration: 1
+      sanity: -6
+    }
+
+    decay: 2 days
+    decaysInto: RottingVegetation
+    image: "survival/graphics/items/animal/insect_meat.png"
+  }
+
+  RoastedMeat {
+    flags {
+      Edible: "+1"
+      Cooked: "+1"
+    }
+
+    food {
+      hunger: "+3"
+      stamina: "+3"
+      hydration: "-1"
+      sanity: "+4"
+    }
+
+    decay: -1 days
+    decaysInto: RottingVegetation
+    image: "survival/graphics/items/animal/cooked_steak.png"
+    stackable: true
+
+    recipe {
+      name: "roast meat"
+      recipeTemplate: Roast
+      ingredients {
+        Ingredient : Flags.Meat
+      }
+      outputs: [Items.RoastedMeat]
+      staminaContribution: Max
+      sanityContribution: Max
+    }
+  }
+
+  RoastedInsectMeat: ${Items.RoastedMeat} {
+    image: "survival/graphics/items/animal/cooked_insect_meat.png"
+
+    food {
+      sanity: "-1"
+    }
+
+    recipe: {
+      name: "roast insect meat"
+      recipeTemplate: Roast
+      specializationOf: Recipes.RoastedMeat
+      ingredients {
+        Ingredient: Items.RawInsectMeat
+      }
+      outputs: [Items.RoastedInsectMeat]
+      staminaContribution: Max
+      sanityContribution: Max
+    }
   }
 
   Fiddleheads {
@@ -430,7 +499,7 @@ Items {
 
     recipe {
       name: "roast carrot"
-      specializationOf: Recipes.RoastedVegetable
+      specializationOf: Recipes.RoastVegetable
       recipeTemplate: Roast
       ingredients.Ingredient : Items.CarrotRoot
       outputs: Items.RoastedCarrot
@@ -451,7 +520,7 @@ Items {
 
     recipe {
       name: "roast fiddleheads"
-      specializationOf: Recipes.RoastedVegetable
+      specializationOf: Recipes.RoastVegetable
       recipeTemplate: Roast
       ingredients.Ingredient: Items.Fiddleheads
       outputs: Items.RoastedFiddleheads

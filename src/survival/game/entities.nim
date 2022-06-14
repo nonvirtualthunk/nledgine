@@ -100,6 +100,8 @@ type
     # indicates an object that is lying on the ground in a non-constructed just-sort-of-sitting-around state
     # need to think of a better term
     capsuled*: bool
+    # indicates that this object should always be drawn at full resolution, even when it's in a "capsuled" state
+    drawFullWhenCapsuled*: bool
     # whether or not this entity fully occupies the tile it is on, preventing movement (assuming it is not capsuled)
     occupiesTile*: bool
     # whether or not this entity blocks the passage of light
@@ -142,12 +144,40 @@ type
     constitution*: int8
     # baseline movement time required to traverse a single tile with no obstacles
     baseMoveTime*: Ticks
-    # what items are equipped to what body parts
+    # what items are equipped to what equipment slots or held in manipulating body parts
     equipment* {.noAutoLoad.} : Table[Taxon, Entity]
+    # the current state of the body parts this creature has
+    bodyParts* {.noAutoLoad.} : Table[Taxon, BodyPart]
     # distance the creature can see, in tiles
     visionRange*: int
     # Remaining time for actions before the next player turn
     remainingTime*: Ticks
+
+  BodyPart* = object
+    # nothing at present. In future, probably injuries and the like
+
+  BodyPartKind* = object
+    # how big this body part is. Unitless, just used for relative size
+    size*: int
+    # what this body part can be used for
+    capabilities*: HashSet[Taxon]
+    # from what body part this is attached
+    attachedFrom*: Option[Taxon]
+
+  EquipmentSlotKind* = object
+    # the name of this equipment slot (boots, pants, etc)
+    name*: string
+    # the taxon identity of this slot
+    kind*: Taxon
+    # the general grouping this falls under so that, i.e. mail shirt and regular shirt can be put together in the ui
+    grouping*: Taxon
+    # the overal layer this is part of (i.e. clothing, armor, accessories)
+    layer*: Taxon
+    # the body parts this equipment slot corresponds to
+    bodyParts*: seq[Taxon]
+    # image to show
+    image*: Image
+
 
 
   Player* = object
@@ -224,6 +254,8 @@ type
 
     actionImages*: Table[Taxon, ImageLike]
 
+    # what body parts this creature naturally has, and information about them (size, etc)
+    bodyParts: Table[Taxon, BodyPartKind]
     # flags that indicate something might be edible to this kind of creature (i.e. vegetable)
     canEat*: seq[Taxon]
     # flags that indicate something cannot be edible to this kind of creature (i.e. Flags.Meat for herbivores)
@@ -250,6 +282,8 @@ type
     innateActions*: Table[Taxon, int]
     # attacks that the creature can perform inherently, without any equipment
     innateAttacks*: seq[AttackType]
+    # the different equipment slots this creature has access to
+    equipmentSlots*: seq[Taxon]
 
 
   PlantGrowthStageInfo* = object
@@ -314,6 +348,7 @@ type
     health*: DiceExpression
     healthRecoveryTime*: Ticks
     images*: seq[ImageRef]
+    drawFullWhenCapsuled*: bool
     occupiesTile*: bool
     blocksLight*: bool
     flags*: ref Flags
@@ -328,6 +363,7 @@ type
     stackable*: bool
     actions*: Table[Taxon, int]
     attack*: Option[AttackType]
+    equipmentSlot*: Option[Taxon]
 
 
   ActionKind* = object
@@ -392,6 +428,14 @@ type
     flagContribution*: Table[Taxon, Contribution]
     # What weight from the ingredients are incorporated into the new output
     weightContribution*: Contribution
+    # What sanity from food ingredients are incorporated into the new output. If not present the overall food contribution will be used
+    sanityContribution*: Option[Contribution]
+    # What sanity from food ingredients are incorporated into the new output. If not present the overall food contribution will be used
+    hungerContribution*: Option[Contribution]
+    # What sanity from food ingredients are incorporated into the new output. If not present the overall food contribution will be used
+    hydrationContribution*: Option[Contribution]
+    # What sanity from food ingredients are incorporated into the new output. If not present the overall food contribution will be used
+    staminaContribution*: Option[Contribution]
     # Flags that are added to every item created from this template
     addFlags*: Table[Taxon, int]
 
@@ -437,6 +481,14 @@ type
     flagContribution*: Table[Taxon, Contribution]
     # What weight from the ingredients are incorporated into the new output
     weightContribution*: Option[Contribution]
+    # What sanity from the ingredients are incorporated into the new output
+    sanityContribution*: Option[Contribution]
+    # What sanity from food ingredients are incorporated into the new output. If not present the overall food contribution will be used
+    hungerContribution*: Option[Contribution]
+    # What sanity from food ingredients are incorporated into the new output. If not present the overall food contribution will be used
+    hydrationContribution*: Option[Contribution]
+    # What sanity from food ingredients are incorporated into the new output. If not present the overall food contribution will be used
+    staminaContribution*: Option[Contribution]
 
 
   ActionUse* = object
@@ -527,12 +579,6 @@ type
     # to deprioritize goals when doing them repeatedly is unhelpful (i.e. checking for threats)
     completedGoals*: Table[CreatureGoals, Ticks]
 
-  # BurrowKind* = object
-  #   burrow*: Burrow
-  #   physical*: Physical
-  #   resources*: List[ResourceYield]
-  #   flags*: Flags
-
   CombatAbility* = object
     # the amount to reduce incoming damage by, organized by damage type
     armor*: Table[Taxon, int]
@@ -549,6 +595,9 @@ type
     accuracy*: float32
     # how long it takes to perform this attack
     duration*: Ticks
+    # what body parts enable this attack, only relevant for natural attacks. An empty seq
+    # indicates it is derived from a weapon or item of some kind
+    bodyParts*: seq[Taxon]
 
 
 
@@ -717,6 +766,7 @@ proc readFromConfig*(cv: ConfigValue, r: var RecipeTemplate) =
     r.recipeSlots[k] = slot
     r.recipeSlots[k].kind = RecipeSlotKind.Location
 
+defineSimpleReadFromConfig(BodyPartKind)
 defineSimpleReadFromConfig(PlantGrowthStageInfo)
 defineSimpleReadFromConfig(PlantKind)
 defineSimpleReadFromConfig(FoodKind)
@@ -724,6 +774,7 @@ defineSimpleReadFromConfig(ActionKind)
 defineSimpleReadFromConfig(Recipe)
 defineSimpleReadFromConfig(Physical)
 defineSimpleReadFromConfig(Creature)
+defineSimpleReadFromConfig(EquipmentSlotKind)
 
 proc readFromConfig*(cv: ConfigValue, v: var AttackType) =
   cv["kind"].readInto(v.kind)
@@ -731,6 +782,7 @@ proc readFromConfig*(cv: ConfigValue, v: var AttackType) =
   cv["damageAmount"].readInto(v.damageAmount)
   cv["accuracy"].readInto(v.accuracy)
   cv["duration"].readInto(v.duration)
+  cv["bodyParts"].readInto(v.bodyParts)
 
 # proc readFromConfig*(cv: ConfigValue, v: var BurrowKind) =
 #   cv.readInto(v.burrow)
@@ -757,13 +809,14 @@ proc readFromConfig*(cv: ConfigValue, ck: var CreatureKind) =
   cv["deadResources"].readInto(ck.deadResources)
   cv["priorities"].readInto(ck.priorities)
   cv["aggressionRange"].readInto(ck.aggressionRange)
-
+  readIntoTaxonTable(cv["bodyParts"], ck.bodyParts, "BodyParts")
   readIntoTaxonTable(cv["innateActions"], ck.innateActions, "Actions")
   for k,subV in cv["innateAttacks"].pairsOpt:
     var at = subV.readInto(AttackType)
     at.kind = taxon("Attacks", k)
     ck.innateAttacks.add(at)
   readIntoTaxonTable(cv["actionImages"], ck.actionImages, "Actions")
+  cv["equipmentSlots"].readInto(ck.equipmentSlots)
 
 proc readFromConfig*(cv: ConfigValue, ik: var LightSource) =
   cv["brightness"].readInto(ik.brightness)
@@ -779,6 +832,7 @@ proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["image"].readInto(ik.images)
   cv["images"].readInto(ik.images)
   cv["occupiesTile"].readInto(ik.occupiesTile)
+  cv["drawFullWhenCapsuled"].readInto(ik.drawFullWhenCapsuled)
   cv["blocksLight"].readInto(ik.blocksLight)
   cv["fuel"].readInto(ik.fuel)
   cv["food"].readInto(ik.food)
@@ -790,6 +844,7 @@ proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   ik.flags = new Flags
   cv["flags"].readInto(ik.flags[])
   cv["attack"].readInto(ik.attack)
+  cv["equipmentSlot"].readInto(ik.equipmentSlot)
 
   readIntoTaxonTable(cv["actions"], ik.actions, "Actions")
 
@@ -833,11 +888,40 @@ addTaxonomyLoader(TaxonomyLoader(
       r
 ))
 
+proc merge(bodyPart: var BodyPartKind, base: ref BodyPartKind) =
+  if bodyPart.size == 0: bodyPart.size = base.size
+  bodyPart.capabilities.incl(base.capabilities)
+  if bodyPart.attachedFrom.isNone: bodyPart.attachedFrom = base.attachedFrom
 
+proc propagateParentIntoBodyPart(lib: Library[BodyPartKind], bodyPart: ref BodyPartKind, parentKind: Taxon) =
+  if parentKind == † BodyPart: return
+  let otherOpt = lib.get(parentKind)
+  if otherOpt.isSome:
+    let other = otherOpt.get
+    merge(bodyPart[], other)
+    for grandparentKind in parentKind.parents:
+      propagateParentIntoBodyPart(lib, bodyPart, grandparentKind)
+
+proc postProcessBodyPartInheritance(lib: Library[BodyPartKind]) =
+  for k,v in lib:
+    for parentKind in k.parents:
+      propagateParentIntoBodyPart(lib, v, parentKind)
+
+
+defineSimpleLibrary[BodyPartKind]("survival/game/body_parts.sml", "BodyParts", postProcessBodyPartInheritance)
+defineSimpleLibrary[EquipmentSlotKind]("survival/game/equipment_slots.sml", "EquipmentSlots")
 defineSimpleLibrary[PlantKind]("survival/game/plant_kinds.sml", "Plants")
 defineSimpleLibrary[ItemKind](@["survival/game/items.sml", "survival/game/creatures.sml", "survival/game/burrows.sml"], "Items")
 defineSimpleLibrary[ActionKind]("survival/game/actions.sml", "Actions")
-defineSimpleLibrary[CreatureKind]("survival/game/creatures.sml", "Creatures")
+
+
+proc postProcessCreatureKind(lib: Library[CreatureKind]) =
+  let bodyPartLib = library(BodyPartKind)
+  for k,v in lib:
+    for bodyPartK, bodyPartV in v.bodyParts.mpairs:
+      merge(bodyPartV, bodyPartLib[bodyPartK])
+
+defineSimpleLibrary[CreatureKind]("survival/game/creatures.sml", "Creatures", postProcessCreatureKind)
 # defineSimpleLibrary[BurrowKind]("survival/game/burrows.sml", "Burrows")
 defineSimpleLibrary[RecipeTemplate]("survival/game/recipe_templates.sml", "RecipeTemplates")
 # defineSimpleLibrary[Recipe]("survival/game/recipes.sml", "Recipes")
@@ -885,7 +969,7 @@ defineLibrary[Recipe]:
             let key = taxon("Recipes", str)
             var ri: ref Recipe = new Recipe
             ri.taxon = key
-            ri.name = recipeTemplateStr.capitalize & " " & key.displayName.capitalize
+            ri.name = recipeTemplateStr.capitalize & " " & itemKey.displayName.capitalize
 
             readInto(trans, ri[])
             let templ = templateLib[recipeTemplateStr]
@@ -908,6 +992,17 @@ for k,v in library(Recipe):
   info &"{k}: {v[]}"
   info "-------------"
 info "END RECIPES======================="
+info "ALL CREATURE KINDS======================="
+for k,v in library(CreatureKind):
+  info &"{k}: {v[]}"
+  info "-------------"
+info "END CREATURE KINDS======================="
+info "ALL EQUIPMENT SLOTS======================="
+for k,v in library(EquipmentSlotKind):
+  info &"{k}: {v[]}"
+  info "-------------"
+info "END EQUIPMENT SLOTS======================="
+
 
 proc plantKind*(kind: Taxon) : ref PlantKind = library(PlantKind)[kind]
 proc itemKind*(kind: Taxon) : ref ItemKind = library(ItemKind)[kind]
@@ -916,8 +1011,10 @@ proc creatureKind*(kind: Taxon) : ref CreatureKind = library(CreatureKind)[kind]
 proc recipeTemplate*(kind: Taxon): ref RecipeTemplate = library(RecipeTemplate)[kind]
 proc recipeTemplateFor*(recipe: ref Recipe): ref RecipeTemplate = recipeTemplate(recipe.recipeTemplate)
 proc recipe*(kind: Taxon): ref Recipe = library(Recipe)[kind]
-# proc burrowKind*(t : Taxon): ref BurrowKind = library(BurrowKind)[t]
+proc equipmentSlot*(kind: Taxon): ref EquipmentSlotKind = library(EquipmentSlotKind)[kind]
 
+template kind*(e: Entity) : Taxon =
+  e[Identity].kind
 
 
 proc recipesForTemplate*(t: ref RecipeTemplate) : seq[ref Recipe] =
@@ -1045,6 +1142,7 @@ proc taskSucceeded*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTas
 proc taskFailed*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Failed)
 proc taskInvalid*(reason: string = ""): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Invalid, reason: reason)
 proc taskContinues*(): CreatureTaskResult = CreatureTaskResult(kind: CreatureTaskResultKind.Continues)
+
 
 when isMainModule:
   let lib = library(ItemKind)

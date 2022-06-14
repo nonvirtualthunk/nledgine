@@ -440,6 +440,7 @@ proc createItem*(world: LiveWorld, region: Entity, itemKind: Taxon) : Entity =
       region: region,
       occupiesTile: ik.occupiesTile,
       blocksLight: ik.blocksLight,
+      drawFullWhenCapsuled: ik.drawFullWhenCapsuled,
       weight: ik.weight.rollInt(rand).int32,
       images: ik.images,
       health: vital(ik.health.rollInt(rand)).withRecoveryTime(ik.healthRecoveryTime),
@@ -475,23 +476,6 @@ proc createCreature*(world: LiveWorld, region: Entity, creatureKind: Taxon) : En
 
   ent
 
-# proc createBurrow*(world: LiveWorld, region: Entity, burrowKind: Taxon): Entity =
-#   let lib = library(BurrowKind)
-#   let arch : ref BurrowKind = lib[burrowKind]
-#
-#   let ent = world.createEntity()
-#   world.eventStmts(BuildingCreatedEvent(entity: ent, buildingKind: burrowKind)):
-#     ent.attachData(arch.burrow)
-#     ent.attachData(arch.physical)
-#     ent.attachData(arch.flags)
-#     ent.attachData(Identity(kind: burrowKind))
-#     ent.attachData(Inventory())
-#     if arch.resources.nonEmpty:
-#       createGatherableDataFromYields(world, ent, arch.resources, burrowKind)
-#
-#     addToRegion(world, ent, region)
-#
-#   ent
 
 proc unequipItemFrom*(world: LiveWorld, entity: Entity, item: Entity) =
   let creature = entity[Creature]
@@ -1242,8 +1226,8 @@ proc craftItem*(world: LiveWorld, actor: Entity, recipeTaxon: Taxon, ingredients
   else:
     randomizer(world)
 
-  let recipe = recipe(recipeTaxon)
-  let recipeTemplate = recipeTemplate(recipe.recipeTemplate)
+  let recipe : ref Recipe = recipe(recipeTaxon)
+  let recipeTemplate : ref RecipeTemplate = recipeTemplate(recipe.recipeTemplate)
   if matchesRecipe(world, actor, recipe, ingredients):
     var results : seq[Entity]
     for output in recipe.outputs:
@@ -1262,6 +1246,10 @@ proc craftItem*(world: LiveWorld, actor: Entity, recipeTaxon: Taxon, ingredients
       let slot = recipeTemplate.recipeSlots[k]
       if slot.kind == RecipeSlotKind.Ingredient:
         let foodCon = recipe.foodContribution.get(recipeTemplate.foodContribution)
+        let sanityCon = recipe.sanityContribution.orElse(recipeTemplate.sanityContribution).get(foodCon)
+        let hungerCon = recipe.hungerContribution.orElse(recipeTemplate.hungerContribution).get(foodCon)
+        let hydrationCon = recipe.hydrationContribution.orElse(recipeTemplate.hydrationContribution).get(foodCon)
+        let staminaCon = recipe.staminaContribution.orElse(recipeTemplate.staminaContribution).get(foodCon)
         let durCon = recipe.durabilityContribution.get(recipeTemplate.durabilityContribution)
         let decayCon = recipe.decayContribution.get(recipeTemplate.decayContribution)
         let weightCon = recipe.weightContribution.get(recipeTemplate.weightContribution)
@@ -1274,10 +1262,10 @@ proc craftItem*(world: LiveWorld, actor: Entity, recipeTaxon: Taxon, ingredients
             if output.hasData(Food) and ingredient.hasData(Food):
               let outFood = output[Food]
               let inFood = ingredient[Food]
-              outFood.hunger = applyContribution(foodCon, outFood.hunger, inFood.hunger)
-              outFood.stamina = applyContribution(foodCon, outFood.stamina, inFood.stamina)
-              outFood.hydration = applyContribution(foodCon, outFood.hydration, inFood.hydration)
-              outFood.sanity = applyContribution(foodCon, outFood.sanity, inFood.sanity)
+              outFood.hunger = applyContribution(hungerCon, outFood.hunger, inFood.hunger)
+              outFood.stamina = applyContribution(staminaCon, outFood.stamina, inFood.stamina)
+              outFood.hydration = applyContribution(hydrationCon, outFood.hydration, inFood.hydration)
+              outFood.sanity = applyContribution(sanityCon, outFood.sanity, inFood.sanity)
               outFood.health = applyContribution(foodCon, outFood.health, inFood.health)
             if output.hasData(Item) and ingredient.hasData(Item):
               output[Item].durability = applyContribution(durCon, output[Item].durability, ingredient[Item].durability)

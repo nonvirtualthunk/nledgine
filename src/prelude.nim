@@ -497,6 +497,12 @@ template ifPresent*[T](opt: Option[T], varName: untyped, stmts: untyped) =
     let `varName` {.inject.} = opt.get
     stmts
 
+proc orElse*[T](opt: Option[T], fallback: Option[T]) : Option[T] =
+  if opt.isSome:
+    opt
+  else:
+    fallback
+
 proc addOpt*[T](s: var seq[T], opt: Option[T]) =
   if opt.isSome:
     s.add(opt.get)

@@ -33,6 +33,7 @@ import crafting_display
 import inventory_display
 import survival_display_core
 import game/flags
+import graphics/image_extras
 
 type Latch* = object
   notValue: bool
@@ -40,6 +41,7 @@ type Latch* = object
 type
   PlayerControlComponent* = ref object of GraphicsComponent
     inventoryLatch*: Latch
+    equipmentLatch*: Latch
     messageText*: RichText
     messageLatch*: Latch
     quickSlotLatch*: Latch
@@ -52,6 +54,7 @@ type
     lastRepeat*: UnitOfTime
     lastMove*: UnitOfTime
     inventoryWidget*: Widget
+    equipmentWidget*: Widget
     choosingQuickSlot*: int
     choosingQuickSlotWidget*: Widget
     activeEventStack*: seq[Event]
@@ -68,6 +71,19 @@ type
     icon: ImageRef
     showing: bool
     index: int
+
+  EquipmentSlotB = object
+    showing: bool
+    image: Image
+    identifier: string
+
+  EquipmentLayerB = object
+    name: string
+    slots: seq[EquipmentSlotB]
+
+  EquipmentSlotsB = object
+    showing: bool
+    layers: seq[EquipmentLayerB]
 
 
 proc constructActionInfo(world: LiveWorld, player: Entity, considering: Entity): seq[ActionInfo] {.gcsafe.}
@@ -98,6 +114,7 @@ method initialize(g: PlayerControlComponent, world: LiveWorld, display: DisplayW
   g.actionMenu = ws.desktop.createChild("ActionMenu", "ActionMenu")
   g.actionMenu.bindValue("ActionMenu.showing", false)
   g.craftingMenu = newCraftingMenu(ws, world, player)
+  g.equipmentWidget = ws.desktop.createChild("EquipmentSlotUI", "EquipmentDisplay")
 
 
 
@@ -214,22 +231,39 @@ proc message*(world: LiveWorld, evt: Event, activeEventStack: seq[Event]): Optio
     extract(FoodEatenEvent, entity, eaten, hungerRecovered, staminaRecovered, hydrationRecovered, sanityRecovered, healthRecovered):
       if entity == player:
         let kindStr = eaten[Identity].kind.displayName
+        let anyPositive = hungerRecovered > 0 or staminaRecovered > 0 or hydrationRecovered > 0 or sanityRecovered > 0 or healthRecovered > 0
+        let anyNegative = hungerRecovered < 0 or staminaRecovered < 0 or hydrationRecovered < 0 or sanityRecovered < 0 or healthRecovered < 0
         let verb = if flagValue(world, eaten, † Flags.Liquid) > 0: "drink some"
           else: "eat a"
-        var text = textSection(&"You {verb} {kindStr} and recover ")
+        var text = textSection(&"You {verb} {kindStr}")
         var first = true
-
-        proc addVital(amount: int, vital: Taxon, color: RGBA, last: bool) =
-          if amount > 0:
+        proc addVital(amount: int, vital: Taxon, positiveOnly: bool, color: RGBA, last: bool) =
+          if (positiveOnly and amount > 0) or (not positiveOnly and amount < 0):
             let commaStr = if first: "" elif last: " and " else: ", "
-            text.add(&"{commaStr}{amount} {vital.displayName.toLowerAscii}", textColor = some(color))
+            text.add(&"{commaStr}{amount.abs} {vital.displayName.toLowerAscii}", textColor = some(color))
             first = false
 
-        addVital(hungerRecovered, † GameConcepts.Hunger, rgba(100, 40, 120, 255), hydrationRecovered == 0 and staminaRecovered == 0 and healthRecovered == 0 and sanityRecovered == 0)
-        addVital(hydrationRecovered, † GameConcepts.Hydration, rgba(0.1, 0.15, 0.75, 1.0), staminaRecovered == 0 and healthRecovered == 0 and sanityRecovered == 0)
-        addVital(staminaRecovered, † GameConcepts.Stamina, rgba(0.1, 0.75, 0.2, 1.0), healthRecovered == 0 and sanityRecovered == 0)
-        addVital(healthRecovered, † GameConcepts.Health, rgba(0.75, 0.15, 0.2, 1.0), sanityRecovered == 0)
-        addVital(sanityRecovered, † GameConcepts.Sanity, rgba(0.75, 0.35, 0.4, 1.0), true)
+        
+        if anyPositive:
+          first = true
+          text &= " and recover "
+
+          addVital(hungerRecovered, † GameConcepts.Hunger, true, rgba(100, 40, 120, 255), hydrationRecovered <= 0 and staminaRecovered <= 0 and healthRecovered <= 0 and sanityRecovered <= 0)
+          addVital(hydrationRecovered, † GameConcepts.Hydration, true, rgba(0.1, 0.15, 0.75, 1.0), staminaRecovered <= 0 and healthRecovered <= 0 and sanityRecovered <= 0)
+          addVital(staminaRecovered, † GameConcepts.Stamina, true, rgba(0.1, 0.75, 0.2, 1.0), healthRecovered <= 0 and sanityRecovered <= 0)
+          addVital(healthRecovered, † GameConcepts.Health, true, rgba(0.75, 0.15, 0.2, 1.0), sanityRecovered <= 0)
+          addVital(sanityRecovered, † GameConcepts.Sanity, true, rgba(0.75, 0.35, 0.4, 1.0), true)
+        
+        if anyNegative:
+          first = true
+          text &= " and lose "
+          
+          var first = true
+          addVital(hungerRecovered, † GameConcepts.Hunger, false, rgba(100, 40, 120, 255), hydrationRecovered >= 0 and staminaRecovered >= 0 and healthRecovered >= 0 and sanityRecovered >= 0)
+          addVital(hydrationRecovered, † GameConcepts.Hydration, false, rgba(0.1, 0.15, 0.75, 1.0), staminaRecovered >= 0 and healthRecovered >= 0 and sanityRecovered >= 0)
+          addVital(staminaRecovered, † GameConcepts.Stamina, false, rgba(0.1, 0.75, 0.2, 1.0), healthRecovered >= 0 and sanityRecovered >= 0)
+          addVital(healthRecovered, † GameConcepts.Health, false, rgba(0.75, 0.15, 0.2, 1.0), sanityRecovered >= 0)
+          addVital(sanityRecovered, † GameConcepts.Sanity, false, rgba(0.75, 0.35, 0.4, 1.0), true)
 
         result = some(richText(text))
     extract(DamageTakenEvent, entity, damageTaken, damageType, source, reason):
@@ -372,6 +406,10 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
     extract(ItemRemovedFromInventoryEvent,fromInventory):
       if fromInventory.hasData(Player):
         g.inventoryLatch.flipOn()
+    extract(ItemEquippedEvent):
+      g.equipmentLatch.flipOn()
+    extract(ItemUnequippedEvent):
+      g.equipmentLatch.flipOn()
     extract(IgnitedEvent):
       g.inventoryLatch.flipOn()
     extract(ExtinguishedEvent):
@@ -449,6 +487,38 @@ proc constructActionInfo(world: LiveWorld, player: Entity, considering: Entity):
       text: text,
     ))
 
+
+proc constructEquipmentSlotsInfo(world : LiveWorld, player: Entity) : EquipmentSlotsB =
+  let ck : ref CreatureKind = creatureKind(player.kind)
+
+  result.showing = true
+
+  # var slotKinds: seq[ref EquipmentSlotKind]
+  var groupings : OrderedSet[Taxon]
+  var layers: OrderedTable[Taxon, seq[ref EquipmentSlotKind]]
+
+  for slotK in ck.equipmentSlots:
+    let slot : ref EquipmentSlotKind = equipmentSlot(slotK)
+    groupings.incl(slot.grouping)
+    layers.mgetOrPut(slot.layer, @[]).add(slot)
+
+  for layerKind, slotsInLayer in layers:
+    var layerB = EquipmentLayerB(name: layerKind.displayName)
+    for grouping in groupings:
+      var found = false
+      for s in slotsInLayer:
+        if s.grouping == grouping:
+          layerB.slots.add(EquipmentSlotB(showing: true, image: s.image, identifier: s.))
+          found = true
+          break
+      if not found:
+        layerB.slots.add(EquipmentSlotB(showing: false))
+
+    result.layers.add(layerB)
+
+  info &"Binding equipment slots: {result}"
+
+
 method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
   if g.movementDelta != vec2i(0,0):
     if relTime() - g.lastMove >= 0.18.seconds:
@@ -467,8 +537,8 @@ method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld
             moveEntityDelta(world, player, vec3i(delta.x, delta.y, 0))
             for ent in toTile.entities:
               ifHasData(ent, Physical, phys):
-                # if phys.capsuled:
-                if not phys.occupiesTile:
+                if phys.capsuled:
+                # if not phys.occupiesTile:
                   if ent.hasData(Item):
                     moveEntityToInventory(world, ent, player)
                   else:
@@ -499,6 +569,9 @@ method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld
       if g.inventoryLatch.flipOff():
         ws.desktop.bindValue("itemIconAndText", true)
         g.inventoryWidget.setInventoryDisplayItems(world, toSeq(player[Inventory].items.items))
+
+      if g.equipmentLatch.flipOff():
+        ws.desktop.bindValue("EquipmentSlots", constructEquipmentSlotsInfo(world, player))
 
       if g.messageLatch.flipOff():
         ws.desktop.bindValue("messages", g.messageText)

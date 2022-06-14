@@ -100,9 +100,11 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
 
     placeEntity(world, player, pos)
 
-    tilePtr(regionEnt[Region], player[Physical].position + vec3i(5,-5,0)).wallLayers = @[TileLayer(tileKind: library(TileKind).libTaxon(† TileKinds.RoughStone), resources : @[GatherableResource(resource: † Items.Stone, quantity: reduceable(3.int16), source: † TileKinds.RoughStone)])]
+    # tilePtr(regionEnt[Region], player[Physical].position + vec3i(5,-5,0)).wallLayers = @[TileLayer(tileKind: library(TileKind).libTaxon(† TileKinds.RoughStone), resources : @[GatherableResource(resource: † Items.Stone, quantity: reduceable(3.int16), source: † TileKinds.RoughStone)])]
 
     # tilePtr(regionEnt[Region], vec3i(-7,-7,MainLayer)).wallLayers = @[TileLayer(tileKind: † TileKinds.RoughStone, resources : @[GatherableResource(resource: † Items.Stone, quantity: reduceable(3.int16), source: † TileKinds.RoughStone)])]
+    player[Creature].stamina.value.reduceBy(10)
+    player[Creature].sanity.value.reduceBy(10)
 
     let playerPos = player[Physical].position
 

@@ -1,56 +1,150 @@
 BodyParts {
   Hand {
-    uses: [Manipulate]
+    capabilities: [Manipulate]
+    size: 2
   }
   Foot {
-    uses: [Move]
+    capabilities: [BodyCapabilities.Move]
+    size: 2
+  }
+  Paw {
+    capabilities: [BodyCapabilities.Move]
+    size: 2
   }
   Leg {
-
+    capabilities: [BodyCapabilities.Move]
+    size: 10
   }
   Arm {
-
+    size: 6
   }
 
   RightHand {
-    from: RightArm
+    attachedFrom: RightArm
     isA: Hand
   }
   RightArm {
-    from: Torso
+    attachedFrom: Torso
     isA: Arm
   }
   LeftHand {
-    from: LeftArm
+    attachedFrom: LeftArm
     isA: Hand
   }
   LeftArm {
-    from: Torso
+    attachedFrom: Torso
     isA: Arm
   }
   RightFoot {
-    from: RightLeg
+    attachedFrom: RightLeg
     isA: Foot
   }
   RightLeg {
-    from: Torso
+    attachedFrom: Torso
     isA: Leg
   }
   LeftFoot {
-    from: LeftLeg
+    attachedFrom: LeftLeg
     isA: Foot
   }
   LeftLeg {
-    from: Torso
+    attachedFrom: Torso
     isA: Leg
   }
-  Torso {
 
+  # Four footed animals
+
+  LeftForeLeg {
+    attachedFrom: Torso
+    isA: Leg
+  }
+  LeftForePaw {
+    attachedFrom: LeftForeLeg
+    isA: Paw
+  }
+  RightForeLeg {
+    attachedFrom: Torso
+    isA: Leg
+  }
+  RightForePaw {
+    attachedFrom: RightForeLeg
+    isA: Paw
+  }
+  LeftHindLeg {
+    attachedFrom: Torso
+    isA: Leg
+  }
+  LeftHindPaw {
+    attachedFrom: LeftHindLeg
+    isA: Paw
+  }
+  RightHindLeg {
+    attachedFrom: Torso
+    isA: Leg
+  }
+  RightHindPaw {
+    attachedFrom: RightHindPaw
+    isA: Paw
+  }
+  
+  # Spider anatomy
+  
+  LeftInsectLeg1 {
+    size: 2
+    isA: Leg
+    attachedFrom: Thorax
+  }
+  LeftInsectLeg2 {
+    size: 2
+    isA: Leg
+    attachedFrom: Thorax
+  }
+  LeftInsectLeg3 {
+    size: 2
+    isA: Leg
+    attachedFrom: Thorax
+  }
+  LeftInsectLeg4 {
+    size: 2
+    isA: Leg
+    attachedFrom: Thorax
+  }
+  RightInsectLeg1 {
+    size: 2
+    isA: Leg
+    attachedFrom: Thorax
+  }
+  RightInsectLeg2 {
+    size: 2
+    isA: Leg
+    attachedFrom: Thorax
+  }
+  RightInsectLeg3 {
+    size: 2
+    isA: Leg
+    attachedFrom: Thorax
+  }
+  RightInsectLeg4 {
+    size: 2
+    isA: Leg
+    attachedFrom: Thorax
+  }
+  Thorax {
+    size: 16
+  }
+
+  # General
+
+  Torso {
+    size: 15
   }
   Head {
-    from: Neck
+    attachedFrom: BodyParts.Neck
+    capabilities: Think
+    size: 5
   }
   Neck {
-    from: Torso
+    attachedFrom: Torso
+    size: 3
   }
 }

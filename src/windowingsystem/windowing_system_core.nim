@@ -136,6 +136,7 @@ type
     resolvedDimensions*: Vec2i
     showing_f: seq[Bindable[bool]]
     cursor*: Option[int]
+    boundData*: Bindable[string]
     # drawing caches
     preVertices: seq[WVertex]
     postVertices: seq[WVertex]
@@ -170,7 +171,7 @@ type
     dependsOnAxis: Axis
     sourceAxis: Axis
 
-  RecalculationFlatSet = set[RecalculationFlag]
+  RecalculationFlagSet = set[RecalculationFlag]
 
 
   WindowingSystem* = object
@@ -189,7 +190,7 @@ type
 
     # recomputaton
     renderRevision: int
-    pendingUpdates: Table[Widget, RecalculationFlatSet]
+    pendingUpdates: Table[Widget, RecalculationFlagSet]
     rerenderSet: HashSet[Widget]
 
     # event handling
@@ -1503,6 +1504,7 @@ proc readFromConfig*(cv: ConfigValue, e: var Widget) =
   readInto(cv["padding"], e.padding)
   readIntoOrElse(cv["showing"], e.showing_f, @[bindable(true)])
   readInto(cv["ignoreMissingRelativePosition"], e.ignoreMissingRelativePosition)
+  readInto(cv["boundData"], e.boundData)
 
   if e.dimensions[0].kind == WidgetDimensionKind.Intrinsic:
     readInto(cv["minWidth"], e.dimensions[0].intrinsicMin)

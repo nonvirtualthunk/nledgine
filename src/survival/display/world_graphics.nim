@@ -328,7 +328,7 @@ proc render(g: WorldGraphicsComponent, world: LiveWorld, display: DisplayWorld) 
             else:
               gi = maxLight
 
-            if phys.capsuled:
+            if phys.capsuled and not phys.drawFullWhenCapsuled:
               qb.dimensions = vec2f(16.0f,16.0f)
               qb.position = vec3f(phys.position.x.float * TileSize + 4.0f, phys.position.y.float * TileSize + 6.0f - offset.float, 10.0f)
             else:

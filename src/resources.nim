@@ -15,7 +15,7 @@ const ProjectName* {.strdefine.} : string = "project"
 type
   Resources = ref object
     images: Table[string, Image]
-    config: Table[string, ConfigValue]
+    config: ref Table[string, ConfigValue]
     fonts: Table[string, ArxTypeface]
 
     imageChannel: ptr Channel[Image]
@@ -50,6 +50,8 @@ var resourcesThread: Thread[void]
 
 proc loadResources() {.thread.} =
   let r = new Resources
+  r.config = new Table[string,ConfigValue]
+
   while true:
     let request = requestChannel.recv()
     case request.kind:

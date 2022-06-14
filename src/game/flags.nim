@@ -80,7 +80,7 @@ proc readFromConfig*(cv: ConfigValue, v: var FlagInfo) =
     (cv["countsAsNegativeOne"], (-1, 0))
   ]
   # Allows for "countsAs25: DamageDealtReduction" or whatever arbitrary number, it's hacky, but :shrug:
-  for subK, subV in cv.fields:
+  for subK, subV in cv.pairsOpt:
     matcher(subK):
       extractMatches(countsAsNPattern, n):
         equivalenceConfigs.add((subV, (n.parseInt, 0)))

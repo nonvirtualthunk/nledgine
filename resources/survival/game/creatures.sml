@@ -1,3 +1,43 @@
+
+HumanoidEquipmentSlots : [Hat, Cloak, Shirt, Gloves, Pants, Shoes, Helmet, BodyArmor, Greaves, Crown, Necklace, Brooch, Ring, Belt]
+
+HumanoidBodyParts {
+  RightHand {
+    size: 2
+  }
+  LeftHand {
+    size: 2
+  }
+  RightFoot {
+    size: 2
+  }
+  LeftFoot {
+    size: 2
+  }
+  LeftArm {
+    size: 6
+  }
+  RightArm {
+    size: 6
+  }
+  RightLeg {
+    size: 10
+  }
+  LeftLeg {
+    size: 10
+  }
+  Torso {
+    size: 15
+  }
+  Neck {
+    size: 3
+  }
+  Head {
+    size: 4
+  }
+}
+
+
 Creatures {
   Human {
     images: ["survival/graphics/creatures/player/down.png"]
@@ -7,7 +47,7 @@ Creatures {
       recoveryTime: 1 day
     }
     stamina {
-      value: 14
+      value: 22
       recoveryTime: 1 long action
     }
     hydration {
@@ -45,6 +85,7 @@ Creatures {
         damageAmount: 2
         accuracy: 0.75
         duration: 1 short action
+        bodyParts: [RightHand, LeftHand]
       }
 
       Kick: {
@@ -52,8 +93,13 @@ Creatures {
         damageAmount: 3
         accuracy: 0.5
         duration: 1 short action
+        bodyParts: [LeftFoot, RightFoot]
       }
     }
+
+    bodyParts : ${HumanoidBodyParts}
+
+    equipmentSlots : ${HumanoidEquipmentSlots}
   }
 
   Rabbit {
@@ -115,10 +161,47 @@ Creatures {
         damageAmount: 1
         accuracy: 0.5
         duration: 1 short action
+        bodyParts: [BodyParts.Head]
       }
     }
 
     corpse: Items.RabbitCorpse
+
+    bodyParts {
+      RightForePaw {
+        size: 2
+      }
+      LeftForePaw {
+        size: 2
+      }
+      RightHindPaw {
+        size: 2
+      }
+      LeftHindPaw {
+        size: 2
+      }
+      LeftForeLeg {
+        size: 6
+      }
+      RightForeLeg {
+        size: 6
+      }
+      LeftHindLeg {
+        size: 8
+      }
+      RightHindLeg {
+        size: 8
+      }
+      Torso {
+        size: 15
+      }
+      Neck {
+        size: 3
+      }
+      Head {
+        size: 4
+      }
+    }
   }
 
   Spider {
@@ -176,13 +259,54 @@ Creatures {
         damageAmount: 2
         accuracy: 0.5
         duration: 1 short action
+        bodyParts: [BodyParts.Head]
       }
+    }
+
+    LeftInsectLeg1 {
+      size: 2
+    }
+    LeftInsectLeg2 {
+      size: 2
+    }
+    LeftInsectLeg3 {
+      size: 2
+    }
+    LeftInsectLeg4 {
+      size: 2
+    }
+    RightInsectLeg1 {
+      size: 2
+    }
+    RightInsectLeg2 {
+      size: 2
+    }
+    RightInsectLeg3 {
+      size: 2
+    }
+    RightInsectLeg4 {
+      size: 2
+    }
+    Thorax {
+      size: 16
+    }
+    Head {
+      size: 4
     }
   }
 }
 
+
+Corpse {
+  drawFullWhenCapsuled: true
+  flags {
+    Corpse: 1
+  }
+  stackable: false
+}
+
 Items {
-  RabbitCorpse {
+  RabbitCorpse: ${Corpse} {
     description: "An ex-rabbit"
     weight: 400
     durability: 20
@@ -190,35 +314,24 @@ Items {
       {
         recipeTemplate: Carve
         difficulty: 3
-        outputs: [
-          RawMeat
-        ]
+        outputs: [ RawMeat ]
       }
     ]
 
-    flags {
-      Corpse: 1
-    }
 
     image: "survival/graphics/creatures/rabbit/rabbit_dead.png"
-    stackable: false
   }
 
-  SpiderCorpse {
-    description: "Still too many legs, less scuttling though"
+  SpiderCorpse: ${Corpse} {
+    description: "Still too many legs, less scuttling now"
     weight: 300
     durability: 15
     transforms: [{
       recipeTemplate: Carve
       difficulty: 2
-      outputs: [ RawMeat, SpiderSilk ]
+      outputs: [ RawInsectMeat, SpiderSilk ]
     }]
 
-    flags {
-      Corpse: 1
-    }
-
     image: "survival/graphics/creatures/spider/spider_dead.png"
-    stackable: false
   }
 }

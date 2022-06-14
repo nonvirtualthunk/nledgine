@@ -7,6 +7,7 @@ import noto
 import glm
 import options
 import std/strbasics
+import sets
 
 const ConfigParsingDebug = false
 
@@ -34,6 +35,7 @@ type
     cursor: int
     buffer: string
     merges: seq[(ConfigValue, string)]
+    external: ref Table[string, ConfigValue]
 
 template noAutoLoad* {.pragma.}
 
@@ -311,7 +313,14 @@ proc readFromConfig*[T](v: ConfigValue, x: var set[T]) =
       var tmp: T
       s.readInto(tmp)
       x.incl(tmp)
-      
+
+proc readFromConfig*[T](v: ConfigValue, x: var HashSet[T]) =
+  if v.nonEmpty:
+    for s in v.asSeq:
+      var tmp: T
+      s.readInto(tmp)
+      x.incl(tmp)
+
       
       
 proc writeToConfig*(x: int) : ConfigValue =
@@ -551,10 +560,14 @@ proc parseObj(ctx: var ParseContext, skipEnclosingBraces: bool = false): ConfigV
       ctx.advance()
       let mainFieldName = ctx.parseUntil(quoteSet, enquoted=true)
       ctx.advance()
-      let fieldName = mainFieldName & ctx.parseUntil(fieldStartCharacters).strip()
+      var section = ctx.parseUntil(fieldStartCharacters)
+      section.strip()
+      let fieldName = mainFieldName & section
       (fieldName, true)
     else:
-      (ctx.parseUntil(fieldStartCharacters).strip(), false)
+      var section = ctx.parseUntil(fieldStartCharacters)
+      section.strip()
+      (section, false)
 
     if ctx.peek() == ':':
       ctx.advance()
@@ -577,11 +590,19 @@ proc parseObj(ctx: var ParseContext, skipEnclosingBraces: bool = false): ConfigV
 
 
 proc mergeInherit*(base: ConfigValue, sub: ConfigValue) =
-  for k,v in base.fields:
-    if sub.fields.hasKeyOrPut(k, v):
-      let subv = sub.fields[k]
-      if v.kind == ConfigValueKind.Object and subv.kind == ConfigValueKind.Object:
-        mergeInherit(v, subv)
+  if sub.kind == ConfigValueKind.Empty:
+    sub[] = base[]
+  else:
+    if base.kind == ConfigValueKind.Array and sub.kind == ConfigValueKind.Array:
+      sub.values.insert(base.values)
+    elif base.kind == ConfigValueKind.Object and sub.kind == ConfigValueKind.Object:
+      for k,v in base.fields:
+        if sub.fields.hasKeyOrPut(k, v):
+          let subv = sub.fields[k]
+          if v.kind == ConfigValueKind.Object and subv.kind == ConfigValueKind.Object:
+            mergeInherit(v, subv)
+    else:
+      warn &"merge inheritance attempted for two config values of differing kinds: {base}\n <=>\n{sub}"
 
 proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
   ctx.skipWhitespace()
@@ -590,7 +611,8 @@ proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
   if ctx.peek() == '$' and ctx.peek(1) == '{':
     ctx.advance()
     ctx.advance()
-    baseConfig = ctx.parseUntil({'}'}).strip()
+    baseConfig = ctx.parseUntil({'}'})
+    baseConfig.strip()
     ctx.advance() # advance past the closing '}'
 
   ctx.skipWhitespace()
@@ -603,29 +625,36 @@ proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
   of '[':
     parseArray(ctx)
   else:
-    var rawValue : string = if underArr:
-      ctx.parseUntil(fieldValueEndCharactersInArr)
+    # if we've got a base we're inheriting from, and we don't have an array/obj following then we're simply
+    # going to add the base config value in, and we consider that to be the value
+    if baseConfig.len > 0:
+      ConfigValue()
     else:
-      ctx.parseUntil(fieldValueEndCharactersInObj)
+      var rawValue : string = if underArr:
+        ctx.parseUntil(fieldValueEndCharactersInArr)
+      else:
+        ctx.parseUntil(fieldValueEndCharactersInObj)
 
-    if cmpIgnoreCase(rawValue, "true") == 0:
-      ConfigValue(kind: ConfigValueKind.Bool, truth: true)
-    elif cmpIgnoreCase(rawValue, "false") == 0:
-      ConfigValue(kind: ConfigValueKind.Bool, truth: false)
-    else:
-      try:
-        let f = parseFloat rawValue
-        ConfigValue(kind: ConfigValueKind.Number, num: f)
-      except ValueError:
-        strip(rawValue, false, true)
-        ConfigValue(kind: ConfigValueKind.String, str: rawValue)
+      if cmpIgnoreCase(rawValue, "true") == 0:
+        ConfigValue(kind: ConfigValueKind.Bool, truth: true)
+      elif cmpIgnoreCase(rawValue, "false") == 0:
+        ConfigValue(kind: ConfigValueKind.Bool, truth: false)
+      else:
+        try:
+          let f = parseFloat rawValue
+          ConfigValue(kind: ConfigValueKind.Number, num: f)
+        except ValueError:
+          strip(rawValue, false, true)
+          ConfigValue(kind: ConfigValueKind.String, str: rawValue)
 
   if result.kind == ConfigValueKind.Object and baseConfig.len > 0:
     ctx.merges.add((result, baseConfig))
+  elif baseConfig.len > 0:
+    ctx.merges.add((result, baseConfig))
 
 
-proc parseConfig*(str: string): ConfigValue =
-  var ctx = ParseContext(str: str, cursor: 0)
+proc parseConfig*(str: string, context: ref Table[string, ConfigValue] = nil): ConfigValue =
+  var ctx = ParseContext(str: str, cursor: 0, external: context)
   ctx.skipWhitespace()
   if ctx.peek == '[':
     result = parseArray(ctx)
@@ -633,10 +662,7 @@ proc parseConfig*(str: string): ConfigValue =
     result = parseObj(ctx, ctx.peek() != '{')
   for (inheritor, basePath) in ctx.merges:
     let baseConfig = result.getByPath(basePath)
-    if baseConfig.kind == ConfigValueKind.Object:
-      mergeInherit(baseConfig, inheritor)
-    else:
-      warn &"Haven't implemented non-object-overlay inherited config values\n\tbasePath: {basePath}"
+    mergeInherit(baseConfig, inheritor)
 
 
 proc readConfigFromFile*(path: string): ConfigValue =

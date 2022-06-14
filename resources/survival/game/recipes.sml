@@ -1,6 +1,6 @@
 Recipes {
 
-  RoastedVegetable {
+  RoastVegetable {
     name: "roast vegetable"
     recipeTemplate: Roast
     ingredients {
@@ -12,6 +12,7 @@ Recipes {
       item: Items.RoastedVegetable
     }]
   }
+
 
   CarvePlank {
     name: "carve plank"

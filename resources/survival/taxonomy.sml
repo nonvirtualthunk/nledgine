@@ -31,6 +31,31 @@ Taxonomy {
     Cold: Elemental
     Acid: Elemental
   }
+
+  BodyCapability: []
+  BodyCapabilities {
+    Manipulate: BodyCapability
+    Move: BodyCapability
+    Think: BodyCapability
+
+  }
+
+  EquipmentLayer: []
+  EquipmentLayers {
+    Clothing: EquipmentLayer
+    Armor: EquipmentLayer
+    Trinkets: EquipmentLayer
+  }
+
+  EquipmentGrouping: []
+  EquipmentGroupings {
+    Head: EquipmentGrouping
+    Neck: EquipmentGrouping
+    Body: EquipmentGrouping
+    Hands: EquipmentGrouping
+    Legs: EquipmentGrouping
+    Feet: EquipmentGrouping
+  }
 }
 
 TaxonomySources : [
@@ -41,9 +66,10 @@ TaxonomySources : [
   survival/game/plant_kinds.sml
   survival/game/flags.sml
   survival/game/body_parts.sml
+  survival/game/equipment_slots.sml
   survival/game/recipe_templates.sml
   survival/game/recipes.sml
-  survival/game/creatures.sml
+  [survival/game/creatures.sml, Creatures, Items]
   survival/game/burrows.sml
   survival/game/attacks.sml
 ]

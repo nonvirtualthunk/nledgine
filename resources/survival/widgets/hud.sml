@@ -201,16 +201,16 @@ QuickSlotItem {
   background.draw: true
   background.pixelScale: 2
 
-  width: 88
-  height: 88
+  width: 76
+  height: 76
 
   children {
     ItemImage {
       type: ImageDisplay
       x: centered
       y: centered
-      width: 64
-      height: 64
+      width: 48
+      height: 48
       scale: scaleToFit
       showing: "%(item.showing)"
 
@@ -222,7 +222,7 @@ QuickSlotItem {
       y: 3
       z: 10
       text: "%(item.index)"
-      fontSize: 24
+      fontSize: 16
       font: "ChevyRayThicket.ttf"
     }
   }
