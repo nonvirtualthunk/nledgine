@@ -455,11 +455,28 @@ template readIntoOrElse*[T](cv: ConfigValue, x: var T, defaultV: typed) =
 proc peek(ctx: ParseContext, ahead: int = 0): char =
   ctx.str[ctx.cursor + ahead]
 
+proc peekAheadMatches(ctx: ParseContext, value: string): bool =
+  if ctx.str.len >= ctx.cursor + value.len:
+    for i in 0 ..< value.len:
+      if peek(ctx, i) != value[i]:
+        return false
+    true
+  else:
+    false
+
+
 proc finished(ctx: ParseContext): bool =
   ctx.cursor >= ctx.str.len
 
 proc advance(ctx: var ParseContext) =
   ctx.cursor += 1
+
+proc advance(ctx: var ParseContext, n: int) =
+  ctx.cursor += n
+
+proc advanceUntil(ctx: var ParseContext, c: char) =
+  while ctx.peek != c and ctx.cursor < ctx.str.len:
+    ctx.advance()
 
 proc next(ctx: var ParseContext, enquoted: bool = false): char =
   result = ctx.str[ctx.cursor]
@@ -653,15 +670,49 @@ proc parseValue(ctx: var ParseContext, underArr: bool): ConfigValue =
     ctx.merges.add((result, baseConfig))
 
 
+const importKW = "import"
+
+proc parseImportKeys(ctx: var ParseContext) : seq[string] =
+  if ctx.peekAheadMatches(importKW):
+    ctx.advance(importKW.len)
+    ctx.advanceUntil('[')
+    let arr = parseArray(ctx)
+    for v in arr.asArr:
+      result.add(v.asStr)
+
+proc parseImportKeys*(str: string): seq[string] =
+  var ctx = ParseContext(str: str, cursor: 0)
+  parseImportKeys(ctx)
+
+
+proc readConfigFromFile*(path: string): ConfigValue {.gcsafe.}
+
+proc parseImports(ctx: var ParseContext): seq[ConfigValue] =
+  for importKey in parseImportKeys(ctx):
+    let ext = ctx.external.getOrDefault(importKey)
+    if ext != nil:
+      result.add(ext)
+    else:
+      let newExt = readConfigFromFile("resources/" & importKey)
+      result.add(newExt)
+      ctx.external[importKey] = newExt
+
 proc parseConfig*(str: string, context: ref Table[string, ConfigValue] = nil): ConfigValue =
   var ctx = ParseContext(str: str, cursor: 0, external: context)
   ctx.skipWhitespace()
+  let imports = parseImports(ctx)
+
   if ctx.peek == '[':
     result = parseArray(ctx)
   else:
     result = parseObj(ctx, ctx.peek() != '{')
   for (inheritor, basePath) in ctx.merges:
-    let baseConfig = result.getByPath(basePath)
+    var baseConfig = result.getByPath(basePath)
+    var i = 0
+    while baseConfig.isEmpty and i < imports.len:
+      baseConfig = imports[i].getByPath(basePath)
+      i.inc
+
     mergeInherit(baseConfig, inheritor)
 
 

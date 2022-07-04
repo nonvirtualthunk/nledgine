@@ -664,6 +664,7 @@ Items {
   StoneAxe {
     weight: 2000
     durability: 100
+    wieldable: true
     flags {
       Tool: 1
       Weapon: 1
@@ -864,4 +865,14 @@ Items {
       Grind: 1
     }
   }
+
+  SimplePants {
+    durability: "+5"
+
+    image: "survival/graphics/items/clothing/basic_pants.png"
+
+    equipmentSlot: EquipmentSlots.Pants
+  }
+
+
 }

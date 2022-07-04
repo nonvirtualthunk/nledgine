@@ -20,3 +20,7 @@ proc debugIdentifier*(world: LiveWorld, entity: Entity) : string =
       ID.kind.displayName.replace(" ","") & "(" & $entity.id & ")"
   else:
     "Entity(" & $entity.id & ")"
+
+
+template isA*(entity: Entity, t: Taxon): bool =
+  entity[Identity].kind.isA(t)

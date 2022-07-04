@@ -10,6 +10,7 @@ import engines/core_event_types
 import resources
 import noto
 import sets
+import strutils
 
 {.experimental.}
 
@@ -105,8 +106,19 @@ proc `$`*(e: Entity): string =
 proc `$`*(e: DisplayEntity): string =
   return $e.id
 
+proc parseEntity*(s: string): Entity =
+  if s.startsWith("@("):
+    let numStr = s.substr(2, s.len - 2)
+    try:
+      Entity(id: parseInt(numStr))
+    except ValueError:
+      SentinelEntity
+  else:
+    SentinelEntity
+
 proc isSentinel*(e: Entity): bool = e == SentinelEntity
 proc isSentinel*(e: DisplayEntity): bool = e == SentinelDisplayEntity
+proc nonSentinel*(e: Entity): bool = e != SentinelEntity
 
 proc currentTime*(view: WorldView): WorldEventClock =
   if view.baseView.isSome:

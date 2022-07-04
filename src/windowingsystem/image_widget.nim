@@ -137,7 +137,7 @@ proc calcPos(ID: ref ImageDisplay, widget: Widget, axis: Axis, axisDim: int): in
   (widget.resolvedDimensions[axis] - widget.clientOffset[axis] * 2 - axisDim) div 2
 
 method render*(ws: ImageDisplayComponent, widget: Widget): seq[WQuad] =
-  if widget.hasData(ImageDisplay):
+  if widget.hasData(ImageDisplay) and widget.showing:
     let ID = widget.data(ImageDisplay)
     let width = calcSize(ID, widget, Axis.X)
     let height = calcSize(ID, widget, Axis.Y)

@@ -48,6 +48,50 @@ proc placeEntity*(world: LiveWorld, entity: Entity, atPosition: Vec3i, capsuled:
 proc canEat*(world: LiveWorld, actor: Entity, target: Entity): bool {.gcsafe.}
 
 
+## An open-ended or exploding dice roll, where each 2 sided die is rolled until it gets a 0
+## so it is theoretically possible to get a 0 total, or an arbitrarily large total. In practice
+## The distribution is roughly normal, and the average result will be equal to the number of die
+## An example empirical distribution for 10 rolls is given below
+##
+## Average: 9.995710000000001
+## 0 [0.09300%]:
+## 1 [0.4780%]: *****
+## 2 [1.313%]: **************
+## 3 [2.767%]: *****************************
+## 4 [4.303%]: **********************************************
+## 5 [6.159%]: ******************************************************************
+## 6 [7.640%]: **********************************************************************************
+## 7 [8.841%]: **********************************************************************************************
+## 8 [9.310%]: ****************************************************************************************************
+## 9 [9.069%]: *************************************************************************************************
+## 10 [8.821%]: **********************************************************************************************
+## 11 [7.993%]: *************************************************************************************
+## 12 [7.103%]: ****************************************************************************
+## 13 [5.969%]: ****************************************************************
+## 14 [4.818%]: ***************************************************
+## 15 [3.835%]: *****************************************
+## 16 [3.059%]: ********************************
+## 17 [2.308%]: ************************
+## 18 [1.794%]: *******************
+## 19 [1.241%]: *************
+## 20 [0.9320%]: **********
+## 21 [0.6540%]: *******
+## 22 [0.4830%]: *****
+## 23 [0.3380%]: ***
+## 24 [0.2480%]: **
+## 25 [0.1450%]: *
+## 26 [0.09300%]:
+## 27 [0.07200%]:
+## 28 [0.04600%]:
+## 29 [0.02600%]:
+## 30 [0.01600%]:
+proc explodingRoll*(r: var Randomizer, dice: int): int =
+  for i in 0 ..< dice:
+    while true:
+      while r.nextInt(2) == 1:
+        result.inc
+
+
 
 ## Shifts a [0.0,1.0] fractional range such that values <= minFract resolve to 0.0 and value >= maxFract resolve to 1.0
 ## with values between the two interpolating smoothly between. i.e. shifting 0.3 to [0.2,0.4] would result in a value of
@@ -742,6 +786,23 @@ iterator possibleAttacks*(world: LiveWorld, actor: Entity, allowedEquipment: seq
         yield PossibleAttack(attack: item[Item].attack.get, source: item)
 
 
+proc pickBodyPartHit*(world: LiveWorld, r: var Randomizer, target: Entity): Taxon =
+  if not target.isA(† Creature):
+    err &"Cannot pick the body part of something that isn't a creature"
+    UnknownThing
+  else:
+    let ck : ref CreatureKind = creatureKind(target.kind)
+    var totalSize = 0
+    for bp, bpk in ck.bodyParts:
+      totalSize += bpk.size
+    var v = r.nextInt(totalSize)
+    for bp, bpk in ck.bodyParts:
+      if v < bpk.size:
+        return bp
+      v -= bpk.size
+    err &"picking a body part to hit didn't match anything, all body parts: {ck.bodyParts}"
+    UnknownThing
+
 proc attack*(world: LiveWorld, actor: Entity, target: Target, possibleAttack: PossibleAttack) =
   let attackType = possibleAttack.attack
   var rand = randomizer(world)
@@ -757,10 +818,18 @@ proc attack*(world: LiveWorld, actor: Entity, target: Target, possibleAttack: Po
       let isHit = nextFloat(rand) < attackType.accuracy
 
       if isHit:
-        let armor = targetCA.armor.getOrDefault(attackType.damageType, 0)
-        # each point of armor gives a 50% chance to negate a point of damage, so roll `armor`d2 - `armor` to simulate dice with faces [0,1]
-        let damageReducedBy = roll(dicePool(armor,2), rand).total - armor
-        let damage = attackType.damageAmount - damageReducedBy
+        # start with the inherent armor, then add from equipment as relevant
+        var armor = targetCA.armor + targetCA.armorByDamageType.getOrDefault(attackType.damageType, 0)
+        if targetEnt.isA(† Creature):
+          let cd : ref Creature = targetEnt[Creature]
+          let bodyPart = pickBodyPartHit(world, rand, targetEnt)
+          for slot, item in cd.equipment:
+            if slot.isA(† EquipmentSlot):
+
+        # armor uses an exploding roll to reflect the possibility of being hit where the armor isn't
+        let damageReducedBy = explodingRoll(rand, armor)
+        let rawDamage = explodingRoll(rand, attackType.damageAmount)
+        let damage = rawDamage - damageReducedBy
         world.eventStmts(AttackHitEvent(attacker: actor, target: target, damage: damage, armorReduction: damageReducedBy, attackType: attackType, damageType: attackType.damageType)):
           damageEntity(world, targetEnt, damage, attackType.damageType, "attack")
       else:

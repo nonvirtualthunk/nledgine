@@ -54,7 +54,7 @@ type
     lastRepeat*: UnitOfTime
     lastMove*: UnitOfTime
     inventoryWidget*: Widget
-    equipmentWidget*: Widget
+    equipmentUI*: EquipmentUI
     choosingQuickSlot*: int
     choosingQuickSlotWidget*: Widget
     activeEventStack*: seq[Event]
@@ -71,19 +71,6 @@ type
     icon: ImageRef
     showing: bool
     index: int
-
-  EquipmentSlotB = object
-    showing: bool
-    image: Image
-    identifier: string
-
-  EquipmentLayerB = object
-    name: string
-    slots: seq[EquipmentSlotB]
-
-  EquipmentSlotsB = object
-    showing: bool
-    layers: seq[EquipmentLayerB]
 
 
 proc constructActionInfo(world: LiveWorld, player: Entity, considering: Entity): seq[ActionInfo] {.gcsafe.}
@@ -113,8 +100,8 @@ method initialize(g: PlayerControlComponent, world: LiveWorld, display: DisplayW
   ws.desktop.createChild("hud", "QuickSlots")
   g.actionMenu = ws.desktop.createChild("ActionMenu", "ActionMenu")
   g.actionMenu.bindValue("ActionMenu.showing", false)
+  g.equipmentUI = createEquipmentDisplay(ws.desktop, player, "Equipment")
   g.craftingMenu = newCraftingMenu(ws, world, player)
-  g.equipmentWidget = ws.desktop.createChild("EquipmentSlotUI", "EquipmentDisplay")
 
 
 
@@ -295,6 +282,8 @@ proc closeMenus(g: PlayerControlComponent) =
     g.choosingQuickSlotWidget = nil
     g.choosingQuickSlot = 0
 
+  g.equipmentUI.closeMenus()
+
 
 method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, event: Event) =
   let ws = display[WindowingSystem]
@@ -397,7 +386,19 @@ method onEvent*(g: PlayerControlComponent, world: LiveWorld, display: DisplayWor
         g.actionMenu.bindValue("ActionMenu.actions", g.actionItems)
         g.actionMenu.x = absolutePos(originatingPosition.x, WidgetOrientation.TopRight)
         g.actionMenu.y = absolutePos(originatingPosition.y, WidgetOrientation.TopRight)
+    extract(EquipmentChangeRequested, entity, slot, newEquipment):
+      let p = entity
 
+      if p[Creature].equipment.contains(slot):
+        unequipItemFrom(world, p, p[Creature].equipment[slot])
+
+      if newEquipment.isSome:
+        let itemToEquip = newEquipment.get
+        unequipItemFrom(world, p, itemToEquip)
+        equipItemTo(world, p, itemToEquip, slot)
+        info &"equiping item {itemToEquip}"
+
+      closeMenus(g)
 
   postMatcher(event):
     extract(EntityMovedToInventoryEvent, toInventory):
@@ -488,35 +489,6 @@ proc constructActionInfo(world: LiveWorld, player: Entity, considering: Entity):
     ))
 
 
-proc constructEquipmentSlotsInfo(world : LiveWorld, player: Entity) : EquipmentSlotsB =
-  let ck : ref CreatureKind = creatureKind(player.kind)
-
-  result.showing = true
-
-  # var slotKinds: seq[ref EquipmentSlotKind]
-  var groupings : OrderedSet[Taxon]
-  var layers: OrderedTable[Taxon, seq[ref EquipmentSlotKind]]
-
-  for slotK in ck.equipmentSlots:
-    let slot : ref EquipmentSlotKind = equipmentSlot(slotK)
-    groupings.incl(slot.grouping)
-    layers.mgetOrPut(slot.layer, @[]).add(slot)
-
-  for layerKind, slotsInLayer in layers:
-    var layerB = EquipmentLayerB(name: layerKind.displayName)
-    for grouping in groupings:
-      var found = false
-      for s in slotsInLayer:
-        if s.grouping == grouping:
-          layerB.slots.add(EquipmentSlotB(showing: true, image: s.image, identifier: s.))
-          found = true
-          break
-      if not found:
-        layerB.slots.add(EquipmentSlotB(showing: false))
-
-    result.layers.add(layerB)
-
-  info &"Binding equipment slots: {result}"
 
 
 method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld, df: float): seq[DrawCommand] =
@@ -571,7 +543,7 @@ method update(g: PlayerControlComponent, world: LiveWorld, display: DisplayWorld
         g.inventoryWidget.setInventoryDisplayItems(world, toSeq(player[Inventory].items.items))
 
       if g.equipmentLatch.flipOff():
-        ws.desktop.bindValue("EquipmentSlots", constructEquipmentSlotsInfo(world, player))
+        updateEquipmentDisplay(g.equipmentUI, world, player)
 
       if g.messageLatch.flipOff():
         ws.desktop.bindValue("messages", g.messageText)

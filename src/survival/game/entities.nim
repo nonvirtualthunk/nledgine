@@ -168,7 +168,7 @@ type
     # the name of this equipment slot (boots, pants, etc)
     name*: string
     # the taxon identity of this slot
-    kind*: Taxon
+    identity*: Taxon
     # the general grouping this falls under so that, i.e. mail shirt and regular shirt can be put together in the ui
     grouping*: Taxon
     # the overal layer this is part of (i.e. clothing, armor, accessories)
@@ -255,7 +255,7 @@ type
     actionImages*: Table[Taxon, ImageLike]
 
     # what body parts this creature naturally has, and information about them (size, etc)
-    bodyParts: Table[Taxon, BodyPartKind]
+    bodyParts*: Table[Taxon, BodyPartKind]
     # flags that indicate something might be edible to this kind of creature (i.e. vegetable)
     canEat*: seq[Taxon]
     # flags that indicate something cannot be edible to this kind of creature (i.e. Flags.Meat for herbivores)
@@ -361,6 +361,8 @@ type
     # Whether individual items of this kind are sufficiently interchangeable that they
     # can be "stacked" when displayed rather than showing each individually
     stackable*: bool
+    # whether this item can be wielded in a hand, generally speaking only relevant for weapons
+    wieldable*: bool
     actions*: Table[Taxon, int]
     attack*: Option[AttackType]
     equipmentSlot*: Option[Taxon]
@@ -581,7 +583,9 @@ type
 
   CombatAbility* = object
     # the amount to reduce incoming damage by, organized by damage type
-    armor*: Table[Taxon, int]
+    armorByDamageType*: Table[Taxon, int]
+    # the base amount of armor regardless of damage type
+    armor*: int
 
 
   AttackType* = object
@@ -845,6 +849,7 @@ proc readFromConfig*(cv: ConfigValue, ik: var ItemKind) =
   cv["flags"].readInto(ik.flags[])
   cv["attack"].readInto(ik.attack)
   cv["equipmentSlot"].readInto(ik.equipmentSlot)
+  cv["wieldable"].readInto(ik.wieldable)
 
   readIntoTaxonTable(cv["actions"], ik.actions, "Actions")
 
@@ -922,9 +927,7 @@ proc postProcessCreatureKind(lib: Library[CreatureKind]) =
       merge(bodyPartV, bodyPartLib[bodyPartK])
 
 defineSimpleLibrary[CreatureKind]("survival/game/creatures.sml", "Creatures", postProcessCreatureKind)
-# defineSimpleLibrary[BurrowKind]("survival/game/burrows.sml", "Burrows")
 defineSimpleLibrary[RecipeTemplate]("survival/game/recipe_templates.sml", "RecipeTemplates")
-# defineSimpleLibrary[Recipe]("survival/game/recipes.sml", "Recipes")
 defineLibrary[Recipe]:
   let namespace = "Recipes"
   var lib = new Library[Recipe]

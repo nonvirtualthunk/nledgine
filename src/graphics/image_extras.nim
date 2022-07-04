@@ -164,3 +164,5 @@ converter toImageRef*(img: string): ImageRef = ImageRef(kind: Path, path: img)
 
 proc isEmpty*(img: ImageRef): bool = img.kind == ImageRefKinds.Sentinel
 proc isSentinel*(img: ImageRef): bool = img.kind == ImageRefKinds.Sentinel
+
+proc imageLayer*(img: ImageRef): ImageLayer = ImageLayer(image: img, color: White)

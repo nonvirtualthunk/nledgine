@@ -149,9 +149,9 @@ template defineSimpleLibrary*[T](baseConfPaths: seq[string], namespace: string, 
 
         when compiles(ri.taxon):
           ri.taxon = key
-        elif compiles(ri.identity = key):
+        elif compiles(ri.identity):
           ri.identity = key
-        elif compiles(ri.kind = key):
+        elif compiles(ri.kind):
           ri.kind = key
         readInto(v, ri[])
         lib[key] = ri

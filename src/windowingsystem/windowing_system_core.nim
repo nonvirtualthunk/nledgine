@@ -312,6 +312,11 @@ iterator descendantsWithData*[T](e: Widget, dataType : typedesc[T]): Widget =
   for c in descendantsMatching(e, w => w.hasData(dataType)):
     yield c
 
+iterator selfAndAncestors*(widget: Widget): Widget =
+  var w = widget
+  while w != nil:
+    yield w
+    w = w.parent_f.get(nil)
 
 proc isDescendantOf*(w: Widget, target: Widget): bool =
   if w.parent_f.isSome:

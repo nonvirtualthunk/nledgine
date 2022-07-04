@@ -70,7 +70,7 @@ proc loadResources() {.thread.} =
       if cur.isEmpty:
         try:
           let configStr = readFile("resources/" & request.path)
-          cur = parseConfig(configStr)
+          cur = parseConfig(configStr, r.config)
         except IoError:
           if not request.acceptAbsence:
             err &"Could not load config file: {request.path}"
@@ -92,6 +92,7 @@ createThread(resourcesThread, loadResources)
 proc getGlobalResources(): Resources =
   if globalResources == nil:
     globalResources = new Resources
+    globalResources.config = new Table[string, ConfigValue]
     globalResources.imageChannel = createShared(Channel[Image])
     globalResources.imageChannel.open()
     globalResources.configChannel = createShared(Channel[ConfigValue])
