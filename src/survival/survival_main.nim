@@ -96,7 +96,7 @@ method initialize(g: InitializationComponent, world: LiveWorld) =
     moveEntityToInventory(world, createItem(world, regionEnt, † Items.StrippedBark), player)
     moveEntityToInventory(world, createItem(world, regionEnt, † Items.StrippedBark), player)
     moveEntityToInventory(world, createItem(world, regionEnt, † Items.Stone), player)
-    moveEntityToInventory(world, createItem(world, regionEnt, † Items.SimplePants), player)
+    moveEntityToInventory(world, createItem(world, regionEnt, † Items.LeatherPants), player)
     moveEntityToInventory(world, fireDrill, player)
 
     placeEntity(world, player, pos)

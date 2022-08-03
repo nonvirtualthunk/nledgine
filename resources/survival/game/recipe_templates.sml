@@ -103,6 +103,29 @@ RecipeTemplates {
     weightContribution: 0.9
   }
 
+  Sew: ${BaseTemplate} {
+    description: "Stitch together fabrics into larger, more complex shapes"
+    icon: "survival/graphics/recipes/sew.png"
+    selectedIcon: "survival/graphics/recipes/sew_selected.png"
+
+    ingredients {
+      Fabric {
+        description: "Fabric pieces to attach together"
+        count: 2
+        distinct: true
+      }
+      Binding {
+        description: "Something to attach the pieces together"
+        requirement: Flags.Binding
+        optional: false
+      }
+      Needle {
+        description: "Tool to stitch the binding with"
+        requirement: Flags.Needle
+      }
+    }
+  }
+
   Combine: ${BaseTemplate} {
     # Braid stripped bark into string
     # Braid string into rope

@@ -87,9 +87,8 @@ proc canEat*(world: LiveWorld, actor: Entity, target: Entity): bool {.gcsafe.}
 ## 30 [0.01600%]:
 proc explodingRoll*(r: var Randomizer, dice: int): int =
   for i in 0 ..< dice:
-    while true:
-      while r.nextInt(2) == 1:
-        result.inc
+    while r.nextInt(2) == 1:
+      result.inc
 
 
 
@@ -818,6 +817,8 @@ proc attack*(world: LiveWorld, actor: Entity, target: Target, possibleAttack: Po
       let isHit = nextFloat(rand) < attackType.accuracy
 
       if isHit:
+        let slotLib = library(EquipmentSlotKind)
+
         # start with the inherent armor, then add from equipment as relevant
         var armor = targetCA.armor + targetCA.armorByDamageType.getOrDefault(attackType.damageType, 0)
         if targetEnt.isA(† Creature):
@@ -825,6 +826,10 @@ proc attack*(world: LiveWorld, actor: Entity, target: Target, possibleAttack: Po
           let bodyPart = pickBodyPartHit(world, rand, targetEnt)
           for slot, item in cd.equipment:
             if slot.isA(† EquipmentSlot):
+              if slotLib[slot].bodyParts.contains(bodyPart) and item.hasData(CombatAbility):
+                let itemCA = item[CombatAbility]
+                armor += itemCA.armor + itemCA.armorByDamageType.getOrDefault(attackType.damageType, 0)
+
 
         # armor uses an exploding roll to reflect the possibility of being hit where the armor isn't
         let damageReducedBy = explodingRoll(rand, armor)

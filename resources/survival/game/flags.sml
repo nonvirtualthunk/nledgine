@@ -167,4 +167,7 @@ Flags {
     description: "A mortal coil bereft of its animating force"
     countsAs: AnimalProduct
   }
+  Needle {
+    description: "A strong, sharp, thin tool that can pull a binding through other materials"
+  }
 }

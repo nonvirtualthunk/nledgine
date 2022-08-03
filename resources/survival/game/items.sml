@@ -866,12 +866,18 @@ Items {
     }
   }
 
-  SimplePants {
+  LeatherPants {
     durability: "+5"
 
     image: "survival/graphics/items/clothing/basic_pants.png"
 
     equipmentSlot: EquipmentSlots.Pants
+
+    recipe {
+      name: "sew leather pants"
+      recipeTemplate: Sew
+
+    }
   }
 
 
